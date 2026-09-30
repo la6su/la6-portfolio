@@ -1,0 +1,1189 @@
+/* Persistent console chrome — the single owner of the TUI shell.
+ *
+ * Owns everything persistent around the authored scene: cinematic shell
+ * positioning, topbar, control banks, menu sheet, bottom status island and
+ * the menu field language. Route composition stays in main.less; UIkit
+ * owns component behavior.
+ *
+ * Cascade note: this file is imported last by main.less, so these rules are
+ * the final voice for chrome selectors. Blocks absorbed from main.less keep
+ * their relative order ahead of the canonical control banks.
+ */
+
+.jlz-cinematic-shell {
+  z-index: 10020;
+  color: var(--jlz-color-text);
+}
+
+// Terminal selection: phosphor field, ink text.
+::selection {
+  background: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-text-inverse);
+}
+
+// ── Topbar: terminal chrome ──
+.jlz-topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10001;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.jlz-cinematic-shell .jlz-topbar {
+  top: 0.85rem;
+  right: 0.85rem;
+  left: 0.85rem;
+  width: auto;
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
+  pointer-events: auto;
+}
+
+.jlz-topbar__brand {
+  min-height: 2.75rem;
+  gap: 0.7rem;
+  padding: 0 0.15rem;
+  overflow: visible;
+  color: var(--jlz-color-text);
+  pointer-events: auto;
+  isolation: isolate;
+}
+
+.jlz-brand-mark {
+  display: block;
+  width: 1.65rem;
+  height: 1.65rem;
+  object-fit: contain;
+  transition: transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-topbar__brand:hover .jlz-brand-mark,
+.jlz-topbar__brand:focus-visible .jlz-brand-mark {
+  transform: rotate(-5deg) scale(1.06);
+}
+
+.jlz-topbar__wordmark {
+  font-family: var(--jlz-font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.jlz-topbar__mode {
+  position: relative;
+  padding-left: 0.8rem;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+.jlz-topbar__mode::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.28rem;
+  height: 0.28rem;
+  background: var(--jlz-color-signal-phosphor);
+  content: '';
+  transform: translateY(-50%);
+}
+
+// ── Toggle controls: language, theme, sound ──
+.jlz-lang-label {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.jlz-theme-toggle [uk-icon] {
+  width: 1rem;
+  height: 1rem;
+  filter: none;
+}
+
+.jlz-theme-toggle [uk-icon] {
+  display: none;
+  color: inherit;
+}
+
+// auto mode (default) → show sun (theme-auto)
+.jlz-theme-toggle:not(.is-inverse) [uk-icon='icon: theme-auto'] {
+  display: inline-block;
+}
+
+// inverse mode → show moon (theme-inverse)
+.jlz-theme-toggle.is-inverse [uk-icon='icon: theme-inverse'] {
+  display: inline-block;
+}
+
+.jlz-theme-toggle:not(.is-inverse) {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-theme-toggle.is-inverse {
+  color: var(--jlz-color-accent-secondary);
+}
+
+.jlz-sound-toggle [uk-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.jlz-sound-toggle.is-muted {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-sound-toggle:not(.is-muted) {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-topbar-controls {
+  gap: 0.4rem;
+  padding: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+// ── Menu launcher ──
+.jlz-menu-launcher {
+  position: relative;
+  min-width: 6.6rem;
+  min-height: 2.55rem;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  padding: 0 1rem;
+  overflow: hidden;
+  color: var(--jlz-color-text);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jlz-menu-launcher::before {
+  position: absolute;
+  right: 0.55rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  background: var(--jlz-color-signal-phosphor);
+  content: '';
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-launcher:hover,
+.jlz-menu-launcher:focus-visible,
+.is-menu-open .jlz-menu-launcher {
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-surface);
+  box-shadow: none;
+}
+
+.jlz-menu-launcher:hover::before,
+.jlz-menu-launcher:focus-visible::before,
+.is-menu-open .jlz-menu-launcher::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.jlz-menu-launcher:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: 2px;
+}
+
+.jlz-menu-launcher__glyph {
+  display: grid;
+  width: 1.1rem;
+  gap: 0.3rem;
+}
+
+.jlz-menu-launcher__glyph i {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-menu-launcher__glyph i:first-child {
+  transform: scaleX(0.66);
+  transform-origin: right;
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:first-child {
+  transform: translateY(0.15rem) rotate(35deg) scaleX(1);
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:last-child {
+  transform: translateY(-0.15rem) rotate(-35deg);
+}
+
+// ── Menu sheet shell: fixed positioning (route sheets overlay the scene) ──
+#spa-content > .jlz-menu-overlay,
+.jlz-page > .jlz-menu-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10010 !important;
+  display: flex !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  visibility: hidden;
+  color: var(--jlz-color-text);
+  pointer-events: none !important;
+  background:
+    radial-gradient(
+      circle at 18% 68%,
+      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
+      transparent 34%
+    ),
+    var(--jlz-color-bg);
+  opacity: 0;
+  clip-path: inset(49.85% 0 49.85% 0);
+  transform: scale(1.015);
+  transform-origin: center;
+  transition:
+    clip-path 900ms var(--jlz-ease-cinematic),
+    transform 900ms var(--jlz-ease-cinematic),
+    opacity 180ms ease,
+    visibility 0s linear 900ms;
+}
+
+body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
+body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
+  visibility: visible;
+  background:
+    radial-gradient(
+      circle at 18% 68%,
+      color-mix(in srgb, var(--jlz-color-signal-phosphor) 7%, transparent),
+      transparent 34%
+    ),
+    var(--jlz-color-bg);
+  pointer-events: auto !important;
+  opacity: 1;
+  clip-path: inset(0);
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s;
+}
+
+// ── Menu field: the console plane behind the sheet ──
+.jlz-menu-field {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.jlz-menu-field__horizon {
+  display: none;
+}
+
+.jlz-menu-field__pulse {
+  position: absolute;
+  top: 50%;
+  left: 28%;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--jlz-color-signal-phosphor);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition:
+    opacity 240ms ease 620ms,
+    transform 600ms var(--jlz-ease-emphasis) 600ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.jlz-menu-overlay .jlz-menu-container {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  justify-content: center;
+  padding: 5.8rem clamp(1.25rem, 5vw, 5rem) 3.5rem;
+}
+
+.jlz-menu-sheet__header {
+  align-self: stretch;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  gap: 1.5rem;
+  margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
+  padding-inline: 0.1rem;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.jlz-menu-sheet__header,
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 0;
+  transform: translate3d(0, 1.25rem, 0);
+  .jlz-cinematic-reveal();
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-sheet__header,
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 1;
+  transform: none;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  transition-delay: 150ms;
+}
+
+.jlz-menu-sheet__index {
+  padding-right: 1.5rem;
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-menu-overlay .jlz-menu-grid {
+  width: 100%;
+  max-height: calc(
+    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) -
+      @global-medium-margin
+  );
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  grid-template-columns: minmax(20rem, 0.9fr) minmax(30rem, 1.35fr);
+  gap: clamp(3rem, 8vw, 9rem);
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.jlz-menu-col {
+  gap: @global-small-margin;
+  min-height: 0;
+}
+
+.jlz-menu-overlay .jlz-menu-col--stat {
+  min-height: 0;
+  justify-content: center;
+  padding: 0;
+  box-shadow: none;
+}
+
+.jlz-menu-preview {
+  position: relative;
+  display: grid;
+  width: min(100%, 30rem);
+  min-height: min(52vh, 30rem);
+  align-content: center;
+  isolation: isolate;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 500ms ease 260ms,
+    transform 1100ms var(--jlz-ease-entrance) 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.jlz-menu-preview::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 38%;
+  width: min(34vw, 25rem);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--jlz-color-accent) 14%, transparent),
+    transparent 64%
+  );
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.jlz-menu-preview__number {
+  color: var(--jlz-color-signal-phosphor);
+  font-family: var(--jlz-font-mono);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  letter-spacing: 0.16em;
+}
+
+.jlz-menu-preview__label {
+  max-width: 9ch;
+  color: var(--jlz-color-text);
+  font-size: clamp(@jlz-type-step-4, 9vw, @jlz-type-step-6); // φ steps 4–6
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.jlz-menu-preview__cursor {
+  width: 0.62rem;
+  height: 1.1rem;
+  margin-top: 1.5rem;
+  background: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-menu-preview__echo {
+  position: absolute;
+  right: 12%;
+  bottom: 8%;
+  color: var(--jlz-color-signal-cool);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  writing-mode: vertical-rl;
+}
+
+// ── Menu nav: the console index ──
+.jlz-menu-overlay .jlz-menu-nav__item {
+  border: 0;
+}
+
+.jlz-menu-nav__toggle {
+  align-items: baseline;
+  gap: @global-small-margin;
+  padding: var(--jlz-space-2) 0;
+  color: var(--jlz-color-text-muted);
+  transition:
+    color 0.2s ease,
+    padding-left 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  position: relative;
+  min-height: clamp(3.5rem, 6.4vh, 4.75rem);
+  padding: 0.25rem 0;
+  overflow: hidden;
+  color: var(--jlz-color-text-muted);
+}
+
+// The prompt glyph: a phosphor '>' slides in on hover and stays while open.
+// The `/ ''` alt keeps the glyph out of the accessibility tree.
+.jlz-menu-overlay .jlz-menu-nav__toggle::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  color: var(--jlz-color-signal-phosphor);
+  content: '>' / '';
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0;
+  transform: translate(-0.35rem, -50%);
+  transition:
+    opacity var(--jlz-duration-fast) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible {
+  padding-left: 1.3rem;
+  color: var(--jlz-color-text);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover::before,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__label {
+  flex: 1;
+  font-size: clamp(@jlz-type-step-2, 3.25vw, @jlz-type-step-4); // φ steps 2–4
+  line-height: 0.92;
+  text-transform: none;
+}
+
+.jlz-menu-nav__num {
+  min-width: 2rem;
+  flex-shrink: 0;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.jlz-menu-nav__arrow {
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  opacity: 0.6;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__arrow {
+  color: var(--jlz-color-signal-phosphor);
+  opacity: 1;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible .jlz-menu-nav__num {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+// Staggered entry for the nav items while the sheet opens.
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(1) .jlz-menu-nav__toggle {
+  transition-delay: 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(2) .jlz-menu-nav__toggle {
+  transition-delay: 215ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(3) .jlz-menu-nav__toggle {
+  transition-delay: 250ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(4) .jlz-menu-nav__toggle {
+  transition-delay: 285ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(5) .jlz-menu-nav__toggle {
+  transition-delay: 320ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(6) .jlz-menu-nav__toggle {
+  transition-delay: 355ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav__toggle {
+  transition-delay: 390ms;
+}
+
+// ── Bottom status: signal, contact launcher, storyline ──
+.jlz-console-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10017;
+  min-height: 4.5rem;
+  padding: 0.75rem 0.85rem;
+  pointer-events: auto;
+  transition: opacity var(--jlz-duration-normal) ease;
+}
+
+.jlz-console-bar__signal {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1rem;
+  width: 0.32rem;
+  height: 0.32rem;
+}
+
+.jlz-console-bar__signal::after {
+  position: absolute;
+  inset: 0;
+  background: var(--jlz-color-signal-phosphor);
+  content: '';
+}
+
+.jlz-contact-launcher__button {
+  position: relative;
+  min-height: 3rem;
+  gap: 0.65rem;
+  padding: 0 1.15rem;
+  border: 1px solid var(--jlz-color-fluid-border);
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 48%, transparent);
+}
+
+.jlz-contact-launcher__button:hover,
+.jlz-contact-launcher__button:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-storyline {
+  position: fixed;
+  right: max(1.35rem, calc(env(safe-area-inset-right) + 1.1rem));
+  bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 1.1rem));
+  z-index: 10018;
+  width: auto;
+  min-height: 3.55rem;
+  padding: 0.25rem;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  transform: none;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+.jlz-storyline__items {
+  gap: 0.18rem;
+}
+
+.jlz-storyline__item {
+  position: relative;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--jlz-color-text-subtle);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.jlz-storyline__item::after {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  width: 0.25rem;
+  height: 0.25rem;
+  background: currentColor;
+  content: '';
+  transform: translateX(-50%) scale(0.45);
+  transition:
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis),
+    background var(--jlz-duration-fast) ease;
+}
+
+.jlz-storyline__item:hover,
+.jlz-storyline__item:focus-visible,
+.jlz-storyline__item.is-active {
+  border: 0;
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+}
+
+.jlz-storyline__item:focus-visible {
+  outline: 2px solid var(--jlz-color-accent-secondary);
+  outline-offset: 2px;
+}
+
+.jlz-storyline__item:hover::after,
+.jlz-storyline__item:focus-visible::after,
+.jlz-storyline__item.is-active::after {
+  background: var(--jlz-color-signal-phosphor);
+  transform: translateX(-50%) scale(1);
+}
+
+.jlz-storyline__number,
+.jlz-storyline__hint {
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+}
+
+// Sheets dim the persistent island while a cinematic sheet is open.
+body[data-cinematic-sheet] .jlz-storyline,
+body[data-cinematic-sheet] .jlz-contact-launcher {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 1.2rem, 0);
+}
+
+body[data-cinematic-sheet] .jlz-console-bar {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+// ── Breakpoints ──
+@media (max-width: 900px) {
+  .jlz-topbar__mode {
+    display: none;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    grid-template-columns: minmax(15rem, 0.7fr) minmax(24rem, 1.3fr);
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .jlz-cinematic-shell .jlz-topbar {
+    top: 0.55rem;
+    right: 0.55rem;
+    left: 0.55rem;
+    min-height: 2.35rem;
+    padding: 0.2rem 0;
+  }
+
+  .jlz-topbar__brand {
+    min-height: 44px;
+    gap: 0.5rem;
+  }
+
+  .jlz-brand-mark {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .jlz-topbar__wordmark {
+    display: none;
+  }
+
+  .jlz-menu-launcher {
+    min-width: auto;
+    min-height: 44px;
+    width: 44px;
+    padding: 0 0.75rem;
+  }
+
+  .jlz-menu-launcher__label {
+    display: none;
+  }
+
+  .jlz-storyline__item {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .jlz-menu-field__pulse {
+    left: 12%;
+  }
+
+  .jlz-menu-overlay .jlz-menu-container {
+    justify-content: center;
+    padding: 4.8rem 1.1rem 2rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    display: block;
+    overflow: visible;
+  }
+
+  .jlz-menu-overlay .jlz-menu-container {
+    overflow-y: auto;
+  }
+
+  // Hide stat column on mobile — nav is the focus
+  .jlz-menu-overlay .jlz-menu-col--stat {
+    display: none;
+  }
+
+  // Center nav items, larger touch targets
+  .jlz-menu-overlay .jlz-menu-nav {
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-sheet__header {
+    justify-content: center;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__toggle {
+    min-height: clamp(3.35rem, 8vh, 4.2rem);
+    justify-content: flex-start;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__label {
+    font-size: clamp(@jlz-type-step-2, 8vw, @jlz-type-step-3); // φ steps 2–3
+  }
+}
+
+@media (max-width: 500px) {
+  .jlz-lang-label {
+    font-size: 12px;
+  }
+}
+
+// ── Canonical control banks ──
+// One tactile language for the lower navigation island and the top menu
+// bank. Square housings with a phosphor corner-tick bezel (the TUI frame),
+// keys composed from the shared bank mixins.
+.jlz-console-bar {
+  right: max(1.15rem, calc(env(safe-area-inset-right) + 0.9rem));
+  bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.9rem));
+  left: auto;
+  display: grid;
+  width: 15.2rem;
+  height: 2.65rem;
+  min-height: 0;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: 0.24rem;
+  padding: 0.2rem;
+  .jlz-control-bank();
+  clip-path: none;
+  .jlz-tui-frame();
+}
+
+.jlz-console-bar__signal,
+.jlz-contact-launcher__button::before,
+.jlz-storyline__item::before {
+  display: none;
+}
+
+.jlz-contact-launcher,
+.jlz-storyline {
+  position: static;
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+.jlz-storyline::before {
+  display: none;
+}
+
+.jlz-contact-launcher__button,
+.jlz-storyline__item {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  .jlz-bank-key();
+}
+
+.jlz-contact-launcher__button {
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding-inline: 0.58rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.13em;
+}
+
+.jlz-storyline__items {
+  display: flex;
+  height: 100%;
+  gap: 0.22rem;
+  align-items: stretch;
+}
+
+.jlz-storyline__item {
+  display: grid;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  place-items: center;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+}
+
+.jlz-contact-launcher__button:hover,
+.jlz-contact-launcher__button:focus-visible,
+.jlz-storyline__item:hover,
+.jlz-storyline__item:focus-visible,
+.jlz-storyline__item.is-active {
+  .jlz-bank-key-active();
+}
+
+.jlz-contact-launcher__button:focus-visible,
+.jlz-storyline__item:focus-visible {
+  .jlz-focus-ring();
+}
+
+.jlz-contact-launcher__button:active,
+.jlz-contact-launcher__button[aria-expanded='true'],
+.jlz-storyline__item:active,
+.jlz-storyline__item.is-active {
+  .jlz-bank-key-pressed();
+}
+
+.jlz-contact-launcher__channel {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 0.9rem;
+  height: 0.9rem;
+  place-items: center;
+  color: currentColor;
+}
+
+.jlz-contact-launcher__channel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.15;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.jlz-storyline__item.is-active::after {
+  background: var(--jlz-color-signal-phosphor);
+  box-shadow: none;
+}
+
+.jlz-topbar-controls {
+  gap: 0.24rem;
+  padding: 0.2rem;
+  .jlz-control-bank();
+  clip-path: none;
+  .jlz-tui-frame();
+}
+
+// A live key lights the bank bezel: ticks go full phosphor.
+.jlz-topbar-controls:has(:hover),
+.jlz-topbar-controls:has(:focus-visible),
+.jlz-topbar-controls:has([aria-expanded='true']),
+.jlz-console-bar:has(:hover),
+.jlz-console-bar:has(:focus-visible) {
+  .jlz-tui-frame-active();
+}
+
+.jlz-topbar-controls .uk-icon-button,
+.jlz-topbar-controls .jlz-menu-launcher {
+  min-height: 2.2rem;
+  .jlz-bank-key();
+}
+
+.jlz-topbar-controls .uk-icon-button {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.jlz-topbar-controls .jlz-menu-launcher {
+  min-width: 6.25rem;
+  height: 2.2rem;
+  padding-inline: 0.78rem;
+}
+
+.jlz-topbar-controls .uk-icon-button:hover,
+.jlz-topbar-controls .uk-icon-button:focus-visible,
+.jlz-topbar-controls .jlz-menu-launcher:hover,
+.jlz-topbar-controls .jlz-menu-launcher:focus-visible,
+.is-menu-open .jlz-topbar-controls .jlz-menu-launcher {
+  .jlz-bank-key-active();
+}
+
+.jlz-topbar-controls .uk-icon-button:focus-visible,
+.jlz-topbar-controls .jlz-menu-launcher:focus-visible {
+  .jlz-focus-ring();
+}
+
+.jlz-topbar-controls .uk-icon-button:active,
+.jlz-topbar-controls .jlz-menu-launcher:active,
+.is-menu-open .jlz-topbar-controls .jlz-menu-launcher {
+  .jlz-bank-key-pressed();
+}
+
+.jlz-topbar-controls .jlz-menu-launcher::before {
+  display: none;
+}
+
+.jlz-topbar-controls .jlz-lang-toggle {
+  font: 600 0.58rem/1 var(--jlz-font-mono);
+  letter-spacing: 0.08em;
+}
+
+// ── Screen-corner bezel: sheets read as terminal frames ──
+.jlz-menu-overlay {
+  .jlz-tui-frame(@len: 1.1rem);
+}
+
+/* Fullscreen media keeps one consistent exit in the persistent top bar. */
+.jlz-cinematic-shell.is-fullscreen-open {
+  z-index: 30020;
+  pointer-events: none;
+}
+
+.jlz-cinematic-shell.is-fullscreen-open .jlz-topbar__brand,
+.jlz-cinematic-shell.is-fullscreen-open .jlz-lang-toggle,
+.jlz-cinematic-shell.is-fullscreen-open .jlz-theme-toggle,
+.jlz-cinematic-shell.is-fullscreen-open .jlz-sound-toggle,
+.jlz-cinematic-shell.is-fullscreen-open .jlz-console-bar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher {
+  color: var(--jlz-color-signal-phosphor);
+  pointer-events: auto;
+}
+
+.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher__glyph i:first-child {
+  transform: translateY(0.15rem) rotate(35deg) scaleX(1);
+}
+
+.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher__glyph i:last-child {
+  transform: translateY(-0.15rem) rotate(-35deg);
+}
+
+[data-contact-footer] {
+  .jlz-tui-frame(@len: 1.1rem);
+}
+
+// ── Boot gate: the console failure state ──
+// Shared by the splash 3D gate (entry-app) and the shell fallback
+// (entry-shell). Mono readout, ember signal, square retry control.
+.jlz-boot-gate {
+  position: relative;
+  display: grid;
+  max-width: 22rem;
+  padding: 1.4rem 1.5rem 1.5rem;
+  gap: 0.55rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text-muted);
+  background: color-mix(in srgb, var(--jlz-color-bg) 92%, #000);
+  font-family: var(--jlz-font-mono);
+  text-align: left;
+  .jlz-tui-frame(@color: color-mix(in srgb, var(--jlz-color-signal-ember) 62%, transparent));
+}
+
+.jlz-boot-gate__head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  color: var(--jlz-color-status-danger);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.jlz-boot-gate__head::before {
+  width: 0.3rem;
+  height: 0.3rem;
+  background: currentColor;
+  content: '';
+}
+
+.jlz-boot-gate__text {
+  margin: 0;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.jlz-boot-gate__code {
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.jlz-boot-gate__action {
+  justify-self: start;
+  margin-top: 0.35rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.jlz-boot-gate__action:hover,
+.jlz-boot-gate__action:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-signal-phosphor-muted);
+}
+
+.jlz-boot-gate__action:focus-visible {
+  .jlz-focus-ring();
+}
+
+// ── Terminal details ──
+// Menu grid scrolls like a terminal pane: hairline thumb, phosphor on hover.
+.jlz-menu-overlay .jlz-menu-grid {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jlz-color-border-strong) transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-thumb {
+  background: var(--jlz-color-border-strong);
+}
+
+.jlz-menu-overlay .jlz-menu-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--jlz-color-signal-phosphor);
+}
+
+// The system readout speaks with a blinking block cursor.
+.jlz-topbar__mode {
+  .jlz-blink-cursor(0.55em);
+}
+
+.jlz-menu-preview__cursor {
+  animation: jlz-cursor-blink 1.1s steps(1) infinite;
+}
+
+// Hairline separators restore the console index rows in the menu field.
+.jlz-menu-overlay .jlz-menu-nav__item + .jlz-menu-nav__item {
+  border-top: 1px solid var(--jlz-color-border);
+}
+
+@media (max-width: 639px) {
+  .jlz-console-bar {
+    right: max(0.8rem, calc(env(safe-area-inset-right) + 0.65rem));
+    bottom: max(0.8rem, calc(env(safe-area-inset-bottom) + 0.65rem));
+    left: auto;
+    width: calc(100vw - 1.6rem);
+    height: calc(44px + 0.36rem);
+    padding: 0.18rem;
+  }
+
+  .jlz-topbar-controls {
+    gap: 0.16rem;
+    padding: 0.16rem;
+  }
+
+  .jlz-topbar-controls .uk-icon-button {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .jlz-topbar-controls .jlz-menu-launcher {
+    min-width: 5.45rem;
+    height: 44px;
+    min-height: 44px;
+    padding-inline: 0.58rem;
+  }
+
+  // The control-bank rules above are deliberately compact on wide screens.
+  // Keep each mobile control independently reachable at the 44px target size.
+  .jlz-storyline__item {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
+
+// Motion settles: the cursor holds steady under reduced motion.
+@media (prefers-reduced-motion: reduce) {
+  .jlz-topbar__mode::after,
+  .jlz-menu-preview__cursor {
+    animation: none;
+  }
+}

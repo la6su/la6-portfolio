@@ -1,0 +1,601 @@
+/*
+ * src/assets/_import.less — UIKit 3 theme assembly + design tokens
+ *
+ * Single source of truth for:
+ *   1. Design tokens (@jlz-* Less vars + --jlz-* CSS custom properties)
+ *   2. UIKit variable overrides (map @jlz-* → UIKit @*)
+ *   3. UIKit component imports (order-dependent, per UIKit docs)
+ *
+ * Load order (load-bearing — break it and theme overrides stop applying):
+ *   1. @jlz-* token definitions (this file, §1)
+ *   2. UIKit variables.less (defaults we override in §3)
+ *   3. Theme overrides — map @jlz-* → UIKit @* (this file, §3)
+ *   4. UIKit mixin.less (shared by components)
+ *   5. UIKit component *.less (emit rules with overridden vars)
+ *
+ * CSS custom properties (:root { --jlz-* }) are generated in §2 so they're
+ * available at runtime for var(--jlz-*) references in main.less.
+ *
+ * Formerly src/styles/tokens.less was a separate file — merged here to
+ * avoid duplication.
+ */
+
+// ═══════════════════════════════════════════════════════════════════════
+// §0. CONSOLE TUI MIXINS — canonical console patterns (emit only on use)
+// ═══════════════════════════════════════════════════════════════════════
+
+@import './console-theme/mixins.less';
+
+// ═══════════════════════════════════════════════════════════════════════
+// §1. DESIGN TOKENS (@jlz-* Less variables)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Color (Neuro Console identity — deep terminal field, cool ivory text,
+// hairline rules, one phosphor signal and one electric funk accent; see
+// ADR 0007 and docs/BRAND.md) ──
+@jlz-color-bg: #0b0e14;
+@jlz-color-bg-elevated: #11151e;
+@jlz-color-surface: #161b26;
+@jlz-color-surface-hover: #1d2432;
+@jlz-color-border: rgba(230, 237, 243, 0.08);
+@jlz-color-border-strong: rgba(230, 237, 243, 0.16);
+
+@jlz-color-text: #e6edf3;
+@jlz-color-text-muted: rgba(230, 237, 243, 0.62);
+@jlz-color-text-subtle: rgba(230, 237, 243, 0.38);
+@jlz-color-text-inverse: #0a0c10;
+
+@jlz-color-accent: #ffd60a;
+@jlz-color-accent-hover: #ffe85c;
+// Secondary action/emphasis accent — the phosphor counterweight to the
+// electric yellow (alias of the console signal; the builder can author it
+// independently through the generated override layer).
+@jlz-color-accent-secondary: @jlz-color-signal-phosphor;
+@jlz-color-accent-glow: rgba(255, 214, 10, 0.35);
+
+// ── Console signals ──
+// Phosphor is the interface voice of the TUI chrome: prompts, status dots,
+// focus rings, active states. Yellow stays the brand/display funk accent.
+@jlz-color-signal-phosphor: #58e6a9;
+@jlz-color-signal-phosphor-muted: rgba(88, 230, 169, 0.1);
+// A cool mineral counterbalances the electric yellow.
+@jlz-color-signal-cool: #79c0ff;
+@jlz-color-signal-cool-muted: rgba(121, 192, 255, 0.22);
+@jlz-color-signal-teal: @jlz-color-signal-phosphor;
+@jlz-color-signal-teal-muted: @jlz-color-signal-phosphor-muted;
+@jlz-color-signal-ember: #ff7b72;
+
+// Semantic status — the only success/warning/danger source for console and
+// admin UI. Success and warning alias the console/terminal signals; danger
+// is the single ember red in the system.
+@jlz-color-status-success: @jlz-color-signal-phosphor;
+@jlz-color-status-warning: #f0883e;
+@jlz-color-status-danger: @jlz-color-signal-ember;
+
+// Inverse (cool paper) polarity. The Style Builder can author this palette
+// independently from the default dark console.
+@jlz-inverse-bg: #e9eef5;
+@jlz-inverse-surface: #f5f8fc;
+@jlz-inverse-text: #0b0e13;
+@jlz-inverse-text-muted: #46505c;
+@jlz-inverse-accent: #7a5c00;
+
+// ── Typography ──
+// Commissioner owns display and reading; fixed-width type identifies controls
+// and coordinates. Both are self-hosted and cover Latin/Cyrillic content.
+@jlz-font-display:
+  'Commissioner',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
+@jlz-font-body:
+  'Commissioner',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
+@jlz-font-mono: 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', 'Consolas', monospace;
+
+@jlz-weight-light: 300;
+@jlz-weight-regular: 400;
+@jlz-weight-medium: 500;
+@jlz-weight-semibold: 600;
+@jlz-weight-bold: 700;
+
+// Typography has one tracking value across the application. Individual
+// compositions use weight, scale and line-height for hierarchy instead.
+@jlz-letter-spacing: 0;
+
+// ── Type scale: golden-ratio (φ = 1.618) modular chain ──
+// Each step ≈ the previous × φ. Rem-based on the mobile-first html base
+// (0.85rem mobile → 1rem ≥640px), so the whole chain scales down on phones.
+// Display compositions use clamp(step, fluid middle, step).
+@jlz-type-step-1: 0.875rem;
+@jlz-type-step-2: 1.414rem;
+@jlz-type-step-3: 2.288rem;
+@jlz-type-step-4: 3.702rem;
+@jlz-type-step-5: 6rem;
+@jlz-type-step-6: 9.708rem;
+@jlz-type-step-7: 15.707rem;
+
+// ── Spacing (4px base, rem-based — scales with html font-size) ──
+@jlz-space-0: 0;
+@jlz-space-1: 0.25rem;
+@jlz-space-2: 0.5rem;
+@jlz-space-3: 0.75rem;
+@jlz-space-4: 1rem;
+@jlz-space-5: 1.25rem;
+@jlz-space-6: 1.5rem;
+@jlz-space-8: 2rem;
+@jlz-space-10: 2.5rem;
+@jlz-space-12: 3rem;
+@jlz-space-16: 4rem;
+@jlz-space-20: 5rem;
+@jlz-space-24: 6rem;
+@jlz-space-32: 8rem;
+
+// ── Radius (console minimal: square corners — the interface is flat,
+// 1px lines and φ scale carry the language; `full` stays small for dot
+// indicators only) ──
+@jlz-radius-none: 0;
+@jlz-radius-sm: 0;
+@jlz-radius-md: 0;
+@jlz-radius-lg: 0;
+@jlz-radius-xl: 0;
+@jlz-radius-fluid: 0;
+@jlz-radius-full: 0.125rem;
+@jlz-button-radius: @jlz-radius-md;
+@jlz-card-radius: @jlz-radius-lg;
+@jlz-card-shadow: none;
+@jlz-form-border: @jlz-color-border;
+@jlz-navbar-surface: @jlz-color-bg;
+
+// ── Console interface surfaces ──
+// Shared technical planes replace the former translucent fluid islands.
+@jlz-color-fluid-surface: #11151e;
+@jlz-color-fluid-surface-strong: #161b26;
+@jlz-color-fluid-border: rgba(230, 237, 243, 0.12);
+@jlz-color-fluid-highlight: rgba(88, 230, 169, 0.1);
+@jlz-color-fluid-warm: @jlz-color-accent;
+@jlz-color-telegram: #2aabee;
+
+// ── Z-index ──
+@jlz-z-canvas: 1;
+@jlz-z-content: 10;
+@jlz-z-nav: 100;
+@jlz-z-overlay: 1000;
+@jlz-z-modal: 2000;
+@jlz-z-toast: 3000;
+
+// ── Motion duration ──
+@jlz-duration-instant: 80ms;
+@jlz-duration-fast: 160ms;
+@jlz-duration-normal: 240ms;
+@jlz-duration-slow: 400ms;
+@jlz-duration-cinematic: 800ms;
+@jlz-duration-epic: 1400ms;
+
+// ── Motion easing ──
+@jlz-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+@jlz-ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
+@jlz-ease-emphasis: cubic-bezier(0.34, 1.56, 0.64, 1);
+@jlz-ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+@jlz-ease-cinematic: cubic-bezier(0.65, 0, 0.35, 1);
+
+// ── Layout ──
+@jlz-page-max-width: 90rem;
+@jlz-page-gutter: 5rem;
+@jlz-section-min-height: 100vh;
+
+// ═══════════════════════════════════════════════════════════════════════
+// §2. CSS CUSTOM PROPERTIES (--jlz-* runtime vars for main.less)
+// ═══════════════════════════════════════════════════════════════════════
+
+:root {
+  --jlz-color-bg: @jlz-color-bg;
+  --jlz-color-bg-elevated: @jlz-color-bg-elevated;
+  --jlz-color-surface: @jlz-color-surface;
+  --jlz-color-surface-hover: @jlz-color-surface-hover;
+  --jlz-color-border: @jlz-color-border;
+  --jlz-color-border-strong: @jlz-color-border-strong;
+  --jlz-color-text: @jlz-color-text;
+  --jlz-color-text-muted: @jlz-color-text-muted;
+  --jlz-color-text-subtle: @jlz-color-text-subtle;
+  --jlz-color-text-inverse: @jlz-color-text-inverse;
+  --jlz-color-accent: @jlz-color-accent;
+  --jlz-color-accent-hover: @jlz-color-accent-hover;
+  --jlz-color-accent-secondary: @jlz-color-accent-secondary;
+  --jlz-color-accent-glow: @jlz-color-accent-glow;
+  --jlz-color-signal-phosphor: @jlz-color-signal-phosphor;
+  --jlz-color-signal-phosphor-muted: @jlz-color-signal-phosphor-muted;
+  --jlz-color-signal-teal: @jlz-color-signal-teal;
+  --jlz-color-signal-teal-muted: @jlz-color-signal-teal-muted;
+  --jlz-color-signal-cool: @jlz-color-signal-cool;
+  --jlz-color-signal-cool-muted: @jlz-color-signal-cool-muted;
+  --jlz-color-signal-ember: @jlz-color-signal-ember;
+  --jlz-color-status-success: @jlz-color-status-success;
+  --jlz-color-status-warning: @jlz-color-status-warning;
+  --jlz-color-status-danger: @jlz-color-status-danger;
+
+  --jlz-font-display: @jlz-font-display;
+  --jlz-font-body: @jlz-font-body;
+  --jlz-font-mono: @jlz-font-mono;
+
+  --jlz-weight-light: @jlz-weight-light;
+  --jlz-weight-regular: @jlz-weight-regular;
+  --jlz-weight-medium: @jlz-weight-medium;
+  --jlz-weight-semibold: @jlz-weight-semibold;
+  --jlz-weight-bold: @jlz-weight-bold;
+
+  --jlz-letter-spacing: @jlz-letter-spacing;
+
+  --jlz-space-0: @jlz-space-0;
+  --jlz-space-1: @jlz-space-1;
+  --jlz-space-2: @jlz-space-2;
+  --jlz-space-3: @jlz-space-3;
+  --jlz-space-4: @jlz-space-4;
+  --jlz-space-5: @jlz-space-5;
+  --jlz-space-6: @jlz-space-6;
+  --jlz-space-8: @jlz-space-8;
+  --jlz-space-10: @jlz-space-10;
+  --jlz-space-12: @jlz-space-12;
+  --jlz-space-16: @jlz-space-16;
+  --jlz-space-20: @jlz-space-20;
+  --jlz-space-24: @jlz-space-24;
+  --jlz-space-32: @jlz-space-32;
+
+  --jlz-type-step-1: @jlz-type-step-1;
+  --jlz-type-step-2: @jlz-type-step-2;
+  --jlz-type-step-3: @jlz-type-step-3;
+  --jlz-type-step-4: @jlz-type-step-4;
+  --jlz-type-step-5: @jlz-type-step-5;
+  --jlz-type-step-6: @jlz-type-step-6;
+  --jlz-type-step-7: @jlz-type-step-7;
+
+  --jlz-radius-sm: @jlz-radius-sm;
+  --jlz-radius-md: @jlz-radius-md;
+  --jlz-radius-lg: @jlz-radius-lg;
+  --jlz-radius-xl: @jlz-radius-xl;
+  --jlz-radius-fluid: @jlz-radius-fluid;
+  --jlz-radius-full: @jlz-radius-full;
+  --jlz-button-radius: @jlz-button-radius;
+  --jlz-card-radius: @jlz-card-radius;
+  --jlz-card-shadow: @jlz-card-shadow;
+
+  --jlz-color-fluid-surface: @jlz-color-fluid-surface;
+  --jlz-color-fluid-surface-strong: @jlz-color-fluid-surface-strong;
+  --jlz-color-fluid-border: @jlz-color-fluid-border;
+  --jlz-color-fluid-highlight: @jlz-color-fluid-highlight;
+  --jlz-color-fluid-warm: @jlz-color-fluid-warm;
+  --jlz-color-telegram: @jlz-color-telegram;
+  --jlz-fluid-blur: 0px;
+  --jlz-fluid-shadow: none;
+
+  --jlz-z-canvas: @jlz-z-canvas;
+  --jlz-z-content: @jlz-z-content;
+  --jlz-z-nav: @jlz-z-nav;
+  --jlz-z-overlay: @jlz-z-overlay;
+  --jlz-z-modal: @jlz-z-modal;
+  --jlz-z-toast: @jlz-z-toast;
+
+  --jlz-duration-instant: @jlz-duration-instant;
+  --jlz-duration-fast: @jlz-duration-fast;
+  --jlz-duration-normal: @jlz-duration-normal;
+  --jlz-duration-slow: @jlz-duration-slow;
+  --jlz-duration-cinematic: @jlz-duration-cinematic;
+  --jlz-duration-epic: @jlz-duration-epic;
+
+  --jlz-ease-entrance: @jlz-ease-entrance;
+  --jlz-ease-exit: @jlz-ease-exit;
+  --jlz-ease-emphasis: @jlz-ease-emphasis;
+  --jlz-ease-state: @jlz-ease-state;
+  --jlz-ease-cinematic: @jlz-ease-cinematic;
+
+  --jlz-duration-reduced: 0ms;
+  --jlz-page-max-width: @jlz-page-max-width;
+  --jlz-page-gutter: clamp(1rem, 5vw, 5rem);
+  --jlz-section-min-height: 100dvh;
+  --jlz-color-cursor-hover: @jlz-color-signal-ember;
+  --jlz-header-height: 64px;
+
+  /* Bottom controls clearance — contact launcher + storyline rail.
+     Replaces the former joystick-size token; the joystick is gone. */
+  --jlz-bottom-controls: 4.5rem;
+
+  /* A single dark field keeps DOM captions legible without soft glass veils. */
+  --jlz-scrim-1: rgba(3, 5, 4, 0.42);
+  --jlz-scrim-2: rgba(3, 5, 4, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --jlz-duration-fast: var(--jlz-duration-reduced);
+    --jlz-duration-normal: var(--jlz-duration-reduced);
+    --jlz-duration-slow: var(--jlz-duration-reduced);
+    --jlz-duration-cinematic: var(--jlz-duration-reduced);
+    --jlz-duration-epic: var(--jlz-duration-reduced);
+  }
+}
+
+html.uk-light {
+  --jlz-color-text: @jlz-inverse-text;
+  --jlz-color-text-muted: @jlz-inverse-text-muted;
+  --jlz-color-text-subtle: rgba(11, 14, 19, 0.5);
+  /* Light theme backgrounds — flip from dark to light for inverse mode.
+     Needed for dropdown/overlay components that use CSS vars. */
+  --jlz-color-bg: @jlz-inverse-bg;
+  --jlz-color-bg-elevated: @jlz-inverse-surface;
+  --jlz-color-surface: @jlz-inverse-surface;
+  --jlz-color-surface-hover: #e3e9f2;
+  --jlz-color-border: rgba(11, 14, 19, 0.1);
+  --jlz-color-border-strong: rgba(11, 14, 19, 0.2);
+  --jlz-color-fluid-surface: rgba(245, 248, 252, 0.7);
+  --jlz-color-fluid-surface-strong: rgba(255, 255, 255, 0.9);
+  --jlz-color-fluid-border: rgba(11, 14, 19, 0.14);
+  --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.9);
+  --jlz-color-accent: @jlz-inverse-accent;
+  --jlz-color-accent-hover: #5c4600;
+  --jlz-color-accent-secondary: var(--jlz-color-signal-phosphor);
+  --jlz-color-accent-glow: rgba(122, 92, 0, 0.3);
+  --jlz-color-signal-phosphor: #0c7a4f;
+  --jlz-color-signal-phosphor-muted: rgba(12, 122, 79, 0.1);
+  --jlz-color-signal-teal: var(--jlz-color-signal-phosphor);
+  --jlz-color-signal-teal-muted: var(--jlz-color-signal-phosphor-muted);
+  --jlz-color-signal-cool: #2c6fb5;
+  --jlz-color-signal-cool-muted: rgba(44, 111, 181, 0.2);
+  --jlz-color-signal-ember: #c03a2e;
+  /* Light scrim — soft white veil aids dark-text readability over 3D
+     (mirrors the dark scrim in dark mode). */
+  --jlz-scrim-1: rgba(255, 255, 255, 0.12);
+  --jlz-scrim-2: rgba(255, 255, 255, 0.03);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// §3. UIKIT VARIABLE OVERRIDES — map @jlz-* tokens to UIKit @*
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── UIKit variables (defaults we override below) ──
+@import '../../node_modules/uikit/src/less/components/variables.less';
+@import './console-theme/_import.less';
+
+// Typography — rem-based, scales with html font-size (.85rem mob → 1rem desktop)
+@global-font-family: @jlz-font-display;
+@global-font-size: 1rem;
+@global-line-height: 1.5;
+
+// Colors (dark theme — project primary palette)
+@global-color: @jlz-color-text;
+@global-emphasis-color: @jlz-color-text;
+@global-muted-color: @jlz-color-text-muted;
+@global-inverse-color: @jlz-color-text-inverse;
+@global-link-color: @jlz-color-signal-phosphor;
+@global-link-hover-color: @jlz-color-accent;
+
+// Backgrounds
+@global-background: @jlz-color-bg;
+@global-muted-background: @jlz-color-surface;
+@global-secondary-background: @jlz-color-bg-elevated;
+
+// Borders
+@global-border-width: 1px;
+@global-border: @jlz-color-border;
+
+// Z-index
+@global-z-index: @jlz-z-overlay;
+
+// Spacing scale — UIkit globals are the semantic source for application
+// layout: use @global-*-margin/gutter in Less and uk-margin/uk-padding
+// utilities in templates. The @jlz-space-* values below remain only for
+// micro-steps that UIkit does not define.
+@global-margin: @jlz-space-5;
+@global-small-margin: @jlz-space-3;
+@global-medium-margin: @jlz-space-8;
+@global-large-margin: @jlz-space-10;
+@global-xlarge-margin: @jlz-space-16;
+@global-gutter: @jlz-space-8;
+@global-small-gutter: @jlz-space-6;
+@global-medium-gutter: @jlz-space-10;
+@global-large-gutter: @jlz-space-12;
+
+// Controls
+@global-control-height: 2.75rem;
+@global-control-small-height: 2.1875rem;
+@global-control-large-height: 4rem;
+@button-font-weight: @jlz-weight-semibold;
+@button-text-transform: none;
+
+// Inverse mode — generates `.uk-light` class (inverse colors = dark text
+// in our dark-theme context, for use on light backgrounds). This lets us
+// use UIKit's native uk-light/uk-dark system instead of custom
+// body.light-theme overrides.
+@inverse-global-color-mode: light;
+
+// UIkit component variables inherit the brand signal.
+@global-primary-background: @jlz-color-accent;
+@global-primary-hover-background: @jlz-color-accent-hover;
+
+// ── Navbar background (transparent — we use custom .tm-header) ──
+@navbar-background: transparent;
+@navbar-border: 0;
+@navbar-nav-subtitle: 0;
+@navbar-nav-item-font-size: 0.72rem;
+@navbar-nav-item-font-weight: 500;
+@navbar-nav-item-text-transform: uppercase;
+@navbar-nav-item-letter-spacing: @jlz-letter-spacing;
+@navbar-nav-item-font-family: @global-font-family;
+@navbar-container: none;
+
+// ── Offcanvas overrides ──
+//@offcanvas-bar-background: @jlz-color-bg-elevated;
+//@offcanvas-bar-color: @jlz-color-text;
+
+// ── Modal overrides ──
+@modal-background: rgba(0, 0, 0, 0.85);
+
+// ── Close/Spinner/Overlay ──
+@close-color: @jlz-color-text;
+@close-hover-color: @jlz-color-accent;
+
+// ── Search overrides ──
+//@search-background: @jlz-color-surface;
+//@search-hover-background: @jlz-color-surface-hover;
+//@search-input-color: @jlz-color-text;
+
+// ═══════════════════════════════════════════════════════════════════════
+// §3.5 UIKIT HOOK OVERRIDES (must be defined BEFORE component .less imports)
+// ═══════════════════════════════════════════════════════════════════════
+// Hooks are Less mixins that UIKit components call during compilation.
+// They must be defined BEFORE the component .less is imported (§4 below).
+// This is the canonical UIKit theming pattern — see:
+// https://getuikit.com/docs/less → "Hooks" section.
+
+// ── Controls: flat technical surfaces, with UIkit owning state. ──
+.hook-button() {
+  border-radius: @jlz-button-radius;
+  font-family: @jlz-font-mono;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  font-weight: @button-font-weight;
+  text-transform: @button-text-transform;
+  transition:
+    border-color @jlz-duration-fast ease,
+    background @jlz-duration-fast ease,
+    color @jlz-duration-fast ease;
+}
+
+.hook-button-default() {
+  border: 1px solid var(--jlz-color-border-strong);
+  background: var(--jlz-color-bg-elevated);
+  color: var(--jlz-color-text);
+}
+
+.hook-button-default-hover() {
+  border-color: var(--jlz-color-accent-secondary);
+  background: var(--jlz-color-surface-hover);
+  color: var(--jlz-color-accent-secondary);
+}
+
+.hook-button-primary() {
+  color: @jlz-color-text-inverse;
+  background: @global-primary-background;
+  box-shadow: none;
+}
+
+.hook-button-primary-hover() {
+  color: @jlz-color-text-inverse;
+  background: @global-primary-hover-background;
+  box-shadow: none;
+}
+
+// Icon buttons remain compact Uikit controls, but use the same technical plane.
+.hook-icon-button() {
+  background: var(--jlz-color-bg-elevated);
+  color: var(--jlz-color-text);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: @jlz-radius-md;
+  box-shadow: none;
+  transition:
+    transform @jlz-duration-fast @jlz-ease-state,
+    border-color @jlz-duration-fast ease,
+    background @jlz-duration-fast ease,
+    color @jlz-duration-fast ease,
+    box-shadow @jlz-duration-fast ease;
+}
+
+.hook-card() {
+  border-radius: @jlz-card-radius;
+  box-shadow: @jlz-card-shadow;
+}
+
+.hook-form() {
+  border: 1px solid @jlz-form-border;
+  border-radius: @jlz-radius-md;
+}
+
+.hook-icon-button-hover() {
+  border-color: var(--jlz-color-accent-secondary);
+  background: var(--jlz-color-surface-hover);
+  color: var(--jlz-color-accent-secondary);
+}
+
+.hook-icon-button-active() {
+  border-color: @jlz-color-signal-phosphor;
+  background: fade(@jlz-color-signal-phosphor, 14%);
+}
+
+// ── Navbar container: Style-owned surface (app-layer CSS may still add glass) ──
+.hook-navbar-container() {
+  background: @jlz-navbar-surface;
+}
+
+@import './console-theme/components.less';
+
+// ═══════════════════════════════════════════════════════════════════════
+// §4. UIKIT COMPONENT IMPORTS (order-dependent, per UIKit docs)
+// ═══════════════════════════════════════════════════════════════════════
+
+// Mixin (shared by components)
+@import '../../node_modules/uikit/src/less/components/mixin.less';
+
+// Base
+@import '../../node_modules/uikit/src/less/components/base.less';
+
+// Element
+@import '../../node_modules/uikit/src/less/components/link.less';
+@import '../../node_modules/uikit/src/less/components/heading.less';
+@import '../../node_modules/uikit/src/less/components/icon.less';
+@import '../../node_modules/uikit/src/less/components/button.less';
+@import '../../node_modules/uikit/src/less/components/list.less';
+@import '../../node_modules/uikit/src/less/components/accordion.less';
+//@import '../../node_modules/uikit/src/less/components/label.less';
+
+// Layout
+@import '../../node_modules/uikit/src/less/components/section.less';
+@import '../../node_modules/uikit/src/less/components/container.less';
+
+// Common
+@import '../../node_modules/uikit/src/less/components/close.less';
+@import '../../node_modules/uikit/src/less/components/modal.less';
+@import '../../node_modules/uikit/src/less/components/card.less';
+
+// JavaScript
+//@import '../../node_modules/uikit/src/less/components/tab.less';
+@import '../../node_modules/uikit/src/less/components/animation.less';
+@import '../../node_modules/uikit/src/less/components/tooltip.less';
+//@import '../../node_modules/uikit/src/less/components/drop.less';
+
+@import '../../node_modules/uikit/src/less/components/grid.less';
+@import '../../node_modules/uikit/src/less/components/form.less';
+@import '../../node_modules/uikit/src/less/components/form-range.less';
+
+//@import '../../node_modules/uikit/src/less/components/thumbnav.less';
+
+// Navs
+@import '../../node_modules/uikit/src/less/components/nav.less';
+@import '../../node_modules/uikit/src/less/components/navbar.less';
+
+// Utilities
+@import '../../node_modules/uikit/src/less/components/width.less';
+@import '../../node_modules/uikit/src/less/components/height.less';
+@import '../../node_modules/uikit/src/less/components/text.less';
+@import '../../node_modules/uikit/src/less/components/utility.less';
+@import '../../node_modules/uikit/src/less/components/flex.less';
+@import '../../node_modules/uikit/src/less/components/margin.less';
+@import '../../node_modules/uikit/src/less/components/padding.less';
+@import '../../node_modules/uikit/src/less/components/position.less';
+// @import '../../node_modules/uikit/src/less/components/svg.less'; // Enable with a real `uk-svg` consumer.
+@import '../../node_modules/uikit/src/less/components/visibility.less';
+@import '../../node_modules/uikit/src/less/components/inverse.less';
+
+// Optional components used by saved Page Builder documents. The admin
+// compiler regenerates this file, so unused optional component CSS is absent
+// from production rather than hidden at runtime.
+@import './builder/components.generated.less';
+
+// The dev Style Builder writes validated Less variables last. Less resolves
+// variables lazily, so these values feed token CSS, hooks and UIkit component
+// rules above while remaining the final declaration for component variables.
+@import './builder/theme.generated.less';

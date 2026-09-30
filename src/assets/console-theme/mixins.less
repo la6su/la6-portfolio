@@ -1,0 +1,176 @@
+// console-theme/mixins.less — JLZ neuro console TUI primitives.
+//
+// One canonical definition per repeated console pattern. Surfaces compose
+// these mixins instead of re-declaring the mono metadata voice, the focus
+// ring or the bezel treatment. Imported first in ../_import.less so every
+// downstream layer (UIkit hooks, app chrome, blog) can use them.
+//
+// Mixins emit nothing until invoked, so the early import is free.
+
+// ── Mono metadata voice ──
+// The terminal readout voice: indices, coordinates, statuses, control labels.
+.jlz-meta-text(@size: 0.62rem; @tracking: 0.14em; @weight: 500) {
+  font-family: var(--jlz-font-mono);
+  font-size: @size;
+  font-weight: @weight;
+  letter-spacing: @tracking;
+  text-transform: uppercase;
+}
+
+// ── Keyboard focus ring ──
+// The single phosphor focus voice for every console control.
+.jlz-focus-ring(@offset: 2px) {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: @offset;
+}
+
+// ── TUI bezel: corner ticks ──
+// The terminal-frame identity for chrome instruments (banks, sheets, gates).
+// Draws four bracket corners with eight gradient layers on one
+// pseudo-element, so chrome gains the bezel without extra DOM. Applied on a
+// positioned surface; pass an inset to pull ticks inside a clipped edge.
+.jlz-tui-frame(@color: color-mix(in srgb, var(--jlz-color-signal-phosphor) 62%, transparent); @len: 0.44rem; @width: 1px; @inset: -1px) {
+  &::before {
+    position: absolute;
+    inset: @inset;
+    content: '';
+    pointer-events: none;
+    background-image:
+      linear-gradient(@color, @color), linear-gradient(@color, @color),
+      linear-gradient(@color, @color), linear-gradient(@color, @color),
+      linear-gradient(@color, @color), linear-gradient(@color, @color),
+      linear-gradient(@color, @color), linear-gradient(@color, @color);
+    background-position:
+      left top,
+      left top,
+      right top,
+      right top,
+      left bottom,
+      left bottom,
+      right bottom,
+      right bottom;
+    background-size:
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len;
+    background-repeat: no-repeat;
+  }
+}
+
+// Hover/open emphasis for a framed instrument: ticks light up phosphor.
+.jlz-tui-frame-active(@len: 0.44rem; @width: 1px; @inset: -1px) {
+  &::before {
+    background-image:
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor)),
+      linear-gradient(var(--jlz-color-signal-phosphor), var(--jlz-color-signal-phosphor));
+    background-position:
+      left top,
+      left top,
+      right top,
+      right top,
+      left bottom,
+      left bottom,
+      right bottom,
+      right bottom;
+    background-size:
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len,
+      @len @width,
+      @width @len;
+    background-repeat: no-repeat;
+  }
+}
+
+// ── Control bank surface ──
+// The flat analog housing that groups keys (top menu bank, bottom island).
+.jlz-control-bank() {
+  box-sizing: border-box;
+  padding: 0.2rem;
+  background: var(--jlz-color-bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 7%, transparent),
+    0 0.35rem 0.8rem color-mix(in srgb, #000 18%, transparent);
+}
+
+// ── Control bank key ──
+// The tactile key inside a bank: shallow bevel, square silhouette.
+.jlz-bank-key() {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 54%, transparent);
+  border-radius: 0.14rem;
+  background: var(--jlz-color-surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-text) 12%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
+    0 1px 0 color-mix(in srgb, #000 18%, transparent);
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 120ms ease,
+    transform 100ms ease;
+}
+
+// Key state voice: phosphor border/text with a lit bevel on hover/focus.
+.jlz-bank-key-active() {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+  background: var(--jlz-color-surface);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--jlz-color-signal-phosphor) 24%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000 24%, transparent),
+    0 1px 0 color-mix(in srgb, #000 18%, transparent);
+}
+
+// Key press: the one-pixel analog press offset.
+.jlz-bank-key-pressed() {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, #000 32%, transparent),
+    0 0 0 transparent;
+}
+
+// ── Blinking terminal cursor ──
+// Appends a phosphor block cursor after the element text. Honors reduced
+// motion through the global blink suppression in _console-language.less.
+.jlz-blink-cursor(@height: 0.6em) {
+  &::after {
+    display: inline-block;
+    width: 0.42em;
+    height: @height;
+    margin-left: 0.4em;
+    background: var(--jlz-color-signal-phosphor);
+    content: '';
+    vertical-align: baseline;
+    animation: jlz-cursor-blink 1.1s steps(1) infinite;
+  }
+}
+
+@keyframes jlz-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}

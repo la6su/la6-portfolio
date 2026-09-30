@@ -1,0 +1,84 @@
+/* Shared navigation controls for project overlay and Works slider — flat
+   hairline console buttons, no glass. */
+
+.jlz-nav-arrow {
+  width: clamp(4rem, 5.6vw, 5.75rem);
+  height: clamp(4rem, 5.6vw, 5.75rem);
+  padding: 0;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: 0;
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 82%, transparent);
+  box-shadow: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.jlz-nav-arrow svg {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.jlz-nav-arrow:hover,
+.jlz-nav-arrow:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-signal-phosphor);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 94%, transparent);
+}
+
+.jlz-nav-arrow:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: 4px;
+}
+
+.jlz-fs-prev,
+.jlz-fs-next {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  transform: translateY(-50%);
+}
+
+.jlz-fs-prev {
+  left: 1rem;
+}
+
+.jlz-fs-next {
+  right: 1rem;
+}
+
+/* The BakuCarousel owns slider state; UIkit supplies the cover/flex layout. */
+.jlz-works-slider-controls {
+  z-index: 4;
+  padding: 0 clamp(1rem, 3.5vw, 4.5rem);
+  pointer-events: none;
+}
+
+.jlz-works-slider-arrow {
+  pointer-events: auto;
+}
+
+@media (max-width: 639px) {
+  .jlz-nav-arrow {
+    width: 3.45rem;
+    height: 3.45rem;
+  }
+
+  .jlz-nav-arrow svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .jlz-fs-prev,
+  .jlz-fs-next {
+    top: calc(50% + 0.5rem);
+  }
+
+  .jlz-works-slider-controls {
+    padding: 0 0.75rem;
+  }
+}

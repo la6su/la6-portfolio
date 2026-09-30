@@ -1,0 +1,130 @@
+<article class="uk-container uk-container-small">
+  <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 05 APR 2026</p>
+  <h1 class="uk-heading-large uk-margin-remove-top">Why TSL Changes Everything</h1>
+  <p class="uk-text-lead uk-margin-medium-top">
+    Three.js Shading Language (TSL) is not just a new API. It's a fundamental shift in how we write
+    GPU code. Type safety, cross-backend compilation, and the end of raw GLSL string concatenation.
+    Here's why we're all-in.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <h2>The old way: GLSL strings</h2>
+  <p>
+    Writing a shader used to mean writing a GLSL string inside a JavaScript file. No autocomplete.
+    No type checking. No way to catch a typo until runtime. A shader bug that crashed the whole
+    pipeline would show up as a black screen with a console warning buried in three.js internals.
+  </p>
+  <pre
+    class="uk-pre uk-margin-medium"
+  ><code class="language-typescript">// The old way — raw GLSL string
+const material = new THREE.ShaderMaterial({
+  vertexShader: \`
+    varying vec3 vNormal;
+    void main() {
+      vNormal = normal;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  \`,
+  fragmentShader: \`
+    varying vec3 vNormal;
+    void main() {
+      gl_FragColor = vec4(vNormal * 0.5 + 0.5, 1.0);
+    }
+  \`,
+})</code></pre>
+  <p>
+    This works. But it doesn't scale. Add a uniform? String concatenation. Add a chunk from another
+    file? <code>#include</code> with a path that breaks if you move files. Share a function between
+    shaders? Copy-paste.
+  </p>
+
+  <h2>The new way: TSL node graphs</h2>
+  <p>
+    TSL turns shaders into TypeScript. Each GPU operation is a function that returns a node. Nodes
+    compose into graphs. The graph compiles to WGSL (WebGPU) or GLSL (WebGL2) at runtime — same
+    code, both backends.
+  </p>
+  <pre
+    class="uk-pre uk-margin-medium"
+  ><code class="language-typescript">// The new way — TSL node graph
+import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
+
+const uTime = uniform(0)
+const uDisplace = uniform(0.08)
+
+const positionNode = Fn(() => {
+  const pos = positionLocal
+  const noise = mx_noise_float(pos.add(uTime))
+  return pos.add(normalLocal.mul(noise.mul(uDisplace)))
+})</code></pre>
+  <p>
+    Type safety: <code>positionLocal</code> is a <code>vec3</code> node.
+    <code>mx_noise_float</code> takes a <code>vec3</code> and returns a <code>float</code>. The
+    TypeScript compiler catches type mismatches before you run the code.
+  </p>
+
+  <h2>Cross-backend compilation</h2>
+  <p>The same TSL graph compiles to:</p>
+  <ul>
+    <li><strong>WGSL</strong> for WebGPU (native, fast)</li>
+    <li><strong>GLSL ES 3.0</strong> for WebGL2 (fallback, widely supported)</li>
+  </ul>
+  <p>
+    We maintain a <strong>parity guarantee</strong>: the visual output is bit-identical across both
+    backends. This required portable primitives — an integer hash that produces the same bits in
+    GLSL and WGSL (we couldn't use <code>sin()</code> — precision differs), an exact sRGB transfer
+    function, and an ACES tonemap with an epsilon to prevent NaN on black pixels.
+  </p>
+
+  <blockquote class="uk-blockquote uk-margin-medium">
+    <p class="uk-margin-remove">
+      "A shader bug that used to take 20 minutes of console.log triangulation now shows up as a type
+      error in the editor."
+    </p>
+  </blockquote>
+
+  <h2>What this unlocks</h2>
+  <p>
+    <strong>Iteration speed</strong>: change a node, see the result. No shader recompilation
+    pipeline to manage — three.js handles it.
+  </p>
+  <p>
+    <strong>Refactoring</strong>: extract a function, reuse it across materials. The type system
+    ensures you wire it up correctly.
+  </p>
+  <p>
+    <strong>Debugging</strong>: inspect the generated WGSL/GLSL if something looks wrong. But you
+    rarely need to — the node graph is the source of truth.
+  </p>
+  <p>
+    <strong>Fallback for free</strong>: write once, run on WebGPU or WebGL2. No separate shader
+    codebases to maintain.
+  </p>
+
+  <h2>The catch</h2>
+  <p>
+    TSL is still evolving. The API has breaking changes between three.js minor versions. We pin
+    three.js to <code>0.184</code> and update deliberately. The type definitions in
+    <code>src/types/tsl.ts</code> are our adapter shim — they smooth over the rough edges.
+  </p>
+  <p>
+    Documentation is sparse. The best reference is the three.js examples and the TSL source itself.
+    We've built up a library of project UI patterns and
+    <code>docs/ARCHITECTURE.md</code> — the hard-won lessons are recorded there.
+  </p>
+
+  <h2>The verdict</h2>
+  <p>
+    TSL is the future of shader programming on the web. The type safety alone is worth the migration
+    — but the cross-backend compilation is the killer feature. We can target WebGPU today without
+    abandoning WebGL2 users. When WebGPU adoption crosses 80%, we drop the fallback with zero code
+    changes.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+    <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+  </nav>
+</article>

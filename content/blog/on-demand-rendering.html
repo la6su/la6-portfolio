@@ -1,0 +1,126 @@
+<article class="uk-container uk-container-small">
+  <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 10 MAY 2026</p>
+  <h1 class="uk-heading-large uk-margin-remove-top">On-Demand Rendering — Zero Idle Draw Calls</h1>
+  <p class="uk-text-lead uk-margin-medium-top">
+    The 3D portfolio looks alive, but when you're not interacting, the GPU sleeps. Here's the
+    architecture that makes it possible — and the one exception that keeps the scene from feeling
+    dead.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <h2>The problem with rAF</h2>
+  <p>
+    The default Three.js pattern is <code>requestAnimationFrame(loop)</code> — render every frame,
+    60 times a second, forever. For a 3D portfolio where the user spends 80% of their time reading
+    text, this means 4,800 draw calls per minute of idle. On a laptop, the fan spins up. On mobile,
+    the battery drains.
+  </p>
+  <p>
+    We wanted the opposite: <strong>zero draw calls when idle</strong>. The scene should render only
+    when something changes — a section transition, a carousel spin, a cursor movement that affects
+    the 3D layer.
+  </p>
+
+  <h2>The _needsRender flag</h2>
+  <p>
+    The core idea is a single boolean: <code>_needsRender</code>. The render loop checks it each
+    frame:
+  </p>
+  <pre class="uk-pre uk-margin-medium"><code class="language-typescript">setAnimationLoop(() => {
+  if (_needsRender) {
+    renderer.update()
+    _needsRender = false
+  }
+})</code></pre>
+  <p>
+    When the flag is false, <code>renderer.update()</code> is never called. The GPU sleeps. The
+    animation loop still runs (cheap — just a boolean check), but no render work happens.
+  </p>
+  <p>The flag is set to <code>true</code> by events that change the scene:</p>
+  <ul>
+    <li><strong>JoystickNav section change</strong> — cube rotates to new face</li>
+    <li><strong>BakuCarousel morph/scroll</strong> — carousel ring animates</li>
+    <li><strong>Splash/intro animation</strong> — opening sequence</li>
+    <li><strong>Camera shake</strong> — burst effects</li>
+    <li><strong>ParticleBurst</strong> — active bursts</li>
+  </ul>
+
+  <h2>Ambient breathing — the one exception</h2>
+  <p>
+    A fully frozen scene feels dead. We added a single exception: every 2.5 seconds, one render
+    frame fires to advance the <code>worldDNA</code> time uniform. This gives a subtle "breathing" —
+    particles drift, the background gradient shifts, the glass cube's iridescence animates. Then the
+    GPU sleeps again.
+  </p>
+  <p>
+    The breathing respects <code>prefers-reduced-motion</code> — if the user has requested reduced
+    motion, the scene is truly frozen between interactions.
+  </p>
+
+  <blockquote class="uk-blockquote uk-margin-medium">
+    <p class="uk-margin-remove">
+      "On-demand rendering: don't set <code>_needsRender=true</code> permanently. Event-driven only.
+      Ambient breathing (1-frame refresh every ~2.5s in idle) is the ONLY exception."
+    </p>
+    <footer>— JUSTLOVEJAZZ engineering principle</footer>
+  </blockquote>
+
+  <h2>What we measured</h2>
+  <table class="uk-table uk-table-divider uk-margin-medium">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Draw calls/frame</th>
+        <th>GPU time</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Idle (no breathing)</td>
+        <td>0</td>
+        <td>0ms</td>
+      </tr>
+      <tr>
+        <td>Idle (breathing frame)</td>
+        <td>~12</td>
+        <td>3ms</td>
+      </tr>
+      <tr>
+        <td>Section transition</td>
+        <td>~15</td>
+        <td>5ms</td>
+      </tr>
+      <tr>
+        <td>BakuCarousel scrolling</td>
+        <td>~18</td>
+        <td>8ms</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Over a 60-second idle period: 24 breathing frames × 3ms = 72ms total GPU time. Compare to rAF:
+    3600 frames × 5ms = 18,000ms. That's a 250× reduction.
+  </p>
+
+  <h2>The catch</h2>
+  <p>
+    On-demand rendering makes the codebase harder to reason about. Every animation must explicitly
+    set <code>_needsRender = true</code> — forget it, and the animation plays in your head but not
+    on screen. We added a lint rule and a DevPanel toggle to force-render during debugging.
+  </p>
+  <p>
+    The CubeCamera reflection (for the glass cube) also needs the flag — if the cube is visible but
+    <code>_needsRender</code> is false, the reflection is stale. We accept this: the reflection
+    updates on the next interaction, which is usually within a second.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+    <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+    <a href="/blog/tsl-changes-everything" class="uk-button uk-button-default uk-button-small"
+      >Next: Why TSL changes everything →</a
+    >
+  </nav>
+</article>

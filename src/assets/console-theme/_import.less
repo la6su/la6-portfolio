@@ -1,0 +1,79 @@
+// console-theme/_import.less — JLZ console theme variables.
+//
+// UIkit typography, surface and color-mode defaults. Brand tokens and the
+// assembly order belong to ../_import.less; generated builder overrides stay
+// last. See docs/BRAND.md for the complete ownership contract.
+//
+// What does NOT live here (defined in ../_import.less):
+//   - @jlz-* design tokens (colors, spacing, radius, z-index, motion)
+//   - UIKit component imports
+//   - UIKit variable overrides (@global-margin, @global-gutter, etc.)
+
+// ── Primary/secondary font (proportional display, natural case) ──
+@global-primary-font-family: @jlz-font-display;
+@global-primary-font-weight: 600;
+@global-primary-text-transform: none;
+@global-primary-letter-spacing: -0.02em;
+@global-primary-font-style: inherit;
+
+@global-secondary-font-family: inherit;
+@global-secondary-font-weight: inherit;
+@global-secondary-text-transform: inherit;
+@global-secondary-letter-spacing: @jlz-letter-spacing;
+@global-secondary-font-style: inherit;
+
+// ── Heading typography (replaces main.less h1..h6 selector) ──
+// UIKit base.less reads these via @base-heading-text-transform / @base-heading-letter-spacing.
+// Console headings: Commissioner, sentence case, slightly tracked-in.
+@base-heading-text-transform: none;
+@base-heading-letter-spacing: -0.02em;
+
+// ── Status colors — owned by the brand status tokens (ADR 0007) ──
+@global-success-background: @jlz-color-status-success;
+@global-warning-background: @jlz-color-status-warning;
+@global-danger-background: @jlz-color-status-danger;
+
+// ── Box-shadows (cinematic depth) ──
+@global-small-box-shadow: none;
+@global-medium-box-shadow: none;
+@global-large-box-shadow: none;
+@global-xlarge-box-shadow: none;
+
+// ── Heading font-sizes (rem-based, mobile-first) ──
+// Golden-ratio (φ = 1.618) modular chain, owned by the @jlz-type-step-*
+// tokens (ADR 0007). html font-size is 0.85rem on mobile and 1rem on
+// desktop, so the whole chain scales down mobile-first. Display sizes beyond
+// h1 use clamp(step, fluid middle, step) compositions in the content layer.
+@global-2xlarge-font-size: @jlz-type-step-5;
+@global-xlarge-font-size: @jlz-type-step-4;
+@global-large-font-size: @jlz-type-step-3;
+@global-medium-font-size: @jlz-type-step-2;
+@global-small-font-size: @jlz-type-step-1;
+@base-blockquote-font-size: @global-large-font-size;
+@base-blockquote-footer-font-size: @global-small-font-size;
+@heading-small-font-size: @global-large-font-size;
+
+// ── Color-mode overrides (dark surfaces → light text) ──
+// UIKit3 color-mode: dark = "dark background → light text".
+// Our surfaces (cards, sections, overlays, navbar) are dark → need light text.
+@card-default-color-mode: dark;
+@card-overlay-color-mode: dark;
+@card-primary-color-mode: light; // accent-colored (solid bg) → dark text
+@card-secondary-color-mode: dark;
+
+@section-default-color-mode: dark;
+@section-muted-color-mode: dark;
+@section-primary-color-mode: dark;
+@section-secondary-color-mode: dark;
+
+@tile-default-color-mode: dark;
+@tile-muted-color-mode: dark;
+@tile-primary-color-mode: dark;
+
+@overlay-default-color-mode: dark;
+@overlay-primary-color-mode: dark;
+
+@navbar-color-mode: dark;
+@navbar-dropdown-color-mode: dark;
+@dropdown-color-mode: dark;
+@dropbar-color-mode: dark;

@@ -1,0 +1,71 @@
+{
+  "name": "la6su",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "type-check": "tsc --noEmit",
+    "type-check:vue": "vue-tsc --noEmit -p tsconfig.json",
+    "build": "tsc && node scripts/prerender-home.mjs && node scripts/prerender-blog.mjs && node scripts/publish-builder-pages.mjs && bun scripts/generate-sitemap.ts && vite build",
+    "budget:build": "bun scripts/check-build-budgets.ts",
+    "check:stdlib": "node scripts/check-stdlib-modules.mjs",
+    "docs:check": "bun scripts/check-docs.ts",
+    "preview": "vite preview",
+    "test:serial": "playwright test --workers=1 --reporter=line",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "wait:preview": "bun scripts/wait-for-url.ts http://127.0.0.1:4173/ 60000",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.0",
+    "@types/node": "^25.9.5",
+    "@types/three": "0.185.4",
+    "@types/uikit": "^3.23.0",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vue/server-renderer": "3.5.41",
+    "@vue/test-utils": "2.4.11",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.8.0",
+    "jsdom": "^29.1.1",
+    "less": "^4.8.1",
+    "prettier": "^3.9.6",
+    "source-map-js": "1.2.1",
+    "tweakpane": "^4.0.5",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10",
+    "vue-tsc": "3.3.10"
+  },
+  "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
+  "dependencies": {
+    "@tresjs/cientos": "5.9.0",
+    "@tresjs/core": "5.9.0",
+    "camera-controls": "3.1.2",
+    "three": "0.185.1",
+    "uikit": "^3.25.20",
+    "vue": "3.5.41",
+    "vue-router": "5.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/la6su/justlovejazz.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/la6su/justlovejazz/issues"
+  },
+  "homepage": "https://github.com/la6su/justlovejazz#readme"
+}

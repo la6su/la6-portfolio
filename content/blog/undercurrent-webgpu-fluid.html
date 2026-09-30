@@ -1,0 +1,131 @@
+<article class="uk-container uk-container-small">
+  <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 15 JUL 2026</p>
+  <h1 class="uk-heading-large uk-margin-remove-top">Undercurrent — WebGPU Fluid Simulation</h1>
+  <p class="uk-text-lead uk-margin-medium-top">
+    A real-time GPU fluid solver built with TSL node graphs. This case study walks through the
+    architecture, performance budget, and the compromises we made to hit 60fps on mid-range
+    hardware.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <h2>The brief</h2>
+  <p>
+    The client wanted a portfolio hero that felt "alive" — not a video, not a canned animation, but
+    something that responded to input in real time. The constraint: it had to run on integrated
+    graphics without dropping below 60fps.
+  </p>
+  <p>
+    We proposed a Navier-Stokes-inspired fluid simulation running entirely on the GPU via WebGPU
+    compute shaders. The visual target was dark, iridescent, with a sense of depth — ink in water,
+    but with light sources inside the flow.
+  </p>
+
+  <h2>Architecture</h2>
+  <p>
+    The simulation uses three ping-pong render targets: velocity, density, and pressure. Each frame
+    runs a five-pass pipeline:
+  </p>
+  <ol>
+    <li><strong>Advection</strong> — semi-Lagrangian, samples previous velocity field</li>
+    <li><strong>Forces</strong> — mouse input injected as velocity impulse</li>
+    <li><strong>Divergence</strong> — compute velocity field divergence</li>
+    <li><strong>Pressure (Jacobi, 20 iterations)</strong> — solve pressure Poisson equation</li>
+    <li><strong>Projection</strong> — subtract pressure gradient from velocity</li>
+  </ol>
+  <p>
+    The density field is advected by the velocity field and rendered with a custom iridescence
+    shader — thin-film interference approximated via a lookup table.
+  </p>
+
+  <blockquote class="uk-blockquote uk-margin-medium">
+    <p class="uk-margin-remove">
+      "The key insight was using TSL node graphs instead of raw WGSL. We could iterate on the shader
+      in TypeScript, with type safety, and the same code compiled to both WebGPU and WebGL2
+      fallback."
+    </p>
+    <footer>— Lead engineer</footer>
+  </blockquote>
+
+  <h2>Performance budget</h2>
+  <p>Target: 60fps on Intel UHD 620 (lowest supported). Budget per frame: 16.6ms.</p>
+  <table class="uk-table uk-table-divider uk-margin-medium">
+    <thead>
+      <tr>
+        <th>Pass</th>
+        <th>Time (ms)</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Advection</td>
+        <td>1.8</td>
+        <td>512×512, bilinear sampling</td>
+      </tr>
+      <tr>
+        <td>Forces</td>
+        <td>0.3</td>
+        <td>Single dispatch, mouse uniform</td>
+      </tr>
+      <tr>
+        <td>Divergence</td>
+        <td>0.9</td>
+        <td>9-tap stencil</td>
+      </tr>
+      <tr>
+        <td>Pressure (×20)</td>
+        <td>7.2</td>
+        <td>20 Jacobi iterations × 0.36ms</td>
+      </tr>
+      <tr>
+        <td>Projection</td>
+        <td>0.8</td>
+        <td>9-tap stencil</td>
+      </tr>
+      <tr>
+        <td>Render (iridescence)</td>
+        <td>2.1</td>
+        <td>Full-screen quad + LUT</td>
+      </tr>
+      <tr>
+        <td><strong>Total</strong></td>
+        <td><strong>13.1</strong></td>
+        <td>3.5ms headroom</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>The compromise</h2>
+  <p>
+    We cut the simulation grid from 1024 to 512. The visual difference was minimal — the iridescence
+    shader masks the lower resolution — but the performance gain was 4×. On high-end hardware, the
+    grid scales up to 1024 automatically via a capabilities check.
+  </p>
+  <p>
+    The WebGL2 fallback uses a CPU-side Jacobi solver at 256×256. It's 30fps instead of 60, but the
+    visual identity holds. Users on Safari pre-WebGPU still get a fluid hero, just slower.
+  </p>
+
+  <h2>What we learned</h2>
+  <p>
+    TSL node graphs are the real deal. The ability to write GPU code in TypeScript, with
+    autocomplete and type checking, changed how we iterate. A shader bug that used to take 20
+    minutes of `console.log` triangulation now shows up as a type error in the editor.
+  </p>
+  <p>
+    The five-pass pipeline is harder to debug than a single shader, but the separation of concerns
+    (advection vs. pressure vs. render) made it possible to tune each pass independently. The
+    performance budget table above was the single most useful artifact — we knew exactly which pass
+    to optimize when frame times slipped.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+    <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+    <a href="/blog/designing-in-the-browser" class="uk-button uk-button-default uk-button-small"
+      >Next: Designing in the browser →</a
+    >
+  </nav>
+</article>

@@ -1,0 +1,51 @@
+// Saved Page Builder documents use UIkit for component behavior and this
+// narrow layer for theme-token surfaces that UIkit cannot express at runtime.
+// The secondary variants (card, section, button) take the secondary
+// accent's 1px line — the cool mineral counterweight to the primary accent.
+.jlz-builder-section.uk-section-default {
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
+}
+
+.jlz-builder-card.uk-card-secondary {
+  border: 1px solid var(--jlz-color-accent-secondary);
+  color: var(--jlz-color-text);
+}
+
+.jlz-builder-card:is(.uk-card-secondary, .uk-card-primary) :is(h1, h2, h3, h4, h5, h6, p) {
+  color: inherit;
+}
+
+// Secondary section and ghost button complete the variant language:
+// hairline band, outlined button that fills on hover.
+.jlz-builder-section.uk-section-secondary {
+  border-block: 1px solid var(--jlz-color-accent-secondary);
+}
+
+.jlz-builder-section .uk-button-secondary {
+  border: 1px solid var(--jlz-color-accent-secondary);
+  color: var(--jlz-color-accent-secondary);
+  background: transparent;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.jlz-builder-section .uk-button-secondary:hover,
+.jlz-builder-section .uk-button-secondary:focus-visible {
+  background: var(--jlz-color-accent-secondary);
+  color: var(--jlz-color-text-inverse);
+}
+
+.jlz-builder-image,
+.jlz-builder-video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--builder-radius);
+}
+
+.jlz-builder-video {
+  background: var(--jlz-color-bg-elevated);
+}

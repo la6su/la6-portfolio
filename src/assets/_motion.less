@@ -1,0 +1,23 @@
+/*
+ * Project motion primitives for compositions UIkit does not provide.
+ * Use UIkit state and accessibility behavior for ordinary components; these
+ * mixins only describe the cinematic reveal language of the 3D shell.
+ */
+
+.jlz-cinematic-reveal(
+  @delay: 0s;
+  @opacity-duration: var(--jlz-duration-normal);
+  @transform-duration: var(--jlz-duration-slow);
+  @easing: var(--jlz-ease-entrance);
+) {
+  transition:
+    opacity @opacity-duration ease @delay,
+    transform @transform-duration @easing @delay;
+}
+
+.jlz-cinematic-sheet() {
+  transition:
+    transform var(--jlz-duration-epic) var(--jlz-ease-entrance),
+    opacity var(--jlz-duration-slow) ease,
+    visibility 0s linear var(--jlz-duration-epic);
+}

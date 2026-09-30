@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="JUSTLOVEJAZZ blog — case studies and process notes on WebGPU, TSL shaders, interactive 3D, and studio workflow. Real engineering stories from the studio."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+    <title>Blog — Case Studies &amp; Process Notes | JUSTLOVEJAZZ</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="mask-icon" href="/logo.svg" color="#232534" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="canonical" href="https://justlovejazz.dev/blog" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="JUSTLOVEJAZZ Blog — Case Studies &amp; Process Notes" />
+    <meta
+      property="og:description"
+      content="Case studies and process notes on WebGPU, TSL shaders, interactive 3D, and studio workflow."
+    />
+    <meta property="og:url" content="https://justlovejazz.dev/blog" />
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="JUSTLOVEJAZZ blog preview" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="JUSTLOVEJAZZ Blog — Case Studies &amp; Process Notes" />
+    <meta
+      name="twitter:description"
+      content="Case studies and process notes on WebGPU, TSL shaders, interactive 3D, and studio workflow."
+    />
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta name="twitter:image:alt" content="JUSTLOVEJAZZ blog preview" />
+
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "JUSTLOVEJAZZ Blog",
+        "url": "https://justlovejazz.dev/blog",
+        "description": "Case studies and process notes on WebGPU, TSL shaders, interactive 3D, and studio workflow.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://justlovejazz.dev/favicon.svg"
+          }
+        },
+        "blogPost": [
+          {
+            "@type": "BlogPosting",
+            "headline": "Undercurrent — WebGPU Fluid Simulation",
+            "url": "https://justlovejazz.dev/blog/undercurrent-webgpu-fluid",
+            "datePublished": "2026-07-15T10:00:00Z",
+            "articleSection": "Case Studies"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "Glassmorphism on WebGPU",
+            "url": "https://justlovejazz.dev/blog/glassmorphism-webgpu",
+            "datePublished": "2026-06-20T10:00:00Z",
+            "articleSection": "Case Studies"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "On-Demand Rendering — Zero Idle Draw Calls",
+            "url": "https://justlovejazz.dev/blog/on-demand-rendering",
+            "datePublished": "2026-05-10T10:00:00Z",
+            "articleSection": "Process Notes"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "Why TSL Changes Everything",
+            "url": "https://justlovejazz.dev/blog/tsl-changes-everything",
+            "datePublished": "2026-04-05T10:00:00Z",
+            "articleSection": "Process Notes"
+          }
+        ]
+      }
+    </script>
+    <link rel="stylesheet" crossorigin href="/assets/blog-Dlo-EbyO.css">
+  </head>
+  <body>
+    <div class="jlz-reading-progress" aria-hidden="true">
+      <div class="jlz-reading-progress__bar"></div>
+    </div>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header class="jlz-blog-header" role="banner">
+      <nav
+        class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
+        uk-navbar
+        aria-label="Main navigation"
+      >
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/">Enter studio ↗</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <div class="uk-container uk-container-expand jlz-journal">
+        <section class="jlz-journal-hero" aria-labelledby="journal-title">
+          <p class="jlz-landing-eyebrow">01 / FIELD NOTES</p>
+          <h1 id="journal-title" class="uk-heading-xlarge uk-margin-remove-top">
+            Built to be felt.
+          </h1>
+          <p class="jlz-journal-hero__lead">
+            Short notes from inside interactive systems: the material, the constraint, and the
+            decision that made the work hold together.
+          </p>
+        </section>
+
+        <article class="jlz-journal-feature">
+          <div class="jlz-journal-feature__index" aria-hidden="true">01</div>
+          <div>
+            <p class="jlz-journal-meta">
+              <span>WebGPU / fluid</span><time datetime="2026-07-15">15 Jul 2026</time>
+            </p>
+            <h2>
+              <a href="/blog/undercurrent-webgpu-fluid">Undercurrent: fluid with a frame budget.</a>
+            </h2>
+          </div>
+          <p class="jlz-journal-feature__summary">
+            A real-time solver only becomes a design tool when it stays responsive. We map the
+            render budget before we start chasing the image.
+          </p>
+          <a
+            class="jlz-journal-arrow"
+            href="/blog/undercurrent-webgpu-fluid"
+            aria-label="Read Undercurrent"
+            >↗</a
+          >
+        </article>
+
+        <section class="jlz-journal-list" aria-labelledby="journal-notes-title">
+          <div class="jlz-journal-list__head">
+            <p class="jlz-landing-eyebrow">02 / ENGINEERING NOTES</p>
+            <h2 id="journal-notes-title" class="uk-heading-medium">
+              The decisions behind the surface.
+            </h2>
+          </div>
+          <a class="jlz-journal-note" href="/blog/glassmorphism-webgpu">
+            <span class="jlz-journal-note__number">02</span>
+            <span class="jlz-journal-note__title">Glassmorphism on WebGPU</span>
+            <span class="jlz-journal-note__tag">Materials</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="jlz-journal-note" href="/blog/on-demand-rendering">
+            <span class="jlz-journal-note__number">03</span>
+            <span class="jlz-journal-note__title">On-demand rendering</span>
+            <span class="jlz-journal-note__tag">Performance</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="jlz-journal-note" href="/blog/tsl-changes-everything">
+            <span class="jlz-journal-note__number">04</span>
+            <span class="jlz-journal-note__title">Why TSL changes everything</span>
+            <span class="jlz-journal-note__tag">Tooling</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+        </section>
+      </div>
+    </main>
+    <footer class="jlz-blog-footer" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <!-- Inline SVGs: the prerendered documents carry no JavaScript, so
+           uk-icon (a UIkit JS component) never renders there. -->
+        <p class="uk-text-meta uk-margin-small-top">
+          © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio
+        </p>
+      </div>
+    </footer>
+    <script defer src="/js/blog.js"></script>
+  </body>
+</html>

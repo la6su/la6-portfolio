@@ -1,0 +1,300 @@
+// The DOM is an editorial layer around a spatial installation, not a card grid.
+.jlz-works-section {
+  padding: 0;
+}
+.jlz-works-stage {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  padding: 0 4vw;
+  color: var(--jlz-color-text);
+}
+.jlz-works-coordinate {
+  position: absolute;
+  top: 6.5rem;
+  left: 4vw;
+  right: 4vw;
+  color: var(--jlz-color-text-muted);
+  font: 0.68rem var(--jlz-font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.jlz-works-coordinate > :last-child {
+  color: var(--jlz-color-accent);
+}
+.jlz-works-heading {
+  position: absolute;
+  top: 23%;
+  left: 7vw;
+  z-index: 3;
+  width: 47%;
+  pointer-events: none;
+}
+.jlz-works-discipline {
+  font: 0.65rem var(--jlz-font-mono);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+}
+.jlz-works-title {
+  max-width: 8ch;
+  margin: 1rem 0 0;
+  font-family: var(--jlz-font-display);
+  font-size: clamp(3.702rem, 8.2vw, 9.708rem);
+  font-weight: 650;
+  line-height: 0.86;
+  letter-spacing: -0.065em;
+  text-wrap: balance;
+}
+.jlz-works-narrative {
+  position: absolute;
+  left: 7vw;
+  bottom: 20%;
+  width: min(34%, 27rem);
+  z-index: 3;
+}
+.jlz-works-premise {
+  font-size: clamp(1rem, 1.35vw, 1.414rem);
+  line-height: 1.4;
+  margin: 0 0 0.65rem;
+}
+.jlz-works-context {
+  color: var(--jlz-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+}
+.jlz-works-actions {
+  gap: 1.8rem;
+  margin-top: 1.6rem;
+  flex-wrap: wrap;
+}
+.jlz-works-enter {
+  color: var(--jlz-color-accent);
+}
+.jlz-works-aperture {
+  position: absolute;
+  top: 30%;
+  left: 49%;
+  width: 41%;
+  height: 38%;
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.jlz-works-aperture:focus-visible {
+  outline: 2px solid var(--jlz-color-accent);
+  outline-offset: 0.75rem;
+}
+.jlz-works-footnote {
+  position: absolute;
+  left: 4vw;
+  right: 4vw;
+  bottom: 6.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  color: var(--jlz-color-text-muted);
+  font: 0.65rem var(--jlz-font-mono);
+}
+.jlz-works-archive {
+  position: absolute;
+  bottom: 20%;
+  right: 5vw;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  max-width: 40%;
+}
+.jlz-works-archive > span {
+  flex-basis: 100%;
+}
+.jlz-works-archive button {
+  font-size: 0.7rem;
+}
+.jlz-works-entrance {
+  position: absolute;
+  z-index: 4;
+  bottom: 6.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+@media (max-width: 959px) {
+  .jlz-works-coordinate {
+    top: 5.5rem;
+  }
+  .jlz-works-heading {
+    top: 17%;
+    left: 6vw;
+    width: 88%;
+  }
+  .jlz-works-title {
+    max-width: 13ch;
+    font-size: clamp(3.702rem, 12vw, 6rem);
+  }
+  .jlz-works-discipline {
+    font-size: 0.6rem;
+  }
+  .jlz-works-narrative {
+    left: 6vw;
+    bottom: 17%;
+    width: 88%;
+  }
+  .jlz-works-context {
+    display: none;
+  }
+  .jlz-works-premise {
+    max-width: 32rem;
+    font-size: 1rem;
+  }
+  .jlz-works-actions {
+    margin-top: 0.75rem;
+  }
+  .jlz-works-aperture {
+    top: 35%;
+    left: 7%;
+    width: 86%;
+    height: 27%;
+  }
+  .jlz-works-footnote {
+    bottom: 6rem;
+    font-size: 0.58rem;
+  }
+  .jlz-works-footnote > :first-child {
+    max-width: 24ch;
+  }
+  .jlz-works-archive {
+    bottom: 16%;
+    left: 6vw;
+    right: 6vw;
+    max-width: none;
+    gap: 0 1rem;
+  }
+  .jlz-works-section:last-of-type .jlz-works-narrative {
+    display: none;
+  }
+}
+@media (max-height: 650px) and (min-width: 960px) {
+  .jlz-works-coordinate {
+    top: 4.5rem;
+  }
+  .jlz-works-title {
+    font-size: 5rem;
+  }
+  .jlz-works-heading {
+    top: 22%;
+  }
+  .jlz-works-narrative {
+    bottom: 22%;
+  }
+  .jlz-works-context {
+    display: none;
+  }
+  .jlz-works-footnote {
+    bottom: 5rem;
+  }
+}
+
+.jlz-case-title {
+  font-size: clamp(3.702rem, 6.8vw, 8rem);
+  max-width: 10ch;
+}
+.jlz-case-copy {
+  bottom: 19%;
+}
+.jlz-case-copy .jlz-works-context {
+  margin-top: 0.7rem;
+}
+.jlz-case-notes {
+  margin-top: 1rem;
+}
+.jlz-case-notes .uk-accordion-title {
+  font-size: 0.8rem;
+}
+.jlz-case-notes .uk-accordion-content {
+  max-height: 7rem;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+.jlz-case-status {
+  color: var(--jlz-color-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+.jlz-case-related {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+}
+.jlz-case-facts {
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+.jlz-case-facts dt {
+  color: var(--jlz-color-accent-secondary);
+  font-family: var(--jlz-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.jlz-case-facts dd {
+  color: var(--jlz-color-text-muted);
+  margin-left: 0;
+}
+.jlz-case-proof {
+  font-size: 0.7rem;
+}
+.jlz-case-proof li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--jlz-color-text-muted);
+}
+.jlz-case-proof strong {
+  color: var(--jlz-color-text);
+  font-weight: 500;
+  text-align: right;
+}
+.jlz-case-media {
+  margin: 1rem 0 0;
+  max-width: 22rem;
+}
+.jlz-case-media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  filter: saturate(0.8) contrast(1.08);
+}
+.jlz-case-media figcaption {
+  color: var(--jlz-color-text-muted);
+  font: 0.58rem var(--jlz-font-mono);
+  margin-top: 0.4rem;
+}
+@media (max-width: 959px) {
+  .jlz-case-title {
+    font-size: clamp(3rem, 11vw, 5rem);
+  }
+  .jlz-case-copy {
+    bottom: 16%;
+    max-height: 26dvh;
+    overflow-y: auto;
+  }
+  .jlz-case-copy .jlz-works-premise {
+    font-size: 0.9rem;
+  }
+  .jlz-case-copy .jlz-works-context {
+    display: block;
+    font-size: 0.8rem;
+  }
+  .jlz-case-notes .uk-accordion-content {
+    max-height: none;
+  }
+}

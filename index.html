@@ -1,0 +1,1356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>JUSTLOVEJAZZ — Digital Experience</title>
+
+    <meta
+      name="description"
+      content="JUSTLOVEJAZZ — interactive digital experiences, WebGPU, Three.js and creative systems."
+    />
+
+    <link rel="canonical" href="https://justlovejazz.dev/" />
+
+    <meta property="og:title" content="JUSTLOVEJAZZ — Digital Experience" />
+    <meta
+      property="og:description"
+      content="Interactive digital experiences, WebGPU, Three.js and creative systems."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://justlovejazz.dev/" />
+    <!-- Raster og:image: social crawlers (Twitter/Facebook/LinkedIn) do not
+         render SVG previews; /preview.jpg is the 1200x630 share card. -->
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="JUSTLOVEJAZZ — Digital Experience" />
+    <meta
+      name="twitter:description"
+      content="Interactive digital experiences, WebGPU, Three.js and creative systems."
+    />
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="mask-icon" href="/logo.svg" color="#232534" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Self-hosted fonts — the splash renders before JS boots, so both
+         faces are preloaded: Commissioner (variable, splash spiral + body)
+         and JetBrains Mono (loader labels). Served immutable via /fonts/*. -->
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/jetbrains-mono-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+    <link rel="stylesheet" href="/fonts/jetbrains-mono.css" />
+
+    <style>
+      :root {
+        --bg: #05090d;
+
+        --blue: #7184bd;
+        --blue-mid: #4b5e86;
+        --blue-dark: #26364d;
+
+        --line: #172630;
+
+        --green: #50e7ae;
+        --yellow: #c9ad36;
+
+        --white: #dce5ef;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      body {
+        font-family: Commissioner, system-ui, sans-serif;
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      .sr-only {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+
+      .skip-link {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        z-index: 99999;
+
+        padding: 8px 12px;
+
+        background: #091017;
+        color: #fff;
+
+        transform: translateY(-150%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      /* =========================================================
+       LOADER
+       ========================================================= */
+
+      #jlz-app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 30000;
+
+        overflow: hidden;
+        isolation: isolate;
+
+        background:
+          radial-gradient(circle at 50% 50%, rgba(52, 173, 143, 0.075), transparent 34%), var(--bg);
+
+        opacity: 1;
+        transform: scale(1);
+
+        contain: paint;
+      }
+
+      #jlz-app-loader.is-exiting {
+        pointer-events: none;
+
+        animation: loader-exit 1.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+      }
+
+      @keyframes loader-exit {
+        from {
+          opacity: 1;
+          transform: scale(1);
+        }
+
+        to {
+          opacity: 0;
+          transform: scale(1.018);
+        }
+      }
+
+      /* =========================================================
+       ATMOSPHERE
+       ========================================================= */
+
+      .jlz-splash-grid {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+
+        opacity: 0.22;
+
+        background:
+          linear-gradient(rgba(100, 130, 150, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100, 130, 150, 0.045) 1px, transparent 1px);
+
+        background-size: 32px 32px;
+
+        mask-image: radial-gradient(circle at center, black 20%, transparent 90%);
+
+        pointer-events: none;
+      }
+
+      .jlz-splash-vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+
+        pointer-events: none;
+
+        background: radial-gradient(
+          ellipse at center,
+          transparent 22%,
+          rgba(1, 5, 8, 0.35) 64%,
+          rgba(1, 5, 8, 0.94) 100%
+        );
+      }
+
+      .jlz-splash-frame {
+        position: absolute;
+        inset: 9px;
+        z-index: 3;
+
+        border: 1px solid rgba(75, 102, 122, 0.22);
+        border-radius: 17px;
+
+        pointer-events: none;
+      }
+
+      .jlz-splash-frame::before,
+      .jlz-splash-frame::after {
+        content: '';
+
+        position: absolute;
+
+        width: 8px;
+        height: 8px;
+      }
+
+      .jlz-splash-frame::before {
+        left: -1px;
+        top: 52px;
+
+        border-left: 1px solid rgba(80, 231, 174, 0.7);
+        border-top: 1px solid rgba(80, 231, 174, 0.7);
+      }
+
+      .jlz-splash-frame::after {
+        right: -1px;
+        bottom: 52px;
+
+        border-right: 1px solid rgba(80, 231, 174, 0.7);
+        border-bottom: 1px solid rgba(80, 231, 174, 0.7);
+      }
+
+      /* =========================================================
+       SVG PORTAL
+       ========================================================= */
+
+      .jlz-splash-svg {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+
+        width: min(100vw, 100vh);
+        height: min(100vw, 100vh);
+
+        transform: translate(-50%, -50%);
+
+        z-index: 5;
+
+        overflow: visible;
+
+        text-rendering: geometricPrecision;
+
+        pointer-events: none;
+      }
+
+      /* =========================================================
+       ARCHITECTURAL LINES
+       ========================================================= */
+
+      .portal-line {
+        fill: none;
+
+        vector-effect: non-scaling-stroke;
+        shape-rendering: geometricPrecision;
+      }
+
+      .portal-line.outer {
+        stroke: #1d303a;
+        stroke-width: 1.1;
+      }
+
+      .portal-line.mid {
+        stroke: #13232c;
+        stroke-width: 1;
+      }
+
+      .portal-line.inner {
+        stroke: rgba(80, 231, 174, 0.24);
+        stroke-width: 1;
+      }
+
+      .portal-mark {
+        fill: var(--green);
+      }
+
+      /* =========================================================
+       TYPOGRAPHIC DEPTH
+       ========================================================= */
+
+      .spiral {
+        transform-box: view-box;
+        transform-origin: 700px 700px;
+      }
+
+      .spiral-frame {
+        fill: none;
+
+        stroke: var(--line);
+        stroke-width: 1;
+
+        vector-effect: non-scaling-stroke;
+      }
+      /* =========================================================
+       PORTAL DEPTH ENTRANCE
+
+       Fast compositor-friendly entrance.
+       No blur.
+       No RAF.
+       The typography appears to travel through the portal.
+       ========================================================= */
+
+      .jlz-splash-svg .spiral {
+        transform-box: view-box;
+        transform-origin: 700px 700px;
+
+        will-change: transform, opacity;
+
+        animation: portal-depth-enter 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      /*
+     * Each successive layer is physically "deeper".
+     *
+     * Outer layer:
+     *   starts slightly oversized and displaced
+     *
+     * Inner layers:
+     *   start progressively closer to the center
+     *   and arrive slightly later
+     */
+
+      .jlz-splash-svg .spiral[data-base-rotation='-1'] {
+        --portal-base-rotation: -1deg;
+        --portal-start-scale: 1.34;
+        --portal-start-x: 0px;
+        --portal-start-y: 0px;
+        --portal-delay: 0ms;
+        --portal-final-opacity: 1;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='1.7'] {
+        --portal-base-rotation: 1.7deg;
+        --portal-start-scale: 1.26;
+        --portal-start-x: 0px;
+        --portal-start-y: 0px;
+        --portal-delay: 55ms;
+        --portal-final-opacity: 0.72;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='-2.8'] {
+        --portal-base-rotation: -2.8deg;
+        --portal-start-scale: 1.18;
+        --portal-start-x: 0px;
+        --portal-start-y: 0px;
+        --portal-delay: 105ms;
+        --portal-final-opacity: 0.52;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='4.2'] {
+        --portal-base-rotation: 4.2deg;
+        --portal-start-scale: 1.12;
+        --portal-start-x: 0px;
+        --portal-start-y: 0px;
+        --portal-delay: 150ms;
+        --portal-final-opacity: 0.32;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='-5.5'] {
+        --portal-base-rotation: -5.5deg;
+        --portal-start-scale: 1.07;
+        --portal-start-x: 0px;
+        --portal-start-y: 0px;
+        --portal-delay: 190ms;
+        --portal-final-opacity: 0.22;
+      }
+
+      @keyframes portal-depth-enter {
+        0% {
+          opacity: 0;
+
+          transform: translate(var(--portal-start-x), var(--portal-start-y))
+            rotate(calc(var(--portal-base-rotation) + 3deg)) scale(var(--portal-start-scale));
+        }
+
+        38% {
+          opacity: var(--portal-final-opacity);
+
+          transform: translate(0, 0) rotate(calc(var(--portal-base-rotation) - 1deg)) scale(0.985);
+        }
+
+        100% {
+          opacity: var(--portal-final-opacity);
+
+          transform: translate(0, 0) rotate(var(--portal-base-rotation)) scale(1);
+        }
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='-1'] {
+        animation-delay: 0ms;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='1.7'] {
+        animation-delay: 55ms;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='-2.8'] {
+        animation-delay: 105ms;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='4.2'] {
+        animation-delay: 150ms;
+      }
+
+      .jlz-splash-svg .spiral[data-base-rotation='-5.5'] {
+        animation-delay: 190ms;
+      }
+
+      .spiral-text {
+        font-family: Commissioner, Arial, sans-serif;
+
+        font-weight: 650;
+
+        fill: var(--blue);
+
+        letter-spacing: 6px;
+
+        text-rendering: geometricPrecision;
+
+        dominant-baseline: middle;
+      }
+
+      .spiral-text.outer {
+        font-size: 37px;
+      }
+
+      .spiral-text.medium {
+        font-size: 20px;
+
+        fill: var(--blue-mid);
+        letter-spacing: 4px;
+      }
+
+      .spiral-text.small {
+        font-family: 'JetBrains Mono', monospace;
+
+        font-size: 9px;
+
+        fill: var(--blue-dark);
+
+        letter-spacing: 3px;
+      }
+
+      /* =========================================================
+       CENTRAL VOID
+
+       The central portal now exists ONLY inside the SVG.
+       No duplicated HTML portal layer.
+       ========================================================= */
+
+      .portal-core {
+        fill: #03080b;
+
+        stroke: rgba(80, 231, 174, 0.4);
+        stroke-width: 1;
+
+        vector-effect: non-scaling-stroke;
+
+        transform-box: fill-box;
+        transform-origin: center;
+
+        animation: portal-breathe 4.5s ease-in-out infinite;
+      }
+
+      .portal-core-glow {
+        fill: url(#portal-core-glow);
+        opacity: 0.75;
+      }
+
+      .portal-core-inner {
+        fill: none;
+
+        stroke: rgba(83, 108, 140, 0.22);
+        stroke-width: 1;
+
+        vector-effect: non-scaling-stroke;
+      }
+
+      .portal-core-inner.green {
+        stroke: rgba(80, 231, 174, 0.22);
+      }
+
+      @keyframes portal-breathe {
+        0%,
+        100% {
+          transform: scale(0.985);
+        }
+
+        50% {
+          transform: scale(1.015);
+        }
+      }
+
+      .portal-center {
+        fill: var(--green);
+
+        filter: drop-shadow(0 0 6px rgba(80, 231, 174, 0.65))
+          drop-shadow(0 0 16px rgba(80, 231, 174, 0.18));
+      }
+
+      /* =========================================================
+       ENTER
+       ========================================================= */
+
+      #jlz-splash-enter {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        width: min(8vmin, 94px);
+        height: min(8vmin, 94px);
+
+        transform: translate(-50%, -50%);
+
+        z-index: 30;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid rgba(91, 115, 150, 0.45);
+        border-radius: 0;
+
+        background: rgba(2, 8, 11, 0.28);
+
+        color: #6579a9;
+
+        cursor: not-allowed;
+
+        transition:
+          transform 0.3s ease,
+          color 0.3s ease,
+          border-color 0.3s ease,
+          box-shadow 0.3s ease;
+
+        backdrop-filter: blur(2px);
+      }
+
+      #jlz-splash-enter::before,
+      #jlz-splash-enter::after {
+        content: '';
+
+        position: absolute;
+
+        width: 8px;
+        height: 8px;
+
+        border-color: currentColor;
+      }
+
+      #jlz-splash-enter::before {
+        left: -1px;
+        top: -1px;
+
+        border-left: 1px solid;
+        border-top: 1px solid;
+      }
+
+      #jlz-splash-enter::after {
+        right: -1px;
+        bottom: -1px;
+
+        border-right: 1px solid;
+        border-bottom: 1px solid;
+      }
+
+      #jlz-splash-enter span {
+        font-family: 'JetBrains Mono', monospace;
+
+        font-size: 8px;
+
+        letter-spacing: 3px;
+        text-indent: 3px;
+      }
+
+      #jlz-splash-enter.is-ready {
+        cursor: pointer;
+
+        color: var(--green);
+
+        border-color: rgba(80, 231, 174, 0.7);
+
+        box-shadow:
+          0 0 25px rgba(80, 231, 174, 0.08),
+          inset 0 0 18px rgba(80, 231, 174, 0.04);
+      }
+
+      #jlz-splash-enter.is-ready:hover {
+        transform: translate(-50%, -50%) scale(1.04);
+
+        box-shadow:
+          0 0 42px rgba(80, 231, 174, 0.12),
+          inset 0 0 22px rgba(80, 231, 174, 0.06);
+      }
+
+      #jlz-splash-enter.is-ready:focus-visible {
+        outline: 1px solid var(--green);
+        outline-offset: 5px;
+      }
+
+      /* =========================================================
+       STATUS
+       ========================================================= */
+
+      .jlz-splash-meta {
+        position: absolute;
+
+        left: 50%;
+        top: calc(50% + min(15vmin, 180px));
+
+        transform: translateX(-50%);
+
+        z-index: 25;
+
+        display: flex;
+        align-items: center;
+
+        gap: 12px;
+
+        font-family: 'JetBrains Mono', monospace;
+
+        font-size: 7px;
+
+        letter-spacing: 2px;
+        text-transform: uppercase;
+
+        white-space: nowrap;
+
+        color: #304258;
+
+        pointer-events: none;
+      }
+
+      .jlz-splash-meta::before {
+        content: '';
+
+        width: 3px;
+        height: 3px;
+
+        background: var(--yellow);
+      }
+
+      .jlz-splash-percent {
+        color: rgba(80, 231, 174, 0.7);
+      }
+
+      /* =========================================================
+       CORNER LABELS
+       ========================================================= */
+
+      .splash-label {
+        position: absolute;
+
+        z-index: 15;
+
+        font-family: 'JetBrains Mono', monospace;
+
+        font-size: 6px;
+
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+
+        color: #2c3d50;
+
+        white-space: nowrap;
+
+        pointer-events: none;
+      }
+
+      .splash-label.tl {
+        left: 4%;
+        top: 13%;
+      }
+
+      .splash-label.tr {
+        right: 4%;
+        top: 13%;
+
+        color: #347662;
+      }
+
+      .splash-label.bl {
+        left: 4%;
+        bottom: 7%;
+      }
+
+      .splash-label.br {
+        right: 4%;
+        bottom: 7%;
+
+        color: #806f29;
+      }
+
+      /* =========================================================
+       CONTROLS
+       ========================================================= */
+
+      .jlz-loader-config {
+        position: absolute;
+
+        top: 34px;
+        right: 28px;
+
+        z-index: 100;
+
+        display: flex;
+
+        border: 1px solid rgba(73, 93, 112, 0.35);
+
+        background: rgba(5, 9, 13, 0.45);
+
+        backdrop-filter: blur(4px);
+      }
+
+      .jlz-loader-config button {
+        width: 38px;
+        height: 32px;
+
+        padding: 0;
+
+        border: 0;
+        border-right: 1px solid rgba(73, 93, 112, 0.25);
+
+        background: transparent;
+
+        color: #526276;
+
+        cursor: pointer;
+
+        font-family: 'JetBrains Mono', monospace;
+
+        font-size: 9px;
+
+        letter-spacing: 1px;
+      }
+
+      .jlz-loader-config button:last-child {
+        border-right: 0;
+      }
+
+      .jlz-loader-config button:hover {
+        color: var(--green);
+      }
+
+      .jlz-loader-config button:focus-visible {
+        outline: 1px solid var(--green);
+        outline-offset: -3px;
+      }
+
+      .jlz-sound-icon {
+        display: inline-block;
+
+        width: 9px;
+        height: 9px;
+
+        border-left: 1px solid currentColor;
+        border-right: 1px solid currentColor;
+      }
+
+      /* =========================================================
+       POST-ENTRANCE STATE
+       ========================================================= */
+
+      .jlz-splash-svg {
+        transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .jlz-splash-svg.is-settled {
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+      @media (prefers-reduced-motion: reduce) {
+        #jlz-app-loader.is-exiting {
+          pointer-events: none;
+
+          animation: loader-exit 780ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+        }
+
+        .portal-core {
+          animation: none;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .jlz-loader-config {
+          top: 20px;
+          right: 20px;
+        }
+
+        /* 44px touch targets (WCAG 2.5.5) on coarse/small screens. */
+        .jlz-loader-config button {
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
+        }
+
+        .jlz-splash-meta {
+          top: calc(50% + 18vmin);
+        }
+
+        .splash-label {
+          font-size: 5px;
+        }
+      }
+    </style>
+
+    <!-- No-JS fallback: the loader overlay (#jlz-app-loader, z-index 30000)
+         would cover the prerendered home shell forever — hide it so crawlers
+         with JS off (and future no-JS visitors) see the prerendered content. -->
+    <noscript>
+      <style>
+        #jlz-app-loader {
+          display: none !important;
+        }
+      </style>
+    </noscript>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#app"> Skip to content </a>
+
+    <div id="jlz-app-loader" aria-hidden="false" aria-busy="true">
+      <!-- =======================================================
+         ATMOSPHERE
+         ======================================================= -->
+
+      <div class="jlz-splash-grid"></div>
+      <div class="jlz-splash-vignette"></div>
+      <div class="jlz-splash-frame"></div>
+
+      <!-- =======================================================
+         CORNER INFORMATION
+         ======================================================= -->
+
+      <div class="splash-label tl">JUSTLOVEJAZZ / 2026</div>
+
+      <div class="splash-label tr">EXPERIENCE / SYSTEM</div>
+
+      <div class="splash-label bl">LA6SU / DIGITAL STUDIO</div>
+
+      <div class="splash-label br">WEBGPU / WEBGL</div>
+
+      <!-- =======================================================
+         SQUARE TYPOGRAPHIC PORTAL
+         ======================================================= -->
+
+      <svg
+        class="jlz-splash-svg"
+        viewBox="0 0 1400 1400"
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
+        <defs>
+          <radialGradient id="portal-light">
+            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12" />
+            <stop offset=".45" stop-color="#50e7ae" stop-opacity=".025" />
+            <stop offset="1" stop-color="#50e7ae" stop-opacity="0" />
+          </radialGradient>
+
+          <radialGradient id="portal-core-glow">
+            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12" />
+            <stop offset=".55" stop-color="#50e7ae" stop-opacity=".025" />
+            <stop offset="1" stop-color="#50e7ae" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+
+        <!-- =====================================================
+           ATMOSPHERIC LIGHT
+           ===================================================== -->
+
+        <circle cx="700" cy="700" r="470" fill="url(#portal-light)" />
+
+        <!-- =====================================================
+           OUTER ARCHITECTURE
+           ===================================================== -->
+
+        <rect class="portal-line outer" x="185" y="185" width="1030" height="1030" />
+
+        <rect class="portal-line mid" x="285" y="285" width="830" height="830" />
+
+        <!-- =====================================================
+           DEPTH 01 — OUTER TEXT
+           ===================================================== -->
+
+        <g class="spiral" data-base-rotation="-1">
+          <rect class="spiral-frame" x="205" y="205" width="990" height="990" />
+
+          <text
+            class="spiral-text outer"
+            x="700"
+            y="177"
+            text-anchor="middle"
+            textLength="950"
+            lengthAdjust="spacing"
+          >
+            ZARAZENI INCLUSION · INTERACTIVE WEB · DIGITAL EXPERIENCE
+          </text>
+
+          <text
+            class="spiral-text outer"
+            x="700"
+            y="177"
+            text-anchor="middle"
+            textLength="950"
+            lengthAdjust="spacing"
+            transform="rotate(90 700 700)"
+          >
+            KEMASUKAN · AUFNAHME · AISÄLLYTTÄMINEN · CREATIVE SYSTEMS
+          </text>
+
+          <text
+            class="spiral-text outer"
+            x="700"
+            y="177"
+            text-anchor="middle"
+            textLength="950"
+            lengthAdjust="spacing"
+            transform="rotate(180 700 700)"
+          >
+            NAME · VISUALITY · INTERACTION · MOTION · LIGHT · WEBGPU
+          </text>
+
+          <text
+            class="spiral-text outer"
+            x="700"
+            y="177"
+            text-anchor="middle"
+            textLength="950"
+            lengthAdjust="spacing"
+            transform="rotate(-90 700 700)"
+          >
+            ВКЛЮЧЕНИЕ · LIGHT · WEBGL · THREE.JS · DESIGN · MOTION
+          </text>
+        </g>
+
+        <!-- =====================================================
+           DEPTH 02
+           ===================================================== -->
+
+        <g class="spiral" data-base-rotation="1.7" opacity=".72">
+          <rect class="spiral-frame" x="300" y="300" width="800" height="800" />
+
+          <text
+            class="spiral-text medium"
+            x="700"
+            y="285"
+            text-anchor="middle"
+            textLength="760"
+            lengthAdjust="spacing"
+          >
+            JUSTLOVEJAZZ · TSL · THREE · WEBGPU · CREATIVE SYSTEMS
+          </text>
+
+          <text
+            class="spiral-text medium"
+            x="700"
+            y="285"
+            text-anchor="middle"
+            textLength="760"
+            lengthAdjust="spacing"
+            transform="rotate(90 700 700)"
+          >
+            GPU · CRAFTED MOTION · LIGHT · WEBGPU · DIGITAL EXPERIENCE
+          </text>
+
+          <text
+            class="spiral-text medium"
+            x="700"
+            y="285"
+            text-anchor="middle"
+            textLength="760"
+            lengthAdjust="spacing"
+            transform="rotate(180 700 700)"
+          >
+            IMMERSION · VISUALITY · INTERACTION · CODE · EXPERIENCE
+          </text>
+
+          <text
+            class="spiral-text medium"
+            x="700"
+            y="285"
+            text-anchor="middle"
+            textLength="760"
+            lengthAdjust="spacing"
+            transform="rotate(-90 700 700)"
+          >
+            DIGITAL · CREATIVE · SYSTEMS · WEB · TSL · THREE.JS
+          </text>
+        </g>
+
+        <!-- =====================================================
+           DEPTH 03
+           ===================================================== -->
+
+        <g class="spiral" data-base-rotation="-2.8" opacity=".52">
+          <rect class="spiral-frame" x="395" y="395" width="610" height="610" />
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="382"
+            text-anchor="middle"
+            textLength="575"
+            lengthAdjust="spacing"
+          >
+            WEBGPU · THREE.JS · TSL · IMMERSION · VISUALITY
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="382"
+            text-anchor="middle"
+            textLength="575"
+            lengthAdjust="spacing"
+            transform="rotate(90 700 700)"
+          >
+            INTERACTION · DIGITAL EXPERIENCE · MOTION · LIGHT
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="382"
+            text-anchor="middle"
+            textLength="575"
+            lengthAdjust="spacing"
+            transform="rotate(180 700 700)"
+          >
+            LA6SU · JUSTLOVEJAZZ · CREATIVE SYSTEMS · DESIGN
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="382"
+            text-anchor="middle"
+            textLength="575"
+            lengthAdjust="spacing"
+            transform="rotate(-90 700 700)"
+          >
+            GPU · CODE · MOTION · WEB · THREE · TSL · LIGHT
+          </text>
+        </g>
+
+        <!-- =====================================================
+           DEPTH 04
+           ===================================================== -->
+
+        <g class="spiral" data-base-rotation="4.2" opacity=".32">
+          <rect class="spiral-frame" x="470" y="470" width="460" height="460" />
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="458"
+            text-anchor="middle"
+            textLength="425"
+            lengthAdjust="spacing"
+          >
+            IMMERSION · WEBGPU · TSL · THREE · MOTION
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="458"
+            text-anchor="middle"
+            textLength="425"
+            lengthAdjust="spacing"
+            transform="rotate(90 700 700)"
+          >
+            VISUALITY · INTERACTION · DIGITAL · CODE
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="458"
+            text-anchor="middle"
+            textLength="425"
+            lengthAdjust="spacing"
+            transform="rotate(180 700 700)"
+          >
+            JUSTLOVEJAZZ · CREATIVE SYSTEMS · LIGHT
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="458"
+            text-anchor="middle"
+            textLength="425"
+            lengthAdjust="spacing"
+            transform="rotate(-90 700 700)"
+          >
+            DIGITAL EXPERIENCE · WEBGL · DESIGN
+          </text>
+        </g>
+
+        <!-- =====================================================
+           DEPTH 05 — MICRO TEXT
+           ===================================================== -->
+
+        <g class="spiral" data-base-rotation="-5.5" opacity=".22">
+          <rect class="spiral-frame" x="535" y="535" width="330" height="330" />
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="526"
+            text-anchor="middle"
+            textLength="300"
+            lengthAdjust="spacing"
+          >
+            JUSTLOVEJAZZ · WEBGPU · TSL · THREE.JS
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="526"
+            text-anchor="middle"
+            textLength="300"
+            lengthAdjust="spacing"
+            transform="rotate(90 700 700)"
+          >
+            IMMERSION · MOTION · LIGHT · CODE
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="526"
+            text-anchor="middle"
+            textLength="300"
+            lengthAdjust="spacing"
+            transform="rotate(180 700 700)"
+          >
+            DIGITAL EXPERIENCE · VISUALITY
+          </text>
+
+          <text
+            class="spiral-text small"
+            x="700"
+            y="526"
+            text-anchor="middle"
+            textLength="300"
+            lengthAdjust="spacing"
+            transform="rotate(-90 700 700)"
+          >
+            CREATIVE SYSTEMS · DESIGN
+          </text>
+        </g>
+
+        <!-- =====================================================
+           CENTRAL PORTAL
+
+           Single source of truth:
+           everything here is SVG.
+           ===================================================== -->
+
+        <circle class="portal-core-glow" cx="700" cy="700" r="175" />
+
+        <rect class="portal-line inner" x="575" y="575" width="250" height="250" />
+
+        <rect class="portal-line inner" x="620" y="620" width="160" height="160" opacity=".55" />
+
+        <rect class="portal-core" x="652" y="652" width="96" height="96" />
+
+        <rect class="portal-core-inner" x="665" y="665" width="70" height="70" />
+
+        <rect class="portal-core-inner green" x="680" y="680" width="40" height="40" />
+
+        <!-- registration marks -->
+
+        <g class="portal-mark">
+          <rect x="697" y="182" width="6" height="6" />
+          <rect x="697" y="1212" width="6" height="6" />
+
+          <rect x="182" y="697" width="6" height="6" />
+          <rect x="1212" y="697" width="6" height="6" />
+
+          <rect x="460" y="460" width="5" height="5" />
+          <rect x="935" y="935" width="5" height="5" />
+        </g>
+
+        <rect class="portal-center" x="697" y="697" width="6" height="6" />
+
+        <rect x="457" y="457" width="7" height="7" fill="#c9ad36" />
+      </svg>
+
+      <!-- =======================================================
+         ENTER
+         ======================================================= -->
+
+      <button
+        id="jlz-splash-enter"
+        type="button"
+        aria-label="Enter JUSTLOVEJAZZ"
+        aria-disabled="true"
+      >
+        <span data-jlz-splash="enter"> ENTER </span>
+      </button>
+
+      <!-- =======================================================
+         STATUS
+         ======================================================= -->
+
+      <div class="jlz-splash-meta">
+        <span class="jlz-splash-percent" data-jlz-splash="progress"> 00% </span>
+
+        <span id="jlz-splash-status" data-jlz-splash="state"> INITIALIZING </span>
+      </div>
+
+      <div id="jlz-splash-lead" data-jlz-splash="lead" class="sr-only">
+        Preparing interactive experience
+      </div>
+
+      <!-- =======================================================
+         CONTROLS
+         ======================================================= -->
+
+      <div class="jlz-loader-config" aria-label="Splash settings">
+        <button id="cfg-sound" type="button" aria-label="Toggle sound">
+          <span class="jlz-sound-icon" aria-hidden="true"></span>
+        </button>
+
+        <button id="cfg-lang" type="button" aria-label="Change language">
+          <span class="jlz-lang-value" data-jlz-lang-value> EN </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Neutral mount node: the landmark <main id="spa-content"> is owned by
+         the route SFCs (and the prerender), keeping a single main landmark.
+         vite `prerender-index` injects the home shell into this exact div. -->
+    <div id="app"></div>
+
+    <div id="jlz-route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="/src/entry-shell.ts"></script>
+
+    <!-- =========================================================
+       ENTER BRIDGE
+
+       entry-app.ts remains the owner of readiness.
+       This bridge only performs the visual exit.
+       ========================================================= -->
+
+    <script>
+      ;(() => {
+        const loader = document.getElementById('jlz-app-loader')
+
+        const enter = document.getElementById('jlz-splash-enter')
+
+        if (!loader || !enter) return
+
+        let exiting = false
+
+        enter.addEventListener('click', () => {
+          if (exiting) return
+
+          if (!enter.classList.contains('is-ready')) {
+            return
+          }
+
+          exiting = true
+
+          enter.setAttribute('aria-disabled', 'true')
+
+          window.__jlzEmit?.('jlz:splash-entered')
+
+          loader.setAttribute('aria-busy', 'false')
+
+          loader.classList.add('is-exiting')
+
+          window.setTimeout(() => {
+            loader.remove()
+          }, 780)
+        })
+      })()
+    </script>
+
+    <!-- =========================================================
+       SUBTLE DEPTH MOTION
+
+       The five SVG groups already provide all depth.
+       No cloning. No duplicated typography.
+       ========================================================= -->
+
+    <script>
+      ;(() => {
+        const loader = document.getElementById('jlz-app-loader')
+
+        if (!loader) return
+
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+        if (reduced) {
+          return
+        }
+
+        /*
+         * One very small finishing pulse.
+         *
+         * This is deliberately NOT a RAF loop.
+         * The browser compositor handles the animation.
+         */
+        const svg = loader.querySelector('.jlz-splash-svg')
+
+        if (!svg) return
+
+        window.setTimeout(() => {
+          if (!document.body.contains(svg)) return
+
+          svg.classList.add('is-settled')
+        }, 850)
+      })()
+    </script>
+  </body>
+</html>

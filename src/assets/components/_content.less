@@ -1,0 +1,534 @@
+/* Shared story-section primitives; structure and baseline spacing come from UIkit. */
+
+.jlz-eyebrow {
+  min-height: 1em;
+  font-family: var(--jlz-font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-section-top,
+.jlz-section-bottom {
+  flex-shrink: 0;
+}
+
+.jlz-section-top {
+  padding-top: calc(48px + @global-small-gutter);
+}
+
+.jlz-section-bottom {
+  padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.jlz-contact-section .uk-container {
+  align-items: flex-end;
+}
+
+.jlz-console-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.35rem, 3vw, 2.4rem);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: 0;
+  background: var(--jlz-color-bg-elevated);
+  box-shadow: none;
+}
+
+.jlz-console-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--jlz-color-signal-phosphor);
+  content: '';
+}
+
+.jlz-console-card__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 0.7rem;
+  margin-bottom: clamp(2.5rem, 8vh, 6rem);
+}
+
+.jlz-console-card__index,
+.jlz-contact-panel__meta,
+.jlz-contact-social__index {
+  font-family: var(--jlz-font-mono), monospace;
+  font-size: 0.66rem;
+}
+
+.jlz-console-card__index {
+  margin-left: auto;
+  color: var(--jlz-color-accent);
+  letter-spacing: 0.08em;
+}
+
+.jlz-contact-panel__title {
+  max-width: 32rem;
+}
+
+.jlz-contact-panel__address {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: clamp(@jlz-type-step-2, 3.5vw, @jlz-type-step-4); // φ steps 2–4
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    color var(--jlz-duration-fast) ease,
+    font-variation-settings var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-contact-panel__address:hover,
+.jlz-contact-panel__address:focus-visible {
+  color: var(--jlz-color-accent);
+  font-variation-settings: 'wght' 680;
+}
+
+.jlz-contact-panel__meta {
+  margin: 1rem 0 0;
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-service-console {
+  width: min(100%, 42rem);
+  margin-bottom: clamp(1.5rem, 4vh, 3rem);
+}
+
+.jlz-service-console .jlz-console-card__chrome {
+  margin-bottom: var(--jlz-space-5);
+}
+
+.jlz-service-console__statement,
+.jlz-service-runtime__caption {
+  max-width: 29rem;
+  font-size: clamp(@jlz-type-step-1, 2.3vw, @jlz-type-step-2); // φ steps 1–2
+  line-height: 1.25;
+}
+.jlz-service-runtime__detail,
+.jlz-service-motion__detail {
+  max-width: 26rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+.jlz-service-spec {
+  max-width: 28rem;
+  font-size: 0.7rem;
+}
+.jlz-service-spec li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.4rem;
+}
+.jlz-service-spec span {
+  color: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
+}
+.jlz-service-spec strong {
+  font-weight: 600;
+}
+.jlz-service-spec small {
+  grid-column: 2;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-service-console__note {
+  margin: var(--jlz-space-4) 0 0;
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-service-runtime,
+.jlz-service-motion {
+  width: min(100%, 38rem);
+}
+
+.jlz-service-runtime__field {
+  position: relative;
+  width: min(100%, 20rem);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 28%, transparent);
+  border-radius: var(--jlz-radius-lg);
+  background:
+    radial-gradient(
+      circle at 14% 70%,
+      color-mix(in srgb, var(--jlz-color-accent) 18%, transparent),
+      transparent 26%
+    ),
+    color-mix(in srgb, var(--jlz-color-bg-elevated) 50%, transparent);
+}
+
+.jlz-service-runtime__field svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.jlz-service-runtime__trace,
+.jlz-service-runtime__signal {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.5;
+}
+
+.jlz-service-runtime__trace {
+  stroke: color-mix(in srgb, var(--jlz-color-text) 26%, transparent);
+}
+
+.jlz-service-runtime__signal {
+  stroke: var(--jlz-color-accent);
+  stroke-dasharray: 18 120;
+  stroke-dashoffset: 0;
+}
+
+.jlz-service-runtime__node {
+  position: absolute;
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-accent);
+}
+
+.jlz-service-runtime__node--start {
+  top: 68%;
+  left: 2.5%;
+}
+
+.jlz-service-runtime__node--middle {
+  top: 24%;
+  left: 31%;
+}
+
+.jlz-service-runtime__node--end {
+  top: 27%;
+  right: 1.5%;
+}
+
+.jlz-service-runtime__caption {
+  max-width: 26rem;
+  margin-top: var(--jlz-space-3);
+  color: var(--jlz-color-text-muted);
+  line-height: 1.4;
+}
+
+.jlz-service-motion__words {
+  position: relative;
+  display: grid;
+  width: min(100%, 28rem);
+  color: var(--jlz-color-text);
+  font-size: clamp(@jlz-type-step-4, 16vw, @jlz-type-step-5); // φ steps 4–5
+  font-weight: 250;
+  line-height: 0.8;
+}
+
+.jlz-service-motion__words::before {
+  position: absolute;
+  top: 52%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--jlz-color-text) 15%, transparent),
+    color-mix(in srgb, var(--jlz-color-accent) 72%, transparent),
+    transparent
+  );
+  content: '';
+}
+
+.jlz-service-motion__words span {
+  position: relative;
+  z-index: 1;
+}
+
+.jlz-service-motion__words span:nth-child(1) {
+  color: color-mix(in srgb, var(--jlz-color-text) 52%, transparent);
+}
+
+.jlz-service-motion__words span:nth-child(2) {
+  padding-left: 12%;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-service-motion__words span:nth-child(3) {
+  padding-left: 28%;
+  text-shadow: 0 0 1.5rem color-mix(in srgb, var(--jlz-color-text) 15%, transparent);
+}
+
+@media (min-width: 640px) {
+  .jlz-service-runtime__field {
+    width: min(100%, 25rem);
+  }
+
+  .jlz-service-motion__words span:nth-child(2) {
+    padding-left: 20%;
+  }
+
+  .jlz-service-motion__words span:nth-child(3) {
+    padding-left: 43%;
+  }
+}
+
+.jlz-contact-social {
+  align-self: flex-start;
+  max-width: 62rem;
+  padding-left: clamp(1.35rem, 5vw, 5rem);
+}
+
+.jlz-contact-social__heading {
+  gap: var(--jlz-space-4);
+}
+
+.jlz-contact-social__index {
+  display: block;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-contact-social__title {
+  max-width: 12ch;
+  margin: var(--jlz-space-5) 0 0;
+}
+
+.jlz-contact-social__channels {
+  margin-top: var(--jlz-space-7);
+}
+
+.jlz-contact-social__channel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 8rem;
+  gap: var(--jlz-space-3);
+  padding: var(--jlz-space-4);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: 0;
+  background: var(--jlz-color-bg-elevated);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.jlz-contact-social__channel:hover,
+.jlz-contact-social__channel:focus-visible {
+  border-color: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-signal-phosphor) 6%, var(--jlz-color-bg-elevated));
+  box-shadow: inset 2px 0 0 var(--jlz-color-signal-phosphor);
+}
+
+.jlz-contact-social__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-contact-social__channel-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.jlz-contact-social__channel-copy strong {
+  font-size: 1.08rem;
+  font-weight: 600;
+}
+
+.jlz-contact-social__channel-copy small {
+  color: var(--jlz-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.jlz-contact-location {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--jlz-space-4);
+  margin: 0;
+  padding: var(--jlz-space-4) 0;
+}
+
+.jlz-contact-location__title {
+  max-width: 12ch;
+}
+
+.jlz-contact-location > span:last-child {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-service-desc {
+  max-width: 34rem;
+  gap: 0.2rem;
+  margin: 0;
+}
+
+.jlz-service-desc .uk-text-meta {
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.jlz-service-explore {
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.jlz-service-explore__dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-accent);
+}
+
+.jlz-experiment-footer {
+  gap: 0.55rem 0.85rem;
+}
+
+.jlz-experiment-footer__mode,
+.jlz-experiment-footer__state {
+  font-family: var(--jlz-font-mono), serif;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 639px) {
+  .jlz-contact-section .uk-container {
+    align-items: stretch;
+  }
+
+  .jlz-console-card {
+    padding: 1.25rem;
+  }
+
+  .jlz-service-console .jlz-console-card__chrome {
+    margin-bottom: var(--jlz-space-4);
+  }
+
+  .jlz-contact-social {
+    padding-left: 0;
+  }
+
+  .jlz-contact-social__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--jlz-space-2);
+  }
+
+  .jlz-contact-social__channel {
+    min-height: 6.75rem;
+  }
+
+  .jlz-contact-location {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--jlz-space-2);
+  }
+
+  .jlz-experiment-footer .jlz-service-explore {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
+
+// UIkit Scrollspy owns simple DOM entrances. The section controller owns frame
+// changes, while BlurFade/NoiseText and the Cyprus stage keep specialised owners.
+.jlz-manifesto-room {
+  position: relative;
+  padding: 7rem 7vw 8rem;
+}
+.jlz-manifesto-head {
+  max-width: 48rem;
+}
+.jlz-manifesto-head .jlz-eyebrow {
+  color: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
+}
+.jlz-manifesto-lead {
+  max-width: 34rem;
+  color: var(--jlz-color-text-muted);
+}
+.jlz-manifesto-grid {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 32rem) 1fr;
+  gap: 2rem;
+  align-items: end;
+  min-height: 42vh;
+  margin-top: 8vh;
+}
+.jlz-manifesto-index {
+  color: var(--jlz-color-text);
+  font: clamp(2rem, 5vw, 5rem) var(--jlz-font-mono);
+  letter-spacing: -0.08em;
+}
+.jlz-manifesto-index span {
+  display: block;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+}
+.jlz-manifesto-protocol {
+  border-top: 1px solid var(--jlz-color-border-strong);
+  padding-top: 1rem;
+}
+.jlz-manifesto-protocol__label {
+  color: var(--jlz-color-accent-secondary);
+  font: 0.62rem var(--jlz-font-mono);
+  letter-spacing: 0.12em;
+}
+.jlz-manifesto-protocol__line {
+  margin: 0.8rem 0;
+  font-size: clamp(1.35rem, 2.2vw, 2.3rem);
+  line-height: 1.1;
+}
+.jlz-manifesto-evidence {
+  max-width: 30rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.jlz-manifesto-link {
+  display: inline-flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  color: var(--jlz-color-accent);
+}
+@media (max-width: 959px) {
+  .jlz-manifesto-room {
+    padding: 6rem 6vw 7rem;
+  }
+  .jlz-manifesto-grid {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 6vh;
+  }
+  .jlz-manifesto-index {
+    font-size: 2.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-service-runtime__signal {
+    animation: none;
+  }
+
+  .jlz-contact-page [uk-scrollspy],
+  .jlz-contact-page [uk-scrollspy] > *,
+  .jlz-services-page [uk-scrollspy],
+  .jlz-services-page [uk-scrollspy] > * {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

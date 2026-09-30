@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="Process note: Why TSL changes everything — TypeScript-safe shader programming, cross-backend compilation (WebGPU + WebGL2), and the end of raw GLSL string concatenation."
+    />
+    <meta name="keywords" content="TSL, Three.js, WebGPU, shaders, TypeScript, process note" />
+
+    <title>Why TSL Changes Everything | JUSTLOVEJAZZ Blog</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="mask-icon" href="/logo.svg" color="#232534" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="canonical" href="https://justlovejazz.dev/blog/tsl-changes-everything" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Why TSL Changes Everything" />
+    <meta
+      property="og:description"
+      content="TypeScript-safe shader programming, cross-backend compilation, and the end of raw GLSL string concatenation."
+    />
+    <meta property="og:url" content="https://justlovejazz.dev/blog/tsl-changes-everything" />
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TSL preview" />
+    <meta property="article:published_time" content="2026-04-05T10:00:00Z" />
+    <meta property="article:author" content="JUSTLOVEJAZZ" />
+    <meta property="article:section" content="Process Notes" />
+    <meta property="article:tag" content="TSL" />
+    <meta property="article:tag" content="WebGPU" />
+    <meta property="article:tag" content="Shaders" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="Why TSL Changes Everything" />
+    <meta
+      name="twitter:description"
+      content="TypeScript-safe shader programming, cross-backend compilation."
+    />
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta name="twitter:image:alt" content="TSL preview" />
+
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+    <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Why TSL Changes Everything",
+        "description": "TypeScript-safe shader programming, cross-backend compilation, and the end of raw GLSL string concatenation.",
+        "image": "https://justlovejazz.dev/preview.jpg",
+        "datePublished": "2026-04-05T10:00:00Z",
+        "dateModified": "2026-04-05T10:00:00Z",
+        "author": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "url": "https://justlovejazz.dev/"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://justlovejazz.dev/favicon.svg"
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://justlovejazz.dev/blog/tsl-changes-everything"
+        },
+        "keywords": "TSL, Three.js, WebGPU, shaders, TypeScript, process note",
+        "articleSection": "Process Notes"
+      }
+    </script>
+    <link rel="stylesheet" crossorigin href="/assets/blog-Dlo-EbyO.css">
+  </head>
+  <body>
+    <div class="jlz-reading-progress" aria-hidden="true">
+      <div class="jlz-reading-progress__bar"></div>
+    </div>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header class="jlz-blog-header" role="banner">
+      <nav
+        class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
+        uk-navbar
+        aria-label="Main navigation"
+      >
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/">Enter 3D →</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <article class="uk-container uk-container-small">
+        <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 05 APR 2026</p>
+        <h1 class="uk-heading-large uk-margin-remove-top">Why TSL Changes Everything</h1>
+        <p class="uk-text-lead uk-margin-medium-top">
+          Three.js Shading Language (TSL) is not just a new API. It's a fundamental shift in how we
+          write GPU code. Type safety, cross-backend compilation, and the end of raw GLSL string
+          concatenation. Here's why we're all-in.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <h2>The old way: GLSL strings</h2>
+        <p>
+          Writing a shader used to mean writing a GLSL string inside a JavaScript file. No
+          autocomplete. No type checking. No way to catch a typo until runtime. A shader bug that
+          crashed the whole pipeline would show up as a black screen with a console warning buried
+          in three.js internals.
+        </p>
+        <pre
+          class="uk-pre uk-margin-medium"
+        ><code class="language-typescript">// The old way — raw GLSL string
+const material = new THREE.ShaderMaterial({
+  vertexShader: \`
+    varying vec3 vNormal;
+    void main() {
+      vNormal = normal;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  \`,
+  fragmentShader: \`
+    varying vec3 vNormal;
+    void main() {
+      gl_FragColor = vec4(vNormal * 0.5 + 0.5, 1.0);
+    }
+  \`,
+})</code></pre>
+        <p>
+          This works. But it doesn't scale. Add a uniform? String concatenation. Add a chunk from
+          another file? <code>#include</code> with a path that breaks if you move files. Share a
+          function between shaders? Copy-paste.
+        </p>
+
+        <h2>The new way: TSL node graphs</h2>
+        <p>
+          TSL turns shaders into TypeScript. Each GPU operation is a function that returns a node.
+          Nodes compose into graphs. The graph compiles to WGSL (WebGPU) or GLSL (WebGL2) at runtime
+          — same code, both backends.
+        </p>
+        <pre
+          class="uk-pre uk-margin-medium"
+        ><code class="language-typescript">// The new way — TSL node graph
+import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
+
+const uTime = uniform(0)
+const uDisplace = uniform(0.08)
+
+const positionNode = Fn(() => {
+  const pos = positionLocal
+  const noise = mx_noise_float(pos.add(uTime))
+  return pos.add(normalLocal.mul(noise.mul(uDisplace)))
+})</code></pre>
+        <p>
+          Type safety: <code>positionLocal</code> is a <code>vec3</code> node.
+          <code>mx_noise_float</code> takes a <code>vec3</code> and returns a <code>float</code>.
+          The TypeScript compiler catches type mismatches before you run the code.
+        </p>
+
+        <h2>Cross-backend compilation</h2>
+        <p>The same TSL graph compiles to:</p>
+        <ul>
+          <li><strong>WGSL</strong> for WebGPU (native, fast)</li>
+          <li><strong>GLSL ES 3.0</strong> for WebGL2 (fallback, widely supported)</li>
+        </ul>
+        <p>
+          We maintain a <strong>parity guarantee</strong>: the visual output is bit-identical across
+          both backends. This required portable primitives — an integer hash that produces the same
+          bits in GLSL and WGSL (we couldn't use <code>sin()</code> — precision differs), an exact
+          sRGB transfer function, and an ACES tonemap with an epsilon to prevent NaN on black
+          pixels.
+        </p>
+
+        <blockquote class="uk-blockquote uk-margin-medium">
+          <p class="uk-margin-remove">
+            "A shader bug that used to take 20 minutes of console.log triangulation now shows up as
+            a type error in the editor."
+          </p>
+        </blockquote>
+
+        <h2>What this unlocks</h2>
+        <p>
+          <strong>Iteration speed</strong>: change a node, see the result. No shader recompilation
+          pipeline to manage — three.js handles it.
+        </p>
+        <p>
+          <strong>Refactoring</strong>: extract a function, reuse it across materials. The type
+          system ensures you wire it up correctly.
+        </p>
+        <p>
+          <strong>Debugging</strong>: inspect the generated WGSL/GLSL if something looks wrong. But
+          you rarely need to — the node graph is the source of truth.
+        </p>
+        <p>
+          <strong>Fallback for free</strong>: write once, run on WebGPU or WebGL2. No separate
+          shader codebases to maintain.
+        </p>
+
+        <h2>The catch</h2>
+        <p>
+          TSL is still evolving. The API has breaking changes between three.js minor versions. We
+          pin three.js to <code>0.184</code> and update deliberately. The type definitions in
+          <code>src/types/tsl.ts</code> are our adapter shim — they smooth over the rough edges.
+        </p>
+        <p>
+          Documentation is sparse. The best reference is the three.js examples and the TSL source
+          itself. We've built up a library of project UI patterns and
+          <code>docs/ARCHITECTURE.md</code> — the hard-won lessons are recorded there.
+        </p>
+
+        <h2>The verdict</h2>
+        <p>
+          TSL is the future of shader programming on the web. The type safety alone is worth the
+          migration — but the cross-backend compilation is the killer feature. We can target WebGPU
+          today without abandoning WebGL2 users. When WebGPU adoption crosses 80%, we drop the
+          fallback with zero code changes.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+          <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+        </nav>
+      </article>
+    </main>
+    <footer class="jlz-blog-footer" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <!-- Inline SVGs: the prerendered documents carry no JavaScript, so
+           uk-icon (a UIkit JS component) never renders there. -->
+        <ul class="jlz-blog-social" aria-label="Social links">
+          <li>
+            <a href="https://github.com/la6su" rel="noopener" aria-label="GitHub"
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+                <path
+                  fill="currentColor"
+                  d="M10,1 C5.03,1 1,5.03 1,10 C1,13.98 3.58,17.35 7.16,18.54 C7.61,18.62 7.77,18.34 7.77,18.11 C7.77,17.9 7.76,17.33 7.76,16.58 C5.26,17.12 4.73,15.37 4.73,15.37 C4.32,14.33 3.73,14.05 3.73,14.05 C2.91,13.5 3.79,13.5 3.79,13.5 C4.69,13.56 5.17,14.43 5.17,14.43 C5.97,15.8 7.28,15.41 7.79,15.18 C7.87,14.6 8.1,14.2 8.36,13.98 C6.36,13.75 4.26,12.98 4.26,9.53 C4.26,8.55 4.61,7.74 5.19,7.11 C5.1,6.88 4.79,5.97 5.28,4.73 C5.28,4.73 6.04,4.49 7.75,5.65 C8.47,5.45 9.24,5.35 10,5.35 C10.76,5.35 11.53,5.45 12.25,5.65 C13.97,4.48 14.72,4.73 14.72,4.73 C15.21,5.97 14.9,6.88 14.81,7.11 C15.39,7.74 15.73,8.54 15.73,9.53 C15.73,12.99 13.63,13.75 11.62,13.97 C11.94,14.25 12.23,14.8 12.23,15.64 C12.23,16.84 12.22,17.81 12.22,18.11 C12.22,18.35 12.38,18.63 12.84,18.54 C16.42,17.35 19,13.98 19,10 C19,5.03 14.97,1 10,1 L10,1 Z"
+                ></path></svg
+            ></a>
+          </li>
+          <li>
+            <a href="https://x.com/justlovejazz" rel="noopener" aria-label="Twitter"
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+                <path
+                  fill="currentColor"
+                  d="M19,4.74 C18.339,5.029 17.626,5.229 16.881,5.32 C17.644,4.86 18.227,4.139 18.503,3.28 C17.79,3.7 17.001,4.009 16.159,4.17 C15.485,3.45 14.526,3 13.464,3 C11.423,3 9.771,4.66 9.771,6.7 C9.771,6.99 9.804,7.269 9.868,7.539 C6.795,7.38 4.076,5.919 2.254,3.679 C1.936,4.219 1.754,4.86 1.754,5.539 C1.754,6.82 2.405,7.95 3.397,8.61 C2.79,8.589 2.22,8.429 1.723,8.149 L1.723,8.189 C1.723,9.978 2.997,11.478 4.686,11.82 C4.376,11.899 4.049,11.939 3.713,11.939 C3.475,11.939 3.245,11.919 3.018,11.88 C3.49,13.349 4.852,14.419 6.469,14.449 C5.205,15.429 3.612,16.019 1.882,16.019 C1.583,16.019 1.29,16.009 1,15.969 C2.635,17.019 4.576,17.629 6.662,17.629 C13.454,17.629 17.17,12 17.17,7.129 C17.17,6.969 17.166,6.809 17.157,6.649 C17.879,6.129 18.504,5.478 19,4.74"
+                ></path></svg
+            ></a>
+          </li>
+          <li>
+            <a href="mailto:hello@justlovejazz.com" aria-label="Email"
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+                <polyline
+                  fill="none"
+                  stroke="currentColor"
+                  points="1.4,6.5 10,11 18.6,6.5"
+                ></polyline>
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  d="M 1,4 1,16 19,16 19,4 1,4 Z M 18,15 2,15 2,5 18,5 18,15 Z"
+                ></path></svg
+            ></a>
+          </li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">
+          © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio
+        </p>
+      </div>
+    </footer>
+    <script>
+      document.getElementById('year').textContent = String(new Date().getFullYear())
+    </script>
+    <script defer src="/vendor/prism/prism-core.min.js"></script>
+    <script defer src="/vendor/prism/prism-clike.min.js"></script>
+    <script defer src="/vendor/prism/prism-javascript.min.js"></script>
+    <script defer src="/vendor/prism/prism-typescript.min.js"></script>
+    <script defer src="/vendor/prism/prism-glsl.min.js"></script>
+    <script defer src="/vendor/prism/prism-css.min.js"></script>
+    <script defer src="/js/blog.js"></script>
+  </body>
+</html>

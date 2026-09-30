@@ -1,0 +1,89 @@
+<article class="uk-container uk-container-small">
+  <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 20 JUN 2026</p>
+  <h1 class="uk-heading-large uk-margin-remove-top">Glassmorphism on WebGPU</h1>
+  <p class="uk-text-lead uk-margin-medium-top">
+    Real glass — not the CSS backdrop-filter approximation. Transmission, clearcoat, iridescence,
+    and a CubeCamera reflection that updates per frame. Here's how we made it work across WebGPU and
+    WebGL2 with bit-identical output.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <h2>The material</h2>
+  <p>We used a single <code>MeshPhysicalMaterial</code> with these properties:</p>
+  <pre
+    class="uk-pre uk-margin-medium"
+  ><code class="language-typescript">transmission: 0      // solid glass, not see-through
+iridescence: 1.0      // thin-film interference (soap bubble)
+clearcoat: 1.0        // glossy top layer
+roughness: 0.05       // polished
+metalness: 0.0        // dielectric
+envMapIntensity: 2.0  // boost reflections</code></pre>
+  <p>
+    The <code>transmission: 0</code> is deliberate — we wanted reflections and iridescence, not
+    refraction. A <code>CubeCamera</code> renders the content scene into a 256×256 cubemap every
+    frame, used as <code>material.envMap</code>.
+  </p>
+
+  <h2>The cube camera problem</h2>
+  <p>
+    A CubeCamera renders 6 views (one per face). At 256×256, that's 6 draw calls per frame just for
+    reflections. On mid-range hardware, this was 4ms — a quarter of our frame budget.
+  </p>
+  <p>
+    The fix: render the CubeCamera <strong>only when the glass object is visible</strong>. Our
+    on-demand rendering pipeline already gated <code>renderer.update()</code> behind a
+    <code>_needsRender</code> flag. We added a check: if the glass mesh is not in the camera
+    frustum, skip the CubeCamera update entirely. Idle frames drop to 0 draw calls.
+  </p>
+
+  <blockquote class="uk-blockquote uk-margin-medium">
+    <p class="uk-margin-remove">
+      "The cube hidden during CubeCamera render to avoid self-reflection" — this comment in the
+      codebase is the single most important detail. Without it, you get a black cube reflecting
+      itself into infinity.
+    </p>
+  </blockquote>
+
+  <h2>Iridescence parity</h2>
+  <p>
+    The thin-film interference approximation in <code>MeshPhysicalMaterial</code> uses a different
+    code path on WebGPU (TSL) vs WebGL2 (GLSL). The visual difference is sub-perceptual, but we
+    wanted bit-identical output for our parity guarantee.
+  </p>
+  <p>
+    The solution: a portable integer hash for the iridescence noise, identical in both shaders. We
+    could not use <code>sin()</code>-based hashing — precision differs between GLSL and WGSL. The
+    integer hash <code>fract((p3.x+p3.y)*p3.z)</code> with
+    <code>p3 = fract(vec3(p.xyx)*0.1031)</code> is bit-identical across both.
+  </p>
+
+  <h2>Edges with rainbow vertex colors</h2>
+  <p>
+    The glass cube has <code>EdgesGeometry</code> — 12 edges (not 24 from separate planes). Each
+    vertex gets an animated rainbow HSL color. This is the detail that makes the cube feel alive —
+    the edges shimmer independently of the glass body.
+  </p>
+  <p>
+    Vertex colors are set directly on the geometry's <code>color</code> attribute, updated each
+    frame. No uniform overhead, no draw call increase. The edges render in the same pass as the
+    glass body.
+  </p>
+
+  <h2>Result</h2>
+  <p>
+    A glass cube that reflects its surroundings, shimmers with iridescence, and has rainbow edges.
+    It runs at 60fps on WebGPU, 60fps on WebGL2 (same material, different backend), and 0fps when
+    idle (on-demand rendering). The visual identity is the centerpiece of the portfolio — every
+    visitor sees it within 2 seconds of entering.
+  </p>
+
+  <hr class="uk-margin-large" />
+
+  <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+    <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+    <a href="/blog/on-demand-rendering" class="uk-button uk-button-default uk-button-small"
+      >Next: On-demand rendering →</a
+    >
+  </nav>
+</article>

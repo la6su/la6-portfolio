@@ -1,0 +1,4 @@
+interface:
+  display_name: 'UIKit 3 + Page Builder'
+  short_description: 'UIKit 3 contracts, builder pattern and yotheme.pro reference'
+  default_prompt: 'Use $uikit3 to implement and verify this UIKit 3 / page-builder change.'

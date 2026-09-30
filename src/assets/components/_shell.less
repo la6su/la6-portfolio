@@ -1,0 +1,175 @@
+/* SPA shell: canvas stacking and section activation. */
+
+html {
+  font-size: 0.85rem;
+  letter-spacing: var(--jlz-letter-spacing);
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 1rem;
+  }
+}
+
+html,
+body {
+  overflow: hidden;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100vw;
+  height: 100vh;
+  outline: none;
+  pointer-events: none;
+}
+
+#spa-content {
+  position: relative;
+  z-index: 2;
+}
+
+// RouteTransition owns this short SPA handoff. It mirrors neither the splash
+// nor the navigator: two quiet planes close over the old frame, then release
+// the new one along a single accent signal.
+.jlz-route-transition {
+  position: fixed;
+  z-index: 30005;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.jlz-route-transition[data-state='covering'],
+.jlz-route-transition[data-state='revealing'] {
+  visibility: visible;
+}
+
+.jlz-route-transition__panel {
+  display: block;
+  background: color-mix(in srgb, var(--jlz-color-bg) 92%, #000);
+  transition: transform 260ms var(--jlz-ease-cinematic, ease);
+}
+
+.jlz-route-transition__panel--top {
+  transform: translateY(-102%);
+}
+
+.jlz-route-transition__panel--bottom {
+  transform: translateY(102%);
+}
+
+.jlz-route-transition[data-state='covering'] .jlz-route-transition__panel {
+  transform: none;
+}
+
+.jlz-route-transition[data-state='revealing'] .jlz-route-transition__panel {
+  transition-duration: 420ms;
+}
+
+.jlz-route-transition[data-state='revealing'] .jlz-route-transition__panel--top {
+  transform: translateY(-102%);
+}
+
+.jlz-route-transition[data-state='revealing'] .jlz-route-transition__panel--bottom {
+  transform: translateY(102%);
+}
+
+.jlz-route-transition__signal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(36vw, 22rem);
+  height: 1px;
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 1.25rem color-mix(in srgb, var(--jlz-color-accent) 72%, transparent);
+  opacity: 0;
+  transform: translate(-50%, -50%) scaleX(0);
+  transition:
+    opacity 120ms ease,
+    transform 260ms var(--jlz-ease-cinematic, ease);
+}
+
+.jlz-route-transition[data-state='covering'] .jlz-route-transition__signal {
+  opacity: 1;
+  transform: translate(-50%, -50%) scaleX(1);
+}
+
+.jlz-route-transition[data-state='revealing'] .jlz-route-transition__signal {
+  opacity: 0;
+  transform: translate(-50%, -50%) scaleX(0.25);
+  transition-delay: 100ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-route-transition {
+    display: none;
+  }
+}
+
+#spa-content[data-page-view='content'] {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#spa-content section[data-section] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  color: inherit;
+  pointer-events: none;
+  background: transparent;
+}
+
+.section-active,
+.jlz-page-section.section-active {
+  display: flex !important;
+  pointer-events: auto;
+}
+
+#spa-content section[data-section].section-active {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #spa-content section[data-section] {
+    transform: none !important;
+  }
+}
+
+.jlz-page {
+  position: relative;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  color: var(--jlz-color-text);
+  background: transparent;
+}
+
+.jlz-page-section {
+  position: absolute;
+  inset: 0;
+  display: none;
+  min-height: 100dvh;
+  overflow: hidden;
+  align-items: center;
+  background: transparent;
+}

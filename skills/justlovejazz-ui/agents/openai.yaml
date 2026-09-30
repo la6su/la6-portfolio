@@ -1,0 +1,4 @@
+interface:
+  display_name: 'JUSTLOVEJAZZ UI'
+  short_description: 'Review UI, Less, themes, and visual behavior'
+  default_prompt: 'Use $justlovejazz-ui to implement and verify this interface change.'

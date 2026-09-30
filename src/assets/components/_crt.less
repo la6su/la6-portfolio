@@ -1,0 +1,23 @@
+// Shared glass bezel: static, backend-independent and outside the scene graph.
+// Keep the semantic interface sharp; only the perimeter is occluded.
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 30100;
+  pointer-events: none;
+  background: url('/crt-frame.svg') center / 100% 100% no-repeat;
+}
+
+@media (max-width: 640px) {
+  body::after {
+    // Narrow screens retain the curved glass without covering edge controls.
+    background-size: 102% 100%;
+  }
+}
+
+@media print, (forced-colors: active) {
+  body::after {
+    display: none;
+  }
+}

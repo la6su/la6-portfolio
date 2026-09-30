@@ -1,0 +1,444 @@
+// blog.less — CSS for blog.html + blog/*.html (standalone semantic pages).
+//
+// Imports UIkit 3 + JLZ tokens only. No app-specific styles (cursor, dock,
+// 3D shell). Minimal: base document, header, journal index, footer.
+
+// Pair with the home entry's opt-in. Blog stays a separate document while
+// supported browsers animate the navigation without JavaScript orchestration.
+@view-transition {
+  navigation: auto;
+}
+
+@import './_import.less';
+@import './components/_crt.less';
+
+// ── Base ──
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  line-height: 1.6;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(88, 230, 169, 0.05), transparent 34rem),
+    var(--jlz-color-bg);
+  color: var(--jlz-color-text);
+}
+
+// ── Terminal details — the same voice as the SPA chrome ──
+// Intentional duplication: the blog is a standalone document bundle that
+// does not load the app chrome, so this rule is maintained here AND in
+// components/_console-language.less (the app owner).
+::selection {
+  background: var(--jlz-color-signal-phosphor);
+  color: var(--jlz-color-text-inverse);
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jlz-color-border-strong) transparent;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: 3px;
+}
+
+.jlz-blog-brand,
+.jlz-landing-eyebrow {
+  font-variation-settings: 'wght' var(--jlz-blog-weight, 650);
+  transition: font-variation-settings 360ms var(--jlz-ease-out-quint, ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-blog-brand,
+  .jlz-landing-eyebrow {
+    transition: none;
+  }
+}
+
+// ── Skip link (WCAG) ──
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 99999;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.25rem;
+  background: var(--jlz-color-accent);
+  color: var(--jlz-color-text-inverse);
+  border-radius: 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+// ── Reading progress bar (top-fixed, scaleX = scroll %) ──
+.jlz-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  z-index: 101; // above the sticky header (z-index: 100)
+  pointer-events: none;
+}
+.jlz-reading-progress__bar {
+  height: 100%;
+  width: 100%;
+  background: var(--jlz-color-signal-phosphor);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.05s linear; // smooth micro-updates without rAF jitter
+  will-change: transform;
+}
+
+// ── Prism code highlighting (prism-tomorrow theme overrides) ──
+// Align prism code blocks with the JLZ card surface.
+pre[class*='language-'],
+pre:not([class]) {
+  background: rgba(10, 14, 20, 0.72) !important;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 1.5rem 0;
+}
+code[class*='language-'] {
+  font-family: var(--jlz-font-mono);
+  font-size: 0.875rem;
+  color: inherit;
+  background: transparent;
+  padding: 0;
+}
+:not(pre) > code {
+  font-family: var(--jlz-font-mono);
+  font-size: 0.85em;
+  color: var(--jlz-color-accent);
+  background: var(--jlz-color-bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: 0;
+}
+
+// ── Header — transparent navbar (matches app style) ──
+.jlz-blog-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--jlz-color-bg) 84%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--jlz-color-border-strong) 68%, transparent);
+  backdrop-filter: blur(14px) saturate(115%);
+}
+
+.jlz-blog-header .uk-navbar-container {
+  min-height: 3.6rem;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.jlz-blog-brand {
+  font-weight: 800;
+  text-transform: uppercase;
+  font: 700 0.72rem/1 var(--jlz-font-mono);
+  letter-spacing: 0.18em;
+  color: var(--jlz-color-text);
+  text-decoration: none;
+}
+
+.jlz-blog-header .uk-navbar-nav > li > a {
+  min-height: 3.6rem;
+  padding-inline: 0.75rem;
+  font: 600 0.63rem/1 var(--jlz-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-blog-header .uk-navbar-nav > li > a:hover {
+  color: var(--jlz-color-text);
+}
+
+// ── Journal index — editorial entry, not a generic card archive ──
+.jlz-journal {
+  max-width: 92rem;
+  padding-inline: clamp(1rem, 4vw, 4.5rem);
+}
+
+.jlz-journal-hero {
+  max-width: 58rem;
+  padding: clamp(3rem, 8vw, 8rem) 0 clamp(3rem, 7vw, 6.5rem);
+}
+
+.jlz-journal-hero h1,
+.jlz-journal-feature h2,
+.jlz-journal-list__head h2 {
+  font-variation-settings: 'wght' 780;
+  line-height: 0.92;
+}
+
+.jlz-journal-hero__lead {
+  max-width: 34rem;
+  margin: clamp(1.5rem, 3vw, 2.75rem) 0 0;
+  font-size: clamp(1.1rem, 1.7vw, 1.45rem);
+  line-height: 1.35;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-journal-feature {
+  display: grid;
+  grid-template-columns: minmax(2.5rem, 0.35fr) minmax(0, 1.35fr) minmax(15rem, 0.85fr) auto;
+  gap: clamp(1rem, 2vw, 2.5rem);
+  align-items: end;
+  padding: clamp(1.25rem, 3vw, 2.5rem) 0;
+  border-top: 1px solid var(--jlz-color-border-strong);
+  border-bottom: 1px solid var(--jlz-color-border);
+  background: transparent;
+}
+
+.jlz-journal-feature__index,
+.jlz-journal-meta,
+.jlz-journal-note__number,
+.jlz-journal-note__tag {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+}
+
+.jlz-journal-feature__index {
+  color: var(--jlz-color-accent);
+}
+
+.jlz-journal-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-journal-feature h2 {
+  max-width: 30rem;
+  margin: 0;
+  font-size: clamp(@jlz-type-step-3, 5vw, @jlz-type-step-5); // φ steps 3–5
+}
+
+.jlz-journal-feature h2 a,
+.jlz-journal-note {
+  color: inherit;
+  text-decoration: none;
+}
+
+.jlz-journal-feature__summary {
+  max-width: 22rem;
+  margin: 0;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-journal-arrow {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: 0;
+  color: inherit;
+  font-size: 1.3rem;
+  text-decoration: none;
+  transition:
+    transform 260ms var(--jlz-ease-out-quint, ease-out),
+    background-color 260ms ease;
+}
+
+.jlz-journal-feature:hover .jlz-journal-arrow,
+.jlz-journal-feature:focus-within .jlz-journal-arrow {
+  transform: rotate(45deg);
+  background: var(--jlz-color-accent);
+  color: #050507;
+}
+
+.jlz-journal-list {
+  padding: clamp(3.5rem, 8vw, 7rem) 0;
+}
+
+.jlz-journal-list__head {
+  max-width: 35rem;
+  margin-bottom: clamp(2rem, 5vw, 4rem);
+}
+
+.jlz-journal-list__head h2 {
+  margin: 0;
+  font-size: clamp(@jlz-type-step-3, 4vw, @jlz-type-step-4); // φ steps 3–4
+}
+
+.jlz-journal-note {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) minmax(7rem, 0.28fr) 1.5rem;
+  gap: 1rem;
+  align-items: center;
+  min-height: 5rem;
+  border-top: 1px solid var(--jlz-color-border);
+  transition:
+    padding 260ms var(--jlz-ease-out-quint, ease-out),
+    color 260ms ease;
+}
+
+.jlz-journal-note:last-child {
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-journal-note__title {
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  font-variation-settings: 'wght' 650;
+}
+
+.jlz-journal-note__tag {
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-journal-note__arrow {
+  justify-self: end;
+  transition: transform 260ms var(--jlz-ease-out-quint, ease-out);
+}
+
+.jlz-journal-note:hover,
+.jlz-journal-note:focus-visible {
+  padding-left: 0.8rem;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-journal-note:hover .jlz-journal-note__arrow,
+.jlz-journal-note:focus-visible .jlz-journal-note__arrow {
+  transform: translate(0.3rem, -0.3rem);
+}
+
+@media (max-width: 767px) {
+  .jlz-journal-feature {
+    grid-template-columns: 1fr auto;
+  }
+
+  .jlz-journal-feature__index,
+  .jlz-journal-feature__summary {
+    display: none;
+  }
+
+  .jlz-journal-note {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+  }
+
+  .jlz-journal-note__tag {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-journal-arrow,
+  .jlz-journal-note,
+  .jlz-journal-note__arrow {
+    transition: none;
+  }
+}
+
+// ── Footer — minimal ──
+.jlz-blog-footer {
+  border-top: 1px solid var(--jlz-color-border);
+  padding: 2rem max(1rem, env(safe-area-inset-right)) 2rem max(1rem, env(safe-area-inset-left));
+  text-align: center;
+}
+
+.jlz-blog-social {
+  display: flex;
+  justify-content: center;
+  gap: var(--jlz-space-4);
+  padding: 0;
+  margin: 0 0 var(--jlz-space-2);
+  list-style: none;
+}
+
+.jlz-blog-social a {
+  display: inline-flex;
+  padding: 0.5rem;
+  color: var(--jlz-color-text-muted);
+  transition: color 260ms var(--jlz-ease-out-quint, ease-out);
+}
+
+.jlz-blog-social a:hover {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+// ── Article reading field ──
+main.uk-section > article.uk-container-small {
+  max-width: 48rem;
+  padding-top: clamp(3.5rem, 9vw, 7rem);
+  padding-bottom: clamp(4rem, 10vw, 8rem);
+}
+
+main.uk-section > article.uk-container-small > h1 {
+  max-width: 42rem;
+  font-size: clamp(2.6rem, 7vw, 5.6rem);
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+}
+
+main.uk-section > article.uk-container-small > h2 {
+  margin-top: clamp(3rem, 7vw, 5rem);
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--jlz-color-border);
+  font: 650 clamp(1.45rem, 3vw, 2.2rem)/1.05 var(--jlz-font-body);
+}
+
+main.uk-section > article.uk-container-small > p,
+main.uk-section > article.uk-container-small > ol,
+main.uk-section > article.uk-container-small > ul,
+main.uk-section > article.uk-container-small > blockquote,
+main.uk-section > article.uk-container-small > table {
+  max-width: 42rem;
+}
+
+main.uk-section > article.uk-container-small > p {
+  color: color-mix(in srgb, var(--jlz-color-text) 84%, transparent);
+}
+
+main.uk-section > article.uk-container-small > hr {
+  border-color: var(--jlz-color-border-strong);
+}
+
+@media (max-width: 639px) {
+  .jlz-blog-header .uk-navbar-nav > li > a {
+    padding-inline: 0.4rem;
+    font-size: 0.57rem;
+  }
+
+  .jlz-journal {
+    padding-inline: 1rem;
+  }
+
+  .jlz-journal-hero {
+    padding-top: 3.5rem;
+  }
+
+  main.uk-section > article.uk-container-small {
+    padding-inline: 1rem;
+  }
+}
+
+.jlz-blog-footer a {
+  color: var(--jlz-color-text-muted);
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-blog-footer a:hover {
+  color: var(--jlz-color-accent);
+  text-decoration: none;
+}

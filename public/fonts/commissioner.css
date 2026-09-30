@@ -1,0 +1,10 @@
+/* Commissioner Variable — Cyrillic/Latin, SIL OFL 1.1.
+ * Axes: weight 100–900, flair 0–100, volume 0–100, slant -12–0.
+ */
+@font-face {
+  font-family: 'Commissioner';
+  font-style: oblique -12deg 0deg;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/commissioner-variable.ttf') format('truetype-variations');
+}

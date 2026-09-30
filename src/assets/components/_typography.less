@@ -1,0 +1,62 @@
+/* Commissioner carries display hierarchy; monospace is reserved for metadata. */
+
+.uk-light h1,
+.uk-light h2,
+.uk-light h3,
+.uk-light h4,
+.uk-light h5,
+.uk-light h6,
+.uk-light .uk-heading-small,
+.uk-light .uk-heading-medium,
+.uk-light .uk-heading-large,
+.uk-light .uk-heading-xlarge,
+.uk-light .uk-heading-2xlarge {
+  color: var(--jlz-color-text);
+}
+
+.studio-title,
+.jlz-menu-nav__label {
+  font-family: var(--jlz-font-display), monospace;
+  font-optical-sizing: auto;
+  transition: font-weight var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.uk-heading-medium.studio-title {
+  font-weight: 500;
+  line-height: 0.95;
+}
+
+.uk-heading-large.studio-title {
+  max-inline-size: min(100%, 16ch);
+  font-weight: 600;
+  line-height: 0.92;
+}
+
+.uk-heading-xlarge.studio-title {
+  max-inline-size: min(100%, 14ch);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.88;
+}
+
+.studio-title {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+[data-story-state] .studio-title {
+  font-weight: 400;
+}
+
+[data-story-state='active'] .studio-title {
+  font-weight: 700;
+}
+
+.jlz-menu-nav__label {
+  font-weight: 500;
+}
+
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__label,
+.jlz-menu-nav__toggle:focus-visible .jlz-menu-nav__label {
+  font-weight: 700;
+}

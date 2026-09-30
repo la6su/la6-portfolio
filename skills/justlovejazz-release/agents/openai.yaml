@@ -1,0 +1,4 @@
+interface:
+  display_name: 'JUSTLOVEJAZZ Release'
+  short_description: 'Verify and publish a scoped project change'
+  default_prompt: 'Use $justlovejazz-release to verify and publish the current scoped change.'

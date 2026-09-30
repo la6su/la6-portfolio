@@ -1,0 +1,80 @@
+/* Pointer-only cursor layer. Cursor.ts owns runtime updates.
+   The inner dot is a phosphor block caret — a terminal caret, not a dot. */
+
+.custom-cursor-inner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 10px;
+  background-color: var(--jlz-color-signal-phosphor);
+  border-radius: 0;
+  pointer-events: none;
+  z-index: 100000;
+  will-change: transform;
+  transition:
+    background-color 0.15s ease,
+    width 0.15s ease,
+    height 0.15s ease;
+}
+
+.custom-cursor-inner.is-hover {
+  width: 4px;
+  height: 14px;
+  background-color: var(--jlz-color-accent);
+}
+
+.custom-cursor-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 100000;
+  will-change: transform;
+}
+
+@media (pointer: coarse) {
+  .custom-cursor-inner,
+  .custom-cursor-canvas {
+    display: none !important;
+  }
+}
+
+html.jlz-force-cursor .custom-cursor-inner,
+html.jlz-force-cursor .custom-cursor-canvas {
+  display: block !important;
+}
+
+html.jlz-force-cursor body,
+html.jlz-force-cursor a,
+html.jlz-force-cursor button,
+html.jlz-force-cursor .interactive {
+  cursor: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body,
+  a,
+  button,
+  .interactive {
+    cursor: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor-inner,
+  .custom-cursor-canvas {
+    transition: none;
+  }
+}
+
+@media (max-width: 500px) {
+  body,
+  a,
+  button,
+  .interactive {
+    cursor: auto !important;
+  }
+}

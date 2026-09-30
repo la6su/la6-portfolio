@@ -1,0 +1,47 @@
+{
+  "name": "JUSTLOVEJAZZ — Web Design Studio",
+  "short_name": "JUSTLOVEJAZZ",
+  "description": "Studio-grade interactive 3D portfolio. WebGPU/WebGL cinematic experience built with Three.js TSL.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "lang": "en",
+  "categories": ["design", "portfolio", "3d", "webgpu"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Works",
+      "short_name": "Works",
+      "url": "/works",
+      "description": "Selected projects and case studies"
+    },
+    {
+      "name": "Lab",
+      "short_name": "Lab",
+      "url": "/lab",
+      "description": "Shader and generative experiments"
+    },
+    {
+      "name": "Contact",
+      "short_name": "Contact",
+      "url": "/contact",
+      "description": "Start a project"
+    }
+  ]
+}

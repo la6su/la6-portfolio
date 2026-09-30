@@ -1,0 +1,372 @@
+/*
+ * src/assets/main.less — JLZ app layer on top of Uikit 3.
+ *
+ * Goal: keep Uikit as the foundation, then add only the project-specific
+ * route composition, scene hosting and bespoke overlays that Uikit does not
+ * provide out of the box.
+ *
+ * Ownership split (one authority per surface):
+ *   - console chrome (topbar, control banks, menu sheet, status island)
+ *     → components/_console-language.less (imported last, final voice)
+ *   - fullscreen project overlay → components/_fullscreen.less
+ *   - works page composition    → components/_works-rooms.less
+ *   - this file                 → assembly + route/scroll composition
+ */
+
+@import './_import.less';
+@import './_motion.less';
+@import './components/_cursor.less';
+@import './components/_content.less';
+@import './components/_typography.less';
+@import './components/_shell.less';
+@import './components/_crt.less';
+@import './components/_navigation-controls.less';
+@import './components/_builder-page.less';
+
+// Fullscreen project overlay — one surface, one owner.
+@import './components/_fullscreen.less';
+
+// Showreel theater — trigger chip + signal console chrome (one instrument).
+@import './components/_showreel.less';
+
+/* ------------------------------------------------------------------
+   Works page — editorial project compositions
+   Uikit owns the responsive grid and cover/overlay behavior. These rules
+   only define the page-specific composition, depth and reveal language.
+   ------------------------------------------------------------------ */
+
+@import './components/_works-rooms.less';
+
+@media (max-width: 768px) {
+  html {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  body {
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  canvas {
+    touch-action: none;
+  }
+}
+
+// Phase 7: the persistent Tres scene host — the single canvas, below the
+// semantic route DOM (#spa-content z-index 2) exactly like the legacy
+// fixed-position canvas (z-index 1). Tres sizes the canvas to the wrapper.
+.jlz-scene-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+// Lab camera exploration (ADR 0005's first Cientos adoption). SceneHost
+// publishes `body[data-lab-camera='on']` only on the Lab route with a fine
+// pointer and no reduced-motion preference. The wrapper + canvas then take
+// pointer input, and the experiment frames pass their empty middle through
+// to the canvas: drag-to-orbit around the gamepad, while interactive
+// descendants (links, buttons) and the menu/footer sheets keep working.
+// Touch devices never publish the attribute — sections stay solid, so
+// page scroll keeps the canvas' touch-action: none out of the way.
+body[data-lab-camera='on'] .jlz-scene-host,
+body[data-lab-camera='on'] .jlz-scene-host canvas {
+  pointer-events: auto;
+}
+
+body[data-lab-camera='on']
+  #spa-content
+  > .jlz-page
+  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+  pointer-events: none;
+
+  a,
+  button {
+    pointer-events: auto;
+  }
+}
+
+.jlz-scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+// Vue-owned structural route roots: home is marked by its semantic page-view
+// root, while content pages use the direct .jlz-page child. Route state is
+// not a CSS dependency here.
+#spa-content[data-page-view='home'],
+#spa-content > .jlz-page {
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  flex-flow: column nowrap;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+#spa-content[data-page-view='home']::-webkit-scrollbar,
+#spa-content > .jlz-page::-webkit-scrollbar {
+  display: none;
+}
+
+#spa-content[data-page-view='home']
+  > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]),
+#spa-content > .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+  position: relative;
+  inset: auto;
+  display: flex !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  flex: 0 0 100dvh;
+  overflow: clip;
+  pointer-events: auto;
+  background: transparent;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+#spa-content > .jlz-page > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+  color: var(--jlz-color-text);
+  background: transparent;
+}
+
+#spa-content[data-page-view='home']
+  > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container:not(.jlz-works-stage),
+#spa-content
+  > .jlz-page
+  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container:not(.jlz-works-stage) {
+  width: min(100%, 96rem);
+  padding: clamp(6.2rem, 10vh, 8rem) clamp(1.25rem, 5vw, 5rem) clamp(6.5rem, 11vh, 8.5rem);
+}
+
+[data-story-state] .jlz-section-top,
+[data-story-state] .jlz-section-bottom {
+  will-change: transform, opacity;
+}
+
+[data-story-state] .jlz-section-top {
+  width: min(100%, 52rem);
+  align-items: flex-start !important;
+  text-align: left !important;
+  transform: translate3d(var(--jlz-story-shift, 0), 0, 0);
+  opacity: var(--jlz-story-title-opacity, 1);
+}
+
+[data-story-state] .jlz-section-bottom {
+  width: min(100%, 38rem);
+  align-self: flex-end;
+  padding: 0;
+  border-top: 0;
+  transform: translate3d(var(--jlz-story-shift-opposite, 0), 0, 0);
+  opacity: var(--jlz-story-panel-opacity, 1);
+}
+
+[data-section='about'] .jlz-section-top,
+[data-section='contact'] .jlz-section-top,
+[data-page-section$='-02'] .jlz-section-top,
+[data-page-section$='-04'] .jlz-section-top {
+  margin-left: auto;
+  align-items: flex-end !important;
+  text-align: right !important;
+}
+
+[data-section='about'] .jlz-section-bottom,
+[data-section='contact'] .jlz-section-bottom,
+[data-page-section$='-02'] .jlz-section-bottom,
+[data-page-section$='-04'] .jlz-section-bottom {
+  align-self: flex-start;
+  border-top-color: var(--jlz-color-fluid-border);
+}
+
+#section-works > .uk-container {
+  pointer-events: none;
+}
+
+// Contact footer sheet — the route-owned cinematic sheet. Its persistent
+// chrome neighbors (menu, status island) live in _console-language.less.
+#spa-content > [data-contact-footer],
+.jlz-page > [data-contact-footer] {
+  position: fixed !important;
+  inset: auto 0 0 !important;
+  z-index: 10011 !important;
+  display: flex !important;
+  width: 100vw;
+  height: min(78dvh, 52rem) !important;
+  min-height: 30rem;
+  overflow: hidden;
+  visibility: hidden;
+  color: var(--jlz-color-text);
+  pointer-events: none !important;
+  border: 1px solid var(--jlz-color-fluid-border);
+  border-bottom: 0;
+  border-radius: 0;
+  background: var(--jlz-color-bg-elevated);
+  box-shadow: none;
+  transform: translate3d(0, 106%, 0) scale(0.985);
+  .jlz-cinematic-sheet();
+}
+
+body[data-cinematic-sheet='footer'] #spa-content > [data-contact-footer],
+body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
+  visibility: visible;
+  pointer-events: auto !important;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s;
+}
+
+[data-contact-footer] > .uk-container {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 96rem);
+  padding: clamp(3.2rem, 8vh, 6rem) clamp(1.3rem, 6vw, 6rem) clamp(2rem, 5vh, 4rem);
+}
+
+.jlz-contact-footer__intro {
+  width: min(100%, 72rem);
+}
+
+.jlz-contact-footer__intro .studio-title {
+  max-width: 13ch;
+  line-height: 0.88;
+}
+
+.jlz-contact-footer__kicker {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-contact-footer__actions {
+  gap: 1rem;
+}
+
+.jlz-contact-footer__email {
+  color: inherit;
+  font-size: 0.74rem;
+}
+
+// While a cinematic sheet is open, dim the route containers behind it.
+body[data-cinematic-sheet]
+  #spa-content
+  > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container,
+body[data-cinematic-sheet]
+  #spa-content
+  > .jlz-page
+  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.94);
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-cinematic) var(--jlz-ease-exit);
+}
+
+@media (max-width: 639px) {
+  #spa-content[data-page-view='home']
+    > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
+    > .uk-container,
+  #spa-content
+    > .jlz-page
+    > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
+    > .uk-container:not(.jlz-works-stage) {
+    padding: 5.4rem 1.15rem 9rem;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-story-state] .jlz-section-bottom {
+    width: 100%;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-section='about'] .jlz-section-top,
+  [data-section='contact'] .jlz-section-top {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  [data-story-state] .jlz-section-bottom,
+  [data-section='about'] .jlz-section-bottom,
+  [data-section='contact'] .jlz-section-bottom {
+    align-self: center;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .jlz-service-desc {
+    max-width: none;
+    gap: 0.28rem;
+  }
+
+  .jlz-service-desc .uk-text-meta {
+    color: var(--jlz-color-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.42;
+  }
+
+  #spa-content > [data-contact-footer],
+  .jlz-page > [data-contact-footer] {
+    height: min(88dvh, 48rem) !important;
+    min-height: 33rem;
+    border-radius: 0;
+    background: var(--jlz-color-bg-elevated);
+  }
+
+  [data-contact-footer] > .uk-container {
+    padding: 3.2rem 1.15rem 1.2rem;
+  }
+
+  .jlz-contact-footer__intro .studio-title {
+    max-width: 11ch;
+    font-size: clamp(@jlz-type-step-3, 13vw, @jlz-type-step-4); // φ steps 3–4
+  }
+
+  .jlz-contact-footer__intro .uk-text-lead {
+    font-size: 1rem;
+  }
+
+  .jlz-contact-footer__actions {
+    flex-wrap: wrap;
+  }
+
+  .jlz-telegram-cta {
+    min-width: 100%;
+    min-height: 4.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #spa-content[data-page-view='home'],
+  #spa-content > .jlz-page {
+    scroll-behavior: auto;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-story-state] .jlz-section-bottom,
+  #spa-content > .jlz-menu-overlay,
+  .jlz-page > .jlz-menu-overlay,
+  #spa-content > [data-contact-footer],
+  .jlz-page > [data-contact-footer],
+  .jlz-storyline,
+  .jlz-contact-launcher {
+    transition-duration: 0ms !important;
+  }
+}
+
+// The shared shell and Menu visual language is intentionally last: legacy
+// route composition remains above while this owner resolves the persistent UI.
+@import './components/_console-language.less';

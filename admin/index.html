@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>JUSTLOVEJAZZ Builder</title>
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+  </head>
+  <body>
+    <!-- Phase 4: the admin shell is a Vue SFC (src/admin/AdminApp.vue); the
+         mount point stays #jlz-admin and the SFC template keeps every id and
+         class `admin/admin.less` anchors on. -->
+    <div id="jlz-admin"></div>
+    <noscript>This builder requires JavaScript.</noscript>
+    <script type="module" src="/admin/main.ts"></script>
+  </body>
+</html>
