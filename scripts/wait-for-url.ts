@@ -16,7 +16,7 @@ while (Date.now() < deadline) {
   } catch (error) {
     lastError = error instanceof Error ? error.message : String(error)
   }
-  await Bun.sleep(250)
+  await new Promise((resolve) => setTimeout(resolve, 250))
 }
 
 throw new Error(`Preview did not become ready at ${url} within ${timeoutMs}ms: ${lastError}`)

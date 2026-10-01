@@ -14,11 +14,12 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { SourceMapConsumer, type RawSourceMap } from 'source-map-js'
 import { sharedThreeAsset } from './build-assets'
 
-const root = resolve(import.meta.dir, '..')
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const tempDir = resolve('/tmp', 'jlz-bundle-breakdown-' + process.pid)
 const assetsDir = join(tempDir, 'assets')
 const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -60,7 +61,8 @@ function profileChunk(jsFile: string): {
     const line = lines[lineNumber - 1] ?? ''
     const lineLength = line.length
     points.forEach((point, index) => {
-      const end = points[index + 1] ? points[index + 1].column : lineLength
+      const next = points[index + 1]
+      const end = next?.column ?? lineLength
       sourceBytes.set(
         point.source,
         (sourceBytes.get(point.source) || 0) + Buffer.byteLength(line.slice(point.column, end)),

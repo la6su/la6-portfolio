@@ -261,6 +261,13 @@ the single documented type-check command.
 The ESLint ignore list also excluded every production/build script; removed
 that blind spot and configured Node/Bun globals for those files. Lint now
 covers the generators and release checks that run as part of the build.
+The executable TypeScript scripts were also outside `tsconfig.json`. Replaced
+their three Bun-only helpers with Node child-process/path/timer APIs and added
+`scripts/**/*.ts` to the existing Vue-aware type-check graph; this adds no
+runtime dependency and keeps Bun as the package/script runner. The expanded
+check found and fixed an unchecked source-map array access in
+`bundle-breakdown.ts`. Vue type-check, lint, all 77 unit tests, stdlib checks,
+and `git diff --check` pass with the expanded coverage.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource

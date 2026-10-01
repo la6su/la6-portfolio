@@ -27,6 +27,6 @@
     "noUncheckedIndexedAccess": true
   },
 
-  "include": ["src", "admin", "vite.config.ts"],
+  "include": ["src", "admin", "scripts/**/*.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
