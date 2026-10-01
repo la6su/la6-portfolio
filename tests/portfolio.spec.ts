@@ -743,9 +743,13 @@ test("Renderer recovers from WebGL context loss on the persistent canvas", async
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
+    // The induced loss is expected to make Three report its WebGL device lost.
     if (
       message.type() === "error" &&
-      !message.text().startsWith("[Renderer] WebGPU device lost")
+      !message.text().startsWith("[Renderer] WebGPU device lost") &&
+      !message.text().startsWith(
+        "THREE.THREE.WebGPURenderer: WebGL Device Lost:",
+      )
     ) {
       errors.push(message.text());
     }
