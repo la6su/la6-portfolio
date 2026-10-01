@@ -232,8 +232,7 @@ export class ContactCyprusStage {
 
   /**
    * The target (not fade-progress) active state — set immediately by
-   * `setActive`. Phase 8 slice 8: the frame pass's cube-visibility gate reads
-   * this off the stage (via `bakuVisibleOnRoute`) instead of a separate flag.
+   * `setActive`; the route visibility gate reads this stage state directly.
    */
   get isActive(): boolean {
     return !this._disposed && this._active

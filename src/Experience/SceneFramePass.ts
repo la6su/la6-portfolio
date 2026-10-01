@@ -39,9 +39,7 @@ export class SceneFramePass {
 
   constructor(private readonly _ctx: SceneFramePassContext) {}
 
-  /** Set camera reference for DrawTrail (unproject to world) and the
-   *  ServicesStage head-tracking. Phase 8 slices 7–8: the lazy stage
-   *  cameras are forwarded directly by Experience (it owns the stages). */
+  /** Set the camera used by DrawTrail and ServicesStage head-tracking. */
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
   }

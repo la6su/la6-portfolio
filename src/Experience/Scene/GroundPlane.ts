@@ -1,16 +1,9 @@
-// src/Experience/Scene/GroundPlane.ts — Phase 8 slice 1: the ground owner.
+// Controller for the Vue-owned declarative ground-plane node. Experience
+// updates its per-section material state and disposes controller state; the
+// Vue component retains ownership of the scene node.
 //
-// Migrates the legacy `World.groundPlane` member and the World ground state
-// (`syncGroundTheme` and the `updateTransform` theme-override/config-lerp
-// write) into an explicit controller around the Vue-owned scene node.
-//
-// `Experience` creates this controller around the Vue-owned declarative node,
-// drives its per-section material state, and releases only controller state on
-// destroy. The node itself remains owned by `GroundPlane.vue`.
-//
-// The ground plane follows the active section config: section index 4
-// is the only section where it is visible — the per-frame gate stays on the
-// Experience frame path, as before.
+// The plane follows the active section config and is visible only at section
+// index 4.
 
 import * as THREE from 'three'
 import type { PhaseConfig } from '../../core/WorldConfig'

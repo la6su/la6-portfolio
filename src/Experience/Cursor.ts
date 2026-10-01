@@ -35,7 +35,6 @@ function noise2D(x: number, y: number): number {
   return (n - Math.floor(n)) * 2 - 1
 }
 
-// Phase 2: canvas 100→120 for larger cursor (baseRadius 28 + targetRadius 44)
 const CANVAS_SIZE = 120
 const CANVAS_HALF = CANVAS_SIZE / 2
 const SMOOTH_SEGMENTS = 16
@@ -93,7 +92,7 @@ export class Cursor {
     return this._themeColors
   }
 
-  // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
+  // Spring physics gives the outer cursor its smoothed wobble.
   // Outer circle lags behind mouse with spring-damper, giving organic wobble
   // Stiffness lowered (0.25→0.18) + damping raised (0.55→0.7) for smoother motion
   private velX = 0
@@ -110,10 +109,9 @@ export class Cursor {
   private isStuck = false
   private stuckX = 0
   private stuckY = 0
-  // Phase 6: spring physics replaces instant magnetic snap — cursor eases
+  // Magnetic targets ease into place through the cursor spring.
   // toward element center with spring-damper (organic wobble, not instant jump)
-  // Phase 2: larger cursor (baseRadius 20→28, targetRadius 36→44)
-  private currentRadius = 28
+    private currentRadius = 28
   private readonly baseRadius = 28
   private readonly targetRadius = 44
   private readonly noiseScale = 150
@@ -144,7 +142,7 @@ export class Cursor {
   private fillTarget = 0
 
   /**
-   * Loop-wake port (Phase 7). The single renderer-loop driver runs frames
+   * Loop-wake signal. The single renderer-loop driver runs frames
    * only while the scene or the cursor is unsettled; the cursor's own
    * pointer/hover/click handlers report activity through this callback so a
    * pointer move can wake a settled loop. Wired by the Experience bootstrap.
@@ -153,7 +151,7 @@ export class Cursor {
 
   /**
    * True when the spring + radius/bump/fill lerps have converged on their
-   * goals (nothing needs another frame for the cursor). Read by the Phase 7
+   * goals (nothing needs another frame for the cursor). Read by the
    * scheduler's settle decision after each frame.
    */
   get isSettled(): boolean {
@@ -225,7 +223,7 @@ export class Cursor {
         // mouseover re-fires for the parent (isStuck briefly goes false→true).
         return
       }
-      // Phase 2: check for custom cursor state (data-cursor attribute)
+      // Check for a custom cursor state (data-cursor attribute).
       const stateEl = target.closest('[data-cursor]') as HTMLElement | null
       this.cursorState = stateEl?.dataset.cursor ?? null
       // Fullscreen overlay buttons opt out of magnetic snap — the overlay is
@@ -314,7 +312,7 @@ export class Cursor {
       this._lastInnerY = this.innerY
     }
 
-    // Phase 6: spring physics for outer circle (skaltenegger wobble pattern)
+    // Spring-damper motion drives the outer circle.
     // Goal: magnetic element center (if stuck) or mouse position (if free)
     const goalX = this.isStuck ? this.stuckX : this.targetX
     const goalY = this.isStuck ? this.stuckY : this.targetY
@@ -376,7 +374,7 @@ export class Cursor {
     const cy = CANVAS_HALF
     const radius = this.currentRadius * this.bumpScale
 
-    // Phase 2: custom cursor states (data-cursor attribute)
+    // Apply custom cursor states (data-cursor attribute).
     // Draw different shapes based on cursorState
     if (this.cursorState === 'play') {
       this.drawPlayIcon(ctx, cx, cy, radius)

@@ -36,7 +36,7 @@ export interface ExperienceUIHost {
   /** Raise render demand + wake the single loop driver (typed reason). */
   raise: (reason?: FrameReason) => void
   reducedMotion: () => boolean
-  /** Phase 8 slice 6: the Experience-owned BakuCarousel init (idempotent). */
+  /** Initialize the Experience-owned carousel once before its first use. */
   ensureCarouselInitialized: () => Promise<void>
   /** The one owner of route stages, read only after Experience initializes. */
   stages: () => StageRegistry
@@ -82,7 +82,7 @@ export class ExperienceUI {
     // The section count is the worldSlots contract (single source of the
     // six-slot model), not a literal.
     this.storyNav = new CinematicNav(WORLD_SLOT_COUNT, this.host.page)
-    // Phase 7: native scroll is a typed loop wake source.
+    // Native scroll wakes the shared render loop.
     this.storyNav.onActivity = () => {
       this.host.raise('nav')
     }
@@ -229,7 +229,7 @@ export class ExperienceUI {
       }),
     )
 
-    // Phase 5: Wobble pulse on card click (work cards + carousel)
+    // Wobble pulse on card click (work cards + carousel).
     this._unsubs.push(
       eventBus.on('jlz:wobble-pulse', () => {
         this.host.coordinator().baku?.triggerWobblePulse()

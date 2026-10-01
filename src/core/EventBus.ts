@@ -92,10 +92,7 @@ class EventBus {
     this.listeners.get(event)?.delete(cb as (payload: unknown) => void)
   }
 
-  /** Emit an event to all subscribers.
-   *  Phase 10: the window dispatchEvent bridge is removed — every consumer
-   *  subscribes through this bus (the raw `jlz:*` window listeners were
-   *  migrated to typed ports in the Phase 10 slice). */
+  /** Emit a typed event to all subscribers. */
   emit<K extends keyof AppEvents>(
     event: K,
     ...args: AppEvents[K] extends void ? [] : [AppEvents[K]]

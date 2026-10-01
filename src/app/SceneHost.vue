@@ -150,7 +150,8 @@ const envSphereNode = envSphereSlot.value
 /** Template-facing alias: the controls need the resolved cinematic camera. */
 const cameraNode = cameraSlot.value
 
-// ── Lab camera exploration (ADR 0005's first Cientos adoption) ──
+// Lab camera exploration is enabled only for fine-pointer users who can
+// scroll the semantic page without being trapped by the canvas.
 // The Lab route is where interactive camera exploration belongs: the
 // declarative `<CameraControls>` (ecosystem camera-controls under the hood)
 // orbits the gamepad while the cinematic writer yields. The decision lives

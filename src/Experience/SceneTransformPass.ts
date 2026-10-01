@@ -172,9 +172,6 @@ export class SceneTransformPass {
       // Junni changeSection() pattern: lights + fog + env sphere driven by section data
       const activeCfg = configs[activeIndex]
       if (activeCfg) {
-        // Phase 8 slice 1: section-arrival light targets moved to Experience
-        // (same frame, same config — only the lerp start moves a few lines
-        // later in the frame path).
         // Inline WorldAtmosphere.setFog — fog exists from init(), reuse instance.
         const existingFog = this._ctx.scene.fog
         if (existingFog instanceof THREE.FogExp2) {
