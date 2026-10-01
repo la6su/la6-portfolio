@@ -28,13 +28,12 @@ import type { ManifestoInkStage } from './World/ManifestoInkStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 
-/** The world facts the contracts read at create/configure time. Getters, not
- *  values: every lazy stage can appear on any route and must observe the
- *  live route, camera, polarity and reduced-motion state at its own init. */
+/** Live policy is read at create/configure time; stable Tres ports and camera
+ *  are passed directly because their identity does not change across routes. */
 interface StageRegistryContext {
   currentPage: () => PageId
-  camera: () => { instance: Camera }
-  host: () => SceneStagePorts
+  camera: Camera
+  host: SceneStagePorts
   /** The effective text polarity (theme-listener cache on Experience). */
   isContactLight: () => boolean
   /** The target Cyprus-active state (the Agros frame replaces the cube). */
@@ -89,26 +88,26 @@ export class StageRegistry {
         () => import('./World/WorksPlaneStage'),
         ({ WorksPlaneStage }) => WorksPlaneStage,
       ),
-      attach: (stage) => this._ctx.host().works.mountStage(stage),
+      attach: (stage) => this._ctx.host.works.mountStage(stage),
       load: async (stage, isCurrent) => {
         await stage.init()
         if (!isCurrent()) return
         await stage.waitForCards()
         if (!isCurrent()) return
         const installation = stage.installationOwner
-        if (installation) await this._ctx.host().works.mountInstallation(stage, installation)
+        if (installation) await this._ctx.host.works.mountInstallation(stage, installation)
       },
       configure: (stage) => {
         stage.setActive(this._ctx.currentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this._ctx.camera().instance)
+        stage.setCamera(this._ctx.camera)
       },
       release: async (stage) => {
         const installation = stage.installationOwner
         if (installation) {
-          await this._ctx.host().works.unmountInstallation(stage, installation)
+          await this._ctx.host.works.unmountInstallation(stage, installation)
         }
-        await this._ctx.host().works.unmountStage(stage)
+        await this._ctx.host.works.unmountStage(stage)
         stage.dispose()
       },
     }
@@ -135,13 +134,13 @@ export class StageRegistry {
         () => import('./World/ContactTypographyStage'),
         ({ ContactTypographyStage }) => ContactTypographyStage,
       ),
-      attach: (stage) => this._ctx.host().contactTypography.mount(stage),
+      attach: (stage) => this._ctx.host.contactTypography.mount(stage),
       configure: (stage) => {
         stage.setActive(this._ctx.currentPage() === 'contact')
         stage.setTheme(this._ctx.isContactLight())
       },
       release: async (stage) => {
-        await this._ctx.host().contactTypography.unmount(stage)
+        await this._ctx.host.contactTypography.unmount(stage)
         // The Vue owner removes its declared root; the controller disposes
         // only the dynamically generated glyph geometry and shared material.
         stage.dispose()
@@ -167,14 +166,14 @@ export class StageRegistry {
         () => import('./World/ContactHaloStage'),
         ({ ContactHaloStage }) => ContactHaloStage,
       ),
-      attach: (stage) => this._ctx.host().contactHalo.mount(stage),
+      attach: (stage) => this._ctx.host.contactHalo.mount(stage),
       configure: (stage) => {
         stage.setTheme(this._ctx.isContactLight())
         stage.setReducedMotion(this._ctx.reducedMotion())
         stage.setActive(this._ctx.currentPage() === 'contact')
       },
       release: async (stage) => {
-        await this._ctx.host().contactHalo.unmount(stage)
+        await this._ctx.host.contactHalo.unmount(stage)
         // Vue removes the declared root/mesh; dispose retires the TSL
         // material and this owner's shared geometry lease.
         stage.dispose()
@@ -201,7 +200,7 @@ export class StageRegistry {
         () => import('./World/ManifestoInkStage'),
         ({ ManifestoInkStage }) => ManifestoInkStage,
       ),
-      attach: (stage) => this._ctx.host().manifestoInk.mount(stage),
+      attach: (stage) => this._ctx.host.manifestoInk.mount(stage),
       configure: (stage) => {
         // The effective-polarity cache is refreshed on every theme event
         // regardless of route, so a lazy stage cannot miss the current ink.
@@ -210,7 +209,7 @@ export class StageRegistry {
         stage.setActive(this._ctx.currentPage() === 'manifesto')
       },
       release: async (stage) => {
-        await this._ctx.host().manifestoInk.unmount(stage)
+        await this._ctx.host.manifestoInk.unmount(stage)
         // Vue removes the declared root/mesh; dispose retires the TSL
         // material and this owner's shared geometry lease.
         stage.dispose()
@@ -236,16 +235,16 @@ export class StageRegistry {
         () => import('./World/ContactCyprusStage'),
         ({ ContactCyprusStage }) => ContactCyprusStage,
       ),
-      attach: (stage) => this._ctx.host().contactCyprus.mount(stage),
+      attach: (stage) => this._ctx.host.contactCyprus.mount(stage),
       load: (stage) => stage.load(),
       configure: (stage) => {
         stage.resize(window.innerWidth, window.innerHeight)
-        stage.setCamera(this._ctx.camera().instance)
+        stage.setCamera(this._ctx.camera)
         stage.setActive(this._ctx.currentPage() === 'contact' && this._ctx.isCyprusActive())
         stage.prewarm()
       },
       release: async (stage) => {
-        await this._ctx.host().contactCyprus.unmount(stage)
+        await this._ctx.host.contactCyprus.unmount(stage)
         stage.dispose()
       },
       onDispose: () => {
@@ -293,12 +292,12 @@ export class StageRegistry {
         // (dispose) instead of silently dropping it.
         return experiment ? experiment.load() : Promise.resolve(null)
       },
-      attach: (stage) => this._ctx.host().labGamepad.mount(stage),
+      attach: (stage) => this._ctx.host.labGamepad.mount(stage),
       configure: (stage) => {
         stage.visible = this._ctx.currentPage() === 'lab'
       },
       release: async (stage) => {
-        await this._ctx.host().labGamepad.unmount(stage)
+        await this._ctx.host.labGamepad.unmount(stage)
         stage.dispose()
       },
     }

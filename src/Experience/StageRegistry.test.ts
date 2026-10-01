@@ -27,8 +27,8 @@ describe('StageRegistry resource teardown', () => {
     } as unknown as SceneStagePorts
     const registry = new StageRegistry({
       currentPage: () => 'contact',
-      camera: () => ({ instance: {} as never }),
-      host: () => ports,
+      camera: {} as never,
+      host: ports,
       isContactLight: () => false,
       isCyprusActive: () => true,
       setCyprusActive: vi.fn(),

@@ -220,8 +220,8 @@ export class Experience {
     // long after the initial scene has mounted.
     this._stages = new StageRegistry({
       currentPage: this._host.page,
-      camera: () => this.camera,
-      host: () => this._host.stages,
+      camera: this._host.camera,
+      host: this._host.stages,
       isContactLight: () => this._contactIsLight,
       isCyprusActive: () => this._contactCyprusActive,
       setCyprusActive: (active) => {
