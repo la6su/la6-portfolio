@@ -89,10 +89,12 @@ export class RenderScheduler {
           this._settledFrames += 1
           this._stop()
         }
-      } catch {
+      } catch (error) {
         // A frame owner failure must not leave the driver installed forever.
-        // The next explicit invalidation can retry after the owner recovers.
+        // The next explicit invalidation can retry after the owner recovers;
+        // keep the failure visible instead of silently freezing the scene.
         this._stop()
+        console.error('[RenderScheduler] frame failed; loop stopped.', error)
       }
     }
 
