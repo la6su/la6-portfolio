@@ -86,34 +86,35 @@ export async function mountVueApp(): Promise<void> {
     routes: jlzRouteRecords(),
   })
 
-  // ── Route transition (legacy `routeTransition.run(render)` contract) ───
+  // Cover before RouterView changes and reveal after the new route settles.
   // The cover phase completes inside the navigation guard, so the RouterView
   // re-render lands under the covered document; the reveal starts once the
   // route has settled. Under reduced motion both phases are synchronous
-  // no-ops and the overlay element is never created (RouteTransition).
+  // no-ops; AppShell keeps the statically declared overlay hidden.
   const routeTransition = new RouteTransition()
+  let appMounted = false
   const initialHashGate = createDeferredInitialHashGate()
   const hashNavigationFrame = createSingleFrameOwner()
   const appUnsubs: Array<() => void> = []
   let disposed = false
-  // The initial navigation skips the cover: the legacy `initRouter`
-  // rendered the first page without the transition (no prior document to
-  // cover), and a synchronous first commit leaves no startup gap in which
-  // an early `jlz:navigate` could race the router.
+  // The initial navigation skips the cover because there is no previous page
+  // to hide. Its flag is consumed synchronously by the first guard.
   let coverNavigation = true
   router.beforeEach(async () => {
     if (coverNavigation) {
       coverNavigation = false
       return
     }
+    // Startup navigation can settle before AppShell has mounted its overlay.
+    if (!appMounted) return
     await routeTransition.cover()
   })
   router.afterEach(() => {
-    routeTransition.reveal()
+    if (appMounted) routeTransition.reveal()
   })
   router.onError(() => {
     hashNavigationFrame.cancel()
-    routeTransition.dispose()
+    routeTransition.cancel()
     initialHashGate.invalidate()
   })
 
@@ -228,7 +229,6 @@ export async function mountVueApp(): Promise<void> {
   }
   document.addEventListener('click', onClick, true)
 
-  let appMounted = false
   unmountMountedVueApp = () => {
     if (disposed) return
     disposed = true

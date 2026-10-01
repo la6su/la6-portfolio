@@ -5,6 +5,7 @@ import SceneHost from './SceneHost.vue'
 import PersistentConsole from './PersistentConsole.vue'
 import FullscreenOverlayView from './FullscreenOverlayView.vue'
 import ShowreelConsole from './ShowreelConsole.vue'
+import RouteTransitionView from './RouteTransitionView.vue'
 </script>
 
 <template>
@@ -12,5 +13,6 @@ import ShowreelConsole from './ShowreelConsole.vue'
   <PersistentConsole />
   <FullscreenOverlayView />
   <ShowreelConsole />
+  <RouteTransitionView />
   <RouterView />
 </template>

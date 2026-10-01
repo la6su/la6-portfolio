@@ -16,16 +16,8 @@ export class RouteTransition {
 
   private getOverlay(): HTMLElement {
     if (this.overlay?.isConnected) return this.overlay
-    const overlay = document.createElement('div')
-    overlay.className = 'jlz-route-transition'
-    overlay.dataset.state = 'idle'
-    overlay.setAttribute('aria-hidden', 'true')
-    overlay.innerHTML = `
-      <span class="jlz-route-transition__panel jlz-route-transition__panel--top"></span>
-      <span class="jlz-route-transition__signal"></span>
-      <span class="jlz-route-transition__panel jlz-route-transition__panel--bottom"></span>
-    `
-    document.body.appendChild(overlay)
+    const overlay = document.getElementById('jlz-route-transition')
+    if (!overlay) throw new Error('Route transition view must be mounted by AppShell.')
     this.overlay = overlay
     return overlay
   }
@@ -35,8 +27,8 @@ export class RouteTransition {
    * cover phase before the router guard resolves (the RouterView re-render
    * lands under the covered document), and `reveal()` starts the reveal
    * after the guard settles. Under reduced motion both phases are synchronous
-   * no-ops and the overlay element is never created. A newer cover supersedes
-   * a pending reveal (sequence check).
+   * no-ops and the statically declared overlay stays hidden. A newer cover
+   * supersedes a pending reveal (sequence check).
    */
   async cover(): Promise<void> {
     const sequence = ++this.sequence
@@ -82,10 +74,9 @@ export class RouteTransition {
     if (this.overlay) this.overlay.dataset.state = 'idle'
   }
 
-  /** Release the transition DOM owner and every pending timer. */
+  /** Release pending transition work; Vue owns the overlay element. */
   dispose(): void {
     this.cancel()
-    if (this.overlay?.isConnected) this.overlay.remove()
     this.overlay = null
   }
 

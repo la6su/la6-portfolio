@@ -64,7 +64,8 @@ preserve custom policy only when code or measurements prove the difference.
   declares the modal structure; its controller adopts the Vue root and owns
   UIKit/focus, decoded-poster, and keyboard behavior. `ShowreelConsole.vue`
   renders theater state declaratively and owns its UI subscriptions/input until
-  AppShell unmount.
+  AppShell unmount. `RouteTransitionView.vue` declares the transition surface;
+  the route controller retains only guard timing and cancel policy.
 
 ## Phases
 
@@ -160,8 +161,8 @@ Behavior controllers keep media/rendering policies at their existing owners;
 Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
 by the user and the local suite.
 
-**Next audit:** review remaining route-transition/browser-library behavior
-against Vue ownership; walk EN/RU routes, direct deep links, hash navigation,
+**Next audit:** audit hash navigation and remaining dynamic DOM against router
+and browser-library behavior; walk EN/RU routes, direct deep links, hash navigation,
 focus, contrast, touch targets, resize/orientation, no-scene and renderer
 failure states. Run the production suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
@@ -196,9 +197,9 @@ no known dead active path or unowned persistent resource remains.
 
 ## Current checkpoint — 2026-10-01
 
-**Latest source slice:** the persistent console, fullscreen viewer and showreel
-chrome are Vue-owned under `AppShell`; controllers retain modal, media and
-render behavior and follow the host lifecycle. Earlier commits removed
+**Latest source slice:** the persistent console, fullscreen viewer, showreel
+chrome, and route transition surface are Vue-owned under `AppShell`; controllers
+retain modal, media, render, and transition timing behavior and follow the host lifecycle. Earlier commits removed
 duplicate global error handling and recorded why the scene coordinator/frame
 pass and typed bus remain. Keep build output under tracked `dist/` unstaged;
 its deploy consumer is still unknown.
@@ -218,10 +219,14 @@ type-check, ESLint, and all 73 unit tests pass on the updated source. The
 showreel Vue adoption then passed the same full suites. After its final
 unchanged-state guard, the focused showreel open/close suite passed in Chromium
 and Firefox (2/2). Dedicated Chromium host teardown passed with assertions that
-both modal roots are removed when AppShell unmounts.
+the declared modal roots are removed when AppShell unmounts. Route-transition
+Vue adoption now passes the full production Chromium suite (14 passed, 3
+opt-in skipped) and Firefox suite (13 passed, 4 skipped), plus dedicated
+Chromium host teardown (1/1). Vue type-check, ESLint, all 73 unit tests,
+Prettier, and `git diff --check` also pass.
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
-route-transition/overlay behavior audit. Make the next code change only after
+hash-navigation/router behavior audit. Make the next code change only after
 identifying a concrete duplicated owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.
 
@@ -229,13 +234,16 @@ The first scene-construction search found no runtime `scene.add/remove` or
 manual `THREE.Group/Mesh` hierarchy construction under `src/Experience`.
 `WorksInstallation.vue` uses one `Object3D` only as an instancing matrix
 scratch object; `ShowreelTheater` owns a separate offscreen scene by design.
-Those are not parallel owners. The remaining concrete declarative candidate
-from this pass was the hand-built persistent UI DOM. It is now resolved:
+Those are not parallel owners. The concrete declarative candidates from this
+pass were hand-built persistent UI DOM and route-transition markup. They are
+now resolved:
 `AppShell` declares the console, fullscreen viewer, and showreel chrome;
 `FullscreenOverlay` adopts its Vue root for UIKit/focus/poster behavior, while
 `ShowreelConsole.vue` renders the typed theater state reactively. Keep their
 behavior owners because they handle real browser/media policy; do not restore
-runtime markup construction or add wrapper-only SFCs.
+runtime markup construction or add wrapper-only SFCs. `RouteTransitionView.vue`
+declares the remaining overlay structure while its controller coordinates
+Vue Router guard timing. Focus host teardown coverage on all AppShell roots.
 
 ## Follow-on goal policy
 
