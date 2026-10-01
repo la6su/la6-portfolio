@@ -342,14 +342,20 @@ Chromium suite passed again; the build regenerated the tracked release output.
 The dedicated Chromium host-teardown test also passes after adding coverage for
 the create-to-mount microtask race: host teardown now waits for a stale stage's
 declared-node release without waiting on unrelated in-flight imports.
+After that change, the isolated Firefox production project also passed (16
+passed, 4 opt-in renderer scenarios skipped). The full browser matrix remains
+host-limited: Playwright's managed Chromium executable is absent and the local
+WebKit binary lacks `libicu74`, `libxml2`, and `libflite1`; Firefox itself is
+available and passed all non-opt-in route/lifecycle cases.
 These browser runs use software rendering. They do not prove physical-GPU
 WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
 this host because its browser dependencies are missing.
 
 **Next actions:**
 
-1. Continue phase 2's `Experience.ts` ownership and teardown trace. The
-   create-to-mount teardown race is fixed and covered; inspect the remaining
+1. Continue phase 2's `src/Experience/Experience.ts` ownership and teardown
+   trace through `src/app/SceneHost.vue` and `src/app/sceneHost.ts`. The
+   create-to-mount teardown race is fixed and covered; inspect remaining
    boot/UI lifecycle owners and async stage continuations, changing only a
    demonstrated duplicate or missing cleanup path.
 2. Finish phase 5's source-to-output map for generated CSS, routes, content,
