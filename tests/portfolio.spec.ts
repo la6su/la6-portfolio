@@ -183,6 +183,9 @@ test("DOM-only mode keeps semantic route navigation available without a canvas",
   await expect(page.locator('[data-page-view="case-study"]')).toHaveCount(1);
   await expect(page.locator(".jlz-works-aperture")).toHaveCount(0);
   await expect(page.locator(".jlz-case-copy button")).toHaveCount(0);
+  await page.goto("/contact?no-scene", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="contact"]')).toHaveCount(1);
+  await expect(page.locator('[uk-icon*="telegram"] svg')).toHaveCount(1);
 });
 
 test("standalone blog and builder routes publish valid static documents", async ({

@@ -119,6 +119,8 @@ camera updates. `Experience.destroy()` and async lazy-stage release have
 focused tests. The unused global error tracker is removed. Route-specific
 stage contracts remain separate from the generic stale-request lifecycle.
 The fullscreen behavior controller is released when its Vue host unmounts.
+The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
+the unreferenced `twitter` product icon module was removed.
 
 **Next audit:** trace `Experience.ts` end to end and test every remaining
 boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
@@ -220,7 +222,8 @@ The application shell and stable scene hierarchy are Vue/Tres-owned. Behavior
 controllers remain for Three algorithms, browser/media policy, route-guard
 timing, and lifecycle work that the framework does not supply. Recent audits
 removed duplicate renderer-query parsing, a redundant UIkit global assignment,
-and the Works room-count literals. These changes are committed. `dist/` is
+the unused project icon registration, a DOM-only UIManager subscription, and
+the Works room-count literals. These changes are committed. `dist/` is
 restored after build verification and remains tracked pending deploy-contract
 evidence.
 

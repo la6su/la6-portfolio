@@ -309,14 +309,6 @@ async function boot(): Promise<BootResult> {
     try {
       transitionBootstrap('renderer-initializing')
       progress(100)
-      const { UIManager } = await import('./UI/UIManager')
-      const ui = new UIManager()
-      try {
-        ui.init()
-      } catch (error) {
-        ui.dispose()
-        throw error
-      }
       transitionBootstrap('scene-prewarming')
       transitionBootstrap('ready')
       eventBus.emit('jlz:webgl-ready')

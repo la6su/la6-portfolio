@@ -1,5 +1,4 @@
 import { FullscreenOverlay } from './FullscreenOverlay'
-import { registerProductIcons } from '../assets/product-icons'
 import { eventBus } from '../core/EventBus'
 
 export class UIManager {
@@ -13,10 +12,6 @@ export class UIManager {
     if (!(element instanceof HTMLDivElement)) return null
     this._overlay = new FullscreenOverlay(element)
     return this._overlay
-  }
-
-  constructor() {
-    registerProductIcons()
   }
 
   /** Initialize persistent UI behavior owners. */
