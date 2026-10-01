@@ -4,7 +4,7 @@ import { input } from './Input'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'
-import { getCurrentPage } from '../core/routePage'
+import { resolvePagePath } from '../core/routeManifest'
 
 const SP_STIFFNESS = 8
 const SP_DAMPING = 3
@@ -243,7 +243,7 @@ export class Camera {
     this.springY.pos += this.springY.vel * dt
 
     // ── 2. Build position ──
-    const isHome = getCurrentPage() === 'home'
+    const isHome = resolvePagePath(window.location.pathname) === 'home'
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
     const reduced = this._reducedMotion

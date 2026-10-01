@@ -6,7 +6,7 @@ import { contentRoot } from './core/contentRoot'
 import { devDiagnostic } from './core/devDiagnostic'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
-import { getCurrentPage } from './core/routePage'
+import { resolvePagePath } from './core/routeManifest'
 // LANG_KEY handled by i18n.ts
 import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
 
@@ -308,7 +308,7 @@ async function boot(): Promise<BootResult> {
         loop: host.loop,
         stages: host.stages,
       },
-      getCurrentPage,
+      () => resolvePagePath(window.location.pathname),
     )
     experience = runtime
     if (import.meta.env.DEV) {

@@ -26,11 +26,6 @@ export const ROUTE_MANIFEST: readonly RouteEntry[] = [
   { path: '/contact', page: 'contact' },
 ] as const
 
-/** Every page the manifest maps to, in manifest order. */
-export const MANIFEST_PAGES: readonly PageId[] = Object.freeze(
-  ROUTE_MANIFEST.map((entry) => entry.page),
-)
-
 const PAGE_BY_PATH = new Map<string, PageId>(
   ROUTE_MANIFEST.map((entry) => [entry.path, entry.page]),
 )
@@ -64,6 +59,11 @@ export function resolveRoute(path: string): PageId | undefined {
  */
 export function resolvePage(path: string): PageId {
   return PAGE_BY_PATH.get(path) ?? 'home'
+}
+
+/** Resolve the page shown by a URL, including Works case-study routes. */
+export function resolvePagePath(path: string): PageId {
+  return isCaseStudyPath(path) ? 'works' : resolvePage(path)
 }
 
 /** True when the manifest owns the path (strict lookup). */

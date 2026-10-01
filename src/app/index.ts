@@ -12,7 +12,8 @@ import { applyMetaTags } from '../core/pageMeta'
 import { isRoutePath, resolveRoute } from '../core/routeManifest'
 import { RouteTransition } from '../UI/RouteTransition'
 import AppShell from './AppShell.vue'
-import { jlzRouteRecords, pageForPath } from './routes'
+import { jlzRouteRecords } from './routes'
+import { resolvePagePath } from '../core/routeManifest'
 
 let mounted = false
 let unmountMountedVueApp: (() => Promise<void>) | null = null
@@ -192,7 +193,7 @@ export async function mountVueApp(): Promise<void> {
   appUnsubs.push(
     eventBus.on('jlz:lang-change', () => {
       applyTranslations()
-      applyMetaTags(pageForPath(router.currentRoute.value.path))
+      applyMetaTags(resolvePagePath(router.currentRoute.value.path))
     }),
   )
 

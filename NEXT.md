@@ -38,6 +38,9 @@ preserve custom policy only when code or measurements prove the difference.
 5. Tracked `dist/` is the repository's current release artifact: regenerate it
    with the sources for release-facing changes, but do not change its tracking
    policy until the external deployment consumer is identified.
+6. Treat a passing build or test as evidence for a behavior, never as evidence
+   that its architecture should be retained. Before preserving an abstraction,
+   state the distinct responsibility and the direct caller that needs it.
 
 ## Current audit decisions
 
@@ -97,6 +100,15 @@ preserve custom policy only when code or measurements prove the difference.
 - `inspectUnifiedBackend` retained a constructor-name fallback despite both
   pinned Three backend classes exposing `isWebGPUBackend` / `isWebGLBackend`.
   Removed the guess and added tests for both markers and an unknown backend.
+- The route page singleton duplicated the active Vue Router location: route
+  SFCs wrote `PageId` through `setCurrentPage()`, while Experience/Camera read
+  it from a mutable module variable. Removed that mirror and `routePage.ts`;
+  consumers now resolve `window.location.pathname` through the canonical
+  route manifest. Moved case-study-to-Works resolution into that manifest too,
+  removing the second path resolver from `app/routes.ts`. `jlz:route-change`
+  remains because it triggers actual route side effects (content theme,
+  navigation rebinding and stage reconciliation); its payload/consumers remain
+  in the next event-boundary audit.
 - Keep `RenderScheduler`: Tres 5.9.2 on-demand gates renderer calls but retains
   its RAF loop; this project also requires zero idle ticks, settled activity
   windows, and hidden-tab pause/resume. Reconsider only if equivalent behavior
@@ -131,6 +143,34 @@ acceptance is complete. Findings below are grounded in inspected call sites,
 plugin wiring, package scripts, and current module ownership. Items marked
 `verify` need runtime/deployment evidence before changing architecture.
 
+### Architecture pressure points requiring a simplification pass
+
+The earlier lifecycle and scene ownership audit established useful safety
+facts, but it over-weighted preserving the resulting structure. The project is
+not yet accepted as cleanly architected. These are concrete hotspots for the
+next refactor slices:
+
+| Surface | Current evidence | Refactor direction |
+| --- | --- | --- |
+| App startup and shell | `index.html`/`entry-shell.ts`/`entry-app.ts`/`app/index.ts` divide splash controls, bootstrap state, dynamic imports, Vue mount, router events, readiness timers, retry, HMR teardown, and fallback continuation. The classic shell and Vue app communicate through a broad singleton `EventBus`. | Draw one startup sequence and assign each transition one owner. Keep the static shell only for work needed before Vue; move the remaining app-owned state into Vue/app startup. Delete forwarding state and events after callers move. |
+| Navigation state | Vue Router is authoritative for URL/view selection. Removed `routePage.ts` mutable mirror and the duplicate case-study path resolver; `resolvePagePath()` in `routeManifest.ts` now maps current pathname to `PageId`. `jlz:route-change` still triggers content theme, navigation rebinding and stage reconciliation. | Trace subscribers and replace the broad event only where a direct router/composable subscription is simpler. Keep scene section navigation as a distinct product contract. |
+| Runtime composition | `Experience.ts` is ~55 KB and creates renderer-side policy, scene composition, UI, route stages, readiness, diagnostics, recovery integration, and the render-demand loop. `SceneCoordinator`, `SceneTransformPass`, `SceneFramePass`, `ExperienceUI`, and `StageRegistry` form a second orchestration graph. | Trace every public method and context field. Collapse pass-through classes and one-use bags into the owning composition module. Retain a boundary only for a distinct algorithm/resource lifecycle or a separately testable contract. Prefer product-level slices over generic manager/registry/pass infrastructure. |
+| Renderer ownership | `SceneHost.vue` owns the Tres canvas/context and initial renderer init; `Experience/Renderer.ts` adopts it but also owns backend recovery, a second pipeline wrapper, capability policy and unsupported UI; `core/unifiedRenderer.ts` owns construction/init/disposal primitives. This spans three files and two async lifecycle owners. | Produce a state/ownership diagram for initial creation, fallback, recovery and teardown. Reduce to one renderer lifecycle owner and one narrow adapter where Tres requires it. Remove recovery branches/policies that are not supportable on the target browser matrix; keep WebGL2 fallback as explicit product behavior. |
+| Post effects | `Renderer.ts` → `PostProcessingManager` → `RenderPipeline` → `WebGPUPostPipeline` splits policy, crossfade, renderer routing, TSL graph construction and resource accounting. WebGLBackend skips the graph. | Audit each public method and parameter for actual cross-boundary need. Keep TSL graph code isolated from WebGL compatibility; flatten the extra wrapper/manager where it only forwards parameters or duplicates state. Make expensive post effects an explicit measured quality choice. |
+| Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` and `core/types.ts` define adjacent contracts; route, sitemap and blog metadata have separate derived registries. | Decide one source record per project and derive card/case/sitemap views from it where fields overlap. Preserve separate authored content only where its meaning differs. Add closed-set checks only at real content boundaries. |
+| Performance and DX | `SceneHost.vue` and `Experience.ts` are large mixed-responsibility modules. `entry-app.ts` statically imports reveal and shell utilities before the app graph is lazy. Scene feature ownership is declarative in many places but controller adoption and disposal conventions vary by owner. | Measure startup and route chunk boundaries. Move expensive scene/feature modules behind the route/feature that needs them; standardize a small SFC + controller convention. Remove hand-built utility behavior when Vue/Tres/Three already provides the same contract. |
+
+These findings are audit targets, not instructions to mechanically merge files.
+The intended reference from TvT is its practical `src/` organization around
+app entry, common code, components, pages, plugins, and stores, and its use of
+Vue/Tres declarations for reusable scene behavior. This portfolio does not
+need TvT's editor, plugin marketplace, multi-platform publishing or framework
+scaffolding. The target is a much smaller portfolio-specific implementation.
+TresJS 5.9.2 documentation describes Vue components/composables as its
+declarative scene model; local dependencies are Tres 5.9.2 / Three 0.186.1.
+Do not claim API compatibility beyond this installed matrix without checking
+the installed declarations/source and current upstream docs.
+
 | Area | Audited evidence and finding | Next action | Priority / acceptance |
 | --- | --- | --- | --- |
 | Vue/Tres scene graph | `SceneHost.vue`, `sceneHost.ts`, `useSceneStages.ts`, stage owner SFCs, `Experience.buildScene()`, and scene owner controllers show Vue/Tres owning persistent roots. Experience adopts those roots. No demonstrated duplicate stable scene hierarchy remains. | Keep this as baseline; change an owner only when a concrete duplicate or cleanup defect is demonstrated. | Guardrail: no runtime `scene.add/remove` for stable app nodes; one disposal owner per GPU resource. |
@@ -149,13 +189,38 @@ plugin wiring, package scripts, and current module ownership. Items marked
 
 ### Audit execution order
 
-1. Finish runtime ownership/teardown map (`Experience`, renderer recovery,
-   stage registry, route/hash and app unmount); simplify proven duplicate state.
-2. Complete generated content, blog, CSS selector and media audits.
-3. Confirm dependency/build compatibility from clean install and actual release
-   host behavior; remove only proven dead paths.
-4. Run browser, accessibility, resource, performance and physical GPU evidence;
-   update acceptance rows with commands and results.
+1. **Architecture map and cuts:** write the startup/router/scene/renderer
+   ownership maps from actual call sites. Identify every state mirror,
+   one-use adapter, registry, manager and event; mark keep/remove with caller
+   evidence. Do not implement more wrappers to produce the maps.
+2. **Collapse app and route state:** make Vue Router the page source; simplify
+   app bootstrap and the shell-to-app handshake; keep only the static no-JS /
+   pre-Vue responsibilities that are needed for useful content and splash.
+3. **Flatten runtime orchestration:** reduce `Experience` and the coordination
+   graph into a small composition root plus feature owners. Remove only proven
+   pass-through classes and duplicated route/activity/readiness state.
+4. **Unify renderer lifecycle:** assign canvas, renderer init, fallback,
+   recovery, device listeners and disposal to one owner. Keep Tres responsible
+   for its own sizing, camera registry and declarative scene integration.
+5. **Simplify post and feature code:** preserve TSL for WebGPU-specific effects;
+   remove overlapping parameter/capability/resource layers when their policy
+   can live at the renderer/feature owner. Audit per-frame allocations and
+   quality/DPR decisions using measurements.
+6. **Content and styling cleanup:** establish canonical project/blog sources,
+   remove duplicate declarations, dead CSS/assets and obsolete compatibility
+   code, then recheck route and generated-output inputs.
+7. **Release acceptance:** after structural work, verify production build,
+   Chromium/Firefox/WebKit, WebGPU and forced WebGL2 on available hardware,
+   keyboard/reduced-motion/accessibility, resource teardown and measured
+   startup/frame budgets. Update the plan with evidence and unresolved limits.
+
+### Immediate next slice
+
+Continue the route/bootstrap dependency map. The mutable page mirror is
+removed; next trace the remaining consumers of `routeManifest`,
+`jlz:route-change`, hash dispatch and `CinematicNav` page state. Simplify the
+event boundary only when route effects have a clearer direct owner. Then
+reduce startup and shell-to-app state before editing renderer internals.
 
 ## Phases
 

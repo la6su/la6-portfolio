@@ -17,7 +17,6 @@ import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
-import { setCurrentPage } from '../core/routePage'
 
 /** In-file helper: UIkit's imperative update for the mounted subtree. */
 function uiKitUpdate(el: Element): void {
@@ -86,7 +85,6 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   }
 
   onMounted(() => {
-    setCurrentPage(page)
     mounted = true
     postRender()
     mountedOnce = true
