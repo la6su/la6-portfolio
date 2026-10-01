@@ -2,10 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
-
 import { existsSync, readFileSync } from 'node:fs'
-import { jlzAdminPlugin } from './admin/vite-plugin.ts'
-import { publishedPages, validateBuilderDocuments } from './src/builder/documents.ts'
+
 import { BLOG_ARTICLES } from './src/core/blogPages.ts'
 
 const root = import.meta.dirname
@@ -26,23 +24,6 @@ const VUE_FEATURE_FLAGS = {
 // JS:  Vite/Rolldown tree-shakes unused ESM exports automatically.
 //   UIKit 3 is an ESM package — only imported JS modules are bundled.
 // ═══════════════════════════════════════════════════════════════════════
-
-// Approved (`published: true`) Page Builder documents → static `/p/<slug>`
-// and `/p/<slug>/ru/`
-// routes (Phase 9, slice 5). The closed set is the admin-owned collection
-// (`src/builder/generated/documents.json`); the publish pipeline
-// (`scripts/publish-builder-pages.mjs`) renders these into the Vite build
-// inputs below and the sitemap generator consumes the same set.
-const publishedBuilderSlugs = (() => {
-  const collectionPath = resolve(root, 'src/builder/generated/documents.json')
-  if (!existsSync(collectionPath)) return [] as string[]
-  const validation = validateBuilderDocuments(
-    JSON.parse(readFileSync(collectionPath, 'utf8')) as unknown,
-  )
-  if (!validation.ok || !validation.documents)
-    throw new Error(`documents.json is invalid: ${validation.errors.join('; ')}`)
-  return publishedPages(validation.documents).map((document) => document.slug)
-})()
 
 export default defineConfig(({ mode }) => {
   const enableHmr = mode === 'hmr'
@@ -104,19 +85,6 @@ export default defineConfig(({ mode }) => {
             resolve(root, `blog/${article.slug}.html`),
           ]),
         ),
-        // Published builder documents (SSG output of
-        // scripts/publish-builder-pages.mjs — standalone static pages, no
-        // application bundle, the per-page Less rewritten by Vite).
-        ...Object.fromEntries([
-          ...publishedBuilderSlugs.map((slug) => [
-            `p/${slug}`,
-            resolve(root, `p/${slug}.html`),
-          ]),
-          ...publishedBuilderSlugs.map((slug) => [
-            `p/${slug}/ru`,
-            resolve(root, `p/${slug}/ru/index.html`),
-          ]),
-        ]),
       },
       output: {
         // ───────────────────────────────────────────────────────────────────
@@ -249,9 +217,6 @@ export default defineConfig(({ mode }) => {
   },
   plugins: [
     vue(templateCompilerOptions),
-    // /admin/ is a separate development application. The plugin owns its
-    // fixed-path save/compile API and apply:'serve' keeps it out of builds.
-    jlzAdminPlugin(),
     {
       // Strip @vite/client from HTML + intercept the HTTP request.
       // Through the Caddy/XTransformPort gateway, /@vite/client resolves to

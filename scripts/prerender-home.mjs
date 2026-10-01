@@ -21,7 +21,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const server = await createServer({
   root,
   // Isolated: do not re-load the project config (avoids re-instantiating the
-  // prerender plugin and the admin plugin). Only the Vue SFC compiler is
+  // prerender plugin). Only the Vue SFC compiler is
   // needed to load and render the route SFC.
   configFile: false,
   logLevel: 'error',

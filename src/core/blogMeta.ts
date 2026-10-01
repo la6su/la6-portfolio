@@ -1,5 +1,5 @@
 // Per-page head metadata for the static blog pages and the pure document
-// builder that wraps the prerendered SSG body into a standalone HTML document.
+// renderer that wraps the prerendered body into a standalone HTML document.
 //
 // The blog pages are standalone semantic documents (no 3D app shell, no
 // hydration). This module is the single source for everything that lives in

@@ -47,8 +47,7 @@
 @jlz-color-accent: #ffd60a;
 @jlz-color-accent-hover: #ffe85c;
 // Secondary action/emphasis accent — the phosphor counterweight to the
-// electric yellow (alias of the console signal; the builder can author it
-// independently through the generated override layer).
+// electric yellow (alias of the console signal).
 @jlz-color-accent-secondary: @jlz-color-signal-phosphor;
 @jlz-color-accent-glow: rgba(255, 214, 10, 0.35);
 
@@ -64,15 +63,14 @@
 @jlz-color-signal-teal-muted: @jlz-color-signal-phosphor-muted;
 @jlz-color-signal-ember: #ff7b72;
 
-// Semantic status — the only success/warning/danger source for console and
-// admin UI. Success and warning alias the console/terminal signals; danger
+// Semantic status — the only success/warning/danger source for the UI.
+// Success and warning alias the console/terminal signals; danger
 // is the single ember red in the system.
 @jlz-color-status-success: @jlz-color-signal-phosphor;
 @jlz-color-status-warning: #f0883e;
 @jlz-color-status-danger: @jlz-color-signal-ember;
 
-// Inverse (cool paper) polarity. The Style Builder can author this palette
-// independently from the default dark console.
+// Inverse (cool paper) polarity.
 @jlz-inverse-bg: #e9eef5;
 @jlz-inverse-surface: #f5f8fc;
 @jlz-inverse-text: #0b0e13;
@@ -588,13 +586,3 @@ html.uk-light {
 // @import '../../node_modules/uikit/src/less/components/svg.less'; // Enable with a real `uk-svg` consumer.
 @import '../../node_modules/uikit/src/less/components/visibility.less';
 @import '../../node_modules/uikit/src/less/components/inverse.less';
-
-// Optional components used by saved Page Builder documents. The admin
-// compiler regenerates this file, so unused optional component CSS is absent
-// from production rather than hidden at runtime.
-@import './builder/components.generated.less';
-
-// The dev Style Builder writes validated Less variables last. Less resolves
-// variables lazily, so these values feed token CSS, hooks and UIkit component
-// rules above while remaining the final declaration for component variables.
-@import './builder/theme.generated.less';

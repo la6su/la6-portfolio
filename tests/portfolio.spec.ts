@@ -189,7 +189,7 @@ test("DOM-only mode keeps semantic route navigation available without a canvas",
   await expect(page.locator('[uk-icon*="telegram"] svg')).toHaveCount(1);
 });
 
-test("standalone blog and builder routes publish valid static documents", async ({
+test("blog routes publish valid static documents", async ({
   page,
 }) => {
   const paths = [
@@ -198,8 +198,6 @@ test("standalone blog and builder routes publish valid static documents", async 
     "/blog/glassmorphism-webgpu",
     "/blog/on-demand-rendering",
     "/blog/tsl-changes-everything",
-    "/p/studio-page",
-    "/p/studio-page/ru/",
   ];
 
   for (const path of paths) {
@@ -230,9 +228,6 @@ test("standalone blog and builder routes publish valid static documents", async 
       ).toBe(true);
     }
 
-    if (path.startsWith("/p/")) {
-      await expect(page.locator("script")).toHaveCount(0);
-    }
   }
 });
 
@@ -599,7 +594,6 @@ test("key routes avoid horizontal overflow at mobile and desktop widths", async 
     "/works",
     "/contact",
     "/blog",
-    "/p/studio-page",
   ];
   const viewports = [
     { width: 390, height: 844 },
@@ -610,7 +604,7 @@ test("key routes avoid horizontal overflow at mobile and desktop widths", async 
     await page.setViewportSize(viewport);
     for (const path of routes) {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      if (path.startsWith("/blog") || path.startsWith("/p/")) {
+      if (path.startsWith("/blog")) {
         await expect(page.locator("h1").first()).toBeVisible();
       } else {
         const view = path === "/" ? "home" : path.slice(1);

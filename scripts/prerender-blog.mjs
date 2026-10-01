@@ -33,7 +33,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const server = await createServer({
   root,
   // Isolated: do not re-load the project config (avoids re-instantiating the
-  // prerender and admin plugins). Only the Vue SFC compiler is needed.
+  // prerender plugin). Only the Vue SFC compiler is needed.
   configFile: false,
   logLevel: 'error',
   server: { middlewareMode: true, hmr: false, ws: false },

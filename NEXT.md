@@ -41,6 +41,8 @@ preserve custom policy only when code or measurements prove the difference.
 
 ## Current audit decisions
 
+- Admin and Builder were removed as unnecessary product scope. There is no editor, document schema/storage, compile/save API, `/admin` UI, `/p` publishing pipeline, or generated builder content. Portfolio copy and project data remain source-controlled in the app/content files; publishing is a normal repository build. Do not recreate these systems unless the product goal changes.
+
 - The source tree is already mostly declarative for the scene: `SceneHost.vue`
   and owner SFCs declare stable roots and leaves; controllers adopt those nodes
   and own algorithms/resources. Continue the audit for remaining parallel
@@ -122,11 +124,10 @@ plugin wiring, package scripts, and current module ownership. Items marked
 | Lazy route stages | `LazyStage.ts` centralizes real stale-import, mount, in-flight release and idempotent cleanup races; `StageRegistry.ts` supplies route-specific contracts. Experience awaits registry disposal before its caller unmounts SceneHost, so asynchronous stage release finishes while the backend remains alive. The dev host gate observes Contact typography, Cyprus GLTF and halo stages reaching ready, then proves each reports release before backend disposal. | Retain shared lifecycle only while focused race tests represent production behavior; remove slot/test seams or repeated contract fields that serve no production behavior. Add direct release-order cases for route leave during asset loading if current unit coverage does not establish them. | P1: route leave during create/mount/load releases exactly once and before backend disposal. |
 | Route hash dispatch | `app/index.ts` had both `createSingleFrameOwner` generation/cancel state and `hashNavigationGeneration`; afterEach cancels the owned frame before starting the next poll, so the second stale token duplicated cancellation. Removed the redundant counter; direct and lazy-route hash flows pass in Firefox production browser. New Vitest coverage proves superseded frame callbacks and callbacks cancelled before execution are no-ops; deferred initial hashes dispatch only the newest request and stop after invalidation. Router error and Vue unmount both call the same cancellation owner. | Keep the cancellation helper tests aligned with those two integration cleanup call sites; assess the route hash flow during the full accessibility/navigation browser pass. | P1: no stale hash dispatch; no duplicate generation state. |
 | Bootstrap status | Removed the false 15→40→55→95→100 percentages and 150 ms display delay. Splash now announces real `INITIALIZING`, `PREPARING SCENE`, and `READY` states through a polite live status; failure remains `SIGNAL LOST`. | Done; keep phase labels tied to actual boot transitions. | No estimated completion percentage without measurable work progress. |
-| Dev builder API | `admin/vite-plugin.ts` exposes unauthenticated GET and source-writing POST middleware whenever Vite serves. Default `dev` was observed listening only on `127.0.0.1:5179`; headless Chromium loaded `/admin/`, mounted the editor, and fetched the document list successfully with no browser errors after adding the shared SVG favicon. `dev:hmr` intentionally remains network-facing. `vite.config.ts` allows `project.6la.ru`, but that is a Host check, not authentication. The reverse proxy/access-control configuration and whether it shares this host are outside the repository; remote reachability remains unverified. | Confirm the actual proxy target/bind requirement and that proxy auth/ACL covers `/admin/` and `/__jlz-admin/*`; keep this deployment check open until evidence is available. Assess whether explicit `dev:hmr` exposure is acceptable on the local network. | P0 verify: remote unauthenticated clients cannot read or mutate builder sources; local editor works. |
 | Build/dependency integration | Vite 8/Rolldown code-splitting rules and Three/Tres/Cientos compatibility aliases are pinned to observed ecosystem behavior; the stdlib checker guards its imported module set. Unified renderer initialization calls pinned `WebGPURenderer.init()` directly. Both `RenderPipeline` and `inspectUnifiedBackend` use Three's explicit backend markers, with tests asserting that unmarked backends stay unknown. Three's installed Tres teardown closes over its initial renderer instance; SceneHost separately owns and disposes the current recovery replacement after scene unmount, so recovery does not need an extra deferral wrapper. Direct dependency usage was traced; no unused package was proven. | Keep compatibility seams small; on upgrades verify peer compatibility, bundle duplication, lazy chunk placement and checker output. Do not delete shims based on apparent complexity. | P1: lockfile install, type check, stdlib check, build and budgets agree after upgrades. |
-| Static content and routes | Blog and builder sources are consumed by render/prerender scripts and multi-page Vite inputs; they are live build inputs even when not browser-imported. Runtime route manifest is separate from static blog/published-builder routes by design. Review found generated sitemap/blog used the site-origin env while builder preview images ignored its supplied origin. Origin normalization now has one shared source, all generated builder social URLs use their page origin, and a regression test covers the staging host. A staging-origin build confirmed sitemap, blog and both builder locales use the override; the production build regenerates from defaults. The latest full `bun run build` completed both in the worktree and from a `git archive HEAD` clean checkout: expected routes emitted, sitemap contained 13 URLs, Vite built 360 modules, and budgets passed. Generated blog, builder, sitemap, home-prerender and `dist/` outputs compared byte-for-byte between both builds. | Keep the source/output map current and confirm deployment consumes tracked `dist/` or runs the same build. | P1: each generated artifact has one source and deterministic build owner. |
-| CSS and UIkit | `_console-language.less` (1256 lines), `_import.less` (600), and component sheets contain large authored styling surfaces. LESS entry points compile; duplicate emitted selectors are predominantly UIkit breakpoint rules, keyframes, CSS custom properties or intentional cascade overrides, not identical duplicate blocks. A repository-wide literal reachability scan found `.jlz-admin-theme-fields` only in `admin/admin.less`; removed it from a shared rule while retaining the live inspector selector. | Continue selector reachability against authored HTML, Vue templates, blog and builder markup; account for runtime-generated state classes before deleting. Review actual declaration overlap separately from responsive/keyframe variants. Check responsive, reduced-motion, focus and EN/RU variants after each slice. | P2: no selector removal without closed markup/input search and browser verification. |
-| Public media and budgets | Public runtime assets resolve to app/blog/builder references; `coming-soon.mp4` dominates transfer size (~5.27 MB). `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
+| Static content and routes | Blog sources are consumed by the prerender script and multi-page Vite inputs; they are live build inputs even when not browser-imported. Runtime route manifest is separate from static blog routes by design. Origin normalization is shared by blog metadata and sitemap generation. The latest full build emits 11 sitemap URLs and no editor-generated routes. | Keep the source/output map current and confirm deployment consumes tracked `dist/` or runs the same build. | P1: each generated artifact has one source and deterministic build owner. |
+| CSS and UIkit | `_console-language.less`, `_import.less`, and component sheets contain large authored styling surfaces. LESS entry points compile; emitted selector overlap still needs classification. The former editor-only field rule and generated theme overrides are gone with the editor. | Continue selector reachability against authored HTML, Vue templates and blog markup; account for runtime-generated state classes before deleting. Review declaration overlap separately from responsive/keyframe variants. Check responsive, reduced-motion, focus and EN/RU variants after each slice. | P2: no selector removal without closed markup/input search and browser verification. |
+| Public media and budgets | Public runtime assets resolve to app/blog references; `coming-soon.mp4` dominates transfer size (~5.27 MB). `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
 | Release/deployment | CI checks and browser-tests; no deploy workflow or host config exists in repository. `dist/` remains tracked pending identification of its consumer. | Identify host, rewrite/history behavior, cache headers and whether host consumes committed `dist/` or builds source. Reproduce from a clean checkout. | P0 verify: documented release path matches deployment. |
 | Render loop and animation | Tres is the only scene render-loop driver; `RenderScheduler` controls its open/close window. Other RAF users are DOM text reveal, UIkit content refresh, route-hash polling and route announcement. | Keep the one scene loop. Inspect per-call cleanup and whether each DOM animation has an independent cancellation owner during unmount. | P1: no second scene loop or uncanceled callback after owner teardown. |
 | Cross-browser/GPU | Current combined production run passed 33 tests across system Chromium and Firefox (40 total; 7 opt-in renderer skips) after the backend-marker change. The focused dev Chromium host-teardown gate also passed. Earlier independent full suites passed Chromium and Firefox. WebKit cannot launch locally: cached MiniBrowser is missing ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl libraries. `nvidia-smi` cannot communicate with a driver in this environment. | Run WebKit in CI/host with declared dependencies, then actual WebGPU/WebGL and context recovery on a machine where the NVIDIA driver is available. | P0 release evidence; software render results do not prove physical-GPU behavior. |
@@ -136,7 +137,7 @@ plugin wiring, package scripts, and current module ownership. Items marked
 1. Close the dev API exposure question and protect its write boundary.
 2. Finish runtime ownership/teardown map (`Experience`, renderer recovery,
    stage registry, route/hash and app unmount); simplify proven duplicate state.
-3. Complete generated content, builder/blog, CSS selector and media audits.
+3. Complete generated content, blog, CSS selector and media audits.
 4. Confirm dependency/build compatibility from clean install and actual release
    host behavior; remove only proven dead paths.
 5. Run browser, accessibility, resource, performance and physical GPU evidence;
@@ -152,7 +153,7 @@ acceptance evidence exists.
 **Established:** repository/package identity matches `la6su/la6-portfolio`;
 installed matrix is Vue 3.5.43, Vue Router 5.3.1, Tres core/Cientos 5.9.2,
 Three 0.186.1, Vite 8.3.2, plugin-vue 6.0.9, TypeScript 6.0.3; installed
-dependencies are not tracked; generated blog and builder inputs have known
+dependencies are not tracked; generated blog inputs have known
 sources and build consumers; scripts/dependencies and Node/Bun boundaries were
 audited with no proven unused direct dependency. Package identity and links
 match the new repository. README describes the Vue/Tres, WebGPU and WebGL stack.
@@ -301,7 +302,7 @@ loop/draw or unbounded route resource growth.
 
 ### 4. App shell, content, accessibility, and browser support — active
 
-**Established:** SPA routes, EN/RU metadata, standalone blog/builder pages,
+**Established:** SPA routes, EN/RU metadata, standalone blog pages,
 browser history, unknown-route fallback, menu/modal keyboard focus, reduced
 motion, mobile overflow, and touch scrolling have production-browser coverage.
 Persistent console, fullscreen modal, showreel chrome, route transition, and
@@ -354,7 +355,7 @@ unit tests.
 **Next audit:** finish the source-to-output inventory for generated CSS,
 routes, content generators, tests and package scripts (public runtime assets
 and TypeScript scripts are now source-referenced and checked). Audit authored
-LESS selector reachability across Vue, static HTML, blog and builder output;
+LESS selector reachability across Vue, static HTML and blog output;
 inspect video codec/dimensions before selecting media budgets. Remove proven
 dead or duplicate paths in focused commits. Inspect route chunks, texture/font
 cost, CPU frame work and GPU allocations from measurements. Then do a fresh
@@ -380,7 +381,7 @@ check found and fixed an unchecked source-map array access in
 and `git diff --check` passed at that checkpoint; the latest readiness-gate
 slice raises the unit total to 80.
 **Asset audit:** every public runtime media/font/Prism asset is referenced by
-the app, blog, or builder output. `favicon.svg` and `logo.svg` were identical;
+the app or blog output. `favicon.svg` and `logo.svg` were identical;
 all generated and authored pages now use `logo.svg`, and the duplicate source
 asset/cache rule was removed. The manifest keeps one `any` icon entry because
 the mark has no maskable safe-zone padding. A successful production build
@@ -399,7 +400,7 @@ retain story-to-world behavior, GPU algorithms, browser policies and lifecycle
 work that Tres does not supply. Recent committed cleanups removed duplicate
 runtime state, renderer sizing, pointer wake logic, and stale bootstrap/UI
 wrappers. The generated site origin now has one normalized source shared by
-blog, builder and sitemap output. Route hash dispatch uses the RAF owner's
+blog and sitemap output. Route hash dispatch uses the RAF owner's
 cancellation instead of a second stale token. Experience checks its lifecycle
 generation after Vue mount awaits and after the dev-only DevPanel import.
 
@@ -408,10 +409,10 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Verified locally:** 93 unit tests, Vue type-check, ESLint, stdlib check,
+**Verified before the latest removal:** 99 unit tests, Vue type-check, ESLint, stdlib check,
 production build and budgets pass. Current limits remain 3.03 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
-confirmed the generated blog, both builder locales and sitemap use the staging
+confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined
 Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were
 skipped by their explicit guards. Route, keyboard/focus, touch, responsive
@@ -433,15 +434,13 @@ they verify stale work stops and GPU owners remain alive until compilation
 settles. The development runtime destroy hook is available during init so app
 unmount can await that ordering. The loader now reports phases instead of
 estimated percentages; Firefox verified the ready status alongside direct and
-lazy hash navigation. The broad audit mapped runtime, app, builder, admin,
-build, styling and public media; the risks and remaining source audits are
+lazy hash navigation. The broad audit mapped runtime, app, build, styling and public media; the risks and remaining source audits are
 recorded in the matrix above. Renderer recovery/init failure ownership and the
 remaining audit phases are still active.
 
 **Next actions:**
 
-1. Establish the dev builder API's actual network exposure and enforce an
-   authorized boundary before treating the admin as production-safe.
+1. Complete the source audit for CSS reachability, public media and generated artifacts.
 2. Finish phase 2's `Experience.ts` teardown trace, including renderer recovery
    candidates and init failure; route-hash and current scene-build stale-init
    paths now have focused coverage.
@@ -453,6 +452,13 @@ remaining audit phases are still active.
    clean install/build, routing and cache behavior. Close phases 3/5 only with
    physical WebGPU/WebGL, recovery, resource plateau, idle-render and
    performance evidence on supported hardware.
+
+**Verified after Admin/Builder removal:** 92 unit tests, Vue type-check, ESLint,
+stdlib check, production build and bundle budgets pass. The sitemap contains
+11 URLs; Vite builds 357 modules and emits no `/p` pages or editor chunks. The
+Chromium/Firefox production run passed 33/40 tests; 7 renderer tests were
+skipped by their existing opt-in guards. Route, blog, keyboard/focus, touch,
+responsive overflow and scene teardown checks passed.
 
 ## Follow-on goal policy
 

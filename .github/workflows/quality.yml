@@ -24,8 +24,7 @@ jobs:
       - run: bun run build
       - name: Verify generated outputs match their sources
         run: >-
-          git diff --exit-code -- dist blog.html blog/ p/studio-page.html
-          p/studio-page/ru/index.html prerender/home.html public/sitemap.xml
+          git diff --exit-code -- dist blog.html blog/ prerender/home.html public/sitemap.xml
       - run: bun run type-check:vue
       - run: bun run test:unit
       - run: bun run lint
