@@ -7,7 +7,11 @@ import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
-import { rendererAvailable, setRendererAvailable } from '../core/rendererAvailability'
+import {
+  noSceneRequested,
+  rendererAvailable,
+  setRendererAvailable,
+} from '../core/rendererAvailability'
 
 const language = ref(getLang())
 const soundMuted = ref(getSoundMuted())
@@ -55,7 +59,7 @@ onMounted(() => {
       activeIndex.value = index
     }),
     eventBus.on('jlz:webgl-ready', () => {
-      setRendererAvailable(!new URLSearchParams(window.location.search).has('no-scene'))
+      setRendererAvailable(!noSceneRequested)
     }),
     eventBus.on('jlz:webgl-failed', () => {
       setRendererAvailable(false)

@@ -19,6 +19,7 @@ import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { setLabCameraActive } from '../core/labCameraPolicy'
+import { noSceneRequested } from '../core/rendererAvailability'
 import {
   createUnifiedWebGPUInstance,
   deferRendererDisposal,
@@ -54,7 +55,7 @@ import type { BakuCubeNodes } from '../Experience/World/SplashCube'
 import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
 import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
 
-const noScene = new URLSearchParams(window.location.search).has('no-scene')
+const noScene = noSceneRequested
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
 // topology (`WebGPURenderer` with its WebGLBackend), but lets the browser gate
 // exercise a real WebGL context loss on hardware even when Chrome exposes

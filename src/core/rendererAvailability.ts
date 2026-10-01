@@ -1,9 +1,10 @@
 import { readonly, ref } from "vue";
 
-const available = ref(
-  typeof window === "undefined" ||
-    !new URLSearchParams(window.location.search).has("no-scene"),
-);
+export const noSceneRequested =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).has("no-scene");
+
+const available = ref(typeof window === "undefined" || !noSceneRequested);
 
 export const rendererAvailable = readonly(available);
 
