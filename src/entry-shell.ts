@@ -1,5 +1,5 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
-// Errors are surfaced to console + ErrorTracker (not silently swallowed).
+// Boot failures are logged and shown through the shell fallback below.
 
 // Sync reduced-motion dataset SYNCHRONOUSLY at shell load — before any
 // dynamic import. entry-app.ts re-syncs later (idempotent), but if the lazy

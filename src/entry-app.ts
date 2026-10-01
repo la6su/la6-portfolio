@@ -335,8 +335,6 @@ async function boot(): Promise<BootResult> {
   let experience: import('./Experience/Experience').Experience | null = null
   let sceneHostSettled = false
   try {
-    const { ErrorTracker } = await import('./core/ErrorTracker')
-    ErrorTracker.init()
     transitionBootstrap('renderer-initializing')
     // entry-shell.ts set the reduced-motion dataset synchronously at shell
     // load (legacy E2E/CSS hook); the preference itself is read on demand
@@ -434,10 +432,6 @@ async function boot(): Promise<BootResult> {
     transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
     const retryable = !sceneHostSettled
-    if (retryable) {
-      const { ErrorTracker } = await import('./core/ErrorTracker')
-      ErrorTracker.dispose()
-    }
     return { retryable }
   }
 }

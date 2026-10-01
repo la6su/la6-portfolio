@@ -175,6 +175,15 @@ suite (14 passed, 3 opt-in skipped), and the full Firefox suite (13 passed, 4
 opt-in skipped) passed after the change. Exact elapsed-world-time while the
 demand loop is fully stopped is already owned by separate wall-clock timers.
 
+**Completed global-error slice:** removed `core/ErrorTracker.ts`. It only
+duplicated the browser's global console reporting, deduplicated unrelated
+errors by truncated message, and called `preventDefault()` for unhandled
+rejections, suppressing the browser's normal error visibility. The actual boot
+path already catches initialization failures, logs them, and displays its
+accessible fallback. There were no other consumers or reporting transport.
+Global runtime errors now follow native browser behavior; startup failures keep
+their existing app-shell handling. No replacement abstraction was added.
+
 **Completed explicit Works ownership slice:** replaced the `WeakMap<Group,
 ...>` metadata bag in `sceneOwners.ts` with a `SectionGroups.works` owner result.
 The only writer was the Works factory and the only data lived on the Works
