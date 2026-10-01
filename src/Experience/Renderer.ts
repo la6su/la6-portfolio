@@ -70,6 +70,8 @@ export class Renderer {
   private _disposed = false;
   private _lifecycleGeneration = 0;
   private _recoveryAbortController: AbortController | null = null;
+  private _recoveryPromise: Promise<void> | null = null;
+  private _disposePromise: Promise<void> | null = null;
   // forceWebGL the current instance was created with (software-adapter
   // policy: a SwiftShader WebGPU adapter re-creates on the WebGL backend)
   // — device-loss recovery must match it.
@@ -106,6 +108,8 @@ export class Renderer {
 
   async init(adopted: AdoptedRenderer): Promise<void> {
     this._disposed = false;
+    this._disposePromise = null;
+    this._recoveryPromise = null;
     this._recoveryFailed = false;
     this._lifecycleGeneration += 1;
     // SceneHost owns construction, async initialization and actual backend
@@ -185,9 +189,14 @@ export class Renderer {
         orig(info);
         return;
       }
-      void this.recoverFromDeviceLost(info as { api?: string }).finally(() =>
-        orig(info),
-      );
+      const recovery = this.recoverFromDeviceLost(info as { api?: string });
+      this._recoveryPromise = recovery;
+      void recovery.finally(() => {
+        if (this._recoveryPromise === recovery) this._recoveryPromise = null;
+        orig(info);
+      }).catch((error: unknown) => {
+        console.error("[Renderer] device-loss callback failed:", error);
+      });
     };
   }
 
@@ -215,6 +224,11 @@ export class Renderer {
     const abortController = new AbortController();
     this._recoveryAbortController = abortController;
     let replacement: WebGPURenderer | null = null;
+    const discardReplacement = async (): Promise<void> => {
+      const candidate = replacement;
+      replacement = null;
+      if (candidate) await disposeUnifiedRendererNow(candidate);
+    };
     try {
       this._deviceLostAttempts += 1;
       const canvas = this.instance.domElement;
@@ -254,7 +268,7 @@ export class Renderer {
             abortController.signal,
           )
         : null;
-      disposeUnifiedRendererNow(this.instance);
+      await disposeUnifiedRendererNow(this.instance);
       if (restoreContext && restoredAfterDispose) {
         restoreContext.restoreContext();
         const restored = await restoredAfterDispose;
@@ -274,16 +288,14 @@ export class Renderer {
       );
       if (!replacement) return;
       if (this._disposed || generation !== this._lifecycleGeneration) {
-        disposeUnifiedRendererNow(replacement);
-        replacement = null;
+        await discardReplacement();
         return;
       }
       let plan = planUnifiedBackend(inspectUnifiedBackend(replacement));
       if (plan.recreate) {
         // The replacement landed on a software adapter again — force WebGL2.
         this._forceWebGL = true;
-        disposeUnifiedRendererNow(replacement);
-        replacement = null;
+        await discardReplacement();
         // Re-create on the same persistent SceneHost canvas.
         replacement = await createUnifiedWebGPUInstanceAndInit(
           canvas,
@@ -292,15 +304,13 @@ export class Renderer {
         );
         if (!replacement) return;
         if (this._disposed || generation !== this._lifecycleGeneration) {
-          disposeUnifiedRendererNow(replacement);
-          replacement = null;
+          await discardReplacement();
           return;
         }
         plan = planUnifiedBackend(inspectUnifiedBackend(replacement));
       }
       if (this._disposed || generation !== this._lifecycleGeneration) {
-        disposeUnifiedRendererNow(replacement);
-        replacement = null;
+        await discardReplacement();
         return;
       }
       this.instance = replacement;
@@ -328,12 +338,17 @@ export class Renderer {
       // must still be able to dispose the replacement it just installed.
       replacement = null;
     } catch (e) {
-      if (replacement) disposeUnifiedRendererNow(replacement);
+      let failure = e;
+      try {
+        await discardReplacement();
+      } catch (disposalError) {
+        failure = new AggregateError([e, disposalError], "Renderer recovery and replacement cleanup both failed.", { cause: disposalError });
+      }
       if (this._disposed || generation !== this._lifecycleGeneration) return;
       this._recoveryFailed = true;
       eventBus.emit("jlz:webgl-failed");
       this.showUnsupportedMessage();
-      console.error("[Renderer] device-loss recovery failed:", e);
+      console.error("[Renderer] device-loss recovery failed:", failure);
     } finally {
       if (this._recoveryAbortController === abortController) {
         this._recoveryAbortController = null;
@@ -389,19 +404,30 @@ export class Renderer {
   }
 
   /** Dispose renderer-owned GPU resources. */
-  public dispose(): void {
-    if (this._disposed) return;
+  public dispose(): Promise<void> {
+    if (this._disposePromise) return this._disposePromise;
+    if (this._disposed) return Promise.resolve();
     this._disposed = true;
     this._lifecycleGeneration += 1;
     this._recoveryAbortController?.abort();
+    const recovery = this._recoveryPromise;
     this._onInstanceReplaced = null;
-    this.pipeline?.dispose();
-    // Respect SceneHost's deferred disposal boundary during normal runtime
-    // teardown. Recovery replacements above are explicit and dispose at once.
-    this.instance.dispose();
-    this._unsupportedOverlay?.remove();
-    this._unsupportedOverlay = null;
-    // SceneHost owns the persistent canvas and removes it on Vue root teardown.
+    this._disposePromise = Promise.resolve().then(async () => {
+      await recovery?.catch((error: unknown) => {
+        console.error("[Renderer] recovery cleanup failed during teardown:", error);
+      });
+      try {
+        this.pipeline?.dispose();
+      } finally {
+        try {
+          await this.instance.dispose();
+        } finally {
+          this._unsupportedOverlay?.remove();
+          this._unsupportedOverlay = null;
+        }
+      }
+    });
+    return this._disposePromise;
   }
 }
 

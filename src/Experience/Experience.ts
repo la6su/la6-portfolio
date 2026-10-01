@@ -1096,7 +1096,7 @@ export class Experience {
     const stageTeardown = this._stages.dispose()
     // Release the render pipeline and abort recovery now. SceneHost's
     // renderer instance is deferred until its declarative Vue owners unmount.
-    this.renderer.dispose()
+    const rendererTeardown = this.renderer.dispose()
     // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
     // Dispose carousel and particle resources before the adopted roots.
@@ -1122,7 +1122,7 @@ export class Experience {
       // no owner card yet. In-flight entries self-dispose when they settle.
       disposeAllCaseTextures()
     }
-    const results = await Promise.allSettled([showreelTeardown, stageTeardown])
+    const results = await Promise.allSettled([showreelTeardown, stageTeardown, rendererTeardown])
     for (const result of results) {
       if (result.status === 'rejected') {
         console.error('[Experience] scene owner teardown failed:', result.reason)

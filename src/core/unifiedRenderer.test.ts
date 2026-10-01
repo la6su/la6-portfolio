@@ -50,28 +50,30 @@ describe("unified renderer initialization ownership", () => {
     ).toEqual({ backendName: null, isFallbackAdapter: null });
   });
 
-  it("makes Tres and the application share one idempotent dispose boundary", () => {
+  it("makes Tres and the application share one awaitable idempotent dispose boundary", async () => {
     const dispose = vi.fn();
     const renderer = makeRendererDisposeIdempotent({ dispose });
 
-    renderer.dispose();
-    renderer.dispose();
+    const first = renderer.dispose();
+    const second = renderer.dispose();
 
+    expect(first).toBe(second);
+    await Promise.all([first, second]);
     expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it("defers Tres disposal until the scene owner releases the renderer", () => {
+  it("defers Tres disposal until the scene owner releases the renderer", async () => {
     const dispose = vi.fn();
     const renderer = makeRendererDisposeIdempotent({ dispose });
     const teardownOrder: string[] = [];
     const flush = deferRendererDisposal(renderer);
 
-    renderer.dispose();
+    await renderer.dispose();
     teardownOrder.push("Tres renderer-manager hook");
     expect(dispose).not.toHaveBeenCalled();
     teardownOrder.push("declarative scene owner cleanup");
 
-    flush();
+    await flush();
     teardownOrder.push("backend dispose");
     expect(dispose).toHaveBeenCalledOnce();
     expect(teardownOrder).toEqual([
@@ -79,13 +81,16 @@ describe("unified renderer initialization ownership", () => {
       "declarative scene owner cleanup",
       "backend dispose",
     ]);
-    renderer.dispose();
+    await renderer.dispose();
     expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it("keeps the backend alive through Vue owner cleanup in Tres unmount order", () => {
+  it("keeps the backend alive through Vue owner cleanup in Tres unmount order", async () => {
     const order: string[] = [];
-    const dispose = vi.fn(() => order.push("backend dispose"));
+    const dispose = vi.fn(async () => {
+      await Promise.resolve();
+      order.push("backend dispose");
+    });
     const renderer = makeRendererDisposeIdempotent({ dispose });
     const flush = deferRendererDisposal(renderer);
     const sceneOwners = createApp(
@@ -121,6 +126,7 @@ describe("unified renderer initialization ownership", () => {
     sceneHost.mount(document.createElement("div"));
 
     sceneHost.unmount();
+    await flush();
 
     expect(order).toEqual([
       "Tres renderer-manager hook",
@@ -131,15 +137,34 @@ describe("unified renderer initialization ownership", () => {
     expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it("allows explicit recovery cleanup to bypass deferred Tres disposal", () => {
+  it("allows explicit recovery cleanup to bypass deferred Tres disposal", async () => {
     const dispose = vi.fn();
     const renderer = makeRendererDisposeIdempotent({ dispose });
     const flush = deferRendererDisposal(renderer);
 
-    disposeUnifiedRendererNow(renderer);
-    renderer.dispose();
-    flush();
+    await disposeUnifiedRendererNow(renderer);
+    await renderer.dispose();
+    await flush();
 
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
+  it("waits for Three's asynchronous backend cleanup", async () => {
+    let finishDisposal!: () => void;
+    const dispose = vi.fn(
+      () => new Promise<void>((resolve) => (finishDisposal = resolve)),
+    );
+    const renderer = makeRendererDisposeIdempotent({ dispose });
+    let settled = false;
+
+    const teardown = renderer.dispose().then(() => {
+      settled = true;
+    });
+    expect(settled).toBe(false);
+    finishDisposal();
+    await teardown;
+
+    expect(settled).toBe(true);
     expect(dispose).toHaveBeenCalledOnce();
   });
 
