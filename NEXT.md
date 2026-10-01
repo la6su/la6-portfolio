@@ -83,6 +83,41 @@ preserve custom policy only when code or measurements prove the difference.
   AppShell unmount. `RouteTransitionView.vue` declares the transition surface;
   the route controller retains only guard timing and cancel policy.
 
+## Full source audit — findings and work queue (2026-10-01)
+
+This is the current source-to-runtime audit, not a claim that production
+acceptance is complete. Findings below are grounded in inspected call sites,
+plugin wiring, package scripts, and current module ownership. Items marked
+`verify` need runtime/deployment evidence before changing architecture.
+
+| Area | Audited evidence and finding | Next action | Priority / acceptance |
+| --- | --- | --- | --- |
+| Vue/Tres scene graph | `SceneHost.vue`, `sceneHost.ts`, `useSceneStages.ts`, stage owner SFCs, `Experience.buildScene()`, and scene owner controllers show Vue/Tres owning persistent roots. Experience adopts those roots. No demonstrated duplicate stable scene hierarchy remains. | Keep this as baseline; change an owner only when a concrete duplicate or cleanup defect is demonstrated. | Guardrail: no runtime `scene.add/remove` for stable app nodes; one disposal owner per GPU resource. |
+| Scene coordination | `SceneCoordinator` owns route/story orchestration; `SceneTransformPass` owns scroll-to-world math; `SceneFramePass` owns per-frame updates. These are distinct algorithms, but the split carries getter-rich owner ports and coordination forwarding. Historical extraction comments describe refactor sequence rather than current responsibility. | Review each delegate and port against call sites. Remove pass-through methods/state that do not isolate an algorithm; rewrite stale extraction comments. Do not merge by file size alone. | P1: every surviving class has a direct responsibility and a caller that benefits from its boundary. |
+| Experience composition root | `Experience.ts` initializes renderer, scene, feature UI, theme, motion, recovery, diagnostics and frame policy. It is the composition root, but also has broad event fan-outs and lifecycle state. | Complete method-by-method teardown/error-path map; look for repeated fan-outs and flags derivable from owners. Keep coordination here only where it is the single natural owner. | P1: each listener, timer, observer, renderer candidate and async continuation has one owner and terminal cleanup. |
+| Lazy route stages | `LazyStage.ts` centralizes real stale-import, mount, in-flight release and idempotent cleanup races; `StageRegistry.ts` supplies route-specific contracts. | Retain shared lifecycle only while focused race tests represent production behavior; remove slot/test seams or repeated contract fields that serve no production behavior. | P1: route leave during create/mount/load releases exactly once and does not wait for unrelated imports. |
+| Route hash dispatch | `app/index.ts` had both `createSingleFrameOwner` generation/cancel state and `hashNavigationGeneration`; afterEach cancels the owned frame before starting the next poll, so the second stale token duplicated cancellation. Removed the redundant counter; direct and lazy-route hash flows pass in Firefox production browser. Both function-backed owners remain private to one mount. | Add superseding navigation/router-error/unmount cases if current browser coverage does not cover them; reconsider wrapper exports and simplify their implementation only if it reduces state without weakening cancellation. | P1: no stale hash dispatch; no wrapper exported solely for test access. |
+| Bootstrap progress | `entry-app.ts` reports 15% then 40% with no asynchronous work between; later 55/95 milestones are coarse phases, followed by an artificial 150 ms pause. | Decide whether the UI promises measurable progress. Use phase/status feedback or actual measurable progress; remove fabricated percentages/delay if they add no user value. | P2: loader never implies measured completion that boot cannot report. |
+| Dev builder API | `admin/vite-plugin.ts` exposes unauthenticated GET and source-writing POST middleware whenever Vite serves. Package `dev` uses `vite --host`; `vite.config.ts` allows `project.6la.ru` and documents Caddy forwarding to localhost:5173. No proxy/auth configuration is in this repository, so external reachability is unproven; a reachable dev server grants document and generated Less writes. | Establish actual proxy ACL and whether `/__jlz-admin/*` is reachable remotely. Enforce a local/authorized boundary at the server/API and add request tests; do not rely on hidden UI. | P0 verify: remote unauthenticated clients cannot read or mutate builder sources; local editor still works. |
+| Build/dependency integration | Vite 8/Rolldown code-splitting rules and Three/Tres/Cientos compatibility aliases are pinned to observed ecosystem behavior; the stdlib checker guards its imported module set. Direct dependency usage was traced; no unused package was proven. | Keep compatibility seams small; on upgrades verify peer compatibility, bundle duplication, lazy chunk placement and checker output. Do not delete shims based on apparent complexity. | P1: lockfile install, type check, stdlib check, build and budgets agree after upgrades. |
+| Static content and routes | Blog and builder sources are consumed by render/prerender scripts and multi-page Vite inputs; they are live build inputs even when not browser-imported. Runtime route manifest is separate from static blog/published-builder routes by design. | Finish source→generated-output ownership map, including sitemap, metadata, authored HTML/Less and clean-checkout behavior. | P1: each generated artifact has one source and deterministic build owner. |
+| CSS and UIkit | `_console-language.less` (1256 lines), `_import.less` (600), and component sheets contain large authored styling surfaces. Current search did not prove selector deadness or duplicate semantics. | Audit imports/tokens/selectors against authored HTML, Vue templates, blog and builder markup; only remove proven unused/repeated rules. Check responsive, reduced-motion, focus and EN/RU variants after each slice. | P2: no selector removal without closed markup/input search and browser verification. |
+| Public media and budgets | Public runtime assets resolve to app/blog/builder references; `coming-soon.mp4` dominates transfer size (~5.27 MB). `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
+| Release/deployment | CI checks and browser-tests; no deploy workflow or host config exists in repository. `dist/` remains tracked pending identification of its consumer. | Identify host, rewrite/history behavior, cache headers and whether host consumes committed `dist/` or builds source. Reproduce from a clean checkout. | P0 verify: documented release path matches deployment. |
+| Render loop and animation | Tres is the only scene render-loop driver; `RenderScheduler` controls its open/close window. Other RAF users are DOM text reveal, UIkit content refresh, route-hash polling and route announcement. | Keep the one scene loop. Inspect per-call cleanup and whether each DOM animation has an independent cancellation owner during unmount. | P1: no second scene loop or uncanceled callback after owner teardown. |
+| Cross-browser/GPU | Chromium and Firefox software-rendered suites are recorded; WebKit cannot launch on this host and physical WebGPU/recovery evidence is absent. | Run WebKit on declared CI/available host, then WebGPU/WebGL and context recovery on supported physical hardware. | P0 release evidence; do not infer GPU behavior from software renderer runs. |
+
+### Audit execution order
+
+1. Close the dev API exposure question and protect its write boundary.
+2. Finish runtime ownership/teardown map (`Experience`, renderer recovery,
+   stage registry, route/hash and app unmount); simplify proven duplicate state.
+3. Complete generated content, builder/blog, CSS selector and media audits.
+4. Confirm dependency/build compatibility from clean install and actual release
+   host behavior; remove only proven dead paths.
+5. Run browser, accessibility, resource, performance and physical GPU evidence;
+   update acceptance rows with commands and results.
+
 ## Phases
 
 Status: `active`, `queued`, or `done`. Mark a phase `done` only when its stated
@@ -191,12 +226,14 @@ activity already wakes the shared loop, so the second Works-only pointer
 listener and RAF were removed; DrawTrail consumes the same Input state in that
 scheduler frame.
 
-**Next audit:** trace `Experience.ts` end to end and test every remaining
-boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
-readiness, renderer replacement, and teardown. Collapse only
-forwarding state or duplicate owners. Confirm listeners, timers, observer,
-RAF, media, controls, pending imports, and renderer candidates reach terminal
-cleanup on route leave, boot failure, recovery, and Vue unmount.
+**Next audit:** finish the method-by-method `Experience.ts` trace through
+`ExperienceUI`, `StageRegistry`/`LazyStage`, renderer replacement and app
+unmount. Audit async cancellation, event listener registration, diagnostic
+globals, stage release ordering and boot failure exits. Then simplify only the
+duplicate hash invalidation state and other state proven redundant by that
+trace. Confirm listeners, timers, observer, RAF, media, controls, pending
+imports and renderer candidates reach terminal cleanup on route leave, boot
+failure, recovery and Vue unmount.
 The first-frame false-success and pending-cancel paths are fixed and covered by
 unit tests; production Chromium also confirms the successful boot and existing
 renderer-failure UI path.
@@ -282,13 +319,14 @@ they no longer describe current ownership or APIs. Current source slices
 passed Chromium and Firefox production suites, Vue type-check, lint, and 80
 unit tests.
 
-**Next audit:** finish source-to-output inventory for generated CSS, routes,
-content generators, tests and package scripts (public runtime assets and
-TypeScript scripts are now source-referenced and checked). Remove proven dead
-or duplicate paths in focused commits. Inspect route chunk sizes, texture/font
-cost, CPU frame work, GPU allocations, and build budgets; use measured results
-and retain deploy-required artifacts. Then perform a fresh full source review
-against this plan and record the release audit evidence.
+**Next audit:** finish the source-to-output inventory for generated CSS,
+routes, content generators, tests and package scripts (public runtime assets
+and TypeScript scripts are now source-referenced and checked). Audit authored
+LESS selector reachability across Vue, static HTML, blog and builder output;
+inspect video codec/dimensions before selecting media budgets. Remove proven
+dead or duplicate paths in focused commits. Inspect route chunks, texture/font
+cost, CPU frame work and GPU allocations from measurements. Then do a fresh
+independent source review and record release evidence.
 
 **Audit finding:** removed stale comments referring to the deleted `src/pages`
 tree and prior imperative router/admin renderers. Current comments describe
@@ -379,26 +417,35 @@ project passed (16 passed, 4 opt-in renderer scenarios skipped). TypeScript,
 build budgets, and ESLint also passed. WebKit remains blocked by the recorded
 missing host libraries; physical-GPU behavior remains outside this software
 browser evidence.
-The current policy cleanup also passes all 80 unit tests, Vue/TypeScript build,
-ESLint, and release budgets; removing the unreachable predicate does not
-change tier selection.
+The route hash cleanup removed one stale-generation counter while keeping the
+owned RAF cancellation. 80 unit tests, Vue type-check, ESLint, production
+build/budgets and the focused Firefox production hash test passed. Focused
+Chromium execution was attempted but the installed Playwright Chromium binary
+is absent on this host. The current policy cleanup also passes all 80 unit
+tests, Vue/TypeScript build, ESLint, and release budgets; removing the
+unreachable predicate does not change tier selection. A broad audit pass has
+mapped runtime, app, builder,
+admin, build, styling and public-media ownership. It identified the
+unauthenticated dev builder API exposure question, duplicate route-hash
+stale-token state, misleading fixed progress percentages, and verification
+work in CSS/media and deployment. These findings are now in the audit table;
+they are not yet closed.
 
 **Next actions:**
 
-1. Continue phase 2's `src/Experience/Experience.ts` ownership and teardown
-   trace through `src/app/SceneHost.vue` and `src/app/sceneHost.ts`. The
-   create-to-mount teardown race is fixed and covered; inspect remaining
-   boot/UI lifecycle owners and async stage continuations, changing only a
-   demonstrated duplicate or missing cleanup path.
-2. Finish phase 5's source-to-output map for generated CSS, routes, content,
-   and test fixtures. Public runtime assets, TypeScript scripts, and current
-   release output have been inventoried or synchronized.
-3. Continue phase 4's EN/RU keyboard, contrast, touch, resize, and renderer
+1. Establish the dev builder API's actual network exposure and enforce an
+   authorized boundary before treating the admin as production-safe.
+2. Finish phase 2's `Experience.ts` teardown trace and remove route hash
+   dispatch's duplicated stale generation only after direct/lazy/superseded
+   navigation coverage is confirmed.
+3. Finish phase 5's generated-output and LESS selector audit; inspect the
+   5.27 MB video before setting a measurable media budget.
+4. Continue phase 4's EN/RU keyboard, contrast, touch, resize and renderer
    failure walk; run WebKit in CI or a host with its declared libraries.
-4. Close phase 0 only after identifying the actual deploy consumer and
-   reproducing clean install/build and static routing/cache behavior.
-5. Close phase 3/5 only with physical WebGPU/WebGL, recovery, resource-plateau,
-   idle-render, and performance evidence on supported hardware.
+5. Close phase 0 only after identifying the deploy consumer and reproducing
+   clean install/build, routing and cache behavior. Close phases 3/5 only with
+   physical WebGPU/WebGL, recovery, resource plateau, idle-render and
+   performance evidence on supported hardware.
 
 ## Follow-on goal policy
 

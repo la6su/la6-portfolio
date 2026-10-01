@@ -128,10 +128,8 @@ export async function mountVueApp(): Promise<void> {
   // the 3D navigation owner is ready. In-app hash navigations dispatch on
   // the next frame.
   let firstNavigation = true
-  let hashNavigationGeneration = 0
   router.afterEach((to) => {
     hashNavigationFrame.cancel()
-    const generation = ++hashNavigationGeneration
     const isInitial = firstNavigation
     firstNavigation = false
     initialHashGate.invalidate()
@@ -143,11 +141,11 @@ export async function mountVueApp(): Promise<void> {
     // A first visit to a lazy route swaps the RouterView component only
     // after the dynamic import resolves — later than one frame. Dispatch
     // once the target section actually exists in the swapped-in route root
-    // (bounded poll); a stale generation or the bound gives up silently.
+    // (bounded poll); a newer navigation cancels its scheduled frame and the
+    // bound gives up silently.
     const targetId = to.hash.slice(1)
     let waitedFrames = 0
     const dispatchWhenReady = (): void => {
-      if (generation !== hashNavigationGeneration) return
       if (document.getElementById(targetId)) {
         eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
         return
