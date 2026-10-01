@@ -734,10 +734,14 @@ test("Renderer initialization failure reaches the accessible boot error state", 
 test("Renderer recovers from WebGL context loss on the persistent canvas", async ({
   page,
 }, testInfo) => {
+  const recoveryEnabled =
+    testInfo.project.name === "chromium"
+      ? process.env.JLZ_WEBGL_RECOVERY_CHROME === "1"
+      : testInfo.project.name === "firefox" &&
+        process.env.JLZ_WEBGL_RECOVERY_FIREFOX === "1";
   test.skip(
-    process.env.JLZ_WEBGL_RECOVERY_CHROME !== "1" ||
-      testInfo.project.name !== "chromium",
-    "Run with JLZ_WEBGL_RECOVERY_CHROME=1 in the physical Chrome recovery project.",
+    !recoveryEnabled,
+    "Opt in with the browser-specific JLZ_WEBGL_RECOVERY_* flag.",
   );
 
   const errors: string[] = [];
@@ -762,13 +766,9 @@ test("Renderer recovers from WebGL context loss on the persistent canvas", async
       probe && probe.mode === "webgl" && probe.backend === "WebGLBackend",
     );
   });
-  await page.waitForFunction(
-    () =>
-      typeof (window as Window & { __jlzRuntimeDestroy?: () => Promise<void> })
-        .__jlzRuntimeDestroy === "function",
-    undefined,
-    { timeout: 20_000 },
-  );
+  await expect(page.locator("#jlz-splash-status")).toHaveText("READY", {
+    timeout: 20_000,
+  });
   await page.locator("#app canvas").evaluate(async (canvas) => {
     const gl = canvas.getContext("webgl2");
     const extension = gl?.getExtension("WEBGL_lose_context");

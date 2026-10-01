@@ -1,9 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
-// A physical WebGL recovery gate: use the installed Chrome with WebGPU
-// disabled so the production automatic policy constructs WebGPURenderer on
-// WebGLBackend. CI and the regular suite retain Playwright Chromium defaults.
+// Opt-in WebGL recovery gates use production preview; host teardown alone
+// needs the dev server for its runtime destruction probe.
 const webglRecoveryChrome = process.env.JLZ_WEBGL_RECOVERY_CHROME === "1";
+const webglRecoveryFirefox = process.env.JLZ_WEBGL_RECOVERY_FIREFOX === "1";
 const webglRecoveryOzone = process.env.JLZ_WEBGL_OZONE ?? "wayland";
 const webglRecoverySoftware = process.env.JLZ_WEBGL_RECOVERY_SOFTWARE === "1";
 const rendererInitFailure =
@@ -82,14 +82,15 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: webglRecoveryChrome
+    command: hostTeardownTest
       ? "bun run dev --host 127.0.0.1 --port 4173"
-      : hostTeardownTest
-        ? "bun run dev --host 127.0.0.1 --port 4173"
-        : "bun run build && bun run preview --host 127.0.0.1 --port 4173",
+      : "bun run build && bun run preview --host 127.0.0.1 --port 4173",
     port: 4173,
     reuseExistingServer:
-      !process.env.CI && !webglRecoveryChrome && !hostTeardownTest,
+      !process.env.CI &&
+      !webglRecoveryChrome &&
+      !webglRecoveryFirefox &&
+      !hostTeardownTest,
   },
   projects,
 });
