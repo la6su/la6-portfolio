@@ -7,7 +7,7 @@
 //   - UIKit3 uk-modal base (Esc to close, bg-close, focus trap)
 //
 // Video playback is not part of this surface: the only video source belongs
-// to the ShowreelTheater render mode (ShowreelConsole chrome), so the
+// to the ShowreelTheater render mode (ShowreelConsole.vue chrome), so the
 // overlay is image-only by construction.
 
 import UIkit from 'uikit'

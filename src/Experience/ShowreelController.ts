@@ -6,7 +6,7 @@
 // world simply skips a beat (see renderFrame). This controller owns the
 // lazy theater creation (neither the video element nor its texture exist
 // before the visitor asks for the showreel), the typed bus commands emitted
-// by the DOM chrome (ShowreelConsole), the reduced-motion forwarding and
+// by the Vue chrome (ShowreelConsole.vue), the reduced-motion forwarding and
 // the terminal disposal. The frame path (Experience) asks it to render and
 // falls back to the world scene when the theater does not own the frame.
 

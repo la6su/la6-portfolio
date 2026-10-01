@@ -30,6 +30,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   });
   await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
   await expect(page.locator("#jlz-fs-overlay")).toHaveCount(0);
+  await expect(page.locator("#jlz-showreel-console")).toHaveCount(0);
 
   const anchorWasIntercepted = await page.evaluate(() => {
     const anchor = document.createElement("a");

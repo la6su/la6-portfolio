@@ -513,7 +513,7 @@ export class Experience {
         (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
       if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
     })
-    // Showreel theater commands — DOM chrome (ShowreelConsole) emits over the
+    // Showreel theater commands — Vue chrome (ShowreelConsole.vue) emits over the
     // typed bus; the controller owns the lazy GPU-side stage and the render swap.
     this._showreel.bind()
     await this.renderer.init({

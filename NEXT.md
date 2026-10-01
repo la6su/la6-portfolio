@@ -60,11 +60,11 @@ preserve custom policy only when code or measurements prove the difference.
   caught and shown by the app shell.
 - The persistent top bar/contact launcher now lives declaratively in
   `app/PersistentConsole.vue` under `AppShell`; `CinematicNav` retains native
-  scroll, story position, input, and hash behavior. Fullscreen media owners
-  retain behavior controllers. `FullscreenOverlayView.vue` now declares the
-  modal structure; its controller adopts the Vue root and owns UIKit/focus,
-  decoded-poster, and keyboard behavior. `ShowreelConsole` remains the next
-  persistent-UI structure/lifecycle candidate.
+  scroll, story position, input, and hash behavior. `FullscreenOverlayView.vue`
+  declares the modal structure; its controller adopts the Vue root and owns
+  UIKit/focus, decoded-poster, and keyboard behavior. `ShowreelConsole.vue`
+  renders theater state declaratively and owns its UI subscriptions/input until
+  AppShell unmount.
 
 ## Phases
 
@@ -102,8 +102,9 @@ WeakMap attachment bag.
 `primitive`, `:dispose="null"`, and manual child insertion under
 `src/Experience` and `src/app/scene`. For each, record whether it creates
 stable hierarchy or a runtime algorithm/resource. Move only stable hierarchy
-to Vue and preserve focused disposal coverage. The remaining UI candidate is
-the ShowreelConsole's stateful DOM chrome.
+to Vue and preserve focused disposal coverage. Persistent app-shell DOM now has
+Vue owners; keep the remaining imperative DOM limited to cohesive lifecycle
+or browser-library behavior.
 
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
@@ -154,12 +155,13 @@ loop/draw or unbounded route resource growth.
 **Established:** SPA routes, EN/RU metadata, standalone blog/builder pages,
 browser history, unknown-route fallback, menu/modal keyboard focus, reduced
 motion, mobile overflow, and touch scrolling have production-browser coverage.
-Persistent console and fullscreen modal markup are Vue-owned. Their behavior
-controllers adopt the stable structures and are cleaned up with the AppShell
-lifecycle. Firefox is confirmed by the user and the local suite.
+Persistent console, fullscreen modal, and showreel chrome are Vue-owned.
+Behavior controllers keep media/rendering policies at their existing owners;
+Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
+by the user and the local suite.
 
-**Next audit:** review the remaining imperative overlays and route transitions
-against Vue ownership, starting with ShowreelConsole; walk EN/RU routes, direct deep links, hash navigation,
+**Next audit:** review remaining route-transition/browser-library behavior
+against Vue ownership; walk EN/RU routes, direct deep links, hash navigation,
 focus, contrast, touch targets, resize/orientation, no-scene and renderer
 failure states. Run the production suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
@@ -194,11 +196,12 @@ no known dead active path or unowned persistent resource remains.
 
 ## Current checkpoint — 2026-10-01
 
-**Latest source slice:** the persistent console and fullscreen overlay markup
-are Vue-owned under `AppShell`; their controllers own behavior and follow the
-host lifecycle. Earlier commits removed duplicate global error handling and
-recorded why the scene coordinator/frame pass and typed bus remain. Keep build
-output under tracked `dist/` unstaged; its deploy consumer is still unknown.
+**Latest source slice:** the persistent console, fullscreen viewer and showreel
+chrome are Vue-owned under `AppShell`; controllers retain modal, media and
+render behavior and follow the host lifecycle. Earlier commits removed
+duplicate global error handling and recorded why the scene coordinator/frame
+pass and typed bus remain. Keep build output under tracked `dist/` unstaged;
+its deploy consumer is still unknown.
 
 **Verification:** `bun run type-check:vue`, `bun run lint`, and
 `bun run test:unit` pass (24 files / 73 tests). Production Chromium passes
@@ -212,11 +215,13 @@ and Firefox (4/4 total), with Vue type-check clean.
 The fullscreen overlay Vue adoption also passed full Chromium (14 passed,
 3 opt-in skipped) and Firefox (13 passed, 4 skipped) production suites; Vue
 type-check, ESLint, and all 73 unit tests pass on the updated source. The
-dedicated Chromium host-teardown test passed with an assertion that the
-fullscreen modal root is removed when AppShell unmounts.
+showreel Vue adoption then passed the same full suites. After its final
+unchanged-state guard, the focused showreel open/close suite passed in Chromium
+and Firefox (2/2). Dedicated Chromium host teardown passed with assertions that
+both modal roots are removed when AppShell unmounts.
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
-remaining imperative overlay audit. Make the next code change only after
+route-transition/overlay behavior audit. Make the next code change only after
 identifying a concrete duplicated owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.
 
@@ -225,13 +230,12 @@ manual `THREE.Group/Mesh` hierarchy construction under `src/Experience`.
 `WorksInstallation.vue` uses one `Object3D` only as an instancing matrix
 scratch object; `ShowreelTheater` owns a separate offscreen scene by design.
 Those are not parallel owners. The remaining concrete declarative candidate
-from this pass is the hand-built DOM structure in `FullscreenOverlay` and the
-opened-state chrome in `ShowreelConsole`. Both also own real behavior
-(UIkit modal/focus trapping and poster-decode races; showreel keyboard/touch
-input and media state), so deleting either class wholesale would discard a
-cohesive owner. Review only whether their stable markup can move into Vue while
-keeping state and DOM mutation under one clear owner; a wrapper-only SFC is not
-an improvement.
+from this pass was the hand-built persistent UI DOM. It is now resolved:
+`AppShell` declares the console, fullscreen viewer, and showreel chrome;
+`FullscreenOverlay` adopts its Vue root for UIKit/focus/poster behavior, while
+`ShowreelConsole.vue` renders the typed theater state reactively. Keep their
+behavior owners because they handle real browser/media policy; do not restore
+runtime markup construction or add wrapper-only SFCs.
 
 ## Follow-on goal policy
 

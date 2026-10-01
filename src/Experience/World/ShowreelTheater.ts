@@ -222,7 +222,7 @@ export class ShowreelTheater {
     return Boolean(this.video && !this.video.paused && !this.video.ended)
   }
 
-  // ── Commands (eventBus-driven from ShowreelConsole) ──
+  // ── Commands (eventBus-driven from ShowreelConsole.vue) ──
 
   open(): void {
     if (this.disposed || this.phase === 'open' || this.phase === 'enter') return

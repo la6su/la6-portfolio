@@ -1,13 +1,11 @@
 import UIkit from 'uikit'
 import { FullscreenOverlay } from './FullscreenOverlay'
-import { ShowreelConsole } from './ShowreelConsole'
 import { registerProductIcons } from '../assets/product-icons'
 import { eventBus } from '../core/EventBus'
 
 export class UIManager {
   private _overlay: FullscreenOverlay | null = null
   private _overlayHostUnsub: (() => void) | null = null
-  public showreel: ShowreelConsole | null = null
 
   /** Adopt Vue-owned modal markup when the runtime first needs its behavior. */
   get overlay(): FullscreenOverlay | null {
@@ -31,18 +29,12 @@ export class UIManager {
       this._overlay?.dispose()
       this._overlay = null
     })
-    // The showreel trigger + theater chrome live on their own console owner;
-    // the GPU-side theater is Experience's lazy ShowreelTheater stage.
-    this.showreel = new ShowreelConsole()
-    this.showreel.wireTrigger()
   }
 
   /** Clean up UI components. */
   dispose(): void {
     this._overlayHostUnsub?.()
     this._overlayHostUnsub = null
-    this.showreel?.dispose()
-    this.showreel = null
     this._overlay?.dispose()
     this._overlay = null
   }
