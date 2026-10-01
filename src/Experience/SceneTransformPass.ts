@@ -184,8 +184,8 @@ export class SceneTransformPass {
           )
         }
         // EnvSphere follows the active theme through the jlz:theme-applied
-        // listener in Experience.ts. Per-section pattern overrides were
-        // removed because they could break theme contrast.
+        // listener in Experience.ts so background tone and page contrast
+        // stay synchronized.
       }
     }
 

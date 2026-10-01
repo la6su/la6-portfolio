@@ -50,7 +50,7 @@ export class SceneCoordinator {
     return this.owners.sectionGroups()?.groups ?? []
   }
 
-  // ── Public owner read surface (replaces the legacy `World` adapter getters) ──
+  // ── Live owner read surface ──
   // Experience creates + disposes every owner; ExperienceUI + the Experience
   // frame path read them through these getters (narrow read surface, no stored
   // reference — always live after Experience.init() has built the owners).
@@ -177,7 +177,7 @@ export class SceneCoordinator {
 
   /**
    * Contact's foreground chapters own their visual hierarchy. Agros is a quiet
-   * map frame, while the final CTA does not need the legacy HELLO flock.
+   * map frame, while the final CTA does not need the particle swarm.
    */
   public setContactSceneSection(index: number): void {
     const isContact = this.page() === 'contact'

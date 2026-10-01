@@ -32,8 +32,7 @@ export class SectionStateMachine {
    * Rebuild the page-specific config contract after init or SPA navigation:
    * load the configs, drop the derived map and dispose the previous route's
    * sections. Section construction is a separate step (buildSections) so the
-   * coordinator can run its route-visibility gate in between, matching the
-   * legacy World ordering.
+   * coordinator can run its route-visibility gate in between.
    */
   public beginRoute(page: PageId): readonly PhaseConfig[] {
     this._configs = getWorldConfigForPage(page)

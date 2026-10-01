@@ -26,7 +26,7 @@ export class GroundPlane {
   private _themeOpacity = 0.4
   private _themeActive = false
   private _targetOpacity = 0
-  // GC-free lerp pool (the legacy `_poolGroundColor` — zero allocs/frame).
+  // Reused color keeps interpolation allocation-free.
   private readonly _poolColor = new THREE.Color()
   private _lastFrom: GroundConfig | null = null
   private _lastTo: GroundConfig | null = null
@@ -36,7 +36,7 @@ export class GroundPlane {
     this.object = node
   }
 
-  /** `World.init()` step: initialize the ground from the intro section config. */
+  /** Initialize the ground from the intro section config. */
   public applyInitialConfig(ground: GroundConfig | undefined): void {
     if (this._disposed) return
     if (!ground) return
@@ -48,7 +48,7 @@ export class GroundPlane {
     this._lastT = Number.NaN
   }
 
-  /** `jlz:theme-applied` step (legacy `World.syncGroundTheme`). */
+  /** Apply the active page theme to the ground. */
   public syncTheme(isLight: boolean): void {
     if (this._disposed) return
     if (isLight) {

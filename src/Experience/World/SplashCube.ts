@@ -142,8 +142,6 @@ export class SplashCube {
   private openerProgress = 0
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
-  /** (CubeCamera throttle REMOVED — no more cubemap refresh. Glass uses
-   *   scene.environment PMREM which is static, zero per-frame cost.) */
 
   private targetParams: BakuMaterialParams = {
     color: new THREE.Color(0x333333),
@@ -504,9 +502,6 @@ export class SplashCube {
     ;(this._positions.array as Float32Array).set(this._basePositions)
     this._positions.needsUpdate = true
   }
-
-  // (_createJLZTexture REMOVED — was only used by buildContentScene which is
-  //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
   dispose(): void {
     if (this._disposed) return

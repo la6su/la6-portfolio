@@ -7,8 +7,7 @@
 // Clicking a case uses a focus → travel handoff before UIkit takes ownership.
 
 import * as THREE from 'three'
-// uiChrome.ts removed — inline the guard here. Guard against the cinematic
-// navigator, project overlay, app loader and both responsive sheets.
+// Ignore interactions that belong to the cinematic app chrome.
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
@@ -24,7 +23,6 @@ import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { carouselCardMetadataOf } from './cardMetadata'
-// PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
 // only the centre case and its two adjacent neighbours. They share four

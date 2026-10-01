@@ -244,6 +244,8 @@ against this plan and record the release audit evidence.
 **Audit finding:** removed stale comments referring to the deleted `src/pages`
 tree and prior imperative router/admin renderers. Current comments describe
 the Vue Router timing, hash dispatch, and reactive refresh behavior directly.
+The same pass removed references to deleted carousel helpers, scene adapters,
+and glass-cube render paths from their active owner modules.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
