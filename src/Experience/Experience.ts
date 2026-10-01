@@ -379,8 +379,12 @@ export class Experience {
     // The carousel is declared under the Works root. Experience initializes
     // it and the coordinator drives it through the owner getter.
     this.carousel = this.sectionGroups.works.carousel
-    if (this.carousel) await this._host.stages.carousel.mount(this.carousel)
+    if (this.carousel) {
+      await this._host.stages.carousel.mount(this.carousel)
+      if (!this.isLifecycleCurrent(token)) return
+    }
     await this._host.stages.particles.mount(this.sectionGroups.works.particles)
+    if (!this.isLifecycleCurrent(token)) return
     if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
     // The coordinator forwards per-frame color interpolation to the
     // Vue-owned ambient pavilion.
@@ -596,6 +600,11 @@ export class Experience {
       try {
         this._frameTiming = new FrameTiming()
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
+        // HMR or host teardown can land while the dev-only chunk is loading.
+        // Do not construct a panel or publish its window probe after destroy.
+        if (!this.isLifecycleCurrent(token)) {
+          throw new DOMException('Experience initialization was cancelled.', 'AbortError')
+        }
         this.devPanel = new DevPanelCtor(this)
         // Dev-only probe exposes resource and loop diagnostics.
         ;(
@@ -630,6 +639,9 @@ export class Experience {
         }
         devDiagnostic('info', '[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
       } catch (e) {
+        if (!this.isLifecycleCurrent(token)) {
+          throw new DOMException('Experience initialization was cancelled.', 'AbortError')
+        }
         console.warn('[Experience] DevPanel init failed:', e)
       }
     }
