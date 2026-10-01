@@ -54,7 +54,6 @@ export class CinematicNav {
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
-  private _navButtonHandlers = new Map<HTMLButtonElement, () => void>()
   private _reducedMotion = prefersReducedMotion()
 
   /**
@@ -68,48 +67,12 @@ export class CinematicNav {
     this._page = page
     // The six-slot model is the worldSlots contract, not a literal.
     this._sectionCount = Math.max(WORLD_SLOT_COUNT, sectionCount)
-    this.el = this._buildNavigator()
+    const nav = document.getElementById('cinematic-nav')
+    if (!nav) throw new Error('Cinematic navigation must be declared by PersistentConsole.')
+    this.el = nav
+    this._navButtons = [...nav.querySelectorAll<HTMLButtonElement>('[data-story-index]')]
     this._addGlobalListeners()
     this._bindTrack()
-  }
-
-  private _buildNavigator(): HTMLElement {
-    const nav = document.createElement('nav')
-    nav.id = 'cinematic-nav'
-    nav.className = 'jlz-storyline'
-    nav.setAttribute('aria-label', 'Narrative sections')
-
-    const items = document.createElement('div')
-    items.className = 'jlz-storyline__items uk-flex uk-flex-middle'
-    for (let index = FIRST_MAIN; index <= LAST_MAIN; index++) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className = 'uk-button jlz-storyline__item'
-      button.dataset.storyIndex = String(index)
-      button.setAttribute('aria-label', `Go to section ${index}`)
-
-      const number = document.createElement('span')
-      number.className = 'jlz-storyline__number uk-text-meta uk-text-uppercase'
-      number.textContent = String(index).padStart(2, '0')
-      const label = document.createElement('span')
-      label.className = 'jlz-storyline__label uk-hidden'
-      label.dataset.storyLabel = ''
-      label.textContent = `Section ${index}`
-      button.append(number, label)
-      const clickHandler = (): void => this.goToSection(index)
-      button.addEventListener('click', clickHandler)
-      this._navButtonHandlers.set(button, clickHandler)
-      items.appendChild(button)
-      this._navButtons.push(button)
-    }
-
-    const hint = document.createElement('span')
-    hint.className = 'jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase'
-    hint.dataset.i18n = 'story.hint'
-    hint.textContent = 'Scroll · swipe'
-
-    nav.append(items, hint)
-    return nav
   }
 
   private _addGlobalListeners(): void {
@@ -260,12 +223,6 @@ export class CinematicNav {
       section.style.setProperty('--jlz-story-panel-opacity', String(1 - distance * 0.82))
     })
 
-    this._navButtons.forEach((button, index) => {
-      const active = index === nearest && this._side === 'center'
-      button.classList.toggle('is-active', active)
-      if (active) button.setAttribute('aria-current', 'step')
-      else button.removeAttribute('aria-current')
-    })
   }
 
   /** Settle decorative story parallax when the live motion policy changes. */
@@ -337,6 +294,7 @@ export class CinematicNav {
 
   onSectionChange(callback: (index: number) => void): void {
     this._onSectionChange = callback
+    callback(this.getSectionIndex())
   }
 
   onActiveChange(callback: (active: boolean) => void): void {
@@ -474,10 +432,6 @@ export class CinematicNav {
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)
-    this._navButtonHandlers.forEach((handler, button) => {
-      button.removeEventListener('click', handler)
-    })
-    this._navButtonHandlers.clear()
     this._navButtons = []
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
     this._mainSections.forEach((section) => {

@@ -5,6 +5,7 @@ import { getLang, t, toggleLang } from '../core/i18n'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
+import { worldSlotIndex } from '../core/worldSlots'
 
 const language = ref(getLang())
 const soundMuted = ref(getSoundMuted())
@@ -15,6 +16,12 @@ const soundIcon = ref<HTMLElement | null>(null)
 const menuLabel = computed(() => t(fullscreenOpen.value ? 'common.close' : 'menu.navigate'))
 const nav = ref<HTMLElement | null>(null)
 const sceneEnabled = !new URLSearchParams(window.location.search).has('no-scene')
+const firstStorySection = worldSlotIndex('intro')!
+const lastStorySection = worldSlotIndex('contact')!
+const storylineSections = Array.from(
+  { length: lastStorySection - firstStorySection + 1 },
+  (_, index) => firstStorySection + index,
+)
 
 const unsubscribers: Array<() => void> = []
 
@@ -176,7 +183,25 @@ function toggleSound(): void {
           <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
         </button>
       </div>
-      <!-- CinematicNav owns and mounts the story track here. -->
+      <nav id="cinematic-nav" class="jlz-storyline" aria-label="Narrative sections" data-sheet="center">
+        <div class="jlz-storyline__items uk-flex uk-flex-middle">
+          <button
+            v-for="index in storylineSections"
+            :key="index"
+            class="uk-button jlz-storyline__item"
+            :class="{ 'is-active': activeIndex === index }"
+            type="button"
+            :data-story-index="index"
+            :aria-label="`Go to section ${index}`"
+            :aria-current="activeIndex === index ? 'step' : undefined"
+            @click="requestStoryNavigation(index)"
+          >
+            <span class="jlz-storyline__number uk-text-meta uk-text-uppercase">{{ String(index).padStart(2, '0') }}</span>
+            <span class="jlz-storyline__label uk-hidden" data-story-label>Section {{ index }}</span>
+          </button>
+        </div>
+        <span class="jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase" data-i18n="story.hint">Scroll · swipe</span>
+      </nav>
     </div>
   </div>
 </template>

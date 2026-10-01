@@ -156,15 +156,17 @@ loop/draw or unbounded route resource growth.
 **Established:** SPA routes, EN/RU metadata, standalone blog/builder pages,
 browser history, unknown-route fallback, menu/modal keyboard focus, reduced
 motion, mobile overflow, and touch scrolling have production-browser coverage.
-Persistent console, fullscreen modal, and showreel chrome are Vue-owned.
+Persistent console, fullscreen modal, showreel chrome, route transition, and
+story rail are Vue-owned.
 Behavior controllers keep media/rendering policies at their existing owners;
 Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
 by the user and the local suite.
 
-**Next audit:** CinematicNav still builds its stable story rail with
-`createElement` and appends it into `PersistentConsole.vue`. Trace its focus,
-language, active-state, and sheet behavior before choosing a Vue-owned markup
-boundary; keep scroll observation and story-position policy in the controller.
+**Next audit:** validate the just-moved story rail's labels, focus, active-state,
+and sheet behavior. `CinematicNav` still projects page headings into button
+labels through direct DOM updates; check whether Vue route state can supply
+those labels without duplicating content lookup. Keep scroll observation and
+story-position policy in the controller.
 Then audit hash navigation against router/browser behavior; walk EN/RU routes,
 direct deep links, hash navigation,
 focus, contrast, touch targets, resize/orientation, no-scene and renderer
@@ -202,8 +204,9 @@ no known dead active path or unowned persistent resource remains.
 ## Current checkpoint — 2026-10-01
 
 **Latest source slice:** the persistent console, fullscreen viewer, showreel
-chrome, and route transition surface are Vue-owned under `AppShell`; controllers
-retain modal, media, render, and transition timing behavior and follow the host lifecycle. Earlier commits removed
+chrome, route transition surface, and cinematic story rail are Vue-owned under
+`AppShell`; controllers retain modal, media, render, and transition timing
+behavior and follow the host lifecycle. Earlier commits removed
 duplicate global error handling and recorded why the scene coordinator/frame
 pass and typed bus remain. Keep build output under tracked `dist/` unstaged;
 its deploy consumer is still unknown.
@@ -228,10 +231,17 @@ Vue adoption now passes the full production Chromium suite (14 passed, 3
 opt-in skipped) and Firefox suite (13 passed, 4 skipped), plus dedicated
 Chromium host teardown (1/1). Vue type-check, ESLint, all 73 unit tests,
 Prettier, and `git diff --check` also pass.
+The story-rail Vue adoption removes generated element/button listeners and the
+controller's duplicate active-class projection. A new active-slot regression
+test exposed a missed initial state callback; `onSectionChange` now sends the
+current slot on registration. The focused test and full Chromium (15 passed,
+3 opt-in skipped) and Firefox (14 passed, 4 skipped) suites pass; dedicated
+Chromium teardown also passes (1/1).
 
-**Next action:** continue phase 1's source-to-owner inventory and phase 4's
+**Next action:** audit the remaining direct DOM label projection in
+`CinematicNav`, then continue phase 1's source-to-owner inventory and phase 4's
 hash-navigation/router behavior audit. Make the next code change only after
-identifying a concrete duplicated owner or stable hierarchy still constructed
+identifying a concrete duplicate owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.
 
 The first scene-construction search found no runtime `scene.add/remove` or

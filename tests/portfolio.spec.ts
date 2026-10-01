@@ -383,6 +383,32 @@ test("navigation sheet moves focus in and restores it after Escape", async ({
   await expect(launcher).toBeFocused();
 });
 
+test("Vue story rail reflects and requests the active story slot", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+  const enter = page.locator("#jlz-splash-enter");
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 });
+  await enter.click();
+
+  const rail = page.getByRole("navigation", { name: "Narrative sections" });
+  await expect(rail.locator("[data-story-index]")).toHaveCount(4);
+  const activeSection = rail.locator('[data-story-index="1"]');
+  await expect(activeSection).toHaveAttribute("aria-current", "step");
+
+  const nextSection = rail.locator('[data-story-index="3"]');
+  await nextSection.click();
+  await expect(nextSection).toHaveAttribute("aria-current", "step");
+  await expect(nextSection).toHaveClass(/is-active/);
+});
+
 test("fullscreen project overlay traps and restores keyboard focus", async ({
   page,
 }) => {

@@ -107,15 +107,6 @@ export class ExperienceUI {
       }),
     )
 
-    // The compact storyline lives inside the console bar (bottom strip).
-    // If the console bar exists, append there; otherwise fall back to body.
-    const consoleBar = document.querySelector('.jlz-console-bar')
-    if (consoleBar) {
-      consoleBar.appendChild(this.storyNav.el)
-    } else {
-      document.body.appendChild(this.storyNav.el)
-    }
-
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
     // D-7 fix: default to MUTED (matches the console's getSoundMuted default:
     // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).

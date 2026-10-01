@@ -32,6 +32,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   await expect(page.locator("#jlz-fs-overlay")).toHaveCount(0);
   await expect(page.locator("#jlz-showreel-console")).toHaveCount(0);
   await expect(page.locator("#jlz-route-transition")).toHaveCount(0);
+  await expect(page.locator("#cinematic-nav")).toHaveCount(0);
 
   const anchorWasIntercepted = await page.evaluate(() => {
     const anchor = document.createElement("a");
