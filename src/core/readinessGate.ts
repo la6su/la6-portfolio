@@ -1,26 +1,20 @@
 // src/core/readinessGate.ts — first-render readiness gate.
-//
-// Pure timing helper: wraps the "first successful render" promise with a
-// bounded timeout. Cancellation deliberately leaves the promise pending: a
-// destroyed Experience must never let entry-app publish readiness.
-// Extracted from Experience.ts so the boot contract lives beside the other
-// bootstrap policy modules (bootstrapStates, renderDemand) instead of inside
-// the scene runtime.
 
 export interface ReadinessGate {
-  /** Resolves on the first rendered frame or at the timeout, whichever first. */
+  /** Resolves only after the first rendered frame. */
   promise: Promise<void>
-  /** Abandon the gate without resolving (destroyed Experience). */
+  /** Reject the wait when the Experience is destroyed. */
   cancel(): void
 }
 
 /**
- * Wait for the first successful frame without leaving a fallback timer armed
- * after the gate has settled.
+ * Wait for the first successful frame. A timeout is a startup failure, not a
+ * successful readiness signal; cancellation releases the pending continuation.
  */
 export function createReadinessGate(firstRender: Promise<void>, timeoutMs: number): ReadinessGate {
   let settled = false
   let resolveGate!: () => void
+  let rejectGate!: (error: unknown) => void
   let timeout: ReturnType<typeof setTimeout> | null = null
 
   const clear = () => {
@@ -29,25 +23,34 @@ export function createReadinessGate(firstRender: Promise<void>, timeoutMs: numbe
       timeout = null
     }
   }
-  const settle = () => {
+  const succeed = () => {
     if (settled) return
     settled = true
     clear()
     resolveGate()
   }
+  const fail = (error: unknown) => {
+    if (settled) return
+    settled = true
+    clear()
+    rejectGate(error)
+  }
 
-  const promise = new Promise<void>((resolve) => {
+  const promise = new Promise<void>((resolve, reject) => {
     resolveGate = resolve
-    timeout = setTimeout(settle, timeoutMs)
-    void firstRender.then(settle, settle)
+    rejectGate = reject
+    timeout = setTimeout(
+      () => fail(new Error(`First render did not complete within ${timeoutMs} ms.`)),
+      timeoutMs,
+    )
+    void firstRender.then(succeed, fail)
   })
 
   return {
     promise,
     cancel: () => {
       if (settled) return
-      settled = true
-      clear()
+      fail(new DOMException('Experience initialization was cancelled.', 'AbortError'))
     },
   }
 }

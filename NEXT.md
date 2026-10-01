@@ -166,6 +166,11 @@ Project controls initialize synchronously after the ready scene is built; the
 one-frame readiness RAF and duplicate in-flight promise state are removed.
 Initialization failures release a partially created overlay and carousel
 callback.
+The first-render readiness gate now resolves only after a successful frame;
+its timeout rejects into the existing boot error path instead of falsely
+enabling Enter on a blank canvas. Destroy cancels the wait with an explicit
+abort, and `Experience.init()` aborts when renderer/scene awaits return stale.
+Dedicated tests cover first-frame success, timeout failure, and cancellation.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
 the unreferenced `twitter` product icon module was removed. Module-private
 pointer input is one ES-module instance and starts only in `Experience.init()`;
@@ -180,6 +185,9 @@ readiness, renderer replacement, and teardown. Collapse only
 forwarding state or duplicate owners. Confirm listeners, timers, observer,
 RAF, media, controls, pending imports, and renderer candidates reach terminal
 cleanup on route leave, boot failure, recovery, and Vue unmount.
+The first-frame false-success and pending-cancel paths are fixed and covered by
+unit tests; production Chromium also confirms the successful boot and existing
+renderer-failure UI path.
 
 **Accept when:** one composition root coordinates runtime; initialization,
 route changes, recovery, and teardown are idempotent and covered by tests;
@@ -259,7 +267,7 @@ assets removed after source/content searches. Frame-owner failures are no
 longer swallowed by the render scheduler. Historical comments about removed
 handlers, no-op methods, and effects were removed from active runtime files;
 they no longer describe current ownership or APIs. Current source slices
-passed Chromium and Firefox production suites, Vue type-check, lint, and 77
+passed Chromium and Firefox production suites, Vue type-check, lint, and 80
 unit tests.
 
 **Next audit:** finish source-to-output inventory for generated CSS, routes,
@@ -287,7 +295,8 @@ their three Bun-only helpers with Node child-process/path/timer APIs and added
 runtime dependency and keeps Bun as the package/script runner. The expanded
 check found and fixed an unchecked source-map array access in
 `bundle-breakdown.ts`. Vue type-check, lint, all 77 unit tests, stdlib checks,
-and `git diff --check` pass with the expanded coverage.
+and `git diff --check` passed at that checkpoint; the latest readiness-gate
+slice raises the unit total to 80.
 **Asset audit:** every public runtime media/font/Prism asset is referenced by
 the app, blog, or builder output. `favicon.svg` and `logo.svg` were identical;
 all generated and authored pages now use `logo.svg`, and the duplicate source
@@ -318,9 +327,9 @@ the output consumer remains unknown. After discovering the tracked output was
 stale since the initial commit, the successful production build was retained
 to synchronize release HTML, assets, and headers with source.
 
-**Verified locally:** Vue type-check, ESLint, all 77 unit tests, production
-build/budgets on Vite 8.3.2, and the full production Chromium suite (17 passed, 3 opt-in
-renderer scenarios skipped). That includes repeated lazy-stage mount/release,
+**Verified locally:** Vue type-check, ESLint, all 80 unit tests, stdlib checks,
+production build/budgets on Vite 8.3.2, and the full production Chromium suite
+(17 passed, 3 opt-in renderer scenarios skipped). That includes repeated lazy-stage mount/release,
 route metadata, DOM-only navigation and icons, renderer-failure continuation,
 showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
 production route, hash, and fallback suites passed in the prior matrix run.
@@ -328,6 +337,8 @@ The refreshed tracked release output, including the deduplicated brand asset,
 also passed the production Chromium suite (17 passed, 3 opt-in renderer
 scenarios skipped). Build budgets measured 3.03 kB gzip startup, 310.95 kB
 shared Three, and 53.84 kB UIkit.
+After the readiness gate change, the 80-unit suite and same production
+Chromium suite passed again; the build regenerated the tracked release output.
 The dedicated Chromium host-teardown test also passes after adding coverage for
 the create-to-mount microtask race: host teardown now waits for a stale stage's
 declared-node release without waiting on unrelated in-flight imports.

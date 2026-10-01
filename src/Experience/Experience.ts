@@ -465,7 +465,9 @@ export class Experience {
   }
 
   async init() {
-    if (this._destroyed) return
+    if (this._destroyed) {
+      throw new DOMException('Experience initialization was cancelled.', 'AbortError')
+    }
     const token = this.lifecycleToken()
     // Install recovery ownership before the first renderer/scene await. A
     // device-loss event can arrive during any async initialization gap.
@@ -517,9 +519,13 @@ export class Experience {
       mode: this._host.mode,
       onInstanceReplaced: (instance) => this._host.replaceRenderer(instance),
     })
-    if (!this.isLifecycleCurrent(token)) return
+    if (!this.isLifecycleCurrent(token)) {
+      throw new DOMException('Experience initialization was cancelled.', 'AbortError')
+    }
     await this.buildScene(token)
-    if (!this.isLifecycleCurrent(token)) return
+    if (!this.isLifecycleCurrent(token)) {
+      throw new DOMException('Experience initialization was cancelled.', 'AbortError')
+    }
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on every section change with
     // the resolved sectionIndex + isLight. Each section has its own dark/light
@@ -648,12 +654,8 @@ export class Experience {
     // renderer keeps its normal swap-chain pacing.
     this._scheduler.invalidate('first-frame')
 
-    // Await the initial scene's first successful
-    // RENDER. The 'first-frame' invalidation above guarantees a frame (a
-    // hidden tab resumes with exactly one invalidation); the bounded timeout
-    // keeps the splash from hanging on a path that never renders. The factory
-    // return alone never satisfies readiness — entry-app only publishes
-    // `jlz:webgl-ready` after this init resolves.
+    // Readiness requires a successful first draw. A bounded timeout rejects
+    // startup instead of enabling Enter over a scene that never rendered.
     this._readinessGate = createReadinessGate(this.firstRender, 20000)
     await this._readinessGate.promise
     this._readinessGate = null
