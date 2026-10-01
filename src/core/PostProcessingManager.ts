@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
 import type { PostParams } from './postParams'
-import { NEUTRAL_GRADE } from './postParams'
+import { copyPostParams, NEUTRAL_GRADE } from './postParams'
 
 /**
  * The section-authored subset of the canonical PostParams: the four intensity
@@ -147,16 +147,7 @@ export class PostProcessingManager {
   /** Settle a live post crossfade before reduced-motion stops the scheduler. */
   setReducedMotion(reduced: boolean): void {
     if (!reduced) return
-    this.display.bloom = this.current.bloom
-    this.display.vignette = this.current.vignette
-    this.display.grain = this.current.grain
-    this.display.chromatic = this.current.chromatic
-    this.display.bloomRadius = this.current.bloomRadius
-    this.display.bloomThreshold = this.current.bloomThreshold
-    this.display.refract = this.current.refract
-    this.display.border = this.current.border
-    this.display.gradeShadows = [...this.current.gradeShadows]
-    this.display.gradeHighlights = [...this.current.gradeHighlights]
+    copyPostParams(this.display, this.current)
     this._crossfadeActive = false
   }
 
@@ -198,16 +189,7 @@ export class PostProcessingManager {
     this.lerpTint(this.display.gradeShadows, this.current.gradeShadows, factor)
     this.lerpTint(this.display.gradeHighlights, this.current.gradeHighlights, factor)
     if (this.displayMatchesCurrent(0.001)) {
-      this.display.bloom = this.current.bloom
-      this.display.vignette = this.current.vignette
-      this.display.grain = this.current.grain
-      this.display.chromatic = this.current.chromatic
-      this.display.bloomRadius = this.current.bloomRadius
-      this.display.bloomThreshold = this.current.bloomThreshold
-      this.display.refract = this.current.refract
-      this.display.border = this.current.border
-      this.display.gradeShadows = [...this.current.gradeShadows]
-      this.display.gradeHighlights = [...this.current.gradeHighlights]
+      copyPostParams(this.display, this.current)
       this._crossfadeActive = false
     }
   }
