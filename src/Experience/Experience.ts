@@ -76,8 +76,8 @@ export class Experience {
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
   private _frameTiming: FrameTiming | null = null
-  // Coordinates section state, transforms and frame passes over the adopted
-  // scene owners. Experience constructs and disposes this coordinator.
+  // Coordinates section state, transforms and updates over adopted scene
+  // owners. Experience constructs and disposes this coordinator.
   public coordinator!: SceneCoordinator
   // Experience owns these controllers; their scene nodes are declared in Vue.
   private lights!: CinematicLights

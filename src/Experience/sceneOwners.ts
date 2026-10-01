@@ -1,5 +1,5 @@
 // src/Experience/sceneOwners.ts — the owner-bag contract shared by the
-// SceneCoordinator and its two passes (SceneTransformPass, SceneFramePass).
+// SceneCoordinator and its scroll-to-world transform algorithm.
 //
 // Experience injects getters over its own fields — the lazy route owners
 // (Works / Contact stages, Lab object) change identity per route, so only a

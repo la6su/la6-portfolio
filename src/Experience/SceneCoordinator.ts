@@ -12,18 +12,22 @@ import { type PhaseConfig } from '../core/WorldConfig'
 import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
-import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
 import type { SceneCoordinatorOwners } from './sceneOwners'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
 
+function bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): boolean {
+  return page !== 'lab' && page !== 'works' && !(page === 'contact' && contactCyprusActive)
+}
+
 export class SceneCoordinator {
   private _story = new SectionStateMachine()
   private _transform: SceneTransformPass
-  private _frame: SceneFramePass
+  private _worksPlaneStageSection = 0
   private _reducedMotion = prefersReducedMotion()
   private sceneRef: THREE.Scene
+  private camera: THREE.Camera
   private owners: SceneCoordinatorOwners
   private page: () => PageId
 
@@ -64,6 +68,7 @@ export class SceneCoordinator {
     page: () => PageId,
   ) {
     this.sceneRef = scene
+    this.camera = camera
     this.owners = owners
     this.page = page
     this._transform = new SceneTransformPass({
@@ -71,13 +76,6 @@ export class SceneCoordinator {
       story: this._story,
       owners,
       page,
-      isReducedMotion: () => this._reducedMotion,
-    })
-    this._frame = new SceneFramePass({
-      camera,
-      owners,
-      page,
-      currentSectionIndex: () => this._story.currentSectionIndex,
       isReducedMotion: () => this._reducedMotion,
     })
   }
@@ -153,7 +151,10 @@ export class SceneCoordinator {
 
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
-    if (this._frame.setWorksPlaneStageSection(index)) this._transform.invalidate()
+    if (this._worksPlaneStageSection === index) return
+    this._worksPlaneStageSection = index
+    this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
+    this._transform.invalidate()
   }
 
   /**
@@ -220,7 +221,68 @@ export class SceneCoordinator {
    *  route ownership state synchronized without advancing any animation
    *  clock (parity pinned by SceneCoordinator.motionParity). */
   public update(deltaTime: number, needsRender: boolean = true): void {
-    this._frame.update(deltaTime, needsRender)
+    const page = this.page()
+    const burst = this.owners.particleBurst()
+    if (burst?.isActive) burst.update(deltaTime)
+
+    if (!needsRender) {
+      const worksStage = this.owners.worksPlaneStage()
+      if (worksStage && page === 'works') {
+        worksStage.setActive(true, this._worksPlaneStageSection)
+      }
+      return
+    }
+
+    this.owners.envSphere()?.update(deltaTime)
+
+    const worksStage = this.owners.worksPlaneStage()
+    if (worksStage) {
+      worksStage.setActive(page === 'works', this._worksPlaneStageSection)
+      worksStage.update(deltaTime)
+    }
+    const servicesStage = this.owners.servicesStage()
+    if (servicesStage) {
+      servicesStage.visible = page === 'services'
+      if (servicesStage.visible && this.camera instanceof THREE.PerspectiveCamera) {
+        servicesStage.updateState(
+          this.camera,
+          THREE.MathUtils.clamp(this._story.currentSectionIndex - 1, 0, 3),
+          deltaTime,
+          this._reducedMotion,
+        )
+      }
+    }
+    this.contactTypographyStage?.update(deltaTime)
+    this.contactHaloStage?.update(deltaTime)
+    this.manifestoInkStage?.update(deltaTime)
+    const contactCyprusStage = this.owners.contactCyprusStage()
+    contactCyprusStage?.update(deltaTime)
+    this.owners.labGamepad()?.update?.(deltaTime)
+    const baku = this.owners.baku()
+
+    if (!this._reducedMotion) {
+      if (baku?.visible) baku.update(deltaTime)
+      const isStandaloneWorks = page === 'works'
+      const isWorksStoryFrame = this._story.currentSectionIndex === WORKS_SLOT_INDEX
+      const trail = this.owners.drawTrail()
+      if (trail && (isStandaloneWorks || isWorksStoryFrame)) {
+        trail.update(deltaTime, this.camera)
+      }
+    }
+
+    const carousel = this.owners.carousel()
+    const groups = this.owners.sectionGroups()?.groups ?? []
+    const carouselGroup = groups[WORKS_SLOT_INDEX]
+    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
+    if (carousel && baku) {
+      baku.visible =
+        bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
+        (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+    }
+    if (!this._reducedMotion) {
+      const particles = this.owners.sectionGroups()?.works.particles
+      if (carouselGroup?.visible && particles?.visible !== false) particles?.update(deltaTime)
+    }
   }
 
   /** The pooled scroll→world transform pass (range mapping, easing,

@@ -188,7 +188,7 @@ export class SplashCube {
   private _startFaceRotY = 0
   private _startFaceDelta = 0
 
-  /** Owner scene visibility (the frame pass gates it per route/carousel). */
+  /** Owner scene visibility (the coordinator gates it per route/carousel). */
   get visible(): boolean {
     return this._root.visible
   }
