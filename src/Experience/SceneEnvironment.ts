@@ -10,12 +10,8 @@
 // `PMREMGenerator` from `three/webgpu` on the unified `WebGPURenderer` (the
 // only renderer class the app constructs). It sets `isPMREMTexture` on the
 // result natively, so the common `PMREMNode` passes the texture through
-// instead of double-PMREMing it (double processing used to render the glass
-// cube darker on WebGPU with a concentrated bright-spot artifact). The
-// former classic-generator branch (dev-forced `?renderer=webgl` QA path) was
-// removed together with that path in Phase 10. The former secondary offscreen
-// WebGL context (created solely for PMREM generation on the WebGPU path) was
-// removed in the Phase 6 unified-renderer slice.
+// instead of processing the texture twice. A single renderer-owned generator
+// avoids creating a second graphics context.
 //
 // The renderer and glass-cube owners are injected as getters: the environment
 // is (re)applied after `renderer.init()` and after a device-loss recovery,
@@ -101,8 +97,7 @@ export class SceneEnvironment {
       // Renderer-native TSL PMREM — runs on the live renderer after init and
       // sets isPMREMTexture on the result natively (PMREMNode pass-through,
       // no double processing). The unified WebGPURenderer is the only
-      // instance class (Phase 6 production default; the classic
-      // WebGLRenderer path was removed in Phase 10), so this is the single
+      // instance class, so this is the single
       // generator.
       pmrem = new WebGPUPMREMGenerator(this._owners.renderer().instance as never)
       const envRT = pmrem.fromEquirectangular(envTex)

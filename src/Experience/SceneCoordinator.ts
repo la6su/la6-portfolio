@@ -1,15 +1,6 @@
-// src/Experience/SceneCoordinator.ts — Phase 8 slice 10: the scene-coordination
-// engine left the legacy `World` (six-section state machine, scroll transform
-// and the per-frame coordination body). Experience owns the coordinator and is
-// the single disposal owner; it injects the scene owners as getters over its own
-// fields (the lazy route owners change identity per route, so a direct reference
-// would go stale). With this slice the legacy `World` class and
-// `SectionSceneFactory` leave production (Phase 8 completion) — no production
-// caller remains. NEXT item 4.1 later split the three extracted bodies into
-// their own owners: SectionStateMachine (scroll story state),
-// SceneTransformPass (pooled scroll transform) and SceneFramePass (demand-gated
-// owner fan-out) — this file keeps the delegates, the owner read surface and
-// route/scene policy.
+// Coordinates story state, scene transforms, route visibility and per-frame
+// updates. Experience owns it and passes scene owners as getters so lazily
+// replaced route stages are always read from their current owner.
 
 import * as THREE from 'three'
 import type { Section } from '../core/Section'
@@ -110,23 +101,16 @@ export class SceneCoordinator {
     // caches around the rebuild so lookups and ranges do not retain the
     // previous route's scene contract.
     this._transform.resetForRoute()
-    // Phase 8 slice 10: the route-specific visibility gate runs before the
-    // sections are rebuilt below (matches the legacy World ordering) — it
-    // toggles the shared cube + Lab object and is independent of the
-    // sections added below.
+    // Apply route visibility before rebuilding sections; the shared cube and
+    // Lab object are independent of the section groups below.
     this.syncRouteVisuals()
     this._story.buildSections()
-
-    // Phase 8 slice 1: ground init (intro config) + first-section light targets
-    // live in Experience (it owns the GroundPlane + CinematicLights owners).
 
     // ── Apply first section's fog + env sphere colors immediately
     const firstCfg = configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // Phase 8 slice 3: the EnvSphere intro step (section 1, dark) lives in
-      // Experience (it owns the EnvSphere scene owner).
     }
 
     // ── Enforce final visibility: only group 1 (intro) visible, all others hidden.
@@ -137,14 +121,6 @@ export class SceneCoordinator {
       g.visible = i === 1 // Intro = index 1
     })
 
-    // Phase 8 slice 6: the home-carousel init (the stream must finish texture
-    // decode before Enter becomes ready) lives in Experience — it owns the
-    // carousel reference and awaits it at the same boundary (buildWorld).
-    // Phase 8 slice 7: the /works stage init lives in Experience (it owns the
-    // lazy stage; the route can still enter on /works before init resolves).
-    // Phase 8 slice 8: the Contact typography + Cyprus stage inits live in
-    // Experience (it owns both lazy stages; the route can enter /contact
-    // before their init resolves).
     devDiagnostic(
       'debug',
       '[SceneCoordinator] init — scene group visibility:',
@@ -167,8 +143,6 @@ export class SceneCoordinator {
       compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
     }
     if (this.page() !== 'home') return
-    // Phase 8 slice 6: the carousel init await lives in Experience (it owns the
-    // reference); buildWorld awaits it before calling this method.
 
     const group = this.sceneGroups[3]
     if (!group) return
@@ -289,10 +263,6 @@ export class SceneCoordinator {
     this.sceneGroups.forEach((g) => {
       g.scale.setScalar(scale)
     })
-    // Phase 8 slice 7: the /works stage resize is forwarded directly by
-    // Experience (it owns the stage).
-    // Phase 8 slice 8: the Contact typography resize is forwarded directly by
-    // Experience (it owns the stage).
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -303,13 +273,8 @@ export class SceneCoordinator {
     this._story.updateSections(dt)
   }
 
-  // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose
-  // ordering + the Works particle texture) are owned + disposed by the
-  // Experience-owned SectionGroups owner.
-  // Phase 8 slices 3–9: every scene owner's GPU resources are disposed by
-  // Experience (it owns the owners). ServicesStage is the exception: its
-  // terminal disposal belongs to ServicesStageOwner.vue on persistent-host
-  // unmount, so dispose() must not reach it through the owners bag.
+  // Experience owns scene resources. ServicesStage is the exception: its
+  // terminal disposal belongs to ServicesStageOwner.vue on host unmount.
 
   public dispose(): void {
     this._transform.invalidate()
@@ -319,18 +284,12 @@ export class SceneCoordinator {
     this.sceneRef.fog = null
   }
 
-  /** Set camera reference for DrawTrail (unproject to world).
-   *  Phase 8 slice 7: the /works stage camera is forwarded directly by
-   *  Experience (it owns the stage).
-   *  Phase 8 slice 8: the Contact typography + Cyprus stage cameras are forwarded
-   *  directly by Experience (it owns both stages). */
+  /** Set the camera used by DrawTrail to unproject pointer coordinates. */
   public setCamera(cam: THREE.Camera): void {
     this._frame.setCamera(cam)
   }
 
-  /** Keep route-specific hero objects isolated from the shared home cube.
-   *  Phase 8 slice 9: the Lab object's lazy creation lives in Experience
-   *  (it owns the lifecycle); the visibility gate reads the owner reference. */
+  /** Keep route-specific hero objects isolated from the shared home cube. */
   public syncRouteVisuals(): void {
     const page = this.page()
     const isLab = page === 'lab'

@@ -1,11 +1,6 @@
-// src/Experience/ExperienceUI.ts — Phase 7 slice 4: the former UI features.
-//
-// `Experience` split: bootstrap (init + readiness), scene coordination
-// (per-frame world/camera/post) and the FORMER UI FEATURES — the cinematic
-// navigation shell, the menu, the fullscreen overlay, project controls
-// and the UI-facing window event handlers. This class owns those features
-// (creation, wiring, disposal) and reaches the scene through the narrow
-// `ExperienceUIHost` port: no DOM scene knowledge, no renderer access.
+// Owns the cinematic navigation, menu, fullscreen overlay, project controls
+// and their UI-facing event handlers. Scene access goes through a narrow port;
+// this owner does not reach into the renderer or scene graph.
 //
 // Disposal contract: `destroy()` removes every window listener this class
 // added and disposes the features it created — Experience.destroy() runs it

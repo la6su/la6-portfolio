@@ -105,7 +105,7 @@ const deferredRendererDisposals = new WeakMap<object, () => void>()
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
 
-// ── ADR 0005: Tres-native loop port state ──
+// Tres loop bridge state.
 // Late-bound to the live Tres renderer manager in `onReady`; every port call
 // before ready (or after unmount) is a safe no-op.
 type RendererManager = TresContext['renderer']
@@ -203,7 +203,7 @@ const LabGamepadOwner = defineAsyncComponent(() => import('./scene/LabGamepadOwn
 
 // Cold-start wake: camera-controls' own pointer handlers only dispatch
 // events — the first drag must open a scheduler window itself. The wrapped
-// manager invalidate translates into the typed 'external' demand (ADR 0005);
+// manager invalidate translates into typed external render demand;
 // every later frame keeps the window open through the controls' own
 // 'update' → invalidate path until they go back to sleep.
 function onLabControlsStart(): void {
@@ -241,7 +241,7 @@ function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
-  // ADR 0005: the persistent Tres loop is the one RAF host. Install the
+  // Tres owns the persistent RAF host. Install the
   // bridges BEFORE any async work can yield so the first scheduler tick (and
   // any ecosystem invalidate) always lands on the final wiring.
   const manager = context.renderer
@@ -265,7 +265,7 @@ async function onReady(context: TresContext): Promise<void> {
     externalInvalidateHandler?.()
   }
   // Tres auto-starts its loop when ready. The RenderScheduler owns
-  // start/stop (ADR 0004/0005): pause it until Experience's first
+  // start/stop: pause the loop until Experience's first
   // invalidation opens the first window, and keep the cleanup handle for an
   // unmount during the async backend-fallback window below.
   stopTresLoop = () => manager.loop.stop()
@@ -296,7 +296,7 @@ async function onReady(context: TresContext): Promise<void> {
   let plan = planUnifiedBackend(backend)
   if (plan.recreate) {
     // Software WebGPU adapter (SwiftShader ~2 FPS) → hardware WebGL2 through
-    // the SAME class (Phase 6 policy). The canvas is already in the DOM:
+    // the same renderer class with its WebGL backend. The canvas is already in the DOM:
     // dispose the dead instance and swap in the replacement.
     disposeRendererOnce(renderer)
     const candidate = createUnifiedWebGPUInstance(canvas, true)

@@ -604,18 +604,14 @@ unowned persistent GPU resource remains.
 - **Next action**: continue the source audit for duplicated lifecycle owners,
   unreachable code, and abstractions already provided by Vue/Tres/Three; then
   continue keyboard routes beyond the menu/modal, orientation/resize and
-  touch-target states. Verify
-  unreachable code, and abstractions already provided by Vue/Tres/Three. Then
-  continue keyboard routes beyond the menu/modal, orientation/resize and
-  touch-target states. Verify
-  WebKit in CI and scene-failure behavior on capable GPU hardware. Chromium and Playwright
-  Firefox projects now run locally. A WebKit production smoke was attempted;
+  touch-target states. Verify WebKit in CI and scene-failure behavior on capable
+  GPU hardware. Chromium and Firefox projects run locally. A WebKit production smoke was attempted;
   browser launch is blocked by missing system libraries, with CI configured to
   install them. `dist/` remains pending identification of its external deploy
   consumer, so keep its tracked state intact.
 - **Verification for this checkpoint**: failed renderer-init cleanup and
   cancellation now have six focused renderer tests; `bun run test:unit` passed
-  (24 files / 72 tests), `bun run type-check:vue` passed, and full ESLint now
+  (24 files / 73 tests), `bun run type-check:vue` passed, and full ESLint now
   reports 0 errors and 0 warnings. Prettier and
   `git diff --check` passed. `bun install --frozen-lockfile --dry-run` and
   `bun run check:stdlib` passed; the dependency audit found no unused direct
@@ -678,6 +674,15 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
   not yet evidenced. Do not mark phase 3 or release hardware gates complete
   from unit/build checks alone.
 
+- Recent source-audit slices: removed a duplicated runtime theme-token catalogue
+  (226 lines); added coverage for repeated `Experience.destroy()` and stale async
+  route-stage creation; replaced phase-history commentary in SceneCoordinator,
+  ExperienceUI and SceneHost with current ownership and runtime contracts. The
+  stage race,
+  teardown test, 73 unit tests, Vue type-check, lint, diff-check, and production
+  build passed. These checks used system Chromium on software WebGL; hardware
+  WebGPU and Safari/WebKit gaps above remain open.
+
 ## Authorized follow-on after release acceptance
 
 Once every release-acceptance item above is evidenced, perform a fresh,
@@ -702,35 +707,3 @@ remaining list, but retain concise completed milestones as architectural
 history. If a requirement changes, amend the objective/phase and record the
 reason here. `AGENTS.md` points to this file; no second plan, roadmap, or
 session-log document should be created.
-
-- Source comment hygiene: removed migration chronology from the app shell,
-  routes, page lifecycle, renderer backend, post pipeline, event bus, and frame
-  scheduler. Kept current runtime contracts and constraints beside their
-  owners. `bun run type-check:vue`, `bun run lint`, and `git diff --check`
-  passed. This is documentation-only cleanup; the broader ownership audit
-  remains open.
-
-- Repeated-shutdown browser coverage: the real SceneHost teardown test now calls
-  `Experience.destroy()` twice while host unmount is still pending, then checks
-  each declarative owner and the final SceneHost renderer are released exactly
-  once. The renderer backend trace legitimately includes disposal of an initial
-  candidate replaced during bootstrap, so the assertion targets the final host
-  owner and scene resources. `JLZ_CHROMIUM_PATH=/usr/bin/chromium bun run
-  test:host-teardown` passed; `bun run lint` and `git diff --check` passed.
-
-- Lazy route-stage race coverage: added a regression test where a stale async
-  creation resolves only after disposal and a replacement stage has initialized.
-  The stale object is released exactly once while the replacement remains in
-  its slot and is configured. The implementation already met this contract;
-  the test now guards it directly. `bun run test:unit` passed (24 files / 73
-  tests), `bun run type-check:vue`, `bun run lint`, and `git diff --check`
-  passed.
-
-- Duplicate theme data removed: the runtime `brandTokens` catalogue repeated
-  the Less theme values but had only three Cursor fallback consumers. Removed
-  the catalogue; Cursor now reads the compiled CSS custom properties and keeps
-  only three defaults for pre-stylesheet startup. Updated the UIkit project
-  skill so future work treats Less/CSS as the single source of truth. A full
-  `bun run build` passed (357 modules, within budgets), along with all 73 unit
-  tests, Vue type-check, ESLint, and `git diff --check`. Generated `dist/` output
-  remains uncommitted per the unresolved deployment-consumer note above.
