@@ -300,6 +300,11 @@ was redundant and has been removed. Production build/budgets, Vue type-check,
 lint, all 73 unit tests, and Chromium showreel/fullscreen interaction tests
 pass with the reduced manager.
 
+The Works route also repeated the permanent room count as both `04` and
+`index === 3`. Its counter and archive placement now derive from
+`WORKS_ROOMS.length`; the production direct-route metadata check passes after
+the change.
+
 ## Follow-on goal policy
 
 Only after this plan's full release acceptance is evidenced, perform a fresh

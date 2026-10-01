@@ -15,6 +15,7 @@ const releaseCaseIntent = setWorksCaseProject(null)
 onBeforeUnmount(releaseCaseIntent)
 useJlzPage('works', () => rootEl.value)
 const number = (value: number): string => String(value).padStart(2, '0')
+const roomCount = number(WORKS_ROOMS.length)
 const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
 </script>
 
@@ -35,7 +36,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
         <div class="jlz-works-stage uk-container uk-container-expand">
           <header class="jlz-works-coordinate uk-flex uk-flex-between">
             <span data-i18n="works.observatory">An observatory of ideas.</span>
-            <span>{{ number(index + 1) }} <span aria-hidden="true">/</span> 04</span>
+            <span>{{ number(index + 1) }} <span aria-hidden="true">/</span> {{ roomCount }}</span>
           </header>
           <div class="jlz-works-heading">
             <p class="jlz-works-discipline">
@@ -86,7 +87,11 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
               >Scroll to the next world ↓</span
             >
           </footer>
-          <nav v-if="index === 3" class="jlz-works-archive" aria-label="Project archive">
+          <nav
+            v-if="index === WORKS_ROOMS.length - 1"
+            class="jlz-works-archive"
+            aria-label="Project archive"
+          >
             <span class="jlz-works-discipline" data-i18n="works.archive">The archive</span>
             <button
               v-if="rendererAvailable"
