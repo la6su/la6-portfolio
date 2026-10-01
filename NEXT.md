@@ -61,7 +61,10 @@ preserve custom policy only when code or measurements prove the difference.
 - The persistent top bar/contact launcher now lives declaratively in
   `app/PersistentConsole.vue` under `AppShell`; `CinematicNav` retains native
   scroll, story position, input, and hash behavior. Fullscreen media owners
-  remain imperative for now; audit their structure/lifecycle separately.
+  retain behavior controllers. `FullscreenOverlayView.vue` now declares the
+  modal structure; its controller adopts the Vue root and owns UIKit/focus,
+  decoded-poster, and keyboard behavior. `ShowreelConsole` remains the next
+  persistent-UI structure/lifecycle candidate.
 
 ## Phases
 
@@ -99,8 +102,8 @@ WeakMap attachment bag.
 `primitive`, `:dispose="null"`, and manual child insertion under
 `src/Experience` and `src/app/scene`. For each, record whether it creates
 stable hierarchy or a runtime algorithm/resource. Move only stable hierarchy
-to Vue and preserve focused disposal coverage. Inspect the remaining
-FullscreenOverlay/ShowreelConsole DOM construction as the UI counterpart.
+to Vue and preserve focused disposal coverage. The remaining UI candidate is
+the ShowreelConsole's stateful DOM chrome.
 
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
@@ -113,6 +116,7 @@ leaks, or duplicate construction.
 camera updates. `Experience.destroy()` and async lazy-stage release have
 focused tests. The unused global error tracker is removed. Route-specific
 stage contracts remain separate from the generic stale-request lifecycle.
+The fullscreen behavior controller is released when its Vue host unmounts.
 
 **Next audit:** trace `Experience.ts` end to end and test every remaining
 boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
@@ -150,11 +154,12 @@ loop/draw or unbounded route resource growth.
 **Established:** SPA routes, EN/RU metadata, standalone blog/builder pages,
 browser history, unknown-route fallback, menu/modal keyboard focus, reduced
 motion, mobile overflow, and touch scrolling have production-browser coverage.
-Persistent console markup and state are Vue-owned. Firefox is confirmed by the
-user and the local suite.
+Persistent console and fullscreen modal markup are Vue-owned. Their behavior
+controllers adopt the stable structures and are cleaned up with the AppShell
+lifecycle. Firefox is confirmed by the user and the local suite.
 
 **Next audit:** review the remaining imperative overlays and route transitions
-against Vue ownership; walk EN/RU routes, direct deep links, hash navigation,
+against Vue ownership, starting with ShowreelConsole; walk EN/RU routes, direct deep links, hash navigation,
 focus, contrast, touch targets, resize/orientation, no-scene and renderer
 failure states. Run the production suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
@@ -189,11 +194,11 @@ no known dead active path or unowned persistent resource remains.
 
 ## Current checkpoint — 2026-10-01
 
-**Latest committed source slice:** `8ab63c4 refactor: move persistent console
-into Vue shell`. The previous commits removed duplicate global error handling
-and recorded why the scene coordinator/frame pass and typed bus remain. Source
-and plan are clean; build output under tracked `dist/` is modified by the
-production build and remains unstaged.
+**Latest source slice:** the persistent console and fullscreen overlay markup
+are Vue-owned under `AppShell`; their controllers own behavior and follow the
+host lifecycle. Earlier commits removed duplicate global error handling and
+recorded why the scene coordinator/frame pass and typed bus remain. Keep build
+output under tracked `dist/` unstaged; its deploy consumer is still unknown.
 
 **Verification:** `bun run type-check:vue`, `bun run lint`, and
 `bun run test:unit` pass (24 files / 73 tests). Production Chromium passes
@@ -204,6 +209,11 @@ real-device recovery/performance remain open.
 After the final reactive UIKit icon and no-scene visibility adjustments, the
 production navigation-focus and reduced-motion tests passed again in Chromium
 and Firefox (4/4 total), with Vue type-check clean.
+The fullscreen overlay Vue adoption also passed full Chromium (14 passed,
+3 opt-in skipped) and Firefox (13 passed, 4 skipped) production suites; Vue
+type-check, ESLint, and all 73 unit tests pass on the updated source. The
+dedicated Chromium host-teardown test passed with an assertion that the
+fullscreen modal root is removed when AppShell unmounts.
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
 remaining imperative overlay audit. Make the next code change only after

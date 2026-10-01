@@ -47,6 +47,8 @@ export interface AppEvents {
   'jlz:fullscreen-change': { open: boolean }
   /** Requests that the active fullscreen media owner closes itself. */
   'jlz:close-media-layer': void
+  /** Vue removed the persistent fullscreen overlay host from AppShell. */
+  'jlz:fullscreen-overlay-unmounted': void
   /** Fired by a persistent sound control. */
   'jlz:sound-toggle': { muted: boolean }
   /** Fired by the index.html splash Enter control. */

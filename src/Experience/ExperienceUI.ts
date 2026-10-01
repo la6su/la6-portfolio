@@ -7,7 +7,7 @@
 // so the root teardown returns every owned resource to baseline.
 
 import { CinematicNav } from '../UI/CinematicNav'
-import { FullscreenOverlay } from '../UI/FullscreenOverlay'
+import type { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
 import type { StageRegistry } from './StageRegistry'
@@ -46,9 +46,8 @@ export class ExperienceUI {
   storyNav: CinematicNav | null = null
   /** True after the static project data and overlay are ready to use. */
   private projectUiReady = false
-  /** The fullscreen overlay (UIManager may own one; adopt or create). */
+  /** The fullscreen overlay behavior controller, owned by UIManager. */
   overlay: FullscreenOverlay | null = null
-  private ownsOverlay = false
   private activeProjectIndex = 0
   private _projectControlsPromise: Promise<void> | null = null
   private _projectControlsReadyRaf: number | null = null
@@ -315,9 +314,7 @@ export class ExperienceUI {
     if (this._projectControlsPromise) return this._projectControlsPromise
     const initialization = this.initializeProjectControls().catch((error: unknown) => {
       this.projectUiReady = false
-      if (this.ownsOverlay) this.overlay?.dispose()
       this.overlay = null
-      this.ownsOverlay = false
       if (import.meta.env.DEV) {
         console.error('[ExperienceUI] project controls init failed:', error)
       }
@@ -357,13 +354,11 @@ export class ExperienceUI {
     // here cannot create a separate chunk.
     if (this._destroyed || generation !== this._routeGeneration || this.projectUiReady) return
 
-    // FullscreenOverlay is normally created by UIManager. Project navigation
-    // is routed through `jlz:project-navigate` so arrows and keyboard use the
-    // same owner even if the overlay was created before these controls resolve.
+    // UIManager adopts the Vue-owned overlay markup after AppShell mounts.
+    // Project navigation uses one controller for arrows and keyboard input.
+    this.overlay = this.host.ui().overlay
     if (!this.overlay) {
-      const shared = this.host.ui().overlay
-      this.overlay = shared ?? new FullscreenOverlay()
-      this.ownsOverlay = !shared
+      throw new Error('Fullscreen overlay was not mounted by AppShell.')
     }
 
     // The home carousel exists even on a content deep link. Wire it once
@@ -452,9 +447,7 @@ export class ExperienceUI {
     this.projectUiReady = false
     this._unwireCarousel?.()
     this._unwireCarousel = null
-    if (this.ownsOverlay) this.overlay?.dispose()
     this.overlay = null
-    this.ownsOverlay = false
     this.storyNav?.dispose()
     this.storyNav = null
   }

@@ -29,6 +29,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
     window.__jlzRuntimeDestroy?.();
   });
   await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
+  await expect(page.locator("#jlz-fs-overlay")).toHaveCount(0);
 
   const anchorWasIntercepted = await page.evaluate(() => {
     const anchor = document.createElement("a");
@@ -57,7 +58,9 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   const rendererDispose = trace.indexOf("scene-host:renderer-disposed");
   expect(backendDispose).toBeGreaterThanOrEqual(0);
   expect(rendererDispose).toBeGreaterThanOrEqual(0);
-  expect(trace.filter((event) => event === "scene-host:renderer-disposed")).toHaveLength(1);
+  expect(
+    trace.filter((event) => event === "scene-host:renderer-disposed"),
+  ).toHaveLength(1);
   for (const ownerRelease of [
     "scene-owner:env-sphere-disposed",
     "scene-owner:env-sky-disposed",

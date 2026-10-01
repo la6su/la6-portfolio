@@ -3,10 +3,12 @@
 import { RouterView } from 'vue-router'
 import SceneHost from './SceneHost.vue'
 import PersistentConsole from './PersistentConsole.vue'
+import FullscreenOverlayView from './FullscreenOverlayView.vue'
 </script>
 
 <template>
   <SceneHost />
   <PersistentConsole />
+  <FullscreenOverlayView />
   <RouterView />
 </template>

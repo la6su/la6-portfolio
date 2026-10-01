@@ -76,49 +76,11 @@ export class FullscreenOverlay {
     if (target?.isConnected) target.focus({ preventScroll: true })
   }
 
-  constructor() {
-    this._closeMediaLayerUnsub = eventBus.on('jlz:close-media-layer', () => {
-      if (this.isOpen) this.close()
-    })
-    this.container = document.createElement('div')
-    this.container.id = 'jlz-fs-overlay'
-    this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
-    this.container.setAttribute('data-no-magnetic', '')
-    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full uk-light'
-    this.container.setAttribute('role', 'dialog')
-    this.container.setAttribute('aria-modal', 'true')
-    this.container.setAttribute('aria-label', 'Fullscreen project viewer')
-
-    this.container.innerHTML = `
-      <div class="uk-modal-dialog jlz-fs-dialog">
-        <button class="uk-modal-close-full uk-close-large jlz-fs-close" type="button" aria-label="Close">
-          <span uk-icon="icon: close; ratio: 1.25" aria-hidden="true"></span>
-        </button>
-        <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
-          <div>
-            <div class="jlz-fs-cat uk-text-meta uk-text-uppercase"></div>
-            <h2 class="jlz-fs-title uk-heading-small uk-margin-remove"></h2>
-            <p class="jlz-fs-desc uk-visible@s uk-text-truncate uk-margin-small-top uk-margin-remove-bottom"></p>
-          </div>
-          <div class="jlz-fs-meta-end uk-visible@s uk-text-right">
-            <div class="jlz-fs-counter uk-text-meta"></div>
-            <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top"></div>
-          </div>
-        </header>
-        <main class="jlz-fs-media-stage uk-position-relative">
-          <div class="jlz-fs-poster uk-position-cover" aria-hidden="true"></div>
-        </main>
-        <button class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Previous">
-          <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
-        </button>
-        <button class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Next">
-          <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
-        </button>
-      </div>
-    `
-
-    document.body.appendChild(this.container)
-
+  constructor(container: HTMLDivElement) {
+    this.container = container
+    if (!this.container.isConnected) {
+      throw new Error('Fullscreen overlay must be mounted by AppShell before initialization.')
+    }
     // Wire elements
     this.posterEl = this.container.querySelector('.jlz-fs-poster')!
     this.prevBtn = this.container.querySelector('.jlz-fs-prev')!
@@ -237,6 +199,9 @@ export class FullscreenOverlay {
       const last = focusables[focusables.length - 1]!
       ;(this._lastShiftTab ? last : first).focus({ preventScroll: true })
     }
+    this._closeMediaLayerUnsub = eventBus.on('jlz:close-media-layer', () => {
+      if (this.isOpen) this.close()
+    })
   }
 
   private handleHide(): void {
@@ -411,6 +376,5 @@ export class FullscreenOverlay {
       this._focusTrapHandler = null
     }
     UIkit.modal(this.container).$destroy()
-    this.container.remove()
   }
 }
