@@ -639,7 +639,7 @@ export class Experience {
       index: 1,
     })
     // Always prepare project controls — single-page, always needs the Works slider.
-    void this.features.ensureProjectControls()
+    this.features.ensureProjectControls()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()

@@ -133,6 +133,10 @@ stage contracts remain separate from the generic stale-request lifecycle.
 The fullscreen behavior controller is released when its Vue host unmounts.
 `ExperienceUI` now owns that controller lifecycle directly; the forwarding
 `UIManager` and its bootstrap setup/cleanup are removed.
+Project controls initialize synchronously after the ready scene is built; the
+one-frame readiness RAF and duplicate in-flight promise state are removed.
+Initialization failures release a partially created overlay and carousel
+callback.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
 the unreferenced `twitter` product icon module was removed. Module-private
 pointer input is one ES-module instance and starts only in `Experience.init()`;
@@ -246,11 +250,12 @@ controllers remain for Three algorithms, browser/media policy, route-guard
 timing, and lifecycle work that the framework does not supply. Recent audits
 removed duplicate renderer-query parsing, a redundant UIkit global assignment,
 the unused project icon registration, the standalone overlay adapter,
-the Input class's redundant singleton guard/import side effect, the duplicate
-Works pointer wake listener/RAF, and the Works room-count literals. These
-changes are committed. The `?no-scene` flag now has one Vue-free source used by
-bootstrap, SceneHost, and both Vue shell controls. `dist/` is restored after
-build verification and remains tracked pending deploy-contract evidence.
+project-controls readiness RAF/promise state, the Input class's redundant
+singleton guard/import side effect, the duplicate Works pointer wake
+listener/RAF, and the Works room-count literals. These changes are committed.
+The `?no-scene` flag now has one Vue-free source used by bootstrap, SceneHost,
+and both Vue shell controls. `dist/` is restored after build verification and
+remains tracked pending deploy-contract evidence.
 
 **Verified locally:** Vue type-check, ESLint, all 77 unit tests, production
 build/budgets on Vite 8.3.2, and the full production Chromium suite (17 passed, 3 opt-in

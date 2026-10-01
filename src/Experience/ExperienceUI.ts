@@ -47,9 +47,6 @@ export class ExperienceUI {
   /** Behavior controller for the Vue-owned fullscreen overlay. */
   overlay: FullscreenOverlay | null = null
   private activeProjectIndex = 0
-  private _projectControlsPromise: Promise<void> | null = null
-  private _projectControlsReadyRaf: number | null = null
-  private _projectControlsReadyResolve: (() => void) | null = null
   private _unwireCarousel: (() => void) | null = null
 
   private readonly _unsubs: Array<() => void> = []
@@ -133,12 +130,8 @@ export class ExperienceUI {
     this._unsubs.push(
       eventBus.on('jlz:open-project', ({ idx }) => {
         if (typeof idx !== 'number') return
-        const routeGeneration = this._routeGeneration
-        const page = this.host.page()
-        void this.ensureProjectControls().then(() => {
-          if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
-          this.onProjectSelect(idx)
-        })
+        this.ensureProjectControls()
+        this.onProjectSelect(idx)
       }),
     )
 
@@ -266,22 +259,18 @@ export class ExperienceUI {
         return
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
-      const routeGeneration = this._routeGeneration
-      const page = this.host.page()
-      void this.ensureProjectControls().then(() => {
-        if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
-        const stage = this.host.coordinator().worksPlaneStage
-        if (!stage) return
-        const idx = stage.hitTest(e.clientX, e.clientY)
-        if (
-          idx >= 0 &&
-          stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))
-        ) {
-          // The visual plane owns the wobble pulse; wake the shared loop so
-          // the pulse receives frames after an idle touch/pointer tap.
-          this.host.raise('dirty')
-        }
-      })
+      this.ensureProjectControls()
+      const stage = this.host.coordinator().worksPlaneStage
+      if (!stage) return
+      const idx = stage.hitTest(e.clientX, e.clientY)
+      if (
+        idx >= 0 &&
+        stage.openProject(idx, (projectIndex) => this.onProjectSelect(projectIndex))
+      ) {
+        // The visual plane owns the wobble pulse; wake the shared loop so
+        // the pulse receives frames after an idle touch/pointer tap.
+        this.host.raise('dirty')
+      }
     }
     window.addEventListener('pointerup', this._worksPlaneTapHandler)
 
@@ -307,50 +296,28 @@ export class ExperienceUI {
     if (coordinator.particleBurst?.isActive) this.host.raise('dirty')
   }
 
-  ensureProjectControls(): Promise<void> {
-    if (this.projectUiReady || this._destroyed) return Promise.resolve()
-    if (this._projectControlsPromise) return this._projectControlsPromise
-    const initialization = this.initializeProjectControls().catch((error: unknown) => {
+  ensureProjectControls(): void {
+    if (this.projectUiReady || this._destroyed) return
+    try {
+      this.initializeProjectControls()
+    } catch (error) {
       this.projectUiReady = false
+      this._unwireCarousel?.()
+      this._unwireCarousel = null
+      this.overlay?.dispose()
       this.overlay = null
       if (import.meta.env.DEV) {
         console.error('[ExperienceUI] project controls init failed:', error)
       }
-    })
-    const tracked = initialization.finally(() => {
-      if (this._projectControlsPromise === tracked) this._projectControlsPromise = null
-    })
-    this._projectControlsPromise = tracked
-    return tracked
+    }
   }
 
-  private async initializeProjectControls(): Promise<void> {
+  private initializeProjectControls(): void {
     if (this.projectUiReady || this._destroyed) return
-    const generation = this._routeGeneration
     // Always prepare project controls — single-page experience.
-    // The scene must be initialised (sections attached to the Tres scene)
-    // before the Works raycast can run against the 3D planes.
+    // Experience calls this after buildScene() and coordinator.init(), before
+    // any user controls can emit project-selection events.
     const coordinator = this.host.coordinator()
-    const ready = () => coordinator.sections.length > 0
-    if (!ready()) {
-      // Wait one frame for the scene init to finish, then retry.
-      await new Promise<void>((resolve) => {
-        this._projectControlsReadyResolve = resolve
-        this._projectControlsReadyRaf = requestAnimationFrame(() => {
-          this._projectControlsReadyRaf = null
-          this._projectControlsReadyResolve = null
-          resolve()
-        })
-      })
-      if (this._destroyed || generation !== this._routeGeneration) return
-      if (!this.projectUiReady && !ready()) return
-    }
-
-    // Re-check after the readiness wait — page may have changed while the
-    // scene was becoming available. Projects are already part of the static
-    // scene graph through the carousel and Works stage, so a dynamic import
-    // here cannot create a separate chunk.
-    if (this._destroyed || generation !== this._routeGeneration || this.projectUiReady) return
 
     // Project navigation uses one controller for Vue-owned overlay markup.
     const element = document.getElementById('jlz-fs-overlay')
@@ -430,12 +397,6 @@ export class ExperienceUI {
     if (this._destroyed) return
     this._destroyed = true
     this._routeGeneration++
-    if (this._projectControlsReadyRaf !== null) {
-      cancelAnimationFrame(this._projectControlsReadyRaf)
-      this._projectControlsReadyRaf = null
-    }
-    this._projectControlsReadyResolve?.()
-    this._projectControlsReadyResolve = null
     for (const unsub of this._unsubs) unsub()
     this._unsubs.length = 0
     if (this._worksPlaneTapHandler) {
