@@ -57,7 +57,12 @@ export class SceneCoordinator {
     return this.owners.manifestoInkStage()
   }
 
-  constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
+  constructor(
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+    owners: SceneCoordinatorOwners,
+    page: () => PageId,
+  ) {
     this.sceneRef = scene
     this.owners = owners
     this.page = page
@@ -69,6 +74,7 @@ export class SceneCoordinator {
       isReducedMotion: () => this._reducedMotion,
     })
     this._frame = new SceneFramePass({
+      camera,
       owners,
       page,
       currentSectionIndex: () => this._story.currentSectionIndex,
@@ -251,11 +257,6 @@ export class SceneCoordinator {
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
     this.sceneRef.fog = null
-  }
-
-  /** Set the camera used by DrawTrail to unproject pointer coordinates. */
-  public setCamera(cam: THREE.Camera): void {
-    this._frame.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube. */

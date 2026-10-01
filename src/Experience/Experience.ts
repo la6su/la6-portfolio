@@ -356,6 +356,7 @@ export class Experience {
     // them through getters rather than capturing stale instances.
     this.coordinator = new SceneCoordinator(
       this.scene,
+      this.camera.instance,
       {
         ground: () => this.ground,
         sectionGroups: () => this.sectionGroups,
@@ -914,9 +915,6 @@ export class Experience {
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
     const idx = this.coordinator.currentSectionIndex
-    // Give the frame pass the camera ref for DrawTrail unprojection + the
-    // ServicesStage head-tracking (every frame — the pass re-reads it).
-    this.coordinator.setCamera(this.camera.instance)
     // Update the lazy Works camera controller when that route has been loaded.
     this._stages.worksPlaneStage?.setCamera(this.camera.instance)
     // Update the lazy Contact camera controller when it has been loaded.

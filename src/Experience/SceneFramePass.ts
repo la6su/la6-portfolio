@@ -15,6 +15,7 @@ import type { SceneCoordinatorOwners } from './sceneOwners'
 /** The facts the pass reads per frame. Getters, not values: the route, the
  *  active section and the reduced-motion policy can change between frames. */
 interface SceneFramePassContext {
+  camera: THREE.Camera
   owners: SceneCoordinatorOwners
   page: () => PageId
   currentSectionIndex: () => number
@@ -34,15 +35,9 @@ export function bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): 
 }
 
 export class SceneFramePass {
-  private _camera: THREE.Camera | undefined
   private worksPlaneStageSection = 0
 
   constructor(private readonly _ctx: SceneFramePassContext) {}
-
-  /** Set the camera used by DrawTrail and ServicesStage head-tracking. */
-  public setCamera(cam: THREE.Camera): void {
-    this._camera = cam
-  }
 
   /** Store the DOM chapter index the Works stage renders. Returns true when
    *  it changed, so the caller can invalidate the transform cache. */
@@ -92,9 +87,9 @@ export class SceneFramePass {
     const servicesStage = this._ctx.owners.servicesStage()
     if (servicesStage) {
       servicesStage.visible = page === 'services'
-      if (servicesStage.visible && this._camera instanceof THREE.PerspectiveCamera) {
+      if (servicesStage.visible && this._ctx.camera instanceof THREE.PerspectiveCamera) {
         servicesStage.updateState(
-          this._camera,
+          this._ctx.camera,
           THREE.MathUtils.clamp(this._ctx.currentSectionIndex() - 1, 0, 3),
           deltaTime,
           this._ctx.isReducedMotion(),
@@ -117,8 +112,8 @@ export class SceneFramePass {
       const isStandaloneWorks = page === 'works'
       const isWorksStoryFrame = this._ctx.currentSectionIndex() === WORKS_SLOT_INDEX
       const trail = this._ctx.owners.drawTrail()
-      if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
-        trail.update(deltaTime, this._camera)
+      if (trail && (isStandaloneWorks || isWorksStoryFrame)) {
+        trail.update(deltaTime, this._ctx.camera)
       }
     }
 
