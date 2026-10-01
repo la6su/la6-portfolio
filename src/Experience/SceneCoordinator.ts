@@ -3,6 +3,7 @@
 // replaced route stages are always read from their current owner.
 
 import * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 import type { Section } from '../core/Section'
 import { devDiagnostic } from '../core/devDiagnostic'
 import { prefersReducedMotion } from '../core/motionPolicy'
@@ -134,11 +135,10 @@ export class SceneCoordinator {
    * Compile the home Works and one-shot portal materials while the inline
    * splash still covers the scene. They are exposed only to the compiler.
    */
-  public async prewarmHomeMedia(renderer: object, camera: THREE.Camera): Promise<void> {
-    const compiler = renderer as {
-      compileAsync?: (scene: THREE.Scene, camera: THREE.Camera) => Promise<unknown>
-      compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
-    }
+  public async prewarmHomeMedia(
+    renderer: WebGPURenderer,
+    camera: THREE.Camera,
+  ): Promise<void> {
     if (this.page() !== 'home') return
 
     const group = this.sceneGroups[3]
@@ -149,14 +149,9 @@ export class SceneCoordinator {
     group.visible = true
     if (burst) burst.visible = true
     try {
-      // Prewarm is an optimisation. Some backends (WebGLRenderer fallback
-      // before first render) don't have a render stack yet → compile throws.
-      // Guard with a feature check + silent skip on failure.
-      if (compiler.compileAsync) {
-        await compiler.compileAsync(this.sceneRef, camera)
-      } else if (compiler.compile) {
-        compiler.compile(this.sceneRef, camera)
-      }
+      // Prewarm is an optimisation. Some backends cannot compile before the
+      // first render; on failure, the first visible frame compiles on demand.
+      await renderer.compileAsync(this.sceneRef, camera)
     } catch {
       // Silent — prewarming is not a startup requirement. The first render
       // will compile shaders on demand (slightly slower first frame only).
