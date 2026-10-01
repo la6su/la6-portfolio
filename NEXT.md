@@ -675,7 +675,7 @@ Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
 stress, deployment contract, and hardware-specific performance results pass;
 no known dead active path or unowned persistent resource remains.
 
-## Current checkpoint — 2026-10-01
+## Current checkpoint — 2026-10-02
 
 Vue/Tres owns the application shell and stable scene graph. Project controllers
 retain story-to-world behavior, GPU algorithms, browser policies and lifecycle
@@ -691,8 +691,8 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Verified before the latest removal:** 99 unit tests, Vue type-check, ESLint, stdlib check,
-production build and budgets pass. Current limits remain 3.03 kB startup gzip,
+**Latest verified:** 98 unit tests, Vue type-check, ESLint, production build and
+bundle budgets pass. The latest build reports 2.94 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined
@@ -700,7 +700,7 @@ Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were
 skipped by their explicit guards. Route, keyboard/focus, touch, responsive
 overflow, localized metadata and init-error checks passed. Earlier independent
 production suites passed both browsers. SceneHost teardown order passed in
-dev-mode Chromium. Its gate direct-loads Contact, observes its three lazy
+dev-mode Chromium (2/2 checks). Its gate direct-loads Contact, observes its three lazy
 stages becoming ready, opens showreel, and asserts all four owners plus async
 scene teardown finish before backend disposal. The cached WebKit MiniBrowser cannot launch because its
 ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
@@ -717,8 +717,12 @@ settles. The development runtime destroy hook is available during init so app
 unmount can await that ordering. The loader now reports phases instead of
 estimated percentages; Firefox verified the ready status alongside direct and
 lazy hash navigation. The broad audit mapped runtime, app, build, styling and public media; the risks and remaining source audits are
-recorded in the matrix above. Renderer recovery/init failure ownership and the
-remaining audit phases are still active.
+recorded in the matrix above. The latest renderer slice awaits Three r186's
+asynchronous disposal across init failure, fallback, recovery and Vue host
+teardown. Chromium host teardown passes, but induced WebGL loss still fails
+before recreation because this local browser does not restore the lost context.
+Stage cleanup failures are logged in production while teardown continues. The
+remaining architecture audit and browser/GPU acceptance phases are active.
 
 **Next actions:**
 
