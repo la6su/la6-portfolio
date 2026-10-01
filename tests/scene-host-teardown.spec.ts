@@ -13,10 +13,27 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   await page.addInitScript(() => {
     window.__jlzTestLifecycleTrace = [];
   });
-  await page.goto("/");
+  await page.goto("/contact");
   await expect(page.locator("#jlz-splash-enter")).toHaveClass(/is-ready/, {
     timeout: 60_000,
   });
+  for (const stage of [
+    "ContactTypographyStage",
+    "ContactCyprusStage",
+    "ContactHaloStage",
+  ]) {
+    await expect
+      .poll(
+        () =>
+          page.evaluate((label) =>
+            (window.__jlzTestLifecycleTrace ?? []).includes(
+              `scene-stage:${label}:ready`,
+            ),
+          stage),
+        { timeout: 20_000 },
+      )
+      .toBe(true);
+  }
   await page.waitForFunction(
     () => typeof window.__jlzTestUnmountVueApp === "function",
   );
@@ -71,7 +88,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   expect(anchorWasIntercepted).toBe(false);
   await expect
     .poll(() => new URL(page.url()).pathname, { timeout: 700 })
-    .toBe("/");
+    .toBe("/contact");
 
   const trace = await page.evaluate(() => window.__jlzTestLifecycleTrace ?? []);
   const backendDispose = trace.lastIndexOf("renderer:backend-disposed");
@@ -109,5 +126,16 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   expect(backendDispose).toBeLessThan(rendererDispose);
   expect(showreelDispose).toBeLessThan(backendDispose);
   expect(asyncSceneTeardown).toBeLessThan(rendererDispose);
+  for (const stage of [
+    "ContactTypographyStage",
+    "ContactCyprusStage",
+    "ContactHaloStage",
+  ]) {
+    const released = trace.indexOf(`scene-stage:${stage}:released`);
+    expect(released, `${stage} should finish disposal`).toBeGreaterThanOrEqual(0);
+    expect(released, `${stage} should release before backend disposal`).toBeLessThan(
+      backendDispose,
+    );
+  }
   expect(pageErrors).toEqual([]);
 });

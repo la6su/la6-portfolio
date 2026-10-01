@@ -15,6 +15,8 @@
 //   release  — teardown in the exact per-stage order (dispose ↔ detach)
 //   onDispose— extra invalidation (e.g. the Cyprus active flag)
 
+import { traceDevLifecycle } from '../core/devLifecycleTrace'
+
 /** Function-backed view over the state held by one lazy-stage slot. */
 export interface LazyStageOwner<T> {
   getStage: () => T | null
@@ -135,14 +137,13 @@ function releaseLazyStage<T extends object>(
   contract: LazyStageContract<T>,
   stage: T,
 ): Promise<void> {
-  return contract.owner.release(stage, (value) => {
+  return contract.owner.release(stage, async (value) => {
     try {
-      return Promise.resolve(contract.release(value)).catch((error: unknown) => {
-        if (import.meta.env.DEV) {
-          console.error(`[Experience] ${contract.label} release failed:`, error)
-        }
-      })
-    } catch (error) {
+      await contract.release(value)
+      if (import.meta.env.DEV) {
+        traceDevLifecycle(`scene-stage:${contract.label}:released`)
+      }
+    } catch (error: unknown) {
       if (import.meta.env.DEV) {
         console.error(`[Experience] ${contract.label} release failed:`, error)
       }
@@ -182,6 +183,9 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
       return
     }
     contract.configure(stage)
+    if (import.meta.env.DEV) {
+      traceDevLifecycle(`scene-stage:${contract.label}:ready`)
+    }
   }
 
   // Calling attach before the first await preserves Works' eager mount.
