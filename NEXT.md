@@ -246,6 +246,9 @@ tree and prior imperative router/admin renderers. Current comments describe
 the Vue Router timing, hash dispatch, and reactive refresh behavior directly.
 The same pass removed references to deleted carousel helpers, scene adapters,
 and glass-cube render paths from their active owner modules.
+The package's unused `type-check` script duplicated the CI-authoritative
+`type-check:vue` entry with plain `tsc`; removed it so the Vue-aware check is
+the single documented type-check command.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
