@@ -44,7 +44,10 @@ const publishedBuilderSlugs = (() => {
   return publishedPages(validation.documents).map((document) => document.slug)
 })()
 
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => {
+  const enableHmr = mode === 'hmr'
+
+  return {
   base: '/',
   resolve: {
     // TresJS 5.9 statically imports WebGLRenderer from bare `three`. The
@@ -257,7 +260,7 @@ export default defineConfig(() => ({
       // HTML so the browser never requests it, and (2) return a stub for
       // direct localhost access.
       name: 'block-vite-client',
-      apply: 'serve',
+      apply: (_config, env) => !enableHmr && env.command === 'serve',
       transformIndexHtml(html) {
         // Remove the @vite/client script tag from the HTML
         return html.replace(/<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g, '')
@@ -268,7 +271,7 @@ export default defineConfig(() => ({
             res.setHeader('Content-Type', 'text/javascript')
             res.end(
               [
-                '// Vite client stub — prevents reload loop through proxy',
+                '// Vite client stub — proxy-safe mode',
                 'export function createHotContext() {',
                 '  return { accept() {}, dispose() {}, prune() {}, on() {}, off() {}, send() {}, invalidate() {}, decline() {} }',
                 '}',
@@ -314,14 +317,13 @@ export default defineConfig(() => ({
     },
   },
   server: {
-    // Disable HMR — when accessing through a reverse proxy (Caddy gateway),
-    // the HMR WebSocket connection is unstable (proxy idle timeout ~30s).
-    // When the WebSocket disconnects, Vite client triggers location.reload(),
-    // causing the page to reload every ~30 seconds.
-    hmr: false,
+    // Keep the proxy-safe mode as default; direct local/LAN HMR uses Vite's
+    // built-in client and WebSocket (`bun run dev:hmr`).
+    ...(enableHmr ? {} : { hmr: false as const }),
     // Allow the reverse proxy host so Vite doesn't block requests from
     // project.6la.ru (Caddy forwards to localhost:5173). Loopback hosts are
     // always allowed; this names the one public host that proxies in.
     allowedHosts: ['project.6la.ru'],
   },
-}))
+  }
+})

@@ -11,6 +11,10 @@ bun install
 bun run dev
 ```
 
+`bun run dev` is safe behind the current reverse proxy and disables Vite HMR.
+For a direct local/LAN connection whose proxy forwards WebSockets, use
+`bun run dev:hmr` to enable Vite's built-in hot updates.
+
 SPA: `/`, `/services`, `/works`, `/works/:projectId`, `/manifesto`, `/lab`,
 `/contact`. Static HTML: `/blog`, `/blog/<slug>`, approved `/p/<slug>` and
 `/p/<slug>/ru/`. Dev editor: `/admin/`. Works media includes labelled placeholders;

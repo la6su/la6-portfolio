@@ -474,10 +474,10 @@ to shorten the file.
 
 - Keep `Experience`, router app, and SceneHost teardown boundaries aligned;
   cover pending stage detach and active-renderer disposal under repeated
-  shutdown. Vite HMR is currently intentionally disabled because the project's
-  reverse-proxy gateway drops its WebSocket and causes reload loops; verify a
-  development workflow that preserves this gateway constraint without adding
-  a production abstraction.
+  shutdown. Verify a live HMR websocket/update on direct local access and
+  confirm Vue/Tres edits do not duplicate the persistent renderer. Keep the
+  proxy-safe mode available for the gateway that cannot carry the HMR client
+  and socket reliably.
 
 **Acceptance**: ownership map is reflected in code; duplicate state is
 removed; init/failure/recovery/dispose behavior is explicit and covered by
@@ -663,6 +663,12 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
   passed, 3 expected skips). The startup renderer may be disposed earlier when
   capability policy replaces it with the final backend; the teardown assertion
   intentionally checks the final active renderer disposal.
+- Development workflow now has two explicit Vite modes: `bun run dev` keeps
+  the no-client proxy-safe path; `bun run dev:hmr` uses Vite's built-in client
+  and default WebSocket for direct local/LAN access. HTTP checks confirmed the
+  default mode omits the active client and serves the stub, while HMR mode
+  serves Vite's real `/@vite/client`. A live WebSocket update cycle through
+  the chosen development route still needs verification.
 - **Environment gap**: this host did not expose a working NVIDIA driver to
   `nvidia-smi`; native WebGPU and real GPU recovery/performance acceptance is
   not yet evidenced. Do not mark phase 3 or release hardware gates complete

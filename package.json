@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:hmr": "vite --host --mode hmr",
     "type-check": "tsc --noEmit",
     "type-check:vue": "vue-tsc --noEmit -p tsconfig.json",
     "build": "tsc && node scripts/prerender-home.mjs && node scripts/prerender-blog.mjs && node scripts/publish-builder-pages.mjs && bun scripts/generate-sitemap.ts && vite build && bun scripts/check-build-budgets.ts",
