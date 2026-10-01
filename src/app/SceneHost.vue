@@ -287,15 +287,18 @@ async function onReady(context: TresContext): Promise<void> {
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
-  const camera = await readyNode(cameraSlot)
-  const lights = await readyNode(lightsSlot)
-  const ground = await readyNode(groundSlot)
-  const sectionRoots = await readyNode(sectionRootsSlot)
-  const servicesStage = await readyNode(servicesStageSlot)
-  const envSphere = await readyNode(envSphereSlot)
-  const baku = await readyNode(bakuSlot)
-  const introFrames = await readyNode(introFramesSlot)
-  const cursorTrail = await readyNode(cursorTrailSlot)
+  const [camera, lights, ground, sectionRoots, servicesStage, envSphere, baku, introFrames, cursorTrail] =
+    await Promise.all([
+      readyNode(cameraSlot),
+      readyNode(lightsSlot),
+      readyNode(groundSlot),
+      readyNode(sectionRootsSlot),
+      readyNode(servicesStageSlot),
+      readyNode(envSphereSlot),
+      readyNode(bakuSlot),
+      readyNode(introFramesSlot),
+      readyNode(cursorTrailSlot),
+    ])
   if (!envSkySlot.value.value) await envSkySlot.promise
   if (!isCurrent()) return
   const canvas =
