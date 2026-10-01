@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, markRaw, onBeforeUnmount, onMounted, shallowRef, toRaw, watch } from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import type { Group } from 'three'
 import type { WorksInstallation } from '../../Experience/World/WorksInstallation'
 import type { WorksCaseCard, WorksPlaneStage } from '../../Experience/World/WorksPlaneStage'
@@ -12,9 +12,6 @@ const props = defineProps<{
 }>()
 const cards = shallowRef<readonly WorksCaseCard[]>([])
 let unsubscribeCards: (() => void) | null = null
-const installation = computed(() =>
-  props.installation ? markRaw(toRaw(props.installation)) : null,
-)
 const emit = defineEmits<{ 'root-ready': [root: Group] }>()
 const root = shallowRef<Group | null>(null)
 
@@ -46,6 +43,6 @@ onBeforeUnmount(() => unsubscribeCards?.())
       :card="card"
       @ready="stage?.adoptCard(card.projectIndex, $event)"
     />
-    <WorksInstallationNode v-if="installation" :installation="installation" />
+    <WorksInstallationNode v-if="props.installation" :installation="props.installation" />
   </TresGroup>
 </template>

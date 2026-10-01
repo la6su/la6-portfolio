@@ -1,7 +1,7 @@
 // Shared mount/unmount boundary for lazily created Three.js scene stages.
-// It guards host teardown, keeps objects raw, ignores stale detach requests
-// and waits for Vue to apply each scene-tree change.
-import { markRaw, nextTick, shallowRef, type ShallowRef } from 'vue'
+// It guards host teardown, ignores stale detach requests, and waits for Vue
+// to apply each scene-tree change. shallowRef keeps Three objects raw.
+import { nextTick, shallowRef, type ShallowRef } from 'vue'
 import type { StagePort } from './sceneHost'
 
 /** One declarative stage slot: the `StagePort` boundary plus the live object
@@ -17,13 +17,12 @@ interface StageSlotOptions {
 }
 
 export function createStageSlot<T extends object>(options: StageSlotOptions): StageSlot<T> {
-  // The cast narrows shallowRef's overload union to the matching member.
-  const object = shallowRef<T | null>(null) as ShallowRef<T | null>
+  const object: ShallowRef<T | null> = shallowRef<T | null>(null)
   return {
     object,
     async mount(next: T): Promise<void> {
       if (!options.isAlive()) return
-      object.value = markRaw(next)
+      object.value = next
       await nextTick()
     },
     async unmount(prev: T): Promise<void> {

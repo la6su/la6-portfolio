@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, shallowRef, toRaw, watch } from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import * as THREE from 'three'
 import {
   WorksInstallation,
@@ -7,7 +7,6 @@ import {
 } from '../../Experience/World/WorksInstallation'
 
 const props = defineProps<{ installation: WorksInstallation }>()
-const installation = computed(() => toRaw(props.installation))
 const assembly = shallowRef<THREE.Group | null>(null)
 const arcs = shallowRef<THREE.Mesh[]>([])
 const trace = shallowRef<THREE.Mesh | null>(null)
@@ -35,7 +34,7 @@ function nodes(): WorksInstallationNodes | null {
 function disposeGeometry(): void {
   const mounted = mountedNodes
   if (!mounted) return
-  installation.value.release(mounted)
+  props.installation.release(mounted)
   mounted.arcs.forEach((arc) => arc.geometry.dispose())
   mounted.trace.geometry.dispose()
   mounted.ticks.geometry.dispose()
@@ -55,10 +54,10 @@ onMounted(() => {
     mounted.ticks.setMatrixAt(index, instance.matrix)
   }
   mounted.ticks.instanceMatrix.needsUpdate = true
-  installation.value.adopt(mounted)
+  props.installation.adopt(mounted)
 })
 
-watch(installation, (owner, previous) => {
+watch(() => props.installation, (owner, previous) => {
   if (!mountedNodes) return
   previous.release(mountedNodes)
   owner.adopt(mountedNodes)
@@ -73,7 +72,7 @@ onBeforeUnmount(disposeGeometry)
       v-for="(args, index) in arcArgs"
       :key="index"
       ref="arcs"
-      :material="installation.metalMaterial"
+      :material="props.installation.metalMaterial"
       :rotation="arcRotations[index]"
       :dispose="null"
     >
@@ -81,7 +80,7 @@ onBeforeUnmount(disposeGeometry)
     </TresMesh>
     <TresMesh
       ref="trace"
-      :material="installation.signalMaterial"
+      :material="props.installation.signalMaterial"
       :position="tracePosition"
       :dispose="null"
     >
@@ -90,7 +89,7 @@ onBeforeUnmount(disposeGeometry)
     <TresInstancedMesh
       ref="ticks"
       :args="[undefined, undefined, 48]"
-      :material="installation.signalMaterial"
+      :material="props.installation.signalMaterial"
       :dispose="null"
     >
       <TresBoxGeometry :args="[0.006, 0.055, 0.008]" />
