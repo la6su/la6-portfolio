@@ -311,6 +311,14 @@ async function boot(): Promise<BootResult> {
       getCurrentPage,
     )
     experience = runtime
+    if (import.meta.env.DEV) {
+      // Publish teardown before init() reaches async scene/media prewarm so
+      // HMR/app unmount can await GPU-safe owner release during boot too.
+      const devRuntime = window as unknown as {
+        __jlzRuntimeDestroy?: () => Promise<void>
+      }
+      devRuntime.__jlzRuntimeDestroy = () => runtime.destroy()
+    }
     const hostProbe: JlzHostProbe = {
       mode: host.mode,
       backend: host.backend.backendName,
@@ -324,9 +332,6 @@ async function boot(): Promise<BootResult> {
       }),
     )
     await runtime.init()
-    if (import.meta.env.DEV) {
-      ;(window as unknown as { __jlzRuntimeDestroy?: () => Promise<void> }).__jlzRuntimeDestroy = () => runtime.destroy()
-    }
     // TSL post-processing is enabled only on WebGPUBackend; Three's WebGL
     // fallback renders the scene directly.
     devDiagnostic(

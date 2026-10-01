@@ -205,4 +205,33 @@ describe('Experience scene construction cancellation', () => {
     await teardown
     expect(lifecycle.prewarmHomeMedia).not.toHaveBeenCalled()
   })
+
+  it('keeps scene owners and renderer alive until an in-flight GPU prewarm settles', async () => {
+    let finishPrewarm!: () => void
+    lifecycle.prewarmHomeMedia.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishPrewarm = resolve)),
+    )
+    const experience = createExperienceHarness()
+    const runtime = experience as unknown as {
+      renderer: { dispose: () => void }
+      _stages: { dispose: () => Promise<void> }
+    }
+    const rendererDispose = vi.spyOn(runtime.renderer, 'dispose')
+    const stageDispose = vi.spyOn(runtime._stages, 'dispose')
+
+    const initialization = experience.buildScene(0)
+    await vi.waitFor(() =>
+      expect(lifecycle.prewarmHomeMedia).toHaveBeenCalledOnce(),
+    )
+
+    const teardown = experience.destroy()
+    expect(rendererDispose).not.toHaveBeenCalled()
+    expect(stageDispose).not.toHaveBeenCalled()
+
+    finishPrewarm()
+    await Promise.all([initialization, teardown])
+
+    expect(rendererDispose).toHaveBeenCalledOnce()
+    expect(stageDispose).toHaveBeenCalledOnce()
+  })
 })

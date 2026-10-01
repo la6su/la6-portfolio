@@ -115,6 +115,8 @@ export class Experience {
   private _destroyed = false
   private _destroyPromise: Promise<void> | null = null
   private _lifecycleGeneration = 0
+  /** Active GPU prewarm; teardown keeps its renderer and scene alive until it settles. */
+  private _scenePrewarmPromise: Promise<void> | null = null
 
   /** Development-only project navigation delegates to the UI owner. */
   public navigateProject(direction: -1 | 1): void {
@@ -421,7 +423,13 @@ export class Experience {
     if (!this.isLifecycleCurrent(token)) return
     // The coordinator initializes section behavior; route-owned stages enter
     // the scene through their declarative host ports.
-    await this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
+    const prewarm = this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
+    this._scenePrewarmPromise = prewarm
+    try {
+      await prewarm
+    } finally {
+      if (this._scenePrewarmPromise === prewarm) this._scenePrewarmPromise = null
+    }
     if (!this.isLifecycleCurrent(token)) return
     // Apply the initial section's light and ground state before the first
     // rendered frame.
@@ -1067,14 +1075,9 @@ export class Experience {
     this._lifecycleGeneration++
     this._readinessGate?.cancel()
     this._readinessGate = null
-    // Text effects can outlive a route root while their DOM remains attached;
-    // stop their RAF/timeout owners before tearing down the scene and UI.
-    NoiseText.disposeAll()
-    BlurFade.disposeAll()
-    // Stop the loop driver FIRST — RenderScheduler.destroy() closes the
-    // Tres loop window through the SceneHost port, clears the frame
-    // callback, the visibility listener and any pending invalidation, so no
-    // frame fires after dispose().
+    const scenePrewarm = this._scenePrewarmPromise
+    // Stop frames and callbacks immediately. GPU scene and renderer disposal
+    // waits for an in-flight compileAsync prewarm below.
     this._scheduler.destroy()
     this._unsubExternalInvalidate?.()
     this._unsubExternalInvalidate = null
@@ -1085,6 +1088,8 @@ export class Experience {
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()
+    NoiseText.disposeAll()
+    BlurFade.disposeAll()
     this.contentReveal?.destroy()
     this.cursor?.destroy()
     if (this._sectionChangeHandler) {
@@ -1095,20 +1100,35 @@ export class Experience {
       eventBus.off('jlz:renderer-recovered', this._onRendererRecovered)
       this._onRendererRecovered = null
     }
-    if (this._themeAppliedUnsub) {
-      this._themeAppliedUnsub()
-      this._themeAppliedUnsub = null
+    this._themeAppliedUnsub?.()
+    this._themeAppliedUnsub = null
+    this._splashEnteredUnsub?.()
+    this._splashEnteredUnsub = null
+    this.features.destroy()
+
+    // Publish the completion promise before owner disposal can trigger any
+    // synchronous callbacks that re-enter destroy().
+    this._destroyPromise = Promise.resolve().then(() => this.finishDestroy(scenePrewarm))
+    return this._destroyPromise
+  }
+
+  private async finishDestroy(scenePrewarm: Promise<void> | null): Promise<void> {
+    if (scenePrewarm) {
+      try {
+        await scenePrewarm
+      } catch (error) {
+        // Prewarm is optional, but resources it touched must finish before
+        // the scene and backend owners are released.
+        console.warn('[Experience] scene prewarm ended during teardown:', error)
+      }
     }
-    if (this._splashEnteredUnsub) {
-      this._splashEnteredUnsub()
-      this._splashEnteredUnsub = null
-    }
+    // Event/RAF owners were stopped synchronously in destroy(); release the
+    // scene-facing owners only after compileAsync no longer traverses them.
     // The showreel controller unsubscribes its commands and disposes the
     // theater with the render owner (video element, texture, quad).
     const showreelTeardown = this._showreel.dispose()
     // UI event listeners, menu, overlay and story navigation belong to
     // ExperienceUI.
-    this.features.destroy()
     // Experience owns these controller lifetimes.
     this.lights?.dispose()
     this.ground?.dispose()
@@ -1150,17 +1170,13 @@ export class Experience {
       // no owner card yet. In-flight entries self-dispose when they settle.
       disposeAllCaseTextures()
     }
-    this._destroyPromise = Promise.allSettled([showreelTeardown, stageTeardown]).then(
-      (results) => {
-        for (const result of results) {
-          if (result.status === 'rejected') {
-            console.error('[Experience] scene owner teardown failed:', result.reason)
-          }
-        }
-        traceDevLifecycle('experience:async-scene-teardown-complete')
-        finishRendererTeardown()
-      },
-    )
-    return this._destroyPromise
+    const results = await Promise.allSettled([showreelTeardown, stageTeardown])
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error('[Experience] scene owner teardown failed:', result.reason)
+      }
+    }
+    traceDevLifecycle('experience:async-scene-teardown-complete')
+    finishRendererTeardown()
   }
 }
