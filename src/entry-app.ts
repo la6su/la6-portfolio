@@ -325,7 +325,7 @@ async function boot(): Promise<BootResult> {
     )
     await runtime.init()
     if (import.meta.env.DEV) {
-      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => Promise<void> }).__jlzRuntimeDestroy = () => runtime.destroy()
     }
     // TSL post-processing is enabled only on WebGPUBackend; Three's WebGL
     // fallback renders the scene directly.
@@ -346,7 +346,7 @@ async function boot(): Promise<BootResult> {
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
     try {
-      experience?.destroy()
+      await experience?.destroy()
     } catch (error) {
       console.error('[entry-app] Experience cleanup failed:', error)
     }

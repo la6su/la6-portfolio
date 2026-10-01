@@ -13,9 +13,9 @@ declare global {
     __jlzHost?: JlzHostProbe
     /** Development-only hooks used to observe real SceneHost teardown. */
     __jlzTestLifecycleTrace?: string[]
-    __jlzTestUnmountVueApp?: () => void
+    __jlzTestUnmountVueApp?: () => Promise<void>
     __jlzEmit?: (event: string, detail?: unknown) => void
-    __jlzRuntimeDestroy?: () => void
+    __jlzRuntimeDestroy?: () => Promise<void>
   }
 }
 

@@ -21,12 +21,28 @@ test("SceneHost releases declared owners before disposing its renderer", async (
     () => typeof window.__jlzTestUnmountVueApp === "function",
   );
 
+  await page.evaluate(() => window.__jlzEmit?.("jlz:showreel-open"));
+  await expect(page.locator("#jlz-showreel-console")).toHaveAttribute(
+    "data-state",
+    "open",
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window.__jlzTestLifecycleTrace ?? []).includes(
+          "scene-owner:showreel-quad-bound",
+        ),
+      ),
+    )
+    .toBe(true);
+
   // Runtime teardown may be requested by both an application owner and the
   // Vue host during shutdown. It must stay idempotent while stage detach is
   // still pending.
   await page.evaluate(() => {
-    window.__jlzRuntimeDestroy?.();
-    window.__jlzRuntimeDestroy?.();
+    const destroy = window.__jlzRuntimeDestroy;
+    if (!destroy) throw new Error("Runtime destroy hook is missing.");
+    return Promise.all([destroy(), destroy()]);
   });
   await expect(page.locator("#cinematic-nav")).toHaveCount(1);
   await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
@@ -60,8 +76,16 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   const trace = await page.evaluate(() => window.__jlzTestLifecycleTrace ?? []);
   const backendDispose = trace.lastIndexOf("renderer:backend-disposed");
   const rendererDispose = trace.indexOf("scene-host:renderer-disposed");
+  const asyncSceneTeardown = trace.indexOf(
+    "experience:async-scene-teardown-complete",
+  );
+  const showreelDispose = trace.indexOf(
+    "scene-owner:showreel-media-disposed",
+  );
   expect(backendDispose).toBeGreaterThanOrEqual(0);
   expect(rendererDispose).toBeGreaterThanOrEqual(0);
+  expect(asyncSceneTeardown).toBeGreaterThanOrEqual(0);
+  expect(showreelDispose).toBeGreaterThanOrEqual(0);
   expect(
     trace.filter((event) => event === "scene-host:renderer-disposed"),
   ).toHaveLength(1);
@@ -83,5 +107,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
     expect(trace.filter((event) => event === ownerRelease)).toHaveLength(1);
   }
   expect(backendDispose).toBeLessThan(rendererDispose);
+  expect(showreelDispose).toBeLessThan(backendDispose);
+  expect(asyncSceneTeardown).toBeLessThan(rendererDispose);
   expect(pageErrors).toEqual([]);
 });

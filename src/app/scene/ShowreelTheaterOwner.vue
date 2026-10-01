@@ -15,6 +15,8 @@ function syncQuad(): void {
   if (props.theater && quad.value) {
     props.theater.bindQuad(quad.value);
     boundTheater = props.theater;
+    if (import.meta.env.DEV)
+      traceDevLifecycle("scene-owner:showreel-quad-bound");
   }
 }
 

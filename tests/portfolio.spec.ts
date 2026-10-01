@@ -770,7 +770,7 @@ test("Renderer recovers from WebGL context loss on the persistent canvas", async
   });
   await page.waitForFunction(
     () =>
-      typeof (window as Window & { __jlzRuntimeDestroy?: () => void })
+      typeof (window as Window & { __jlzRuntimeDestroy?: () => Promise<void> })
         .__jlzRuntimeDestroy === "function",
     undefined,
     { timeout: 20_000 },

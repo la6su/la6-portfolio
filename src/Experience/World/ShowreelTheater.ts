@@ -38,6 +38,7 @@ import {
   texture,
 } from 'three/tsl'
 import { eventBus } from '../../core/EventBus'
+import { traceDevLifecycle } from '../../core/devLifecycleTrace'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 /** Duration of the enter transition, in seconds. */
@@ -322,6 +323,7 @@ export class ShowreelTheater {
     this.video?.pause()
     this.videoTexture?.dispose()
     this.posterTexture?.dispose()
+    traceDevLifecycle('scene-owner:showreel-media-disposed')
     // Tres owns the portal quad and its material/geometry. This controller
     // owns the video/poster textures and HTML media element only.
     this.quad = null

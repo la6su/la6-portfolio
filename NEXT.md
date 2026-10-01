@@ -94,8 +94,8 @@ plugin wiring, package scripts, and current module ownership. Items marked
 | --- | --- | --- | --- |
 | Vue/Tres scene graph | `SceneHost.vue`, `sceneHost.ts`, `useSceneStages.ts`, stage owner SFCs, `Experience.buildScene()`, and scene owner controllers show Vue/Tres owning persistent roots. Experience adopts those roots. No demonstrated duplicate stable scene hierarchy remains. | Keep this as baseline; change an owner only when a concrete duplicate or cleanup defect is demonstrated. | Guardrail: no runtime `scene.add/remove` for stable app nodes; one disposal owner per GPU resource. |
 | Scene coordination | `SceneCoordinator` owns route/story orchestration; `SceneTransformPass` owns scroll-to-world math; `SceneFramePass` owns per-frame updates. Call-site review confirmed that ExperienceUI needs `worksPlaneStage` for pointer raycasts and uses baku/burst/carousel commands; scene-stage getters for typography/halo/manifesto had no external readers and are now private. `worksPlaneStage` remains public. The frame path now reads the home carousel from its scene owner directly instead of reaching through `ExperienceUI`; UI keeps its route-aware carousel lookup private for project navigation. The two passes retain distinct algorithms and caches; coordinator forwarding still merits a method-by-method review. Removed stale comments that described completed extraction history instead of present ownership. | Continue tracing every Experience/ExperienceUI coordinator call and each pass context field; remove only proven pass-through state. | P1: every surviving class has a direct responsibility and a caller that benefits from its boundary. |
-| Experience composition root | `Experience.ts` initializes renderer, scene, feature UI, theme, motion, recovery, diagnostics and frame policy. Review found awaited Vue stage mounts and the dev-only DevPanel import could resume after destroy; lifecycle-generation guards now stop later owners from being created and prevent the diagnostic global from being republished. | Continue the method-by-method error/teardown map; look for repeated fan-outs and flags derivable from owners. Keep coordination here only where it is the single natural owner. | P1: each listener, timer, observer, renderer candidate and async continuation has one owner and terminal cleanup. |
-| Lazy route stages | `LazyStage.ts` centralizes real stale-import, mount, in-flight release and idempotent cleanup races; `StageRegistry.ts` supplies route-specific contracts. | Retain shared lifecycle only while focused race tests represent production behavior; remove slot/test seams or repeated contract fields that serve no production behavior. | P1: route leave during create/mount/load releases exactly once and does not wait for unrelated imports. |
+| Experience composition root | `Experience.ts` initializes renderer, scene, feature UI, theme, motion, recovery, diagnostics and frame policy. Lifecycle-generation guards stop awaited mounts and the dev-only DevPanel import from creating owners after destroy. Teardown was synchronous at the app boundary even though `StageRegistry.dispose()` waits on Vue `nextTick`; app unmount could therefore dispose the backend before stage controllers released resources. `Experience.destroy()` now returns an idempotent completion promise, the app awaits it before Vue unmount, and completion covers route-stage + showreel teardown. The dev host test opens the showreel and proves media release and async scene teardown precede backend/renderer disposal. | Continue the method-by-method error/teardown map, including renderer recovery candidates and init failure; add exact stale-init race coverage. Keep coordination here only where it is the single natural owner. | P1: each listener, timer, observer, renderer candidate and async continuation has one owner and terminal cleanup. |
+| Lazy route stages | `LazyStage.ts` centralizes real stale-import, mount, in-flight release and idempotent cleanup races; `StageRegistry.ts` supplies route-specific contracts. Experience now awaits registry disposal before its caller unmounts SceneHost, so asynchronous stage release finishes while the backend remains alive. | Retain shared lifecycle only while focused race tests represent production behavior; remove slot/test seams or repeated contract fields that serve no production behavior. Add runtime evidence for an actually mounted lazy route stage during root teardown. | P1: route leave during create/mount/load releases exactly once and before backend disposal. |
 | Route hash dispatch | `app/index.ts` had both `createSingleFrameOwner` generation/cancel state and `hashNavigationGeneration`; afterEach cancels the owned frame before starting the next poll, so the second stale token duplicated cancellation. Removed the redundant counter; direct and lazy-route hash flows pass in Firefox production browser. New Vitest coverage proves superseded frame callbacks and callbacks cancelled before execution are no-ops; deferred initial hashes dispatch only the newest request and stop after invalidation. Router error and Vue unmount both call the same cancellation owner. | Keep the cancellation helper tests aligned with those two integration cleanup call sites; assess the route hash flow during the full accessibility/navigation browser pass. | P1: no stale hash dispatch; no duplicate generation state. |
 | Bootstrap status | Removed the false 15→40→55→95→100 percentages and 150 ms display delay. Splash now announces real `INITIALIZING`, `PREPARING SCENE`, and `READY` states through a polite live status; failure remains `SIGNAL LOST`. | Done; keep phase labels tied to actual boot transitions. | No estimated completion percentage without measurable work progress. |
 | Dev builder API | `admin/vite-plugin.ts` exposes unauthenticated GET and source-writing POST middleware whenever Vite serves. Default `dev` was observed listening only on `127.0.0.1:5179`; headless Chromium loaded `/admin/`, mounted the editor, and fetched the document list successfully with no browser errors after adding the shared SVG favicon. `dev:hmr` intentionally remains network-facing. `vite.config.ts` allows `project.6la.ru`, but that is a Host check, not authentication. The reverse proxy/access-control configuration and whether it shares this host are outside the repository; remote reachability remains unverified. | Confirm the actual proxy target/bind requirement and that proxy auth/ACL covers `/admin/` and `/__jlz-admin/*`; keep this deployment check open until evidence is available. Assess whether explicit `dev:hmr` exposure is acceptable on the local network. | P0 verify: remote unauthenticated clients cannot read or mutate builder sources; local editor works. |
@@ -381,7 +381,7 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Verified locally:** 81 unit tests, Vue type-check, ESLint, stdlib check,
+**Verified locally:** 86 unit tests, Vue type-check, ESLint, stdlib check,
 production build and budgets pass. Current limits remain 3.03 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog, both builder locales and sitemap use the staging
@@ -390,25 +390,29 @@ suite passed (16 passed, 4 opt-in renderer cases skipped), including the latest
 loader status assertion. Full production Chromium passed (17
 passed, 3 opt-in renderer cases skipped) using `/usr/bin/chromium` through
 `JLZ_CHROMIUM_PATH`. SceneHost teardown order passed in dev-mode Chromium and
-Firefox. The cached WebKit MiniBrowser cannot launch because its
+Firefox. The dev Chromium gate now opens the showreel and asserts its media
+owner plus async scene teardown finish before backend disposal. The cached WebKit MiniBrowser cannot launch because its
 ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
 `nvidia-smi` cannot reach a GPU driver here. Browser runs use software
 rendering and do not establish physical-GPU WebGPU, recovery or performance.
 
 The route-hash cancellation change and Experience stale-init guards pass build,
-type, lint and unit gates. The loader now reports phases instead of estimated
-percentages; Firefox verified the ready status alongside direct and lazy hash
-navigation. The exact Experience await races still need a deterministic
-regression test. The broad audit mapped runtime, app, builder,
+type, lint and unit gates; focused cancellation tests plus the teardown browser
+gate cover the relevant cleanup boundaries. The loader now reports phases
+instead of estimated percentages; Firefox verified the ready status alongside
+direct and lazy hash navigation. Exact init-await races still need a
+deterministic regression test. The broad audit mapped runtime, app, builder,
 admin, build, styling and public media; the risks and remaining source audits
-are recorded in the matrix above.
+are recorded in the matrix above. The full unit suite should be rerun after the
+awaitable teardown contract change.
 
 **Next actions:**
 
 1. Establish the dev builder API's actual network exposure and enforce an
    authorized boundary before treating the admin as production-safe.
-2. Finish phase 2's `Experience.ts` teardown trace; add deterministic coverage
-   for the stale-init awaits and superseding/router-error hash cancellation.
+2. Finish phase 2's `Experience.ts` teardown trace and deterministic stale-init
+   race coverage; route-hash supersede/cancel behavior now has focused helper
+   tests and direct/lazy route browser evidence.
 3. Finish phase 5's generated-output and LESS selector audit; inspect the
    5.27 MB video before setting a measurable media budget.
 4. Continue phase 4's EN/RU keyboard, contrast, touch, resize and renderer

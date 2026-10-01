@@ -111,7 +111,7 @@ export class ShowreelController {
 
   /** Unsubscribe the commands and dispose the theater (video element, its
    *  texture and the quad die here). */
-  public dispose(): void {
+  public dispose(): Promise<void> {
     this._requestedOpen = false
     if (this._openUnsub) {
       this._openUnsub()
@@ -127,9 +127,24 @@ export class ShowreelController {
     }
     const theater = this._theater
     this._theater = null
-    if (theater) {
-      void this._ctx.unmountTheater(theater).finally(() => theater.dispose())
-    }
+    const opening = this._opening
     this._opening = null
+    if (!theater) return Promise.resolve()
+
+    // Retire media textures before Experience's deferred renderer disposal.
+    // The scene loop is already stopped; Tres still owns and will unmount the
+    // portal quad through its declarative stage slot.
+    theater.dispose()
+    let unmount: Promise<void>
+    try {
+      unmount = this._ctx.unmountTheater(theater)
+    } catch (error) {
+      return Promise.reject(error)
+    }
+
+    // If mount was still settling, ensure() also observes the retired owner
+    // and completes its stale-stage release. Await both paths before the host
+    // unmounts and disposes the backend.
+    return Promise.all([unmount, opening?.catch(() => null)]).then(() => undefined)
   }
 }

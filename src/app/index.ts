@@ -15,7 +15,7 @@ import AppShell from './AppShell.vue'
 import { jlzRouteRecords, pageForPath } from './routes'
 
 let mounted = false
-let unmountMountedVueApp: (() => void) | null = null
+let unmountMountedVueApp: (() => Promise<void>) | null = null
 
 /** Own the direct-entry hash handoff until the renderer is ready. */
 export function createDeferredInitialHashGate(): {
@@ -223,7 +223,7 @@ export async function mountVueApp(): Promise<void> {
   }
   document.addEventListener('click', onClick, true)
 
-  unmountMountedVueApp = () => {
+  unmountMountedVueApp = async () => {
     if (disposed) return
     disposed = true
     hashNavigationFrame.cancel()
@@ -231,6 +231,7 @@ export async function mountVueApp(): Promise<void> {
     appUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     document.removeEventListener('click', onClick, true)
     routeTransition.dispose()
+    await window.__jlzRuntimeDestroy?.()
     if (appMounted) app.unmount()
     appMounted = false
     if (
@@ -253,20 +254,22 @@ export async function mountVueApp(): Promise<void> {
     ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady =
       true
   } catch (error) {
-    unmountMountedVueApp()
+    await unmountMountedVueApp()
     throw error
   }
 
   if (import.meta.env.DEV) {
-    window.__jlzTestUnmountVueApp = () => {
-      window.__jlzRuntimeDestroy?.()
-      unmountMountedVueApp?.()
-      delete window.__jlzTestUnmountVueApp
+    window.__jlzTestUnmountVueApp = async () => {
+      try {
+        await unmountMountedVueApp?.()
+      } finally {
+        delete window.__jlzTestUnmountVueApp
+      }
     }
   }
 }
 
 /** Release the app-level listeners and timers before unmounting its Vue tree. */
-export function unmountVueApp(): void {
-  unmountMountedVueApp?.()
+export function unmountVueApp(): Promise<void> {
+  return unmountMountedVueApp?.() ?? Promise.resolve()
 }

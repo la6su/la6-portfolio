@@ -46,6 +46,7 @@ import type { ServicesStage } from './World/ServicesStage'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
 import { devDiagnostic } from '../core/devDiagnostic'
+import { traceDevLifecycle } from '../core/devLifecycleTrace'
 
 /**
  * Instances and scene roots borrowed from the persistent SceneHost. Experience
@@ -112,6 +113,7 @@ export class Experience {
   private features!: ExperienceUI
   private readonly _host: ExperienceHost
   private _destroyed = false
+  private _destroyPromise: Promise<void> | null = null
   private _lifecycleGeneration = 0
 
   /** Development-only project navigation delegates to the UI owner. */
@@ -1058,8 +1060,9 @@ export class Experience {
     // and fight the WebGPU swap chain synchronization.
   }
 
-  destroy() {
-    if (this._destroyed) return
+  destroy(): Promise<void> {
+    if (this._destroyPromise) return this._destroyPromise
+    if (this._destroyed) return Promise.resolve()
     this._destroyed = true
     this._lifecycleGeneration++
     this._readinessGate?.cancel()
@@ -1102,7 +1105,7 @@ export class Experience {
     }
     // The showreel controller unsubscribes its commands and disposes the
     // theater with the render owner (video element, texture, quad).
-    this._showreel?.dispose()
+    const showreelTeardown = this._showreel.dispose()
     // UI event listeners, menu, overlay and story navigation belong to
     // ExperienceUI.
     this.features.destroy()
@@ -1129,7 +1132,7 @@ export class Experience {
     this.coordinator?.dispose()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
-    delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy
+    delete (window as unknown as { __jlzRuntimeDestroy?: () => Promise<void> }).__jlzRuntimeDestroy
     this.camera.destroy()
     // Release the observer of Tres's viewport refs on HMR and teardown.
     this._stopSizeWatch?.()
@@ -1147,12 +1150,17 @@ export class Experience {
       // no owner card yet. In-flight entries self-dispose when they settle.
       disposeAllCaseTextures()
     }
-    void stageTeardown.then(
-      finishRendererTeardown,
-      (error: unknown) => {
-        console.error('[Experience] stage teardown failed:', error)
+    this._destroyPromise = Promise.allSettled([showreelTeardown, stageTeardown]).then(
+      (results) => {
+        for (const result of results) {
+          if (result.status === 'rejected') {
+            console.error('[Experience] scene owner teardown failed:', result.reason)
+          }
+        }
+        traceDevLifecycle('experience:async-scene-teardown-complete')
         finishRendererTeardown()
       },
     )
+    return this._destroyPromise
   }
 }
