@@ -17,8 +17,8 @@ export interface AppEvents {
     configId?: string
     index: number
   }
-  /** Fired by useJlzPage on page navigation — reconciles route-owned runtime features. */
-  'jlz:route-change': { page?: string }
+  /** Fired after route DOM is ready — reconciles route-owned runtime features. */
+  'jlz:route-change': void
   /**
    * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
    * the renderer. The PMREM environment texture dies with the lost device, so

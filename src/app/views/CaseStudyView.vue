@@ -90,7 +90,7 @@ watch(
   () => {
     releaseCaseIntent()
     releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
-    eventBus.emit('jlz:route-change', { page: 'works' })
+    eventBus.emit('jlz:route-change')
   },
   { flush: 'post' },
 )
