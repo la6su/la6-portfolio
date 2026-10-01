@@ -216,7 +216,12 @@ manual `THREE.Group/Mesh` hierarchy construction under `src/Experience`.
 scratch object; `ShowreelTheater` owns a separate offscreen scene by design.
 Those are not parallel owners. The remaining concrete declarative candidate
 from this pass is the hand-built DOM structure in `FullscreenOverlay` and the
-opened-state chrome in `ShowreelConsole`.
+opened-state chrome in `ShowreelConsole`. Both also own real behavior
+(UIkit modal/focus trapping and poster-decode races; showreel keyboard/touch
+input and media state), so deleting either class wholesale would discard a
+cohesive owner. Review only whether their stable markup can move into Vue while
+keeping state and DOM mutation under one clear owner; a wrapper-only SFC is not
+an improvement.
 
 ## Follow-on goal policy
 
