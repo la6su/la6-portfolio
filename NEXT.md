@@ -129,7 +129,7 @@ plugin wiring, package scripts, and current module ownership. Items marked
 | Public media and budgets | Public runtime assets resolve to app/blog/builder references; `coming-soon.mp4` dominates transfer size (~5.27 MB). `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
 | Release/deployment | CI checks and browser-tests; no deploy workflow or host config exists in repository. `dist/` remains tracked pending identification of its consumer. | Identify host, rewrite/history behavior, cache headers and whether host consumes committed `dist/` or builds source. Reproduce from a clean checkout. | P0 verify: documented release path matches deployment. |
 | Render loop and animation | Tres is the only scene render-loop driver; `RenderScheduler` controls its open/close window. Other RAF users are DOM text reveal, UIkit content refresh, route-hash polling and route announcement. | Keep the one scene loop. Inspect per-call cleanup and whether each DOM animation has an independent cancellation owner during unmount. | P1: no second scene loop or uncanceled callback after owner teardown. |
-| Cross-browser/GPU | Full production suites pass on system Chromium (`JLZ_CHROMIUM_PATH=/usr/bin/chromium`: 17 passed, 3 opt-in skips) and Firefox (16 passed, 4 opt-in skips). WebKit cannot launch: installed MiniBrowser is missing ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl libraries. `nvidia-smi` cannot communicate with a driver in this environment. | Run WebKit in CI/host with declared dependencies, then actual WebGPU/WebGL and context recovery on a machine where the NVIDIA driver is available. | P0 release evidence; software render results do not prove physical-GPU behavior. |
+| Cross-browser/GPU | Current combined production run passed 33 tests across system Chromium and Firefox (40 total; 7 opt-in renderer skips) after the backend-marker change. The focused dev Chromium host-teardown gate also passed. Earlier independent full suites passed Chromium and Firefox. WebKit cannot launch locally: cached MiniBrowser is missing ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl libraries. `nvidia-smi` cannot communicate with a driver in this environment. | Run WebKit in CI/host with declared dependencies, then actual WebGPU/WebGL and context recovery on a machine where the NVIDIA driver is available. | P0 release evidence; software render results do not prove physical-GPU behavior. |
 
 ### Audit execution order
 
@@ -412,12 +412,12 @@ identified.
 production build and budgets pass. Current limits remain 3.03 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog, both builder locales and sitemap use the staging
-origin; the normal build restored production outputs. The Firefox production
-suite passed (16 passed, 4 opt-in renderer cases skipped), including the latest
-loader status assertion. Full production Chromium passed (17
-passed, 3 opt-in renderer cases skipped) using `/usr/bin/chromium` through
-`JLZ_CHROMIUM_PATH`. SceneHost teardown order passed in dev-mode Chromium and
-Firefox. The dev Chromium gate direct-loads Contact, observes its three lazy
+origin; the normal build restored production outputs. The latest combined
+Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were
+skipped by their explicit guards. Route, keyboard/focus, touch, responsive
+overflow, localized metadata and init-error checks passed. Earlier independent
+production suites passed both browsers. SceneHost teardown order passed in
+dev-mode Chromium. Its gate direct-loads Contact, observes its three lazy
 stages becoming ready, opens showreel, and asserts all four owners plus async
 scene teardown finish before backend disposal. The cached WebKit MiniBrowser cannot launch because its
 ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
