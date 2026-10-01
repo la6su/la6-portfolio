@@ -21,6 +21,11 @@ jobs:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@v2.2.0
       - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Verify generated outputs match their sources
+        run: >-
+          git diff --exit-code -- dist blog.html blog/ p/studio-page.html
+          p/studio-page/ru/index.html prerender/home.html public/sitemap.xml
       - run: bun run type-check:vue
       - run: bun run test:unit
       - run: bun run lint

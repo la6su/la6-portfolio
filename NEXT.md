@@ -143,16 +143,19 @@ installed matrix is Vue 3.5.43, Vue Router 5.3.1, Tres core/Cientos 5.9.2,
 Three 0.186.1, Vite 8.3.2, plugin-vue 6.0.9, TypeScript 6.0.3; installed
 dependencies are not tracked; generated blog and builder inputs have known
 sources and build consumers; scripts/dependencies and Node/Bun boundaries were
-audited with no proven unused direct dependency. CI contains unit, type, lint,
-repository, and browser jobs. TypeScript 7.0.2 is released, but the installed
+audited with no proven unused direct dependency. Package identity and links
+match the new repository. README describes the Vue/Tres, WebGPU and WebGL stack.
+CI now runs the production build explicitly and fails when tracked generated
+outputs drift from their sources; unit, type, lint, repo and browser checks
+remain enabled. TypeScript 7.0.2 is released, but the installed
 `typescript-eslint` peer range ends below 6.1.0, so a TypeScript 7 upgrade is
 not currently compatible with the lint matrix.
 
 **Remaining:** identify the deploy consumer for tracked `dist/` (84 tracked
 files in the last audit) before changing its tracking policy; prove clean
 checkout install/build and deployed static routing/cache behavior. The only
-local GitHub workflow, `.github/workflows/quality.yml`, runs checks and browser
-tests but has no deployment step. `public/` headers do not establish whether
+local GitHub workflow, `.github/workflows/quality.yml`, runs quality and browser
+checks but has no deployment step. `public/` headers do not establish whether
 Cloudflare Pages, Netlify, or another consumer publishes the output.
 The artifact was tracked from the repository's initial commit and was stale;
 it has now been regenerated from the current source during the brand-asset
