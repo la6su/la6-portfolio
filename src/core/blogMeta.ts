@@ -13,9 +13,10 @@
 // Pure by design — no DOM, no window — unit-testable without a browser.
 
 import { BLOG_ARTICLES, BLOG_INDEX, BLOG_INDEX_PATH, blogArticlePath } from './blogPages'
+import { SITE_ORIGIN } from './siteConfig'
 
 /** The site origin used for canonical/OG URLs (override for staging). */
-export const BLOG_SITE_ORIGIN = process.env.JLZ_SITE_ORIGIN ?? 'https://justlovejazz.dev'
+export const BLOG_SITE_ORIGIN = SITE_ORIGIN
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 const OG_IMAGE = `${BLOG_SITE_ORIGIN}/preview.jpg`

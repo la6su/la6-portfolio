@@ -20,6 +20,7 @@ import { generateBuilderComponentLess, generateBuilderThemeLess } from './compil
 import type { BuilderDocument } from './schema'
 import type { BuilderLocale } from './localization'
 import { stripSsrComments } from '../core/blogMeta'
+import { SITE_ORIGIN } from '../core/siteConfig'
 
 /** The public path prefix of published builder pages. */
 export const BUILDER_PAGE_PREFIX = '/p'
@@ -45,7 +46,7 @@ function esc(value: string): string {
 export function renderBuilderPageDocument(
   document: BuilderDocument,
   body: string,
-  origin: string = 'https://justlovejazz.dev',
+  origin: string = SITE_ORIGIN,
   locale: BuilderLocale = 'EN',
 ): string {
   const cleanBody = stripSsrComments(body)
@@ -88,8 +89,8 @@ export function renderBuilderPageDocument(
     `    <meta property="og:title" content="${title}" />`,
     `    <meta property="og:description" content="${esc(description)}" />`,
     `    <meta property="og:url" content="${esc(url)}" />`,
-    '    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />',
-    '    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />',
+    `    <meta property="og:image" content="${esc(`${bareOrigin}/preview.jpg`)}" />`,
+    `    <meta property="og:image:secure_url" content="${esc(`${bareOrigin}/preview.jpg`)}" />`,
     '    <meta property="og:image:type" content="image/jpeg" />',
     '    <meta property="og:image:width" content="1200" />',
     '    <meta property="og:image:height" content="630" />',
@@ -101,7 +102,7 @@ export function renderBuilderPageDocument(
     '    <meta name="twitter:creator" content="@justlovejazz" />',
     `    <meta name="twitter:title" content="${title}" />`,
     `    <meta name="twitter:description" content="${esc(description)}" />`,
-    '    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />',
+    `    <meta name="twitter:image" content="${esc(`${bareOrigin}/preview.jpg`)}" />`,
     `    <meta name="twitter:image:alt" content="${title} preview" />`,
     '',
     '    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin />',

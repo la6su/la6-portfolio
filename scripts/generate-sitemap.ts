@@ -20,12 +20,12 @@ import { publishedPages, validateBuilderDocuments } from '../src/builder/documen
 import { PAGE_META_DATA } from '../src/core/pageMetaData'
 import { pathForPage, ROUTE_MANIFEST } from '../src/core/routeManifest'
 import { buildSitemapXml } from '../src/core/sitemap'
+import { SITE_ORIGIN } from '../src/core/siteConfig'
 import {
   buildBuilderSitemapSections,
   buildDefaultSitemapSections,
 } from '../src/core/sitemapEntries'
 
-const DEFAULT_ORIGIN = 'https://justlovejazz.dev'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 // Invariant (checked before any write): every page-metadata entry resolves
@@ -38,7 +38,7 @@ for (const page of Object.keys(PAGE_META_DATA) as Array<keyof typeof PAGE_META_D
   }
 }
 
-const origin = process.env.JLZ_SITE_ORIGIN?.replace(/\/+$/, '') ?? DEFAULT_ORIGIN
+const origin = SITE_ORIGIN
 
 // The approved builder documents (Phase 9, slice 5) join the sitemap from
 // the same admin-owned collection the publish pipeline renders — the
