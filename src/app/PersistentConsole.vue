@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import UIkit from 'uikit'
+import { NAV_ITEMS } from './navItems'
 import { getLang, t, toggleLang } from '../core/i18n'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
@@ -15,7 +16,8 @@ const themeIsInverse = ref(themeManager.isInverse)
 const soundIcon = ref<HTMLElement | null>(null)
 const menuLabel = computed(() => t(fullscreenOpen.value ? 'common.close' : 'menu.navigate'))
 const nav = ref<HTMLElement | null>(null)
-const sceneEnabled = !new URLSearchParams(window.location.search).has('no-scene')
+const noSceneRequested = new URLSearchParams(window.location.search).has('no-scene')
+const sceneAvailable = ref(!noSceneRequested)
 const firstStorySection = worldSlotIndex('intro')!
 const lastStorySection = worldSlotIndex('contact')!
 const storylineSections = Array.from(
@@ -53,6 +55,12 @@ onMounted(() => {
     eventBus.on('jlz:story-index-change', ({ index }) => {
       activeIndex.value = index
     }),
+    eventBus.on('jlz:webgl-ready', () => {
+      sceneAvailable.value = !noSceneRequested
+    }),
+    eventBus.on('jlz:webgl-failed', () => {
+      sceneAvailable.value = false
+    }),
   )
 })
 
@@ -75,7 +83,7 @@ function toggleSound(): void {
 
 <template>
   <div
-    v-if="sceneEnabled"
+    v-if="sceneAvailable"
     ref="nav"
     class="jlz-cinematic-shell uk-position-relative"
     :class="{
@@ -203,5 +211,29 @@ function toggleSound(): void {
         <span class="jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase" data-i18n="story.hint">Scroll · swipe</span>
       </nav>
     </div>
+  </div>
+  <div v-else class="jlz-route-fallback">
+    <a class="jlz-route-fallback__skip" href="#spa-content">Skip to content</a>
+    <header class="jlz-route-fallback__header">
+      <a class="jlz-topbar__brand" href="/" aria-label="JUSTLOVEJAZZ — Studio">
+        <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true" />
+        <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
+      </a>
+      <button
+        class="uk-icon-button jlz-lang-toggle"
+        type="button"
+        aria-label="Switch language"
+        :aria-pressed="language === 'RU'"
+        @click="toggleLang"
+      >
+        <span class="jlz-lang-label uk-text-uppercase uk-text-bold">{{ language }}</span>
+      </button>
+    </header>
+    <nav aria-label="Portfolio routes" class="jlz-route-fallback__nav">
+      <a v-for="item in NAV_ITEMS" :key="item.href" :href="item.href">
+        <span class="jlz-route-fallback__number">{{ item.num }}</span>
+        {{ t(item.labelKey) }}
+      </a>
+    </nav>
   </div>
 </template>

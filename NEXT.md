@@ -172,9 +172,17 @@ controller resets its inert/sheet state and listeners without removing it.
 deferred until runtime readiness and in-app hashes to lazy route sections
 after their DOM mounts. Both pass in Chromium and Firefox.
 
-**Next audit:** walk focus, contrast, touch targets, resize/orientation,
-no-scene and renderer-failure states across EN/RU routes. Run the production
-suite in Safari/WebKit. The local WebKit
+**Established:** if the scene is explicitly disabled or renderer startup fails,
+Vue replaces cinematic controls with route links reused from `NAV_ITEMS`. The
+`?no-scene` path navigates to a lazy SPA route without a canvas in Chromium and
+Firefox. The opt-in both-APIs-disabled Chromium case also continues after its
+accessible boot gate; Three emits one `getSupportedExtensions` TypeError while
+constructing its unavailable WebGL fallback, which Tres reports and the app
+handles as boot failure.
+
+**Next audit:** walk focus, contrast, touch targets, resize/orientation, and
+renderer-failure navigation across EN/RU routes. Run the production suite in
+Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
 `libflite1`; CI installs browser dependencies and is the current execution
 path.
@@ -246,7 +254,12 @@ removes it during unmount. Vue type-check, lint, unit suite (73 tests),
 format checks on changed documentation/test teardown files, and diff checks
 pass after that cleanup. A separate production-browser test verifies direct
 section hashes and SPA hashes into a lazy route in Chromium and Firefox (1/1
-each).
+each). The route fallback then passed production Chromium (17 passed, 3 opt-in
+skips) and Firefox (16 passed, 4 skipped); the explicit no-scene test navigates
+to `/services` without a canvas in each. The opt-in both-APIs-disabled Chromium
+test also passed (1/1), including route navigation, and documents the known
+Three WebGL-backend TypeError above. Vue type-check, ESLint, 73 unit tests,
+Prettier on the plan, and `git diff --check` pass.
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
 focus/accessibility route audit. Make the next code change only after

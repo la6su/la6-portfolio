@@ -15,6 +15,72 @@
   color: var(--jlz-color-text);
 }
 
+// Route navigation remains available when the WebGL/WebGPU scene cannot run.
+.jlz-route-fallback {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10020;
+  padding: 0.35rem 0.85rem 0.45rem;
+  border-bottom: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
+}
+
+.jlz-route-fallback__header {
+  display: flex;
+  min-height: 2.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jlz-route-fallback__nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.jlz-route-fallback__nav::-webkit-scrollbar {
+  display: none;
+}
+
+.jlz-route-fallback__nav a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.65rem;
+  color: var(--jlz-color-text);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.68rem;
+  text-decoration: none;
+}
+
+.jlz-route-fallback__nav a:hover,
+.jlz-route-fallback__nav a:focus-visible {
+  color: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-route-fallback__number {
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.58rem;
+}
+
+.jlz-route-fallback__skip {
+  position: absolute;
+  top: 0.5rem;
+  left: -9999px;
+  z-index: 1;
+  padding: 0.65rem 0.9rem;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-signal-phosphor);
+}
+
+.jlz-route-fallback__skip:focus {
+  left: 0.85rem;
+}
+
 // Terminal selection: phosphor field, ink text.
 ::selection {
   background: var(--jlz-color-signal-phosphor);
