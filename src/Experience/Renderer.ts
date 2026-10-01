@@ -123,7 +123,7 @@ export class Renderer {
     // Capability tier and post settings must reflect the backend selected
     // above, not merely the initial navigator.gpu feature detection. Tres
     // already applied the live size and DPR before publishing SceneHost.ready.
-    this.postManager.refreshQualityTier();
+    this.postManager.refreshPreset();
 
     // ── Diagnostic: log final render path + EnvSphere path ──
     // Helps debug "I don't see the shader background" — the console will show
@@ -320,7 +320,7 @@ export class Renderer {
         Math.min(this.viewport.dpr, this.capabilities.maxDpr),
       );
       this.instance.setSize(this.viewport.width, this.viewport.height);
-      this.postManager.refreshQualityTier();
+      this.postManager.refreshPreset();
       this.pipeline = RenderPipeline.create(
         this.instance,
         this.capabilities.postProcessing,

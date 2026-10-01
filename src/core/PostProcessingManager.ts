@@ -97,13 +97,11 @@ export class PostProcessingManager {
   // Crossfade speed (seconds) — 0.5s between section changes
   private crossfadeSpeed = 2.0 // 1 / 0.5 = 2.0
 
-  private tier: QualityTier = 'high'
   private phase = 'sec_intro'
   private sectionPost: SectionPostParams = DEFAULT_SECTION_POST
   private _crossfadeActive = false
 
   constructor() {
-    this.tier = this.capability.tier
     this.applyPreset('sec_intro')
   }
 
@@ -122,7 +120,7 @@ export class PostProcessingManager {
     // display values per frame. Shape/look channels (bloomRadius,
     // bloomThreshold, refract, grades) stay unscaled on purpose:
     // scaling would distort the authored look, not just the intensity.
-    const scaler = QUALITY_SCALARS[this.tier]
+    const scaler = QUALITY_SCALARS[this.capability.tier]
     const intensity = (value: number, gate: number | undefined): number =>
       this.capability.scaleIntensity(value) * (gate ?? 1)
     this.current = {
@@ -148,9 +146,8 @@ export class PostProcessingManager {
     this._crossfadeActive = false
   }
 
-  /** Refresh quality scalars after WebGPU initialization selected WebGL. */
-  refreshQualityTier(): void {
-    this.tier = this.capability.tier
+  /** Recompute targets after renderer initialization selects its final backend. */
+  refreshPreset(): void {
     this.applyPreset(this.phase)
   }
 
