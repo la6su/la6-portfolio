@@ -1,13 +1,21 @@
-import type { Project } from '../core/types.ts'
-
-export { type Project }
+export interface Project {
+  id: string
+  title: string
+  description: string
+  textureUrl: string
+  detailTextureUrl: string
+  color: string
+  year?: string
+  category?: string
+  tags?: string[]
+}
 
 /**
  * The exhibition has four permanent rooms. Their texture paths intentionally
  * point at the current licensed studio placeholders until approved project
  * renders and screenshots are delivered.
  */
-export const PROJECTS: Project[] = [
+export const PROJECTS: readonly Project[] = [
   {
     id: 'porsche-911-spider',
     title: 'Porsche 911 Spider',

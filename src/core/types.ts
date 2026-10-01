@@ -27,15 +27,3 @@ export interface WorldState {
   bakuMaterial: BakuMaterialState
   envColor: THREE.Color
 }
-
-export interface Project {
-  id: string
-  title: string
-  description: string
-  textureUrl: string
-  detailTextureUrl: string
-  color: string
-  year?: string
-  category?: string
-  tags?: string[]
-}
