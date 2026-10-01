@@ -178,7 +178,8 @@ Vue replaces cinematic controls with route links reused from `NAV_ITEMS`. The
 Firefox. The opt-in both-APIs-disabled Chromium case also continues after its
 accessible boot gate; Three emits one `getSupportedExtensions` TypeError while
 constructing its unavailable WebGL fallback, which Tres reports and the app
-handles as boot failure.
+handles as boot failure. Scene-only project and showreel actions are omitted
+in this fallback; case-study and route links remain available.
 
 **Next audit:** walk focus, contrast, touch targets, resize/orientation, and
 renderer-failure navigation across EN/RU routes. Run the production suite in
@@ -215,95 +216,37 @@ no known dead active path or unowned persistent resource remains.
 
 ## Current checkpoint — 2026-10-01
 
-**Latest source slice:** the persistent console, fullscreen viewer, showreel
-chrome, route transition surface, and cinematic story rail are Vue-owned under
-`AppShell`; controllers retain modal, media, render, and transition timing
-behavior and follow the host lifecycle. Earlier commits removed
-duplicate global error handling and recorded why the scene coordinator/frame
-pass and typed bus remain. Keep build output under tracked `dist/` unstaged;
-its deploy consumer is still unknown.
+The application shell and stable scene hierarchy are Vue/Tres-owned. Behavior
+controllers remain for Three algorithms, browser/media policy, route-guard
+timing, and lifecycle work that the framework does not supply. Recent audits
+removed duplicate renderer-query parsing, a redundant UIkit global assignment,
+and the Works room-count literals. These changes are committed. `dist/` is
+restored after build verification and remains tracked pending deploy-contract
+evidence.
 
-**Verification:** `bun run type-check:vue`, `bun run lint`, and
-`bun run test:unit` pass (24 files / 73 tests). Production Chromium passes
-(14 passed, 3 opt-in renderer scenarios skipped) and Firefox passes
-(13 passed, 4 skipped); each Playwright run builds production output and checks
-budgets. Both use software rendering here, not physical-GPU WebGPU. WebKit and
-real-device recovery/performance remain open.
-After the final reactive UIKit icon and no-scene visibility adjustments, the
-production navigation-focus and reduced-motion tests passed again in Chromium
-and Firefox (4/4 total), with Vue type-check clean.
-The fullscreen overlay Vue adoption also passed full Chromium (14 passed,
-3 opt-in skipped) and Firefox (13 passed, 4 skipped) production suites; Vue
-type-check, ESLint, and all 73 unit tests pass on the updated source. The
-showreel Vue adoption then passed the same full suites. After its final
-unchanged-state guard, the focused showreel open/close suite passed in Chromium
-and Firefox (2/2). Dedicated Chromium host teardown passed with assertions that
-the declared modal roots are removed when AppShell unmounts. Route-transition
-Vue adoption now passes the full production Chromium suite (14 passed, 3
-opt-in skipped) and Firefox suite (13 passed, 4 skipped), plus dedicated
-Chromium host teardown (1/1). Vue type-check, ESLint, all 73 unit tests,
-Prettier, and `git diff --check` also pass.
-The story-rail Vue adoption removes generated element/button listeners and the
-controller's duplicate active-class projection. A new active-slot regression
-test exposed a missed initial state callback; `onSectionChange` now sends the
-current slot on registration. The focused test and full Chromium (15 passed,
-3 opt-in skipped) and Firefox (14 passed, 4 skipped) suites pass; dedicated
-Chromium teardown also passes (1/1). A final ownership check confirmed runtime
-dispose leaves the Vue rail mounted and resets its sheet state; AppShell then
-removes it during unmount. Vue type-check, lint, unit suite (73 tests),
-format checks on changed documentation/test teardown files, and diff checks
-pass after that cleanup. A separate production-browser test verifies direct
-section hashes and SPA hashes into a lazy route in Chromium and Firefox (1/1
-each). The route fallback then passed production Chromium (17 passed, 3 opt-in
-skips) and Firefox (16 passed, 4 skipped); the explicit no-scene test navigates
-to `/services` without a canvas in each. The opt-in both-APIs-disabled Chromium
-test also passed (1/1), including route navigation, and documents the known
-Three WebGL-backend TypeError above. Vue type-check, ESLint, 73 unit tests,
-Prettier on the plan, and `git diff --check` pass.
+**Verified locally:** Vue type-check, ESLint, all 73 unit tests, production
+build/budgets, Chromium showreel/fullscreen interactions, direct SPA route
+metadata, DOM-only navigation, and renderer-failure continuation. Firefox
+production route, hash, and fallback suites passed in the prior matrix run.
+These browser runs use software rendering. They do not prove physical-GPU
+WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
+this host because its browser dependencies are missing.
 
-**Next action:** continue phase 1's source-to-owner inventory and phase 4's
-focus/accessibility route audit. Make the next code change only after
-identifying a concrete duplicate owner or stable hierarchy still constructed
-outside Vue. Preserve `dist/` until its deployment consumer is established.
+**Next actions:**
 
-The first scene-construction search found no runtime `scene.add/remove` or
-manual `THREE.Group/Mesh` hierarchy construction under `src/Experience`.
-`WorksInstallation.vue` uses one `Object3D` only as an instancing matrix
-scratch object; `ShowreelTheater` owns a separate offscreen scene by design.
-Those are not parallel owners. The concrete declarative candidates from this
-pass were hand-built persistent UI DOM and route-transition markup. They are
-now resolved:
-`AppShell` declares the console, fullscreen viewer, and showreel chrome;
-`FullscreenOverlay` adopts its Vue root for UIKit/focus/poster behavior, while
-`ShowreelConsole.vue` renders the typed theater state reactively. Keep their
-behavior owners because they handle real browser/media policy; do not restore
-runtime markup construction or add wrapper-only SFCs. `RouteTransitionView.vue`
-declares the remaining overlay structure while its controller coordinates
-Vue Router guard timing. Focus host teardown coverage on all AppShell roots.
-
-The route fallback audit also found scene-only actions still rendered on the
-semantic routes: project apertures/material buttons and the home showreel
-trigger had no owner after renderer failure. `core/rendererAvailability.ts`
-holds the single reactive availability value; `PersistentConsole` updates it
-from existing renderer events, and route components omit those scene-only
-controls when unavailable. Existing case-study/router links stay usable. A
-DOM-only production-browser check confirms controls are absent on home, works,
-and case-study routes. The opt-in both-backends-disabled Chromium check also
-confirms the fallback after the real boot failure and route navigation. Vue
-type-check, lint, production build/budgets, and all 73 unit tests pass.
-
-An audit of `UIManager` kept its real overlay adoption, icon registration, and
-Vue teardown bridge; it did not remove the wrapper without evidence. The
-installed `uikit@3.25.25` package's resolved UMD entry assigns its export to
-`globalThis.UIkit` itself, so the manager's second `window.UIkit` assignment
-was redundant and has been removed. Production build/budgets, Vue type-check,
-lint, all 73 unit tests, and Chromium showreel/fullscreen interaction tests
-pass with the reduced manager.
-
-The Works route also repeated the permanent room count as both `04` and
-`index === 3`. Its counter and archive placement now derive from
-`WORKS_ROOMS.length`; the production direct-route metadata check passes after
-the change.
+1. Complete phase 2's `Experience.ts` ownership and teardown trace. Start with
+   overlapping boot/UI lifecycle owners and async stage continuation; change
+   only a demonstrated duplicate or missing cleanup path.
+2. Finish phase 1's constructor/attachment inventory and phase 5's source to
+   output map, including generated CSS, public assets, routes, scripts, and
+   tests. Preserve Three scratch objects and offscreen scenes where their
+   runtime algorithms require them.
+3. Continue phase 4's EN/RU keyboard, contrast, touch, resize, and renderer
+   failure walk; run WebKit in CI or a host with its declared libraries.
+4. Close phase 0 only after identifying the actual deploy consumer and
+   reproducing clean install/build and static routing/cache behavior.
+5. Close phase 3/5 only with physical WebGPU/WebGL, recovery, resource-plateau,
+   idle-render, and performance evidence on supported hardware.
 
 ## Follow-on goal policy
 
