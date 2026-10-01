@@ -212,7 +212,7 @@ kB gzip). Build/type evidence does not compile the runtime TSL graph on a
 physical WebGPU device; visual and generated shader validation remain open.
 | Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (336 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (271 lines). Vue's `shallowRef` slots drive `<primitive>` mount/unmount, with `nextTick` before GPU controller disposal. The two owners cover distinct async boundaries; `LazyStage` guards import/init/route races, Vue slots own scene-tree timing. Cleanup errors are now reported in production as well as development while teardown continues. Found and fixed a Works race where the host could dispose while its root was awaited: recheck host liveness after `getWorksRoot()` before adopting it. Added delayed-root regression coverage. | Continue mapping per-stage variation to determine whether route contracts can be shortened without losing cleanup order. Retain async stale guards and Vue flush ordering where their call paths need them; compare Vue async component behavior only at the wrapper-load boundary. |
 | Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` defines the case contract; route, sitemap and blog metadata have separate registries. Removed unused project camera coordinates and `slug`; case media now reuses each project's `detailTextureUrl`, removing four repeated paths. `Project` now lives beside `PROJECTS` instead of in Three-dependent `core/types.ts`, and the catalogue is readonly because callers only read it. | Decide whether project/card/case records should share one authored record only where fields really overlap. Preserve separate case prose and sitemap/blog sources with distinct meaning. Add closed-set checks only at real content boundaries. |
-| Performance and DX | `SceneHost.vue` and `Experience.ts` remain large mixed-responsibility modules. DOM reveals now live under `UI/`, and `Experience` no longer owns their events or cleanup. `entry-app` imports a 1.46 kB gzip `chunk-dom-reveal`, with no `chunk-experience` in its transitive static graph. The reveal utility no longer imports Three just to clamp a number. The graph still reaches `vendor-three` through shared camera/core chunks, so Three is not yet lazy at the browser module-load boundary; continue the startup ownership audit before claiming that optimization. A single splash gate defers home/page reveals until dismissal. | Continue measuring route/startup boundaries and reduce remaining mixed modules by moving actual feature ownership, not by splitting on line count. Trace why eager camera/core chunks reach Three, then change boundaries only where the measured graph improves. Remove hand-built behavior only when Vue/Tres/Three supplies the same contract. |
+| Performance and DX | `SceneHost.vue` and `Experience.ts` remain large mixed-responsibility modules. DOM reveals now live under `UI/`, and `Experience` no longer owns their events or cleanup. The source-mapped entry graph showed broad `chunk-core` pulled WebGPU/TSL code into static bootstrap imports, while `chunk-camera` pulled in the shared motion policy. A focused `chunk-bootstrap-core` group now isolates the shell's shared ports: recursive static imports fell from 398.86 KiB gzip across 8 files to 12.29 KiB across 4 files; neither `vendor-three` nor `chunk-experience` is statically reachable. The reveal utility also no longer imports Three for a scalar clamp. Production-preview Chromium/Firefox reveal and direct-hash checks pass 4/4. | Continue the remaining renderer and app lifecycle audit, then validate browser startup/network behavior and the full cross-browser/GPU acceptance. Do not expand manual chunk rules without source-map and transitive-graph evidence. |
 
 ### Cross-cutting simplification evidence
 
@@ -694,7 +694,7 @@ deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
 **Latest verified:** 98 unit tests, Vue type-check, ESLint, production build and
-bundle budgets pass. The latest build reports 2.94 kB startup gzip,
+bundle budgets pass. The latest build reports 2.85 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined
@@ -726,6 +726,12 @@ persistent canvas; local Chromium still fails before recreation because it
 does not restore the lost context, even with SwiftShader forced.
 Stage cleanup failures are logged in production while teardown continues. The
 remaining architecture audit and browser/GPU acceptance phases are active.
+The latest focused production-preview check also passes DOM reveal-after-splash
+and direct section-hash navigation in Chromium and Firefox (4/4). A measured
+source-map graph change reduced static bootstrap reachability from 398.86 KiB
+gzip / 8 files, including Three, to 12.29 KiB / 4 files, with no Three or
+Experience chunk in the transitive static graph. Three remains a dynamic scene
+dependency and its shared chunk is still 310.95 kB gzip.
 
 **Next actions:**
 

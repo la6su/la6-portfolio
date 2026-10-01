@@ -190,6 +190,16 @@ export default defineConfig(({ mode }) => {
               priority: 10,
             },
             {
+              // Keep the shell's tiny runtime ports out of the broad core
+              // chunk, which also contains renderer and TSL implementations.
+              // Otherwise importing the event bus / sound / motion policy
+              // from entry-app makes the whole Three vendor graph eager.
+              name: 'chunk-bootstrap-core',
+              test: /[\\/]src[\\/]core[\\/](?:EventBus|SfxSystem|contentRoot|devDiagnostic|i18n|motionPolicy|sceneMode)\.ts$/,
+              includeDependenciesRecursively: false,
+              priority: 8,
+            },
+            {
               // DOM text reveals and their shared easing helper are used by
               // both the app bootstrap and ExperienceUI. Keep their code in
               // one small shared chunk instead of duplicating it in Experience.
