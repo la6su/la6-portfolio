@@ -59,6 +59,7 @@ export class ExperienceUI {
   private _overlayHostUnsub: (() => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _routeGeneration = 0
+  private _projectOverlayPreloaded = false
 
   /** Route-continuation guard over this host's live generation + page — the
    *  shared idiom behind every async continuation in this file. */
@@ -145,6 +146,24 @@ export class ExperienceUI {
       eventBus.on('jlz:project-navigate', ({ direction }) => {
         if (!this.overlay?.isOpen) return
         this.navigateProject(direction)
+      }),
+    )
+
+    // The fullscreen poster belongs to this UI owner. Warm it on the first
+    // home Works arrival instead of checking overlay state on every scene frame.
+    this._unsubs.push(
+      eventBus.on('jlz:section-change', ({ configId }) => {
+        if (
+          configId !== 'sec_works' ||
+          this.host.page() !== 'home' ||
+          this._projectOverlayPreloaded
+        ) {
+          return
+        }
+        this.ensureProjectControls()
+        if (!this.overlay) return
+        this._projectOverlayPreloaded = true
+        this.onProjectSelect(0, true)
       }),
     )
 

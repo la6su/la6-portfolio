@@ -103,10 +103,6 @@ export class Experience {
   private _contactCyprusActive = false
   private _contactIsLight = false
 
-  // The frame path's one-time Works-gallery preload gate (read + written only
-  // here, so the flag lives on Experience — not on the ExperienceUI host).
-  private _projectOverlayPreloaded = false
-
   // Owns navigation, menu, overlay, project controls, and UI event wiring.
   private features: ExperienceUI | null = null
   private readonly _host: ExperienceHost
@@ -119,10 +115,6 @@ export class Experience {
   /** Development-only project navigation delegates to the UI owner. */
   public navigateProject(direction: -1 | 1): void {
     this.features?.navigateProject(direction)
-  }
-  /** The fullscreen overlay (owned by ExperienceUI). */
-  private get overlay() {
-    return this.features?.overlay ?? null
   }
   private currentSectionContext: string | null = null
   private _prevSectionIndex = -1
@@ -964,20 +956,8 @@ export class Experience {
     // Works section: the baku gives way to an infinite stream of project cards
     // (BakuCarousel). The carousel is a child of sceneGroups[3] (Works idx 3
     // in 6-section layout) and manages its own visibility via morph.
-    const showGallery = cfg?.ui?.showGallery ?? false
     // Carousel activity is sampled before the render gate so a morph started
     // by this frame's transform pass advances immediately.
-    // Sync FullscreenOverlay (DOM UI layer) — fullscreen opens on card click.
-    if (this.overlay && showGallery && !this._projectOverlayPreloaded) {
-      this._projectOverlayPreloaded = true
-      // Preload the first project into the overlay (hidden until card click).
-      // Uses preload() NOT open() — open() calls UIkit.modal().show() which
-      // adds the uk-open class (making the overlay visible). preload() only
-      // sets content without showing, so the overlay stays hidden.
-      // Prepare the same authored texture that the first 3D plane uses. The
-      // overlay can then decode it before the first plane-to-modal handoff.
-      this.features?.onProjectSelect(0, true)
-    }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
     // section the floor is hidden so the 3D scene floats in void. This gives
