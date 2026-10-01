@@ -122,7 +122,10 @@ The fullscreen behavior controller is released when its Vue host unmounts.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
 the unreferenced `twitter` product icon module was removed. Module-private
 pointer input is one ES-module instance and starts only in `Experience.init()`;
-it no longer installs a global listener during module evaluation.
+it no longer installs a global listener during module evaluation. Cursor
+activity already wakes the shared loop, so the second Works-only pointer
+listener and RAF were removed; DrawTrail consumes the same Input state in that
+scheduler frame.
 
 **Next audit:** trace `Experience.ts` end to end and test every remaining
 boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
@@ -230,7 +233,7 @@ room-count literals. These changes are committed. `dist/` is
 restored after build verification and remains tracked pending deploy-contract
 evidence.
 
-**Verified locally:** Vue type-check, ESLint, all 74 unit tests, production
+**Verified locally:** Vue type-check, ESLint, all 75 unit tests, production
 build/budgets, and the full production Chromium suite (17 passed, 3 opt-in
 renderer scenarios skipped). That includes repeated lazy-stage mount/release,
 route metadata, DOM-only navigation and icons, renderer-failure continuation,

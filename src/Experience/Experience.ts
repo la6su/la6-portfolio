@@ -127,9 +127,6 @@ export class Experience {
   private _prevSectionIndex = -1
   private _onSizesResize: () => void = () => {}
   private _onRendererRecovered: (() => void) | null = null
-  private _onMouseMoveForTrail: (() => void) | null = null
-  private _mouseTrailRafPending = false
-  private _mouseTrailRafId: number | null = null
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
   private get _storyNav() {
@@ -489,7 +486,8 @@ export class Experience {
     )
     this.contentReveal = new ContentReveal(() => this.currentPage())
     this.cursor = new Cursor(this.sfx)
-    // Cursor pointer/hover input wakes the loop while its spring settles.
+    // Input was attached above, so pointer coordinates update before Cursor
+    // wakes the shared loop; the Works trail consumes them in that same frame.
     this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
     // Glitch eyebrow — on section change, animate the active section's
     // [data-eyebrow] number with NoiseText random-symbol scramble.
@@ -652,25 +650,6 @@ export class Experience {
     // after a settled frame. Tres remains the single loop host, while the
     // renderer keeps its normal swap-chain pacing.
     this._scheduler.invalidate('first-frame')
-
-    // ── DrawTrail: trigger render on mousemove (Works section only) ──
-    // Wake the scene trail on mousemove only while Works is visible. Throttle
-    // pointer events through rAF so high-frequency input does not flood the
-    // demand scheduler.
-    this._mouseTrailRafPending = false
-    this._onMouseMoveForTrail = () => {
-      if (this._mouseTrailRafPending) return
-      const isWorksStoryFrame = this.coordinator?.currentSectionIndex === WORKS_SLOT_INDEX
-      const isStandaloneWorks = this.currentPage() === 'works'
-      if (!isWorksStoryFrame && !isStandaloneWorks) return
-      this._mouseTrailRafPending = true
-      this._mouseTrailRafId = requestAnimationFrame(() => {
-        this._mouseTrailRafId = null
-        this._mouseTrailRafPending = false
-        this._raiseRenderDemand('cursor')
-      })
-    }
-    window.addEventListener('mousemove', this._onMouseMoveForTrail, { passive: true })
 
     // Await the initial scene's first successful
     // RENDER. The 'first-frame' invalidation above guarantees a frame (a
@@ -1085,16 +1064,6 @@ export class Experience {
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()
-    // Cancel pending rAF for mouse trail (prevents fire after destroy)
-    this._mouseTrailRafPending = false
-    if (this._mouseTrailRafId !== null) {
-      cancelAnimationFrame(this._mouseTrailRafId)
-      this._mouseTrailRafId = null
-    }
-    if (this._onMouseMoveForTrail) {
-      window.removeEventListener('mousemove', this._onMouseMoveForTrail)
-      this._onMouseMoveForTrail = null
-    }
     this.contentReveal?.destroy()
     this.cursor?.destroy()
     if (this._sectionChangeHandler) {
