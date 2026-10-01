@@ -9,7 +9,6 @@ import {
   tslBloom,
   tslFloat,
   tslPass,
-  tslVec3,
 } from '../types/tsl-helpers'
 import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
 import {
@@ -26,10 +25,10 @@ import {
   fract,
   floor,
   max,
+  hash,
 } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
-import type { Node } from 'three/webgpu'
 import { withNoToneMapping } from './toneMappingGuard'
 import type { PostParams } from './postParams'
 
@@ -202,25 +201,20 @@ export class WebGPUPostPipeline {
       // scene→RT). CasePlane sets toneMapped:false for faithful texture colors.
 
       // ── 7. Film grain ──
-      // Integer-based hash avoids the precision variation of a sine hash.
-      // hash(p) = fract((p3.x + p3.y) * p3.z) where p3 = fract(vec3(p.xyx)*0.1031) + dot(...)
+      // Three's integer TSL hash avoids a project-specific shader hash.
       // Static film texture: route uniforms animate its strength, not wall time.
       // Unrelated demand frames must not restart visible grain or glass wobble.
       const noiseCoord = uv().mul(1024.0)
       const nFloor = floor(noiseCoord)
       const nFract = fract(noiseCoord)
       const nSmooth = nFract.mul(nFract).mul(float(3.0).sub(nFract.mul(2.0)))
-      // Portable hash: vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x+p3.y)*p3.z)
-      const hash = (p: Node<'vec2'>): Node<'float'> => {
-        const p3 = fract(vec3(tslFloat(p, 'x'), tslFloat(p, 'y'), tslFloat(p, 'x')).mul(0.1031))
-        const dotVal = dot(p3, tslVec3(p3, 'yzx').add(33.33))
-        const p3d = p3.add(dotVal)
-        return fract(tslFloat(p3d, 'x').add(tslFloat(p3d, 'y')).mul(tslFloat(p3d, 'z')))
-      }
-      const nA = hash(nFloor)
-      const nB = hash(nFloor.add(vec2(1.0, 0.0)))
-      const nC = hash(nFloor.add(vec2(0.0, 1.0)))
-      const nD = hash(nFloor.add(vec2(1.0, 1.0)))
+      // Flatten each integer pixel cell to a unique scalar seed in this
+      // 1024×1024 domain; Three's TSL hash accepts a scalar seed.
+      const cellSeed = tslFloat(nFloor, 'x').add(tslFloat(nFloor, 'y').mul(1024.0))
+      const nA = hash(cellSeed)
+      const nB = hash(cellSeed.add(1.0))
+      const nC = hash(cellSeed.add(1024.0))
+      const nD = hash(cellSeed.add(1025.0))
       const grainNoise = mix(
         mix(nA, nB, tslFloat(nSmooth, 'x')),
         mix(nC, nD, tslFloat(nSmooth, 'x')),

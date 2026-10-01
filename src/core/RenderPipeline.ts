@@ -93,7 +93,7 @@ export class RenderPipeline {
             this._webgpuParamsDirty = false
           }
           // Disable renderer tone mapping during TSL pipeline render — the TSL
-          // graph applies ACES manually (step 6). outputColorTransform=true
+          // graph applies no tone mapping. outputColorTransform=true
           // (default) on the pipeline applies renderOutput() which uses
           // renderer.toneMapping — we set it to NoToneMapping so renderOutput
           // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
