@@ -809,7 +809,7 @@ export class Experience {
     // transform pass's updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
-    const carousel = this.features.getCarousel()
+    const carousel = this.currentPage() === 'home' ? this.coordinator?.carousel : null
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false

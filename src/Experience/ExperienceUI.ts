@@ -343,7 +343,7 @@ export class ExperienceUI {
    *  carousel is a child of the Works group, home-only). Experience polls it
    *  inside the frame decision because it may have started morphing this
    *  frame. */
-  public getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+  private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // The carousel exists in the persistent scene, but only participates in
     // project navigation on home.
     if (this.host.page() !== 'home') return null
