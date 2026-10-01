@@ -6,7 +6,6 @@ import { contentRoot } from './core/contentRoot'
 import { devDiagnostic } from './core/devDiagnostic'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
-import { resolvePagePath } from './core/routeManifest'
 // LANG_KEY handled by i18n.ts
 
 // ── Config: sound toggle (splash overlay) ──
@@ -260,6 +259,7 @@ async function boot(): Promise<void> {
     const runtime = new Experience(
       {
         scene: host.scene,
+        page: host.page,
         camera: host.camera,
         renderer: host.renderer,
         sizes: host.context.sizes,
@@ -277,7 +277,6 @@ async function boot(): Promise<void> {
         loop: host.loop,
         stages: host.stages,
       },
-      () => resolvePagePath(window.location.pathname),
     )
     experience = runtime
     if (import.meta.env.DEV) {

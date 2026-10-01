@@ -7,7 +7,6 @@ import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
 import { input } from './Input'
 import { SfxSystem } from '../core/SfxSystem'
-import type { PageId } from '../core/routeManifest'
 import { NoiseText } from './NoiseText'
 import { BlurFade } from './BlurFade'
 
@@ -199,10 +198,7 @@ export class Experience {
   // One-way: restoring particle counts can cause a GPU spike and re-trigger
   // the low-FPS condition.
   private _particleReductionApplied = false
-  constructor(
-    host: ExperienceHost,
-    private page: () => PageId = () => 'home',
-  ) {
+  constructor(host: ExperienceHost) {
     this.viewport = {
       width: host.sizes.width.value,
       height: host.sizes.height.value,
@@ -215,6 +211,7 @@ export class Experience {
     this.camera = new Camera(
       host.camera,
       DeviceCapability.getInstance().isMobile,
+      () => this._host.page() === 'home',
     )
     this.renderer = new Renderer(this.viewport)
     // The env owner reads the renderer + glass cube lazily: it is applied
@@ -233,7 +230,7 @@ export class Experience {
     // Keep route, polarity and motion reads live: lazy stages can be created
     // long after the initial scene has mounted.
     this._stages = new StageRegistry({
-      currentPage: () => this.currentPage(),
+      currentPage: this._host.page,
       camera: () => this.camera,
       host: () => this._host.stages,
       isContactLight: () => this._contactIsLight,
@@ -349,7 +346,7 @@ export class Experience {
     // initialization. This controller does not create or attach scene nodes.
     this.sectionGroups = new SectionGroups(
       this.scene,
-      () => this.currentPage(),
+      this._host.page,
       () => this._storyNav?.getSide() ?? 'center',
       this._host.sectionRoots,
     )
@@ -386,7 +383,7 @@ export class Experience {
         stages: this._stages,
         servicesStage: this.servicesStage,
       },
-      () => this.currentPage(),
+      this._host.page,
     )
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
@@ -394,7 +391,7 @@ export class Experience {
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup
     // — ExperienceUI calls the idempotent method on every route change.
-    if (this.currentPage() === 'home') await this.ensureCarouselInitialized()
+    if (this._host.page() === 'home') await this.ensureCarouselInitialized()
     if (!this.isLifecycleCurrent(token)) return
     this.prewarmCurrentRouteStages()
     if (!this.isLifecycleCurrent(token)) return
@@ -421,13 +418,9 @@ export class Experience {
     }
   }
 
-  private currentPage(): PageId {
-    return this.page?.() ?? 'home'
-  }
-
   /** Start the current route's stage while shared media warms. */
   private prewarmCurrentRouteStages(): void {
-    const page = this.currentPage()
+    const page = this._host.page()
     if (page === 'works') void this._stages.ensureWorksPlaneStageInitialized()
     if (page === 'contact') {
       void this._stages.ensureContactTypographyStageInitialized()
@@ -482,7 +475,7 @@ export class Experience {
     this._reducedMotionUnsub = observeReducedMotion((reduced) =>
       this._handleReducedMotionChange(reduced),
     )
-    this.contentReveal = new ContentReveal(() => this.currentPage())
+    this.contentReveal = new ContentReveal(this._host.page)
     this.cursor = new Cursor(this.sfx)
     // Input was attached above, so pointer coordinates update before Cursor
     // wakes the shared loop; the Works trail consumes them in that same frame.
@@ -515,7 +508,7 @@ export class Experience {
       throw new DOMException('Experience initialization was cancelled.', 'AbortError')
     }
     const features = new ExperienceUI({
-      page: () => this.currentPage(),
+      page: this._host.page,
       coordinator: this.coordinator,
       baku: this.baku,
       particleBurst: this.particleBurst,
@@ -807,7 +800,7 @@ export class Experience {
     // Read the current state before the transform pass. On the threshold
     // crossing frame, active navigation keeps the frame scheduled; later
     // frames use isAnimating to carry the morph through to its settled state.
-    const carousel = this.currentPage() === 'home' ? this.carousel : null
+    const carousel = this._host.page() === 'home' ? this.carousel : null
     const carouselActive = carousel?.isAnimating ?? false
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
@@ -919,7 +912,7 @@ export class Experience {
       // guards against this, but we also skip the dispatch here to avoid
       // spurious events + cube face rotation that doesn't make sense on
       // content pages (cube rotation is home-only visual feedback).
-      const isHomePage = this.currentPage() === 'home'
+      const isHomePage = this._host.page() === 'home'
       if (isHomePage && !isInitialSectionSync) {
         eventBus.emit('jlz:section-change', {
           sectionId,

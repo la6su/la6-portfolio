@@ -4,7 +4,6 @@ import { input } from './Input'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'
-import { resolvePagePath } from '../core/routeManifest'
 
 const SP_STIFFNESS = 8
 const SP_DAMPING = 3
@@ -68,6 +67,7 @@ export class Camera {
   constructor(
     instance: THREE.PerspectiveCamera,
     isMobile: boolean,
+    private isHomePage: () => boolean,
   ) {
     this.instance = instance
     this._isMobile = isMobile
@@ -243,7 +243,7 @@ export class Camera {
     this.springY.pos += this.springY.vel * dt
 
     // ── 2. Build position ──
-    const isHome = resolvePagePath(window.location.pathname) === 'home'
+    const isHome = this.isHomePage()
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
     const reduced = this._reducedMotion

@@ -20,6 +20,8 @@ import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { setLabCameraActive } from '../core/labCameraPolicy'
 import { noSceneRequested } from '../core/sceneMode'
+import { resolvePagePath } from '../core/routeManifest'
+import type { PageId } from '../core/routeManifest'
 import {
   createUnifiedWebGPUInstance,
   deferRendererDisposal,
@@ -163,6 +165,7 @@ const cameraNode = cameraSlot.value
 // Consumers: the policy port (Experience/Camera), this template's v-if and
 // the `body[data-lab-camera]` CSS port the pass-through layers react to.
 const route = useRoute()
+const currentPage = (): PageId => resolvePagePath(route.path)
 const hasMountedWorksRoute = ref(route.name === 'works')
 watch(
   () => route.name,
@@ -357,6 +360,7 @@ async function onReady(context: TresContext): Promise<void> {
     dprCap.value = maxDprForMode(mode, DeviceCapability.getInstance().isMobile)
   })
   sceneHost.resolve({
+    page: currentPage,
     scene: context.scene.value,
     context,
     renderer,

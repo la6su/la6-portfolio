@@ -4,6 +4,7 @@
 import type * as THREE from 'three'
 import type { TresContext } from '@tresjs/core'
 import type { BackendFacts, FinalMode } from '../core/rendererBackend'
+import type { PageId } from '../core/routeManifest'
 import type { UnifiedRenderSurface } from '../core/unifiedRenderer'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
@@ -80,6 +81,8 @@ export interface SceneStagePorts {
 
 /** The readiness state published once the persistent Tres root is live. */
 export interface SceneHostReady {
+  /** Current semantic page from the persistent Vue Router instance. */
+  page: () => PageId
   /** The Tres-owned scene (`context.scene.value`) — the one THREE.Scene. */
   scene: THREE.Scene
   /** The mounted Tres context (loop/size/camera managers). */
