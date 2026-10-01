@@ -189,8 +189,8 @@ flowchart TD
 
 The opt-in Firefox context-loss test passes against the production preview and
 verifies recovery on the persistent canvas. Local Chromium still fails before
-recreation because it does not restore the induced context; physical-GPU
-recovery evidence remains open. Run it with
+recreation because it does not restore the induced context, even with SwiftShader
+forced; physical-GPU recovery evidence remains open. Run it with
 `JLZ_CROSS_BROWSER_MATRIX=1 JLZ_WEBGL_RECOVERY_FIREFOX=1 bunx playwright test --project=firefox tests/portfolio.spec.ts --grep "Renderer recovers from WebGL context loss"`.
 
 | Surface | Current evidence | Refactor direction |
@@ -723,7 +723,7 @@ recorded in the matrix above. The latest renderer slice awaits Three r186's
 asynchronous disposal across init failure, fallback, recovery and Vue host
 teardown. Chromium host teardown passes. Firefox also passes induced WebGL recovery against production preview on the
 persistent canvas; local Chromium still fails before recreation because it
-does not restore the lost context.
+does not restore the lost context, even with SwiftShader forced.
 Stage cleanup failures are logged in production while teardown continues. The
 remaining architecture audit and browser/GPU acceptance phases are active.
 
