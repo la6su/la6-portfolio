@@ -48,8 +48,6 @@ type DeviceLossCapableRenderer = WebGPURenderer & {
  */
 export interface AdoptedRenderer {
   instance: RenderSurface;
-  /** Persistent Vue-owned canvas — never removed by `dispose()`. */
-  canvas: HTMLCanvasElement;
   mode: FinalMode;
   /** Sync the live instance after a device-loss recovery swap. */
   onInstanceReplaced?: (instance: RenderSurface) => void;

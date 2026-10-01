@@ -552,7 +552,6 @@ export class Experience {
     this._showreel.bind()
     await this.renderer.init({
       instance: this._host.renderer,
-      canvas: this._host.canvas,
       mode: this._host.mode,
       onInstanceReplaced: (instance) => this._host.replaceRenderer(instance),
     })

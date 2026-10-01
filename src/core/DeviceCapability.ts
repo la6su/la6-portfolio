@@ -21,16 +21,12 @@ export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
   return 1
 }
 
-interface TierConfig {
-  postMultiplier: number
-}
-
 /** TSL post is available only on the native WebGPU backend. */
 export function supportsPostProcessing(mode: RendererMode, tier: QualityTier): boolean {
   return mode === 'webgpu' && tier !== 'low'
 }
 
-const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
+const TIER_SETTINGS: Record<QualityTier, { postMultiplier: number }> = {
   low: {
     postMultiplier: 0.4,
   },
@@ -64,11 +60,16 @@ export class DeviceCapability {
   private static instance: DeviceCapability
   public tier: QualityTier
   public mode: RendererMode
-  public maxDpr: number
-  public config: TierConfig
   public readonly isMobile: boolean
   public readonly isTouch: boolean
-  public postProcessing: boolean
+
+  public get maxDpr(): number {
+    return maxDprForMode(this.mode, this.isMobile)
+  }
+
+  public get postProcessing(): boolean {
+    return supportsPostProcessing(this.mode, this.tier)
+  }
 
   /**
    * True ONLY when WebGPURenderer actually got WebGPUBackend (not WebGLBackend
@@ -82,21 +83,16 @@ export class DeviceCapability {
    * the project falls back to the parity path (JS-driven material props,
    * opacity-based glass) that already works.
    */
-  public isRealWebGPU: boolean = false
+  public get isRealWebGPU(): boolean {
+    return this.mode === 'webgpu'
+  }
 
   private constructor() {
     this.isMobile = detectMobile()
     this.isTouch = navigator.maxTouchPoints > 0
 
     this.mode = this.detectRenderMode()
-    // maxDpr MUST be computed before detectTier() — tier uses this.maxDpr
-    // (cores >= 8 && maxDpr >= 2 → high). Previously maxDpr was assigned after
-    // detectTier, so `undefined >= 2` was always false and desktop WebGPU
-    // never reached 'high' tier (stuck on medium postMultiplier / grain).
-    this.maxDpr = this.calculateMaxDpr()
     this.tier = this.detectTier()
-    this.config = TIER_SETTINGS[this.tier]
-    this.postProcessing = supportsPostProcessing(this.mode, this.tier)
   }
 
   public static getInstance(): DeviceCapability {
@@ -112,11 +108,7 @@ export class DeviceCapability {
    */
   public setFinalRendererMode(mode: Exclude<RendererMode, 'unsupported'>): void {
     this.mode = mode
-    this.isRealWebGPU = mode === 'webgpu'
-    this.maxDpr = this.calculateMaxDpr()
     this.tier = this.detectTier()
-    this.config = TIER_SETTINGS[this.tier]
-    this.postProcessing = supportsPostProcessing(this.mode, this.tier)
   }
 
   // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
@@ -193,13 +185,9 @@ export class DeviceCapability {
     return 'low'
   }
 
-  private calculateMaxDpr(): number {
-    return maxDprForMode(this.mode, this.isMobile)
-  }
-
   // ── Per-operation helpers ──
 
   public scaleIntensity(value: number): number {
-    return value * this.config.postMultiplier
+    return value * TIER_SETTINGS[this.tier].postMultiplier
   }
 }
