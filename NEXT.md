@@ -569,7 +569,16 @@ desktop and mobile sizes in Chrome/Chromium, Firefox, and Safari/WebKit; EN/RU
 navigation works; key controls are keyboard accessible; content remains usable
 when the scene is disabled or unsupported.
 
-### 5. Performance, dead-code removal, and release gates — `queued`
+### 5. Performance, dead-code removal, and release gates — `active`
+
+**Completed slices**
+
+- Reduced the shared showreel/builder preview video from 16.35 MB to 5.27 MB
+  (−67.7%) at 1920×1080/30 fps. Kept its non-silent audio track as AAC 96 kbps,
+  moved MP4 metadata to the front, and confirmed decoded-frame SSIM 0.9919.
+  `Showreel` now has a browser assertion for decoded 1920px media and advancing
+  playback. The production build reports 6.65 MB total public media, down from
+  17.73 MB; the targeted system-Chromium production test passed.
 
 **Work**
 
@@ -598,9 +607,8 @@ unowned persistent GPU resource remains.
 
 ## Current checkpoint
 
-- **Active phase**: 0–4; phase 5 queued. Runtime ownership mapping
-  and the first async release race fix are recorded above; no new module
-  boundary was justified by the audit.
+- **Active phase**: 0–5. Runtime ownership mapping and the first async release
+  race fix are recorded above; no new module boundary was justified by the audit.
 - **Next action**: continue the source audit for duplicated lifecycle owners,
   unreachable code, and abstractions already provided by Vue/Tres/Three; then
   continue keyboard routes beyond the menu/modal, orientation/resize and
@@ -633,9 +641,9 @@ run test:serial` passed after a production build (14 tests, 2 opt-in renderer
   physical-GPU WebGPU. `SceneNodeDisposal.test.ts` verifies
   the installed Tres disposer releases boot cursor/burst geometry and material
   exactly once;
-  bundle breakdown completed for Three and lab controls. Build reports 17.7 MB
-  total public media, including a 16.35 MB `coming-soon.mp4`; phase 5 should
-  verify whether that asset and its delivery size are intentional.
+  bundle breakdown completed for Three and lab controls. Current build reports
+  6.65 MB total public media, with the optimized 5.27 MB showreel as the largest
+  asset. Its route and builder-preview consumers are verified above.
 - **Browser/recovery gap**: the opt-in real-renderer WebGL context-recovery
   scenario did not recover under this host's software Chromium/SwiftShader
   setup and surfaced Three's unsupported state. This does not establish
@@ -678,9 +686,11 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
   (226 lines); added coverage for repeated `Experience.destroy()` and stale async
   route-stage creation; replaced migration commentary across active source
   with current contracts. The async stage race, repeated teardown browser test,
-  73 unit tests, Vue type-check, lint, diff-check, and production
-  build passed. These checks used system Chromium on software WebGL; hardware
-  WebGPU and Safari/WebKit gaps above remain open.
+  73 unit tests, Vue type-check, lint, diff-check, and production build passed.
+  The latest full production Chromium suite passed (14 passed, 3 expected skips);
+  the showreel test confirms browser decode/playback. Browser rendering used
+  system Chromium on software WebGL; hardware WebGPU and Safari/WebKit gaps
+  above remain open.
 
 ## Authorized follow-on after release acceptance
 

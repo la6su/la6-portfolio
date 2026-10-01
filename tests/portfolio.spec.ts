@@ -295,6 +295,13 @@ test("Showreel lazily mounts its TresPortal scene and closes cleanly", async ({
   await trigger.evaluate((element: HTMLButtonElement) => element.click());
   const consolePanel = page.locator("#jlz-showreel-console");
   await expect(consolePanel).toHaveAttribute("data-state", "open");
+  const video = page.locator('video[aria-hidden="true"]');
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => element.videoWidth))
+    .toBe(1920);
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime))
+    .toBeGreaterThan(0);
   await page.keyboard.press("Escape");
   await expect(consolePanel).toHaveAttribute("data-state", "closed");
   await trigger.evaluate((element: HTMLButtonElement) => element.click());
