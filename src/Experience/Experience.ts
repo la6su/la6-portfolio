@@ -164,21 +164,8 @@ export class Experience {
   // after renderer.init() and re-applied after a device-loss recovery.
   private _environment!: SceneEnvironment
 
-  // `jlz:webgl-ready` may only fire after the
-  // initial scene's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
-  // invalidation guarantees a frame; the frame resolves this exactly once.
-  private _firstRenderResolve: (() => void) | null = null
-  private _firstRenderPromise: Promise<void> | null = null
+  // Owns the first-draw readiness promise, timeout, and teardown cancellation.
   private _readinessGate: ReadinessGate | null = null
-  /** Resolved on the first successful rendered frame. */
-  private get firstRender(): Promise<void> {
-    if (!this._firstRenderPromise) {
-      this._firstRenderPromise = new Promise<void>((resolve) => {
-        this._firstRenderResolve = resolve
-      })
-    }
-    return this._firstRenderPromise
-  }
   // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
   // One-way: restoring particle counts can cause a GPU spike and re-trigger
   // the low-FPS condition.
@@ -621,11 +608,10 @@ export class Experience {
     // The scheduler starts the frame callback on first invalidation and stops
     // after a settled frame. Tres remains the single loop host, while the
     // renderer keeps its normal swap-chain pacing.
-    this._scheduler.invalidate('first-frame')
-
     // Readiness requires a successful first draw. A bounded timeout rejects
     // startup instead of enabling Enter over a scene that never rendered.
-    this._readinessGate = createReadinessGate(this.firstRender, 20000)
+    this._readinessGate = createReadinessGate(20000)
+    this._scheduler.invalidate('first-frame')
     await this._readinessGate.promise
     this._readinessGate = null
   }
@@ -958,15 +944,9 @@ export class Experience {
         renderer: rendererDuration,
         total: performance.now() - frameStart,
       })
-      // Readiness requires the initial scene's first successful render — a
-      // frame that threw in renderer.update() never resolves the gate
-      // (update() catches and keeps booting), so `jlz:webgl-ready` can only
-      // fire after a real draw. Resolves exactly once.
-      if (this._firstRenderResolve) {
-        const resolve = this._firstRenderResolve
-        this._firstRenderResolve = null
-        resolve()
-      }
+      // A frame that throws in renderer.update() never marks readiness, so
+      // `jlz:webgl-ready` follows the first actual successful draw.
+      this._readinessGate?.markRendered()
       // Keep demand raised while any activity remains; otherwise the next
       // scheduler pass can settle.
       if (demandSettles(activity)) {

@@ -110,6 +110,11 @@ preserve custom policy only when code or measurements prove the difference.
   awaits in-flight host disposal before releasing the current candidate,
   preserving async dispose and late fallback-init ordering. Chromium teardown
   and loop-wake gates pass (2/2).
+- First-draw readiness used an `Experience` promise/resolver wrapped by a
+  separate timeout/cancellation gate. Moved the render signal into
+  `ReadinessGate`, which now owns the sole readiness promise, timeout, and
+  cancellation. Experience creates it before waking the scheduler; frame
+  errors still do not mark the scene ready. Chromium startup/teardown passes.
 - SceneHost's SwiftShader-to-WebGL fallback awaited renderer initialization
   without cancelling on host unmount, and explicit teardown could dispose that
   candidate while `init()` was still pending. The host now aborts the helper
@@ -719,9 +724,9 @@ origin; the normal build restored production outputs. The latest combined
 Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were
 skipped by their explicit guards. Route, keyboard/focus, touch, responsive
 overflow, localized metadata and init-error checks passed. Earlier independent
-production suites passed both browsers. SceneHost teardown order passed in
-dev-mode Chromium (2/2 checks). After the latest renderer-owner simplification,
-the same dedicated gate passes on the installed system Chromium (2/2). Its gate
+production suites passed both browsers. After the renderer-owner and first-draw
+readiness changes, the dedicated startup/teardown gate passes in system
+Chromium (2/2). Its gate
 direct-loads Contact, observes its three lazy
 stages becoming ready, opens showreel, and asserts all four owners plus async
 scene teardown finish before backend disposal. The cached WebKit MiniBrowser cannot launch because its

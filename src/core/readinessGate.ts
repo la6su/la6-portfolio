@@ -3,6 +3,8 @@
 export interface ReadinessGate {
   /** Resolves only after the first rendered frame. */
   promise: Promise<void>
+  /** Mark the initial frame successful. */
+  markRendered(): void
   /** Reject the wait when the Experience is destroyed. */
   cancel(): void
 }
@@ -11,7 +13,7 @@ export interface ReadinessGate {
  * Wait for the first successful frame. A timeout is a startup failure, not a
  * successful readiness signal; cancellation releases the pending continuation.
  */
-export function createReadinessGate(firstRender: Promise<void>, timeoutMs: number): ReadinessGate {
+export function createReadinessGate(timeoutMs: number): ReadinessGate {
   let settled = false
   let resolveGate!: () => void
   let rejectGate!: (error: unknown) => void
@@ -43,11 +45,11 @@ export function createReadinessGate(firstRender: Promise<void>, timeoutMs: numbe
       () => fail(new Error(`First render did not complete within ${timeoutMs} ms.`)),
       timeoutMs,
     )
-    void firstRender.then(succeed, fail)
   })
 
   return {
     promise,
+    markRendered: succeed,
     cancel: () => {
       if (settled) return
       fail(new DOMException('Experience initialization was cancelled.', 'AbortError'))
