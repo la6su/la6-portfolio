@@ -13,7 +13,7 @@ import type { StageRegistry } from './StageRegistry'
 import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
-import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
+import { WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
 import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
@@ -95,17 +95,6 @@ export class ExperienceUI {
     }
     this.storyNav.onSectionChange((idx) => {
       eventBus.emit('jlz:story-index-change', { index: idx })
-      // Initial hashes are replayed only after the ready splash event. Keep
-      // the Works owner explicit at that boundary so a hash-driven arrival
-      // cannot depend on an earlier render frame to wake its carousel.
-      if (idx === WORKS_SLOT_INDEX && this.host.page() === 'home') {
-        const routeGeneration = this._routeGeneration
-        const page = this.host.page()
-        void this.host.ensureCarouselInitialized().then(() => {
-          if (!this._routeContinuationIsCurrent(routeGeneration, page)) return
-          if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
-        })
-      }
       this.host.raise('nav')
     })
     this.storyNav.onActiveChange((active) => {
@@ -188,7 +177,9 @@ export class ExperienceUI {
           coordinator.syncRouteVisuals()
           const stages = this.host.stages
           if (newPage === 'home') {
-            void this.host.ensureCarouselInitialized()
+            void this.host.ensureCarouselInitialized().then(() => {
+              if (continuationIsCurrent()) this.host.raise('nav')
+            })
           }
           if (newPage === 'works') {
             void stages.ensureWorksPlaneStageInitialized().then(() => {
