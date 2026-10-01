@@ -14,7 +14,7 @@ import { copyPostParams, NEUTRAL_GRADE, postParamsMatch } from './postParams'
  * here — it is renderer-specific (see PHASE_BLOOM_SHAPES).
  */
 export type SectionPostParams = Pick<PostParams, 'bloom' | 'vignette' | 'grain' | 'chromatic'> &
-  Partial<Pick<PostParams, 'refract' | 'border' | 'gradeShadows' | 'gradeHighlights'>>
+  Partial<Pick<PostParams, 'refract' | 'gradeShadows' | 'gradeHighlights'>>
 
 interface BloomShape {
   bloomRadius: number
@@ -77,7 +77,6 @@ export class PostProcessingManager {
     bloomRadius: 0.6,
     bloomThreshold: 0.5,
     refract: 0,
-    border: 0,
     gradeShadows: [1, 1, 1],
     gradeHighlights: [1, 1, 1],
   }
@@ -91,7 +90,6 @@ export class PostProcessingManager {
     bloomRadius: 0.6,
     bloomThreshold: 0.5,
     refract: 0,
-    border: 0,
     gradeShadows: [1, 1, 1],
     gradeHighlights: [1, 1, 1],
   }
@@ -122,7 +120,7 @@ export class PostProcessingManager {
     // feature gates below. Linear scaling commutes with the crossfade lerp,
     // so applying it to the crossfade TARGET is identical to scaling the
     // display values per frame. Shape/look channels (bloomRadius,
-    // bloomThreshold, refract, border, grades) stay unscaled on purpose:
+    // bloomThreshold, refract, grades) stay unscaled on purpose:
     // scaling would distort the authored look, not just the intensity.
     const scaler = QUALITY_SCALARS[this.tier]
     const intensity = (value: number, gate: number | undefined): number =>
@@ -135,7 +133,6 @@ export class PostProcessingManager {
       ...bloomShape,
       // Grade channels: authored per section, neutral when a caller omits them.
       refract: sectionPost.refract ?? 0,
-      border: sectionPost.border ?? 0,
       gradeShadows: sectionPost.gradeShadows ? [...sectionPost.gradeShadows] : [...NEUTRAL_GRADE],
       gradeHighlights: sectionPost.gradeHighlights
         ? [...sectionPost.gradeHighlights]
@@ -185,7 +182,6 @@ export class PostProcessingManager {
       factor,
     )
     this.display.refract = THREE.MathUtils.lerp(this.display.refract, this.current.refract, factor)
-    this.display.border = THREE.MathUtils.lerp(this.display.border, this.current.border, factor)
     this.lerpTint(this.display.gradeShadows, this.current.gradeShadows, factor)
     this.lerpTint(this.display.gradeHighlights, this.current.gradeHighlights, factor)
     if (this.displayMatchesCurrent(0.001)) {

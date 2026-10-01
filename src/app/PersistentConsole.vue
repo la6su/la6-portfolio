@@ -234,10 +234,16 @@ function toggleSound(): void {
       </button>
     </header>
     <nav aria-label="Portfolio routes" class="jlz-route-fallback__nav">
-      <component :is="item.page ? RouterLink : 'a'" v-for="item in NAV_ITEMS" :key="item.num" :to="item.page ? { name: item.page } : undefined" :href="item.href">
-        <span class="jlz-route-fallback__number">{{ item.num }}</span>
-        {{ t(item.labelKey) }}
-      </component>
+      <template v-for="item in NAV_ITEMS" :key="item.num">
+        <RouterLink v-if="item.page" :to="{ name: item.page }">
+          <span class="jlz-route-fallback__number">{{ item.num }}</span>
+          {{ t(item.labelKey) }}
+        </RouterLink>
+        <a v-else :href="item.href">
+          <span class="jlz-route-fallback__number">{{ item.num }}</span>
+          {{ t(item.labelKey) }}
+        </a>
+      </template>
     </nav>
   </div>
 </template>

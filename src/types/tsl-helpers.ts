@@ -3,17 +3,15 @@
 // Three.js ships near-complete TSL types, so production code consumes
 // pass()/bloom()/swizzles without blind `as any` widening. The two residual
 // gaps in the shipped types — component swizzle getters like `.x` (the
-// runtime Proxy exposes them but the declarations do not) and smoothstep()
-// with scalar low/high over a vec2 operand (the declarations only carry
-// matching-shape overloads) — are bridged here with ONE narrow adapter each
+// runtime Proxy exposes them but the declarations do not) — are bridged here
 // instead of scattering casts through the graph code.
 //
 // Both adapters are runtime-identical to the forms they replace:
 // `split(node, components)` materializes exactly the node the `.x` getter
-// would, and WGSL compiles scalar smoothstep edges per-component.
+// would.
 
 import { bloom as _bloom } from 'three/addons/tsl/display/BloomNode.js'
-import { pass as _pass, split as _split, smoothstep as _smoothstep } from 'three/tsl'
+import { pass as _pass, split as _split } from 'three/tsl'
 import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
 import type { Camera, Scene } from 'three'
 import type { Node, PassNode, UniformNode } from 'three/webgpu'
@@ -51,20 +49,4 @@ export function tslFloat(node: Node, components: 'x' | 'y' | 'z' | 'w'): Node<'f
 /** Multi-component swizzle returning a vec3 (`.xyz`, `.yzx`, …). */
 export function tslVec3(node: Node, components: string): Node<'vec3'> {
   return _split(node, components) as Node<'vec3'>
-}
-
-/** smoothstep(low, high, x) with scalar edges over a vec2 operand — the
- *  per-component form the WebGL2 composite mirrors. The shipped declarations
- *  only carry matching-shape overloads, so the boundary owns the one
- *  function-shape widening. */
-export function tslSmoothstepPerComponent(
-  low: number,
-  high: number,
-  x: Node<'vec2'>,
-): Node<'vec2'> {
-  return (_smoothstep as unknown as (low: number, high: number, x: Node<'vec2'>) => Node<'vec2'>)(
-    low,
-    high,
-    x,
-  )
 }

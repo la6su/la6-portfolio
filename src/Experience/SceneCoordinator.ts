@@ -1,6 +1,6 @@
 // Coordinates story state, scene transforms, route visibility and per-frame
-// updates. Experience owns it and passes scene owners as getters so lazily
-// replaced route stages are always read from their current owner.
+// updates. Stable boot owners are direct references; lazily replaced route
+// stages are read from the stage registry.
 
 import * as THREE from 'three'
 import type { WebGPURenderer } from 'three/webgpu'
@@ -13,9 +13,6 @@ import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import type { SceneCoordinatorOwners } from './sceneOwners'
-import type { ContactTypographyStage } from './World/ContactTypographyStage'
-import type { ContactHaloStage } from './World/ContactHaloStage'
-import type { ManifestoInkStage } from './World/ManifestoInkStage'
 
 function bakuVisibleOnRoute(page: PageId, contactCyprusActive: boolean): boolean {
   return page !== 'lab' && page !== 'works' && !(page === 'contact' && contactCyprusActive)
@@ -46,19 +43,7 @@ export class SceneCoordinator {
 
   /** Stable section groups used only by the coordinator's route/frame policy. */
   private get sceneGroups(): THREE.Group[] {
-    return this.owners.sectionGroups()?.groups ?? []
-  }
-
-  // Live owner reads stay private to the coordinator and its passes. UI
-  // interactions access those controllers through Experience's UI host port.
-  private get contactTypographyStage(): ContactTypographyStage | null {
-    return this.owners.contactTypographyStage()
-  }
-  private get contactHaloStage(): ContactHaloStage | null {
-    return this.owners.contactHaloStage()
-  }
-  private get manifestoInkStage(): ManifestoInkStage | null {
-    return this.owners.manifestoInkStage()
+    return this.owners.sectionGroups.groups
   }
 
   constructor(
@@ -131,7 +116,7 @@ export class SceneCoordinator {
 
     const group = this.sceneGroups[WORKS_SLOT_INDEX]
     if (!group) return
-    const burst = this.owners.particleBurst()
+    const burst = this.owners.particleBurst
     const wasVisible = group.visible
     const wasPortalVisible = burst?.visible ?? false
     group.visible = true
@@ -153,7 +138,7 @@ export class SceneCoordinator {
   public setWorksPlaneStageSection(index: number): void {
     if (this._worksPlaneStageSection === index) return
     this._worksPlaneStageSection = index
-    this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
+    this.owners.stages.worksPlaneStage?.setActive(this.page() === 'works', index)
     this._transform.invalidate()
   }
 
@@ -166,11 +151,11 @@ export class SceneCoordinator {
     const isAgros = isContact && index === 2
     const isFinal = isContact && index === 3
 
-    const particles = this.owners.sectionGroups()?.works.particles
+    const particles = this.owners.sectionGroups.works.particles
     if (particles) particles.visible = !isAgros
-    this.contactTypographyStage?.setActive(isContact && !isFinal)
+    this.owners.stages.contactTypographyStage?.setActive(isContact && !isFinal)
     // The halo backs the greeting — it shares the flock's chapter gating.
-    this.contactHaloStage?.setActive(isContact && !isFinal)
+    this.owners.stages.contactHaloStage?.setActive(isContact && !isFinal)
     this._transform.invalidate()
   }
 
@@ -183,7 +168,7 @@ export class SceneCoordinator {
    */
   public hasVisibleParticles(): boolean {
     const worksGroup = this.sceneGroups[WORKS_SLOT_INDEX]
-    return Boolean(worksGroup?.visible && this.owners.sectionGroups()?.works.particles.visible)
+    return Boolean(worksGroup?.visible && this.owners.sectionGroups.works.particles.visible)
   }
 
   /**
@@ -193,28 +178,28 @@ export class SceneCoordinator {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
-    if (this.owners.envSphere()?.isAnimating) return true
-    if (this.owners.baku()?.isAmbientlyAnimated) return true
-    const contactTypographyStage = this.contactTypographyStage
+    if (this.owners.envSphere.isAnimating) return true
+    if (this.owners.baku.isAmbientlyAnimated) return true
+    const contactTypographyStage = this.owners.stages.contactTypographyStage
     if (contactTypographyStage?.visible && contactTypographyStage.isAnimating) return true
-    const contactHaloStage = this.contactHaloStage
+    const contactHaloStage = this.owners.stages.contactHaloStage
     if (contactHaloStage?.visible && contactHaloStage.isAnimating) return true
-    const manifestoInkStage = this.manifestoInkStage
+    const manifestoInkStage = this.owners.stages.manifestoInkStage
     if (manifestoInkStage?.visible && manifestoInkStage.isAnimating) return true
-    const servicesStage = this.owners.servicesStage()
+    const servicesStage = this.owners.servicesStage
     if (servicesStage?.visible && servicesStage.isAnimating) return true
     // The Lab object's authored hover clock is an intentional primary object
     // motion (mirrors the typography stage), not decoration.
-    const labGamepad = this.owners.labGamepad()
+    const labGamepad = this.owners.stages.labGamepad
     if (labGamepad?.visible && labGamepad.isAnimating) return true
     return false
   }
 
   /** Match the opaque 3D words and the ink halo to the effective contrast. */
   public syncTypographyTheme(isLight: boolean): void {
-    this.contactTypographyStage?.setTheme(isLight)
-    this.contactHaloStage?.setTheme(isLight)
-    this.manifestoInkStage?.setTheme(isLight)
+    this.owners.stages.contactTypographyStage?.setTheme(isLight)
+    this.owners.stages.contactHaloStage?.setTheme(isLight)
+    this.owners.stages.manifestoInkStage?.setTheme(isLight)
   }
 
   /** The demand-gated owner frame fan-out. On an idle frame it keeps
@@ -222,25 +207,25 @@ export class SceneCoordinator {
    *  clock (parity pinned by SceneCoordinator.motionParity). */
   public update(deltaTime: number, needsRender: boolean = true): void {
     const page = this.page()
-    const burst = this.owners.particleBurst()
+    const burst = this.owners.particleBurst
     if (burst?.isActive) burst.update(deltaTime)
 
     if (!needsRender) {
-      const worksStage = this.owners.worksPlaneStage()
+      const worksStage = this.owners.stages.worksPlaneStage
       if (worksStage && page === 'works') {
         worksStage.setActive(true, this._worksPlaneStageSection)
       }
       return
     }
 
-    this.owners.envSphere()?.update(deltaTime)
+    this.owners.envSphere.update(deltaTime)
 
-    const worksStage = this.owners.worksPlaneStage()
+    const worksStage = this.owners.stages.worksPlaneStage
     if (worksStage) {
       worksStage.setActive(page === 'works', this._worksPlaneStageSection)
       worksStage.update(deltaTime)
     }
-    const servicesStage = this.owners.servicesStage()
+    const servicesStage = this.owners.servicesStage
     if (servicesStage) {
       servicesStage.visible = page === 'services'
       if (servicesStage.visible && this.camera instanceof THREE.PerspectiveCamera) {
@@ -252,26 +237,26 @@ export class SceneCoordinator {
         )
       }
     }
-    this.contactTypographyStage?.update(deltaTime)
-    this.contactHaloStage?.update(deltaTime)
-    this.manifestoInkStage?.update(deltaTime)
-    const contactCyprusStage = this.owners.contactCyprusStage()
+    this.owners.stages.contactTypographyStage?.update(deltaTime)
+    this.owners.stages.contactHaloStage?.update(deltaTime)
+    this.owners.stages.manifestoInkStage?.update(deltaTime)
+    const contactCyprusStage = this.owners.stages.contactCyprusStage
     contactCyprusStage?.update(deltaTime)
-    this.owners.labGamepad()?.update?.(deltaTime)
-    const baku = this.owners.baku()
+    this.owners.stages.labGamepad?.update?.(deltaTime)
+    const baku = this.owners.baku
 
     if (!this._reducedMotion) {
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = page === 'works'
       const isWorksStoryFrame = this._story.currentSectionIndex === WORKS_SLOT_INDEX
-      const trail = this.owners.drawTrail()
+      const trail = this.owners.drawTrail
       if (trail && (isStandaloneWorks || isWorksStoryFrame)) {
         trail.update(deltaTime, this.camera)
       }
     }
 
-    const carousel = this.owners.carousel()
-    const groups = this.owners.sectionGroups()?.groups ?? []
+    const carousel = this.owners.carousel
+    const groups = this.owners.sectionGroups.groups
     const carouselGroup = groups[WORKS_SLOT_INDEX]
     if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
     if (carousel && baku) {
@@ -280,7 +265,7 @@ export class SceneCoordinator {
         (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
     }
     if (!this._reducedMotion) {
-      const particles = this.owners.sectionGroups()?.works.particles
+      const particles = this.owners.sectionGroups.works.particles
       if (carouselGroup?.visible && particles?.visible !== false) particles?.update(deltaTime)
     }
   }
@@ -325,10 +310,10 @@ export class SceneCoordinator {
   public syncRouteVisuals(): void {
     const page = this.page()
     const isLab = page === 'lab'
-    const baku = this.owners.baku()
+    const baku = this.owners.baku
     if (baku)
-      baku.visible = bakuVisibleOnRoute(page, this.owners.contactCyprusStage()?.isActive ?? false)
-    const labGamepad = this.owners.labGamepad()
+      baku.visible = bakuVisibleOnRoute(page, this.owners.stages.contactCyprusStage?.isActive ?? false)
+    const labGamepad = this.owners.stages.labGamepad
     if (labGamepad) {
       labGamepad.visible = isLab
       // Every route entry starts from the authored pose — without this reset

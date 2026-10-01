@@ -1,6 +1,6 @@
 // Owns the cinematic navigation, menu, fullscreen overlay, project controls
-// and their UI-facing event handlers. Scene access goes through a narrow port;
-// this owner does not reach into the renderer or scene graph.
+// and their UI-facing event handlers. It receives the scene owners it uses,
+// without reaching into the renderer or scene graph.
 //
 // Disposal contract: `destroy()` removes every window listener this class
 // added and disposes the features it created — Experience.destroy() runs it
@@ -22,29 +22,27 @@ import { PROJECTS } from '../Data/Projects'
 import type { SplashCube } from './World/SplashCube'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
-import type { WorksPlaneStage } from './World/WorksPlaneStage'
 
 /**
- * The narrow port ExperienceUI reaches the scene through. Every accessor is
- * a getter (not a stored reference) so the scene + its owners can only be
- * read AFTER Experience.init() has built them.
+ * Scene owners are passed after buildScene() has completed. Only route state,
+ * render demand, and initialization remain callbacks because they can change
+ * or are actions rather than owned objects.
  */
 export interface ExperienceUIHost {
   page: () => PageId
-  coordinator: () => SceneCoordinator
-  baku: () => SplashCube
-  particleBurst: () => ParticleBurst
-  carousel: () => BakuCarousel | null
-  worksPlaneStage: () => WorksPlaneStage | null
-  camera: () => Camera
-  sfx: () => SfxSystem
+  coordinator: SceneCoordinator
+  baku: SplashCube
+  particleBurst: ParticleBurst
+  carousel: BakuCarousel | null
+  camera: Camera
+  sfx: SfxSystem
   /** Raise render demand + wake the single loop driver (typed reason). */
   raise: (reason?: FrameReason) => void
   reducedMotion: () => boolean
   /** Initialize the Experience-owned carousel once before its first use. */
   ensureCarouselInitialized: () => Promise<void>
   /** The one owner of route stages, read only after Experience initializes. */
-  stages: () => StageRegistry
+  stages: StageRegistry
 }
 
 export class ExperienceUI {
@@ -122,12 +120,12 @@ export class ExperienceUI {
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
     // D-7 fix: default to MUTED (matches the console's getSoundMuted default:
     // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
-    this.host.sfx().setMuted(getSoundMuted())
+    this.host.sfx.setMuted(getSoundMuted())
 
     // Runtime sound toggle from the persistent console or other in-app controls.
     this._unsubs.push(
       eventBus.on('jlz:sound-toggle', ({ muted }) => {
-        this.host.sfx().setMuted(muted)
+        this.host.sfx.setMuted(muted)
       }),
     )
 
@@ -163,21 +161,21 @@ export class ExperienceUI {
         const newPage = this.host.page()
         const continuationIsCurrent = () =>
           this._routeContinuationIsCurrent(routeGeneration, newPage)
-        const coordinator = this.host.coordinator()
+        const coordinator = this.host.coordinator
         void (async () => {
           // Rebuild page-specific fog/post/section ranges before route owners
           // reconcile visibility; otherwise SPA navigation keeps boot config.
           await coordinator.refreshRouteConfig()
           if (!continuationIsCurrent()) return
           coordinator.syncRouteVisuals()
-          const stages = this.host.stages()
+          const stages = this.host.stages
           if (newPage === 'home') {
             void this.host.ensureCarouselInitialized()
           }
           if (newPage === 'works') {
             void stages.ensureWorksPlaneStageInitialized().then(() => {
               if (!continuationIsCurrent()) return
-              this.host.coordinator().setWorksPlaneStageSection(0)
+              this.host.coordinator.setWorksPlaneStageSection(0)
               this.host.raise('nav')
             })
           } else {
@@ -227,7 +225,7 @@ export class ExperienceUI {
     // Wobble pulse on card click (work cards + carousel).
     this._unsubs.push(
       eventBus.on('jlz:wobble-pulse', () => {
-        this.host.baku().triggerWobblePulse()
+        this.host.baku.triggerWobblePulse()
         // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
         this.host.raise('dirty')
       }),
@@ -239,12 +237,12 @@ export class ExperienceUI {
         const domIndex = index ?? 0
         const stageIndex = Math.max(0, domIndex - 1)
         const page = this.host.page()
-        const coordinator = this.host.coordinator()
+        const coordinator = this.host.coordinator
         if (page === 'works') {
           // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
           coordinator.setWorksPlaneStageSection(stageIndex)
         } else if (page === 'contact') {
-          this.host.stages().setContactCyprusStageSection(stageIndex)
+          this.host.stages.setContactCyprusStageSection(stageIndex)
           coordinator.setContactSceneSection(stageIndex)
         } else {
           return
@@ -268,7 +266,7 @@ export class ExperienceUI {
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       this.ensureProjectControls()
-      const stage = this.host.worksPlaneStage()
+      const stage = this.host.stages.worksPlaneStage
       if (!stage) return
       const idx = stage.hitTest(e.clientX, e.clientY)
       if (
@@ -297,9 +295,9 @@ export class ExperienceUI {
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
   triggerSplashOpener(): void {
-    this.host.baku().triggerOpener()
+    this.host.baku.triggerOpener()
     if (this.host.reducedMotion()) return
-    const particleBurst = this.host.particleBurst()
+    const particleBurst = this.host.particleBurst
     particleBurst.trigger(0, 0, 0)
     if (particleBurst.isActive) this.host.raise('dirty')
   }
@@ -335,9 +333,9 @@ export class ExperienceUI {
     // The home carousel exists even on a content deep link. Wire it once
     // regardless of the active route, and release the callback with this UI
     // owner so a later Experience can adopt the same scene object safely.
-    const carousel = this.host.carousel()
+    const carousel = this.host.carousel
     if (carousel) {
-      carousel.setCamera(this.host.camera().instance)
+      carousel.setCamera(this.host.camera.instance)
       this._unwireCarousel = carousel.onCardClick((idx) => {
         this.onProjectSelect(idx)
       })
@@ -353,7 +351,7 @@ export class ExperienceUI {
     // The carousel exists in the persistent scene, but only participates in
     // project navigation on home.
     if (this.host.page() !== 'home') return null
-    return this.host.carousel()
+    return this.host.carousel
   }
 
   /** Select the adjacent project from the one canonical active index. */

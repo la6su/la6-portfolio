@@ -58,9 +58,19 @@ import { RouterLink } from 'vue-router'
         >
           <ul class="jlz-menu-nav uk-nav uk-nav-default">
             <li v-for="item in NAV_ITEMS" :key="item.num" class="jlz-menu-nav__item">
-              <component
-                :is="item.page ? RouterLink : 'a'"
-                :to="item.page ? { name: item.page } : undefined"
+              <RouterLink
+                v-if="item.page"
+                :to="{ name: item.page }"
+                class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1"
+                data-magnetic
+                data-page-transition
+              >
+                <span class="jlz-menu-nav__num">{{ item.num }}</span>
+                <span class="jlz-menu-nav__label" :data-i18n="item.labelKey">{{ item.label }}</span>
+                <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
+              </RouterLink>
+              <a
+                v-else
                 :href="item.href"
                 class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1"
                 data-magnetic
@@ -69,7 +79,7 @@ import { RouterLink } from 'vue-router'
                 <span class="jlz-menu-nav__num">{{ item.num }}</span>
                 <span class="jlz-menu-nav__label" :data-i18n="item.labelKey">{{ item.label }}</span>
                 <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
-              </component>
+              </a>
             </li>
           </ul>
         </div>

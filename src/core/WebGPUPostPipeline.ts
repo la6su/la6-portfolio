@@ -9,7 +9,6 @@ import {
   tslBloom,
   tslFloat,
   tslPass,
-  tslSmoothstepPerComponent,
   tslVec3,
 } from '../types/tsl-helpers'
 import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
@@ -21,7 +20,6 @@ import {
   vec3,
   mix,
   smoothstep,
-  oneMinus,
   sin,
   cos,
   float,
@@ -63,7 +61,6 @@ export class WebGPUPostPipeline {
   private _bloomThreshold = uniform(0.5)
   private _vignetteStrength = uniform(0)
   private _grainStrength = uniform(0)
-  private _borderStrength = uniform(0)
   private _chromaticStrength = uniform(0)
   private _refractStrength = uniform(0)
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
@@ -97,7 +94,6 @@ export class WebGPUPostPipeline {
     this._bloomThreshold.value = params.bloomThreshold
     this._vignetteStrength.value = params.vignette
     this._grainStrength.value = params.grain
-    this._borderStrength.value = params.border
     this._chromaticStrength.value = params.chromatic
     this._refractStrength.value = params.refract
     this._gradeShadows.value.set(
@@ -149,13 +145,12 @@ export class WebGPUPostPipeline {
     try {
       const sceneColor = scenePass.getTextureNode()
 
-      // ════════════════════════════════════════════════════════════════════
-      // MIRROR WebGL2 COMPOSITE_FSG EXACTLY (same order, same formulas)
-      // ════════════════════════════════════════════════════════════════════
+      // Compose the scene grade in one TSL graph: refraction, color separation,
+      // bloom, grade, grain, and vignette. The CSS bezel is shared by both
+      // renderer backends and does not belong in this graph.
 
       // ── 1. Screen-space refraction ──
-      // WebGL2: uv = vUv + center * strength * 0.04 + wobble (only if uRefract > 0)
-      // WebGPU: same formula, but always computed (when refract=0, offset=0)
+      // The zero-strength uniform naturally reduces this offset to zero.
       const rCenter = uv().sub(0.5)
       const rDist = rCenter.length()
       const rStrength = this._refractStrength.mul(float(0.5).add(rDist.mul(1.5)))
@@ -166,12 +161,9 @@ export class WebGPUPostPipeline {
       const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble).clamp(0.0, 1.0)
 
       // ── 2. Sample scene at refracted UV ──
-      // WebGL2: vec3 scene = texture2D(uScene, uv).xyz;
       const sampled = sceneColor.sample(refractUv)
 
       // ── 3. Chromatic aberration ──
-      // WebGL2: samples uScene at uv+dir and uv-dir (using SAME refracted uv)
-      // WebGPU: must sample sceneColor at refractUv+dir, not uv+dir
       // Guard: normalize(0,0) is undefined → NaN at exact screen center.
       // Use max(length, 0.001) to avoid NaN (zero chromatic at center is fine).
       const cCenter = uv().sub(0.5)
@@ -186,7 +178,6 @@ export class WebGPUPostPipeline {
       const scene = vec3(rChan, tslFloat(sampled, 'y'), bChan)
 
       // ── 4. Bloom composite ──
-      // WebGL2: color = scene + bloom * uBloomIntensity
       const bloomNode = tslBloom(
         scene,
         this._bloomStrength,
@@ -197,9 +188,6 @@ export class WebGPUPostPipeline {
       let color = scene.add(bloomNode)
 
       // ── 5. Color grading ──
-      // WebGL2: lum = dot(color, vec3(0.299,0.587,0.114));
-      //         graded = mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.5,0), smoothstep(0,1,lum));
-      //         color = mix(color, graded, 0.4);
       const lum = dot(color, vec3(0.299, 0.587, 0.114))
       const graded = mix(
         color.mul(this._gradeShadows),
@@ -214,10 +202,8 @@ export class WebGPUPostPipeline {
       // scene→RT). CasePlane sets toneMapped:false for faithful texture colors.
 
       // ── 7. Film grain ──
-      // Portable integer-based hash (NOT sin-based — sin() gives different
-      // precision in GLSL vs WGSL, causing grain mismatch between WebGL2 and WebGPU).
+      // Integer-based hash avoids the precision variation of a sine hash.
       // hash(p) = fract((p3.x + p3.y) * p3.z) where p3 = fract(vec3(p.xyx)*0.1031) + dot(...)
-      // This graph is admitted only on WebGPU; WebGL currently renders directly.
       // Static film texture: route uniforms animate its strength, not wall time.
       // Unrelated demand frames must not restart visible grain or glass wobble.
       const noiseCoord = uv().mul(1024.0)
@@ -245,60 +231,18 @@ export class WebGPUPostPipeline {
       color = color.add(vec3(grain))
 
       // ── 8. Vignette (radial falloff) ──
-      // MIRROR WebGL2 COMPOSITE_FSG vignette EXACTLY (was missing → WebGPU frame
-      // stayed full-brightness while WebGL2 darkened edges; on intro postVignette=1.5
-      // this made the cube+background appear uniformly bright on WebGPU vs edge-
-      // darkened on WebGL2 → perceived "lighter/more transparent" discrepancy).
-      // WebGL2 formula (RenderPipeline.ts COMPOSITE_FSG):
-      //   center = vUv - 0.5; dist = length(center);
-      //   vig = 1.0 - dist * uVignette; vig = smoothstep(0,1,vig); color *= vig;
-      // When vignette=0: vig = smoothstep(0,1, 1-0) = smoothstep(0,1,1) = 1 → no
-      // change (matches WebGL2 `if (uVignette > 0.0)` skip — visually identical).
+      // Radial falloff from the screen center; zero strength leaves the image
+      // unchanged because smoothstep(0, 1, 1) is 1.
       const vCenter = uv().sub(0.5)
       const vDist = vCenter.length()
       const vigRaw = float(1.0).sub(vDist.mul(this._vignetteStrength))
       const vig = smoothstep(0.0, 1.0, vigRaw)
       color = color.mul(vig)
 
-      // ── 9. Screen border ──
-      // MIRROR WebGL2 COMPOSITE_FSG barrel distortion + edge masking exactly
-      // WebGL2: curveUV = vUv * 2 - 1; offset = curveUV.yx * 0.25;
-      //         curveUV += curveUV * offset * offset; curveUV = curveUV * 0.5 + 0.5;
-      //         edge = smoothstep(0, 0.02, curveUV) * (1 - smoothstep(0.98, 1, curveUV));
-      //         color *= (edge.x * edge.y)  if uBorder > 0
-      //
-      // edge is vec2, but edge.x * edge.y = scalar. All RGB channels multiply by same
-      // scalar → uniform blackening at edges (disabled by project presets).
-      // Gate: step(0.0, _borderStrength) → 0 when off, 1 when any border > 0.
-      // mix(1.0, edgeScalar, gate) = edgeScalar when border enabled, 1.0 when off.
-      // TSL note: smoothstep() declarations only carry matching-shape overloads,
-      // while WGSL compiles the scalar low/high form per-component — the widened
-      // call lives behind tslSmoothstepPerComponent() in tsl-helpers.ts.
-      // TSL note: swizzle getters like edge.x are runtime Proxy sugar for
-      // split(node, 'x') — the typed call form lives in tsl-helpers.ts too.
-      const barrelUV = uv().mul(2.0).sub(1.0)
-      const barrelOffset = barrelUV.yx.mul(0.25)
-      const barrelDistorted = barrelUV
-        .add(barrelUV.mul(barrelOffset).mul(barrelOffset))
-        .mul(0.5)
-        .add(0.5)
-      const innerEdge = tslSmoothstepPerComponent(0.0, 0.02, barrelDistorted)
-      const outerEdge = oneMinus(tslSmoothstepPerComponent(0.98, 1.0, barrelDistorted))
-      const edge = innerEdge.mul(outerEdge) // Node<"vec2">
-      const edgeScalar = tslFloat(edge, 'x').mul(tslFloat(edge, 'y')) // Node<"float">
-      // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
-      // Interpolate authored strength continuously; a binary gate caused a
-      // full black edge to pop in at the beginning of a section crossfade.
-      // The persistent CRT bezel is owned by _crt.less on both backends.
-      const borderGate = this._borderStrength.clamp(0.0, 1.0)
-      const borderFactor = mix(float(1.0), edgeScalar, borderGate)
-      color = color.mul(borderFactor)
-
       // ── sRGB encode ──
       // Let TSLRenderPipeline apply sRGB automatically via outputColorTransform=true
-      // (default). This uses three.js's EXACT sRGBTransferOETF function (not pow
-      // approximation), matching WebGL2 which also uses the exact OETF via
-      // renderer.outputColorSpace = SRGBColorSpace.
+      // (default). Three applies its exact sRGB transfer function rather than
+      // a power approximation, especially important in the shadows.
       //
       // We do NOT apply pow(0.4545) manually — that's an approximation that
       // differs from the exact sRGB curve (especially in shadows).

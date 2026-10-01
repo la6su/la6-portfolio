@@ -49,7 +49,6 @@ type PostTransform = Pick<
   | 'grain'
   | 'chromatic'
   | 'refract'
-  | 'border'
   | 'gradeShadows'
   | 'gradeHighlights'
 >
@@ -129,7 +128,6 @@ type RawScene = {
   postGrain?: number
   postChromatic?: number
   postRefract?: number
-  postBorder?: number
   postGradeShadows?: [number, number, number]
   postGradeHighlights?: [number, number, number]
   lightColor?: number
@@ -164,7 +162,6 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   postGrain: 0,
   postChromatic: 0,
   postRefract: 0,
-  postBorder: 0.0,
   postGradeShadows: [1.0, 1.0, 1.0],
   postGradeHighlights: [1.0, 1.0, 1.0],
   lightColor: 0xffffff,
@@ -304,7 +301,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       grain: r.postGrain!,
       chromatic: r.postChromatic!,
       refract: r.postRefract!,
-      border: r.postBorder!,
       gradeShadows: r.postGradeShadows!,
       gradeHighlights: r.postGradeHighlights!,
     },

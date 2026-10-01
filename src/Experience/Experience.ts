@@ -110,7 +110,7 @@ export class Experience {
   private _projectOverlayPreloaded = false
 
   // Owns navigation, menu, overlay, project controls, and UI event wiring.
-  private features!: ExperienceUI
+  private features: ExperienceUI | null = null
   private readonly _host: ExperienceHost
   private _destroyed = false
   private _destroyPromise: Promise<void> | null = null
@@ -231,9 +231,8 @@ export class Experience {
       mountTheater: (theater) => this._host.stages.showreelTheater.mount(theater),
       unmountTheater: (theater) => this._host.stages.showreelTheater.unmount(theater),
     })
-    // The stage registry reads the live route/camera/polarity/motion state at
-    // its own lazy-init time — a stage can be created on any route at any
-    // moment, so every fact crosses as a getter.
+    // Keep route, polarity and motion reads live: lazy stages can be created
+    // long after the initial scene has mounted.
     this._stages = new StageRegistry({
       currentPage: () => this.currentPage(),
       camera: () => this.camera,
@@ -247,24 +246,6 @@ export class Experience {
       syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
     })
 
-    // Scene owners are initialized asynchronously, so UI access crosses a
-    // narrow getter-based port.
-    this.features = new ExperienceUI({
-      page: () => this.currentPage(),
-      coordinator: () => this.coordinator,
-      baku: () => this.baku,
-      particleBurst: () => this.particleBurst,
-      carousel: () => this.carousel,
-      worksPlaneStage: () => this._stages.worksPlaneStage,
-      camera: () => this.camera,
-      sfx: () => this.sfx,
-      raise: (reason) => this._raiseRenderDemand(reason),
-      reducedMotion: () => this._reducedMotion,
-      // The UI requests initialization through the composition root.
-      ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
-      stages: () => this._stages,
-    })
-
     // Install one demand scheduler into the persistent Tres loop. A callback
     // opens the loop window; null closes it. Visibility pauses the loop and
     // resumes it with one invalidation.
@@ -276,7 +257,12 @@ export class Experience {
           else this._host.loop.stop()
         },
       },
-      { onFrame: (deltaMs) => this.update(deltaMs), isSettled: () => this._isLoopSettled() },
+      {
+        onFrame: (deltaMs) => {
+          if (this.coordinator) this.update(deltaMs)
+        },
+        isSettled: () => !this.coordinator || this._isLoopSettled(),
+      },
     )
     // Tres/Cientos invalidate calls (for example CameraControls changes)
     // enter the same demand path as internal activity.
@@ -362,29 +348,6 @@ export class Experience {
 
   private async buildScene(token: number): Promise<void> {
     if (!this.isLifecycleCurrent(token)) return
-    // Route owners are lazy and can change identity, so the coordinator reads
-    // them through getters rather than capturing stale instances.
-    this.coordinator = new SceneCoordinator(
-      this.scene,
-      this.camera.instance,
-      {
-        ground: () => this.ground,
-        sectionGroups: () => this.sectionGroups,
-        envSphere: () => this.envSphere,
-        baku: () => this.baku,
-        particleBurst: () => this.particleBurst,
-        drawTrail: () => this.drawTrail,
-        carousel: () => this.carousel,
-        worksPlaneStage: () => this._stages.worksPlaneStage,
-        contactTypographyStage: () => this._stages.contactTypographyStage,
-        contactCyprusStage: () => this._stages.contactCyprusStage,
-        contactHaloStage: () => this._stages.contactHaloStage,
-        manifestoInkStage: () => this._stages.manifestoInkStage,
-        labGamepad: () => this._stages.labGamepad,
-        servicesStage: () => this.servicesStage,
-      },
-      () => this.currentPage(),
-    )
     // Adopt the six section roots mounted by Vue/Tres before Experience
     // initialization. This controller does not create or attach scene nodes.
     this.sectionGroups = new SectionGroups(
@@ -395,8 +358,6 @@ export class Experience {
     )
     const servicesStage = this._host.servicesStage
     this.servicesStage = servicesStage
-    // The carousel is declared under the Works root. Experience initializes
-    // it and the coordinator drives it through the owner getter.
     this.carousel = this.sectionGroups.works.carousel
     if (this.carousel) {
       await this._host.stages.carousel.mount(this.carousel)
@@ -404,28 +365,32 @@ export class Experience {
     }
     await this._host.stages.particles.mount(this.sectionGroups.works.particles)
     if (!this.isLifecycleCurrent(token)) return
-    if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
-    // The coordinator forwards per-frame color interpolation to the
-    // Vue-owned ambient pavilion.
-    const envSphere = this._host.envSphere
-    this.envSphere = envSphere
-    // Declarative boot-static boundary: the glass cube, the intro light
-    // frames and the cursor trail reach the scene through their host nodes
-    // (BakuCubeOwner / IntroLightFramesOwner / CursorTrailOwner) — Experience
-    // only wraps the behavior controllers around them, so no runtime
-    // `scene.add` remains in the boot path. The coordinator frame path gates
-    // their visibility and forwards their per-frame updates; init() needs the
-    // cube (its syncRouteVisuals sets the visibility).
+    // These owners and the scene roots are stable for the Experience lifetime.
+    // Construct them before the coordinator so its frame path can hold direct
+    // references; only lazily replaced route stages need registry lookups.
+    this.envSphere = this._host.envSphere
     this.baku = new SplashCube(this._host.baku)
     this.particleBurst = new ParticleBurst(this._host.introFrames)
     this.drawTrail = new DrawTrail(this._host.cursorTrail)
-    // These owners are read by the demand-driven frame path. Construct them
-    // before the first async coordinator/prewarm step so an early resize or
-    // invalidation can never enter `update()` with an undefined ground/light
-    // owner. Their section-dependent configuration is applied below once the
-    // coordinator has completed its synchronous setup.
     this.lights = new CinematicLights(this._host.lights)
     this.ground = new GroundPlane(this._host.ground)
+    if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
+    this.coordinator = new SceneCoordinator(
+      this.scene,
+      this.camera.instance,
+      {
+        ground: this.ground,
+        sectionGroups: this.sectionGroups,
+        envSphere: this.envSphere,
+        baku: this.baku,
+        particleBurst: this.particleBurst,
+        drawTrail: this.drawTrail,
+        carousel: this.carousel,
+        stages: this._stages,
+        servicesStage: this.servicesStage,
+      },
+      () => this.currentPage(),
+    )
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
     // The home carousel finishes texture
@@ -538,15 +503,6 @@ export class Experience {
     }
     eventBus.on('jlz:section-change', this._sectionChangeHandler)
 
-    // After splash is dismissed (Enter click), re-trigger NoiseText on the
-    // active section so user sees the eyebrow animation as 3D scene reveals.
-    this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
-      this.features.triggerSplashOpener()
-      const activeSection =
-        (contentRoot().querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
-        (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
-      if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
-    })
     // Showreel theater commands — Vue chrome (ShowreelConsole.vue) emits over the
     // typed bus; the controller owns the lazy GPU-side stage and the render swap.
     this._showreel.bind()
@@ -562,6 +518,29 @@ export class Experience {
     if (!this.isLifecycleCurrent(token)) {
       throw new DOMException('Experience initialization was cancelled.', 'AbortError')
     }
+    const features = new ExperienceUI({
+      page: () => this.currentPage(),
+      coordinator: this.coordinator,
+      baku: this.baku,
+      particleBurst: this.particleBurst,
+      carousel: this.carousel,
+      camera: this.camera,
+      sfx: this.sfx,
+      raise: (reason) => this._raiseRenderDemand(reason),
+      reducedMotion: () => this._reducedMotion,
+      ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
+      stages: this._stages,
+    })
+    this.features = features
+    // Enter is not exposed until the first successful frame, after the UI
+    // owner and its scene dependencies have been initialized.
+    this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
+      features.triggerSplashOpener()
+      const activeSection =
+        (contentRoot().querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
+        (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
+      if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
+    })
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on every section change with
     // the resolved sectionIndex + isLight. Each section has its own dark/light
@@ -617,7 +596,7 @@ export class Experience {
 
     // Initialize navigation, menus, overlays and project controls after the
     // scene and environment are ready.
-    this.features.init()
+    features.init()
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
@@ -689,7 +668,7 @@ export class Experience {
       index: 1,
     })
     // Always prepare project controls — single-page, always needs the Works slider.
-    this.features.ensureProjectControls()
+    this.features?.ensureProjectControls()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -977,7 +956,7 @@ export class Experience {
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is re-targeted by the transform pass on section arrival —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
-      // applyPreset also targets the section grade channels (refraction, border,
+      // applyPreset also targets the section grade channels (refraction,
       // shadow/highlight tints) — Renderer.update() crossfades them into the
       // pipeline, so section transitions no longer snap the grade.
       this.renderer.postManager.applyPreset(cfg.id, cfg.post)
@@ -1009,7 +988,7 @@ export class Experience {
       // sets content without showing, so the overlay stays hidden.
       // Prepare the same authored texture that the first 3D plane uses. The
       // overlay can then decode it before the first plane-to-modal handoff.
-      this.features.onProjectSelect(0, true)
+      this.features?.onProjectSelect(0, true)
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
@@ -1114,7 +1093,8 @@ export class Experience {
     this._themeAppliedUnsub = null
     this._splashEnteredUnsub?.()
     this._splashEnteredUnsub = null
-    this.features.destroy()
+    this.features?.destroy()
+    this.features = null
 
     // Publish the completion promise before owner disposal can trigger any
     // synchronous callbacks that re-enter destroy().

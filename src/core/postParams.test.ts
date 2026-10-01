@@ -11,7 +11,6 @@ function params(): PostParams {
     bloomRadius: 0.5,
     bloomThreshold: 0.45,
     refract: 0.1,
-    border: 0,
     gradeShadows: [0.9, 1, 1.1],
     gradeHighlights: [1.1, 1, 0.9],
   }

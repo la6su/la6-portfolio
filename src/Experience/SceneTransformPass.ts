@@ -110,7 +110,7 @@ export class SceneTransformPass {
     this._transformCacheRevision = this._transformRevision
     this._transformCachePage = page
     this._transformCacheScroll = scrollValue
-    const carouselOwner = this._ctx.owners.carousel()
+    const carouselOwner = this._ctx.owners.carousel
 
     // ── Find from/to indices from range config
     // Use the cached ranges (built once in init) instead of map() every frame
@@ -193,7 +193,7 @@ export class SceneTransformPass {
     // remains outside the large media stream, where it would cut across the
     // case artwork instead of supporting it. Route replacement can retain the
     // same section index, so this must run outside the arrival-only branch.
-    const trail = this._ctx.owners.drawTrail()
+    const trail = this._ctx.owners.drawTrail
     if (trail) {
       const isStandaloneWorks = page === 'works'
       trail.object.visible =
@@ -210,7 +210,7 @@ export class SceneTransformPass {
     // then apply the transition fade
     // multiplicatively. Keep factory opacity values as the base and apply the
     // transition fade multiplicatively.
-    const groups = this._ctx.owners.sectionGroups()?.groups ?? []
+    const groups = this._ctx.owners.sectionGroups.groups
     for (let i = 0; i < groups.length; i++) {
       const g = groups[i]!
       const isFrom = i === fromIndex
@@ -270,7 +270,7 @@ export class SceneTransformPass {
         const sceneObjects = cfg?.scene?.objects
         if (sceneObjects && i === CONTACT_SLOT_INDEX) {
           const visible = sceneObjects.wireframeText !== false && fade > 0.01
-          this._ctx.owners.contactTypographyStage()?.setActive(visible && fade > 0.5)
+          this._ctx.owners.stages.contactTypographyStage?.setActive(visible && fade > 0.5)
         }
       } else {
         g.visible = false
@@ -305,7 +305,7 @@ export class SceneTransformPass {
     // The GroundPlane owner owns the theme-override/lerp state (syncTheme flips
     // it to a contrasting tone per theme); the pass forwards its eased
     // `t` (the lerp needs the per-section eased t from here).
-    this._ctx.owners.ground()?.applyTransform(fromCfg.ground, toCfg.ground, t)
+    this._ctx.owners.ground.applyTransform(fromCfg.ground, toCfg.ground, t)
 
     // Scroll-driven parallax: subtle camera depth drift within a section.
     // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
@@ -394,7 +394,6 @@ export class SceneTransformPass {
         grain: 0.03,
         chromatic: 0,
         refract: 0,
-        border: 0.0,
         gradeShadows: [1, 1, 1],
         gradeHighlights: [1, 1, 1],
       },

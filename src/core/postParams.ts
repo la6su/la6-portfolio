@@ -1,6 +1,6 @@
 // src/core/postParams.ts — the one canonical post-processing parameter shape.
 //
-// Every post layer shares these ten runtime values: PostProcessingManager
+// Every post layer shares this runtime shape: PostProcessingManager
 // crossfades them per section, RenderPipeline diffs them against its snapshot,
 // WebGPUPostPipeline writes them into the TSL uniform nodes. Declaring the
 // shape once makes adding a channel a one-file change. RenderPipeline keeps a
@@ -24,8 +24,6 @@ export interface PostParams {
   bloomThreshold: number
   /** 0–1, screen-space glass refraction strength (0=off, 0.1=subtle, 0.3=strong). */
   refract: number
-  /** 0–1, screen border intensity (0=off, 0.3=subtle, 1.0=full black border). */
-  border: number
   /** Shadow tint multipliers, crossfaded per section. */
   gradeShadows: PostGradeTuple
   /** Highlight tint multipliers, crossfaded per section. */
@@ -48,7 +46,6 @@ export function copyPostParams(target: PostParams, from: Readonly<PostParams>): 
   target.bloomRadius = from.bloomRadius
   target.bloomThreshold = from.bloomThreshold
   target.refract = from.refract
-  target.border = from.border
   target.gradeShadows[0] = from.gradeShadows[0]
   target.gradeShadows[1] = from.gradeShadows[1]
   target.gradeShadows[2] = from.gradeShadows[2]
@@ -75,7 +72,6 @@ export function postParamsMatch(
     channelMatches(a.bloomRadius, b.bloomRadius, epsilon) &&
     channelMatches(a.bloomThreshold, b.bloomThreshold, epsilon) &&
     channelMatches(a.refract, b.refract, epsilon) &&
-    channelMatches(a.border, b.border, epsilon) &&
     channelMatches(a.gradeShadows[0], b.gradeShadows[0], epsilon) &&
     channelMatches(a.gradeShadows[1], b.gradeShadows[1], epsilon) &&
     channelMatches(a.gradeShadows[2], b.gradeShadows[2], epsilon) &&

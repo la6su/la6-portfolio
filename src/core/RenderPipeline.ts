@@ -34,7 +34,6 @@ export class RenderPipeline {
       bloomRadius: 0.6,
       bloomThreshold: 0.5,
       refract: 0,
-      border: 0,
       gradeShadows: [1, 1, 1],
       gradeHighlights: [1, 1, 1],
     }
@@ -58,9 +57,7 @@ export class RenderPipeline {
 
   // ─── Public API ────────────────────────────────────────────────
 
-  /** Update post-processing parameters (cross-faded by PostProcessingManager).
-   *  The grade channels ride the same crossfade as the intensity channels, so
-   *  section transitions no longer snap refraction, border and color tints. */
+  /** Update post-processing parameters cross-faded by PostProcessingManager. */
   public updateParams(params: Readonly<PostParams>): void {
     if (postParamsMatch(this._params, params)) return
     // Copy through the canonical in-place helper — the diff above decides
