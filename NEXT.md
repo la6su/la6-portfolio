@@ -100,8 +100,9 @@ preserve custom policy only when code or measurements prove the difference.
 - Contact Cyprus activation was stored in `Experience` but only read, changed,
   and reset by `StageRegistry`. Moved that route-local target state into the
   registry and removed the two forwarding callbacks from runtime composition;
-  the Contact theme cache stays in `Experience` because its source is the
-  global theme event.
+  lazy Contact stages read effective polarity from `ContentReveal`, the
+  existing owner that resolves and publishes the theme, instead of a second
+  `Experience` cache.
 - SceneHost's SwiftShader-to-WebGL fallback awaited renderer initialization
   without cancelling on host unmount, and explicit teardown could dispose that
   candidate while `init()` was still pending. The host now aborts the helper

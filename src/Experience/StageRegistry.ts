@@ -32,7 +32,7 @@ interface StageRegistryContext {
   currentPage: () => PageId
   camera: Camera
   host: SceneStagePorts
-  /** The effective text polarity (theme-listener cache on Experience). */
+  /** The effective text polarity resolved by ContentReveal. */
   isContactLight: () => boolean
   reducedMotion: () => boolean
   /** Route-visual reconciliation after a late Cyprus activation. */

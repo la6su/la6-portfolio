@@ -96,9 +96,6 @@ export class Experience {
   // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
   // its typed bus commands, the reduced-motion forwarding and the render swap.
   private _showreel!: ShowreelController
-  // Cached route/theme state applied when lazy Contact stages are created.
-  private _contactIsLight = false
-
   // Owns navigation, menu, overlay, project controls, and UI event wiring.
   private features: ExperienceUI | null = null
   private readonly _host: ExperienceHost
@@ -222,7 +219,7 @@ export class Experience {
       currentPage: this._host.page,
       camera: this._host.camera,
       host: this._host.stages,
-      isContactLight: () => this._contactIsLight,
+      isContactLight: () => this.contentReveal?.isLight ?? false,
       reducedMotion: () => this._reducedMotion,
       syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
     })
@@ -522,12 +519,9 @@ export class Experience {
         }
       }
       if (this.coordinator) {
-        // Experience caches the effective polarity so lazy creation cannot
-        // default to white text against a light route background. The live
-        // stages' theme fan-out is the coordinator's syncTypographyTheme —
+        // The live stages' theme fan-out is the coordinator's syncTypographyTheme —
         // one owner per change (was: a second Experience fan-out that
         // re-applied the same theme to typography + halo twice per event).
-        this._contactIsLight = detail.isLight
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this._syncPolaritySurfaces(detail.isLight)
