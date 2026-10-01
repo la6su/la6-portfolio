@@ -44,6 +44,13 @@ preserve custom policy only when code or measurements prove the difference.
   and owner SFCs declare stable roots and leaves; controllers adopt those nodes
   and own algorithms/resources. Continue the audit for remaining parallel
   construction and duplicated disposal.
+- Current constructor audit: scene section roots, Works installation meshes,
+  and case planes are Vue/Tres-declared. Cyprus's `primitive` is the loaded
+  glTF hierarchy; showreel's private `Scene`/`OrthographicCamera` serve its
+  offscreen render algorithm. `EnvSphereOwner` directly declares each rounded
+  surface so its per-mesh geometry cleanup stays separate from its shared
+  materials; Cientos `RoundedBox` wraps a mesh and fallback material without
+  simplifying that ownership contract.
 - `SceneCoordinator` and `SceneFramePass` remain separate: one coordinates
   story/route/transforms and policy, the other owns the per-frame owner
   fan-out. `SceneTransformPass` contains the scroll-to-world mapping algorithm.
