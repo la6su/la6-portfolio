@@ -601,8 +601,9 @@ unowned persistent GPU resource remains.
 - **Active phase**: 0–4; phase 5 queued. Runtime ownership mapping
   and the first async release race fix are recorded above; no new module
   boundary was justified by the audit.
-- **Next action**: complete repeat-shutdown coverage across Experience, route
-  stages, and host; continue the source audit for duplicated lifecycle owners,
+- **Next action**: extend repeated-shutdown coverage to route-stage requests
+  during pending async creation, then continue the source audit for duplicated
+  lifecycle owners,
   unreachable code, and abstractions already provided by Vue/Tres/Three. Then
   continue keyboard routes beyond the menu/modal, orientation/resize and
   touch-target states. Verify
@@ -707,3 +708,11 @@ session-log document should be created.
   owners. `bun run type-check:vue`, `bun run lint`, and `git diff --check`
   passed. This is documentation-only cleanup; the broader ownership audit
   remains open.
+
+- Repeated-shutdown browser coverage: the real SceneHost teardown test now calls
+  `Experience.destroy()` twice while host unmount is still pending, then checks
+  each declarative owner and the final SceneHost renderer are released exactly
+  once. The renderer backend trace legitimately includes disposal of an initial
+  candidate replaced during bootstrap, so the assertion targets the final host
+  owner and scene resources. `JLZ_CHROMIUM_PATH=/usr/bin/chromium bun run
+  test:host-teardown` passed; `bun run lint` and `git diff --check` passed.

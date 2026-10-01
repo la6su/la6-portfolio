@@ -21,6 +21,13 @@ test("SceneHost releases declared owners before disposing its renderer", async (
     () => typeof window.__jlzTestUnmountVueApp === "function",
   );
 
+  // Runtime teardown may be requested by both an application owner and the
+  // Vue host during shutdown. It must stay idempotent while stage detach is
+  // still pending.
+  await page.evaluate(() => {
+    window.__jlzRuntimeDestroy?.();
+    window.__jlzRuntimeDestroy?.();
+  });
   await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
 
   const anchorWasIntercepted = await page.evaluate(() => {
@@ -50,6 +57,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
   const rendererDispose = trace.indexOf("scene-host:renderer-disposed");
   expect(backendDispose).toBeGreaterThanOrEqual(0);
   expect(rendererDispose).toBeGreaterThanOrEqual(0);
+  expect(trace.filter((event) => event === "scene-host:renderer-disposed")).toHaveLength(1);
   for (const ownerRelease of [
     "scene-owner:env-sphere-disposed",
     "scene-owner:env-sky-disposed",
@@ -65,6 +73,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
       releaseIndex,
       `${ownerRelease} should precede backend disposal`,
     ).toBeLessThan(backendDispose);
+    expect(trace.filter((event) => event === ownerRelease)).toHaveLength(1);
   }
   expect(backendDispose).toBeLessThan(rendererDispose);
   expect(pageErrors).toEqual([]);
