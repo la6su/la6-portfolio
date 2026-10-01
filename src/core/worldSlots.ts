@@ -100,6 +100,8 @@ const SLOT_BY_ID = new Map<WorldSlotId, WorldSlotDef>(WORLD_SLOTS.map((slot) => 
  *  route). Exported once here — Experience and ExperienceUI used to declare
  *  identical module-local copies. */
 export const WORKS_SLOT_INDEX = SLOT_BY_ID.get('works')!.index
+export const INTRO_SLOT_INDEX = SLOT_BY_ID.get('intro')!.index
+export const CONTACT_SLOT_INDEX = SLOT_BY_ID.get('contact')!.index
 
 /** Lookup by stable index; out-of-range indices are clamped to the ends. */
 export function worldSlotAt(index: number): WorldSlotDef {

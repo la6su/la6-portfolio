@@ -10,7 +10,13 @@ const createWorksSection = vi.hoisted(() => vi.fn(() => worksOwners))
 vi.mock('./WorksSection', () => ({ createWorksSection }))
 
 import { SectionGroups } from './SectionGroups'
-import { WORLD_SLOT_COUNT, WORKS_SLOT_INDEX } from '../../core/worldSlots'
+import {
+  CONTACT_SLOT_INDEX,
+  INTRO_SLOT_INDEX,
+  WORKS_SLOT_INDEX,
+  WORLD_SLOT_COUNT,
+  worldSlotAt,
+} from '../../core/worldSlots'
 
 describe('Vue-owned section roots', () => {
   beforeEach(() => {
@@ -31,7 +37,9 @@ describe('Vue-owned section roots', () => {
     const owner = new SectionGroups(scene, () => 'home', () => 'center', roots)
 
     expect(owner.groups).toEqual(roots)
+    expect(worldSlotAt(INTRO_SLOT_INDEX).id).toBe('intro')
     expect(owner.groups[WORKS_SLOT_INDEX]).toBe(roots[WORKS_SLOT_INDEX])
+    expect(worldSlotAt(CONTACT_SLOT_INDEX).id).toBe('contact')
     expect(owner.works).toBe(worksOwners)
     expect(createWorksSection).toHaveBeenCalledWith(expect.any(Function), expect.any(Function))
     expect(scene.children).toEqual(roots)

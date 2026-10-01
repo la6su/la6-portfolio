@@ -115,7 +115,7 @@ export class SceneFramePass {
     if (!this._ctx.isReducedMotion()) {
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = page === 'works'
-      const isWorksStoryFrame = this._ctx.currentSectionIndex() === 3
+      const isWorksStoryFrame = this._ctx.currentSectionIndex() === WORKS_SLOT_INDEX
       const trail = this._ctx.owners.drawTrail()
       if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
         trail.update(deltaTime, this._camera)

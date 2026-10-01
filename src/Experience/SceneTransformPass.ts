@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig, type SceneTransitionEasing } from '../core/WorldConfig'
+import { CONTACT_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import { easeOutCubic } from '../Utils/easing'
 import type { SceneCoordinatorOwners } from './sceneOwners'
@@ -195,7 +196,8 @@ export class SceneTransformPass {
     const trail = this._ctx.owners.drawTrail()
     if (trail) {
       const isStandaloneWorks = page === 'works'
-      trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carouselOwner?.isActive)
+      trail.object.visible =
+        isStandaloneWorks || (activeIndex === WORKS_SLOT_INDEX && !carouselOwner?.isActive)
     }
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
@@ -221,7 +223,7 @@ export class SceneTransformPass {
       const shouldShow = isFrom || isTo
       // The carousel is only on the Works group (index 3) — read it from the
       // Experience-owned reference.
-      const carousel = i === 3 ? carouselOwner : undefined
+      const carousel = i === WORKS_SLOT_INDEX ? carouselOwner : undefined
       const cfg = configs[i]
       const showCarousel = page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
@@ -266,7 +268,7 @@ export class SceneTransformPass {
         // Toggle section-specific 3D content based on config.
         // objects undefined = defaults (visible if present in scene group).
         const sceneObjects = cfg?.scene?.objects
-        if (sceneObjects && i === 4) {
+        if (sceneObjects && i === CONTACT_SLOT_INDEX) {
           const visible = sceneObjects.wireframeText !== false && fade > 0.01
           this._ctx.owners.contactTypographyStage()?.setActive(visible && fade > 0.5)
         }

@@ -9,7 +9,7 @@ import { devDiagnostic } from '../core/devDiagnostic'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig } from '../core/WorldConfig'
-import { WORKS_SLOT_INDEX } from '../core/worldSlots'
+import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
@@ -89,18 +89,18 @@ export class SceneCoordinator {
     this._story.buildSections()
 
     // ── Apply first section's fog + env sphere colors immediately
-    const firstCfg = configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
+    const firstCfg = configs[INTRO_SLOT_INDEX]
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
     }
 
-    // ── Enforce final visibility: only group 1 (intro) visible, all others hidden.
+    // ── Enforce final visibility: only the Intro group is visible.
     // This guard runs after ALL group creation to prevent any upstream call
     // (e.g. a premature updateTransform with t=0 showing from+to) from
     // leaking visibility before init() returns.
     this.sceneGroups.forEach((g, i) => {
-      g.visible = i === 1 // Intro = index 1
+      g.visible = i === INTRO_SLOT_INDEX
     })
 
     devDiagnostic(
@@ -125,7 +125,7 @@ export class SceneCoordinator {
   ): Promise<void> {
     if (this.page() !== 'home') return
 
-    const group = this.sceneGroups[3]
+    const group = this.sceneGroups[WORKS_SLOT_INDEX]
     if (!group) return
     const burst = this.owners.particleBurst()
     const wasVisible = group.visible
