@@ -241,7 +241,7 @@ The current lifecycle pass added generation checks immediately after the
 carousel and particle Vue mount awaits in `buildScene()`, and after the
 development-only DevPanel import. A stale initialization now stops before it
 constructs later scene controllers or republishes the runtime diagnostic
-global. Existing 80 unit tests, Vue type-check, ESLint, build and budgets pass;
+global. Existing 81 unit tests, Vue type-check, ESLint, build and budgets pass;
 dedicated deterministic coverage for teardown during these exact awaits is
 still outstanding.
 
@@ -369,82 +369,44 @@ no known dead active path or unowned persistent resource remains.
 
 ## Current checkpoint — 2026-10-01
 
-The application shell and stable scene hierarchy are Vue/Tres-owned. Behavior
-controllers remain for Three algorithms, browser/media policy, route-guard
-timing, and lifecycle work that the framework does not supply. Recent audits
-removed duplicate renderer-query parsing, a redundant UIkit global assignment,
-the unused project icon registration, the standalone overlay adapter,
-project-controls readiness RAF/promise state, the Input class's redundant
-singleton guard/import side effect, the duplicate Works pointer wake
-listener/RAF, and the Works room-count literals. These changes are committed.
-The `?no-scene` flag now has one Vue-free source used by bootstrap, SceneHost,
-and both Vue shell controls. `dist/` remains tracked pending deploy-contract
-evidence. The local quality workflow was inspected and confirmed not to deploy;
-the output consumer remains unknown. After discovering the tracked output was
-stale since the initial commit, the successful production build was retained
-to synchronize release HTML, assets, and headers with source.
-The bootstrap's one-use `createStyleOwner` and `createReadyEventTimer` wrappers
-were removed: their single style node and cancelable readiness timeout now
-have direct module-local owners. This removes test-only exports and keeps the
-same teardown/reschedule behavior without generic wrapper objects.
-`DeviceCapability.detectTier()` no longer repeats the low-end desktop check
-inside its WebGPU branch after the same predicate already returned at the
-desktop policy boundary; the WebGPU tier result is unchanged.
+Vue/Tres owns the application shell and stable scene graph. Project controllers
+retain story-to-world behavior, GPU algorithms, browser policies and lifecycle
+work that Tres does not supply. Recent committed cleanups removed duplicate
+runtime state, renderer sizing, pointer wake logic, and stale bootstrap/UI
+wrappers. The generated site origin now has one normalized source shared by
+blog, builder and sitemap output. Route hash dispatch uses the RAF owner's
+cancellation instead of a second stale token. Experience checks its lifecycle
+generation after Vue mount awaits and after the dev-only DevPanel import.
 
-**Verified locally:** Vue type-check, ESLint, all 80 unit tests, stdlib checks,
-production build/budgets on Vite 8.3.2, and the full production Chromium suite
-(17 passed, 3 opt-in renderer scenarios skipped). That includes repeated lazy-stage mount/release,
-route metadata, DOM-only navigation and icons, renderer-failure continuation,
-showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
-production route, hash, and fallback suites passed in the prior matrix run.
-The refreshed tracked release output, including the deduplicated brand asset,
-also passed the production Chromium suite (17 passed, 3 opt-in renderer
-scenarios skipped). Build budgets measured 3.03 kB gzip startup, 310.95 kB
-shared Three, and 53.84 kB UIkit.
-After the readiness gate change, the 80-unit suite and same production
-Chromium suite passed again; the build regenerated the tracked release output.
-The bootstrap ownership simplification passes the production TypeScript/build
-and ESLint checks; it retained the current startup, shared Three, and UIkit
-gzip budgets. Browser behavior for this exact simplification has not been
-rerun yet.
-The dedicated Chromium host-teardown test also passes after adding coverage for
-the create-to-mount microtask race: host teardown now waits for a stale stage's
-declared-node release without waiting on unrelated in-flight imports.
-After that change, the isolated Firefox production project also passed (16
-passed, 4 opt-in renderer scenarios skipped). The full browser matrix remains
-host-limited: Playwright's managed Chromium executable is absent and the local
-WebKit binary lacks `libicu74`, `libxml2`, and `libflite1`; Firefox itself is
-available and passed all non-opt-in route/lifecycle cases.
-These browser runs use software rendering. They do not prove physical-GPU
-WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
-this host because its browser dependencies are missing.
-After delegating viewport ownership to Tres, the production Chromium suite
-passed (17 passed, 3 opt-in renderer scenarios skipped) and the Firefox
-project passed (16 passed, 4 opt-in renderer scenarios skipped). TypeScript,
-build budgets, and ESLint also passed. WebKit remains blocked by the recorded
-missing host libraries; physical-GPU behavior remains outside this software
-browser evidence.
-The route hash cleanup removed one stale-generation counter while keeping the
-owned RAF cancellation. 80 unit tests, Vue type-check, ESLint, production
-build/budgets and the focused Firefox production hash test passed. Focused
-Chromium execution was attempted but the installed Playwright Chromium binary
-is absent on this host. The current policy cleanup also passes all 80 unit
-tests, Vue/TypeScript build, ESLint, and release budgets; removing the
-unreachable predicate does not change tier selection. A broad audit pass has
-mapped runtime, app, builder,
-admin, build, styling and public-media ownership. It identified the
-unauthenticated dev builder API exposure question, duplicate route-hash
-stale-token state, misleading fixed progress percentages, and verification
-work in CSS/media and deployment. These findings are now in the audit table;
-they are not yet closed.
+The repo is `la6-portfolio`; `dist/` remains tracked because the deployment
+consumer is unknown. `quality.yml` runs checks and browser tests but does not
+deploy. Do not change release artifact policy until the actual host contract is
+identified.
+
+**Verified locally:** 81 unit tests, Vue type-check, ESLint, stdlib check,
+production build and budgets pass. Current limits remain 3.03 kB startup gzip,
+310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
+confirmed the generated blog, both builder locales and sitemap use the staging
+origin; the normal build restored production outputs. Firefox production
+checks passed for direct/lazy route hashes and host teardown. Previous full
+Chromium production coverage passed (17 passed, 3 opt-in renderer cases
+skipped); a rerun cannot start because the Playwright Chromium binary is
+missing. WebKit lacks `libicu74`, `libxml2` and `libflite1` on this host.
+Browser runs use software rendering and do not establish physical-GPU WebGPU,
+device-loss recovery or performance.
+
+The route-hash cancellation change and Experience stale-init guards pass build,
+type, lint and unit gates. The exact Experience await races still need a
+deterministic regression test. The broad audit mapped runtime, app, builder,
+admin, build, styling and public media; the risks and remaining source audits
+are recorded in the matrix above.
 
 **Next actions:**
 
 1. Establish the dev builder API's actual network exposure and enforce an
    authorized boundary before treating the admin as production-safe.
-2. Finish phase 2's `Experience.ts` teardown trace and remove route hash
-   dispatch's duplicated stale generation only after direct/lazy/superseded
-   navigation coverage is confirmed.
+2. Finish phase 2's `Experience.ts` teardown trace; add deterministic coverage
+   for the stale-init awaits and superseding/router-error hash cancellation.
 3. Finish phase 5's generated-output and LESS selector audit; inspect the
    5.27 MB video before setting a measurable media budget.
 4. Continue phase 4's EN/RU keyboard, contrast, touch, resize and renderer
