@@ -66,7 +66,6 @@ export class Renderer {
 
   // Device-loss recovery is bounded by the backend policy.
   private _deviceLostAttempts = 0;
-  private _recovering = false;
   private _recoveryFailed = false;
   private _disposed = false;
   private _lifecycleGeneration = 0;
@@ -86,7 +85,7 @@ export class Renderer {
   constructor(viewport: Viewport) {
     this.viewport = viewport;
     if (this.capabilities.mode === "unsupported") {
-      if (!this._disposed) this.showUnsupportedMessage();
+      this.showUnsupportedMessage();
       throw new Error(
         "Neither WebGPU nor WebGL2 is supported by this browser.",
       );
@@ -168,7 +167,7 @@ export class Renderer {
       const action = deviceLostAction(
         this._deviceLostAttempts,
         MAX_DEVICE_LOST_RECOVERIES,
-        this._recovering,
+        this._recoveryAbortController !== null,
       );
       if (action === "ignore") {
         orig(info);
@@ -211,8 +210,7 @@ export class Renderer {
    * deviceLostAction); the Tres-owned loop needs no re-attachment.
    */
   private async recoverFromDeviceLost(info?: { api?: string }): Promise<void> {
-    if (this._disposed || this._recovering) return;
-    this._recovering = true;
+    if (this._disposed || this._recoveryAbortController) return;
     const generation = this._lifecycleGeneration;
     const abortController = new AbortController();
     this._recoveryAbortController = abortController;
@@ -340,7 +338,6 @@ export class Renderer {
       if (this._recoveryAbortController === abortController) {
         this._recoveryAbortController = null;
       }
-      this._recovering = false;
     }
   }
 
@@ -348,7 +345,7 @@ export class Renderer {
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number): void {
     // During a device-loss recovery the pipeline is torn down and rebuilt;
     // skip the frame so we never render through a disposed renderer.
-    if (this._recovering || this._recoveryFailed || this._disposed) return;
+    if (this._recoveryAbortController || this._recoveryFailed || this._disposed) return;
     // ── Fog ──
     // Fog is managed by SceneCoordinator (per-section fog color + density
     // from WorldConfig). SceneCoordinator creates scene.fog on init and
@@ -396,7 +393,6 @@ export class Renderer {
     this._disposed = true;
     this._lifecycleGeneration += 1;
     this._recoveryAbortController?.abort();
-    this._recoveryAbortController = null;
     this._onInstanceReplaced = null;
     this.pipeline?.dispose();
     // Respect SceneHost's deferred disposal boundary during normal runtime
