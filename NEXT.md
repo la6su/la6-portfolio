@@ -210,6 +210,14 @@ remaining imperative overlay audit. Make the next code change only after
 identifying a concrete duplicated owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.
 
+The first scene-construction search found no runtime `scene.add/remove` or
+manual `THREE.Group/Mesh` hierarchy construction under `src/Experience`.
+`WorksInstallation.vue` uses one `Object3D` only as an instancing matrix
+scratch object; `ShowreelTheater` owns a separate offscreen scene by design.
+Those are not parallel owners. The remaining concrete declarative candidate
+from this pass is the hand-built DOM structure in `FullscreenOverlay` and the
+opened-state chrome in `ShowreelConsole`.
+
 ## Follow-on goal policy
 
 Only after this plan's full release acceptance is evidenced, perform a fresh
