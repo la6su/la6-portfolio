@@ -110,7 +110,7 @@ export async function initUnifiedWebGPUInstance(
     return false;
   }
   try {
-    await (renderer as unknown as { init?: () => Promise<unknown> }).init?.();
+    await renderer.init();
   } catch (initializationError) {
     // Recovery creates the renderer inside this async boundary, so the caller
     // cannot own it until this function resolves. Release it here on failure;
