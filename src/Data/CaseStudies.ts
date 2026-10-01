@@ -25,7 +25,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
     ],
     media: [
       {
-        src: '/assets/projects/ebb-vibes/detail.webp',
         alt: 'Temporary abstract project material for Porsche 911 Spider',
         width: 1600,
         height: 900,
@@ -56,7 +55,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
     ],
     media: [
       {
-        src: '/assets/projects/mono-sunday/detail.webp',
         alt: 'Temporary abstract project material for Alise',
         width: 1600,
         height: 900,
@@ -90,7 +88,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
     ],
     media: [
       {
-        src: '/assets/projects/till-at-night/detail.webp',
         alt: 'Temporary abstract project material for 19 Lab',
         width: 1600,
         height: 900,
@@ -123,7 +120,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
     ],
     media: [
       {
-        src: '/assets/projects/nocturne-blue/detail.jpg',
         alt: 'Temporary abstract project material for Pro193',
         width: 1600,
         height: 900,

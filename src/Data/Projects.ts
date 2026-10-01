@@ -18,8 +18,6 @@ export const PROJECTS: Project[] = [
     year: '2025',
     category: 'Motion & CG',
     tags: ['CG', 'Motion direction', 'Art direction'],
-    viewPosition: { x: -4, y: 0.5, z: 5 },
-    viewLookAt: { x: -4, y: 0, z: 0 },
   },
   {
     id: 'alise',
@@ -31,8 +29,6 @@ export const PROJECTS: Project[] = [
     year: '2025',
     category: 'Motion & CG',
     tags: ['CG', 'Look development', 'Motion direction'],
-    viewPosition: { x: 0, y: 0.5, z: 5 },
-    viewLookAt: { x: 0, y: 0, z: 0 },
   },
   {
     id: '19-lab',
@@ -44,8 +40,6 @@ export const PROJECTS: Project[] = [
     year: '2025',
     category: 'Product website',
     tags: ['E-commerce', 'Art direction', 'Web design'],
-    viewPosition: { x: 4, y: 0.5, z: 5 },
-    viewLookAt: { x: 4, y: 0, z: 0 },
   },
   {
     id: 'pro193',
@@ -57,7 +51,5 @@ export const PROJECTS: Project[] = [
     year: '2025',
     category: 'E-commerce',
     tags: ['E-commerce', 'UX', 'Web design'],
-    viewPosition: { x: 8, y: 0.5, z: 5 },
-    viewLookAt: { x: 8, y: 0, z: 0 },
   },
 ]

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { CASE_STUDIES, CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
+import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { PROJECTS } from '../../Data/Projects'
 import { setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
@@ -81,7 +81,6 @@ const labels = computed(() =>
         status: 'Project material is being prepared for publication.',
       },
 )
-const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
 const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.value })
 
 // Set intent before useJlzPage publishes route readiness. Reused detail routes
@@ -170,7 +169,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
                 </ul>
                 <figure v-if="study.media[0]" class="jlz-case-media uk-margin-top">
                   <img
-                    :src="study.media[0].src"
+                    :src="project.detailTextureUrl"
                     :alt="study.media[0].alt"
                     :width="study.media[0].width"
                     :height="study.media[0].height"
