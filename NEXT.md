@@ -229,14 +229,14 @@ scheduler frame.
 **Next audit:** finish the method-by-method `Experience.ts` trace through
 `ExperienceUI`, `StageRegistry`/`LazyStage`, renderer replacement and app
 unmount. Audit async cancellation, event listener registration, diagnostic
-globals, stage release ordering and boot failure exits. Then simplify only the
-duplicate hash invalidation state and other state proven redundant by that
-trace. Confirm listeners, timers, observer, RAF, media, controls, pending
-imports and renderer candidates reach terminal cleanup on route leave, boot
-failure, recovery and Vue unmount.
+globals, stage release ordering and boot failure exits. The route hash's
+duplicate invalidation state is already removed; simplify other state only
+when the trace proves it redundant. Confirm listeners, timers, observer, RAF,
+media, controls, pending imports and renderer candidates reach terminal cleanup
+on route leave, boot failure, recovery and Vue unmount.
 The first-frame false-success and pending-cancel paths are fixed and covered by
-unit tests; production Chromium also confirms the successful boot and existing
-renderer-failure UI path.
+unit tests; Chromium and Firefox production suites confirm successful boot,
+renderer-failure UI, and host teardown resource ordering.
 The current lifecycle pass added generation checks immediately after the
 carousel and particle Vue mount awaits in `buildScene()`, and after the
 development-only DevPanel import. A stale initialization now stops before it
@@ -321,7 +321,7 @@ assets removed after source/content searches. Frame-owner failures are no
 longer swallowed by the render scheduler. Historical comments about removed
 handlers, no-op methods, and effects were removed from active runtime files;
 they no longer describe current ownership or APIs. Current source slices
-passed Chromium and Firefox production suites, Vue type-check, lint, and 80
+passed Chromium and Firefox production suites, Vue type-check, lint, and 81
 unit tests.
 
 **Next audit:** finish the source-to-output inventory for generated CSS,
@@ -385,11 +385,12 @@ identified.
 production build and budgets pass. Current limits remain 3.03 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog, both builder locales and sitemap use the staging
-origin; the normal build restored production outputs. Firefox production
-production suite passed (16 passed, 4 opt-in renderer cases skipped), including
-the latest loader status assertion. Full production Chromium passed (17
+origin; the normal build restored production outputs. The Firefox production
+suite passed (16 passed, 4 opt-in renderer cases skipped), including the latest
+loader status assertion. Full production Chromium passed (17
 passed, 3 opt-in renderer cases skipped) using `/usr/bin/chromium` through
-`JLZ_CHROMIUM_PATH`. The cached WebKit MiniBrowser cannot launch because its
+`JLZ_CHROMIUM_PATH`. SceneHost teardown order passed in dev-mode Chromium and
+Firefox. The cached WebKit MiniBrowser cannot launch because its
 ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
 `nvidia-smi` cannot reach a GPU driver here. Browser runs use software
 rendering and do not establish physical-GPU WebGPU, recovery or performance.
