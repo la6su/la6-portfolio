@@ -26,14 +26,14 @@ export type FrameReason =
 
 /** The single edge to the renderer's animation loop. */
 export interface LoopDriver {
-  /** Install the frame callback, or `null` to stop the loop. */
-  setLoop(callback: ((time: number) => void) | null): void
+  /** Install the frame callback (delta in ms), or `null` to stop the loop. */
+  setLoop(callback: ((deltaMs: number) => void) | null): void
 }
 
 /** The frame work and settle state, owned by the scene runtime. */
 export interface SchedulerHost {
   /** Run one frame of work. Called only while the loop is active and visible. */
-  onFrame(time: number): void
+  onFrame(deltaMs: number): void
   /**
    * Called after each frame: has everything settled (no active scene work,
    * no pending demand)? `true` stops the loop after the frame.
@@ -73,18 +73,18 @@ export class RenderScheduler {
   private _settledFrames = 0
   private _lastInvalidation: FrameReason | null = null
 
-  private readonly _frameCallback: (time: number) => void
+  private readonly _frameCallback: (deltaMs: number) => void
   private _onVisibilityChange: (() => void) | null = null
 
   constructor(driver: LoopDriver, host: SchedulerHost, options: SchedulerOptions = {}) {
     this._driver = driver
     this._host = host
 
-    this._frameCallback = (time: number) => {
+    this._frameCallback = (deltaMs: number) => {
       if (this._destroyed || !this._loopActive) return
       this._frames += 1
       try {
-        this._host.onFrame(time)
+        this._host.onFrame(deltaMs)
         if (this._host.isSettled()) {
           this._settledFrames += 1
           this._stop()

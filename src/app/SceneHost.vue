@@ -255,8 +255,8 @@ async function onReady(context: TresContext): Promise<void> {
   manager.replaceRenderFunction((notify) => notify())
   // The scheduler's frame callback runs inside Tres's before-render hooks,
   // so `useLoop` subscribers (Cientos components included) share this RAF.
-  // The frame contract expects a ms timestamp (Experience `Time.update`).
-  manager.loop.onBeforeLoop(() => frameCallback?.(performance.now()))
+  // Pass Tres's elapsed frame delta through; Experience clamps it in ms.
+  manager.loop.onBeforeLoop(({ delta }) => frameCallback?.(delta * 1000))
   // Ecosystem wake path: Cientos components invalidate the manager on their
   // change events; the wrap translates each call into a typed scheduler
   // demand so external activity opens a render window.

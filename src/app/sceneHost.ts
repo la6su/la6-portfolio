@@ -28,8 +28,8 @@ import type { ShowreelTheater } from '../Experience/World/ShowreelTheater'
  * Adapter between the demand scheduler and Tres's render loop.
  */
 export interface SceneLoopPort {
-  /** Install (or clear) the scheduler's frame callback (before-render bridge). */
-  onFrame(callback: ((time: number) => void) | null): void
+  /** Install (or clear) the scheduler's frame callback (delta in ms). */
+  onFrame(callback: ((deltaMs: number) => void) | null): void
   /** Open the scheduler window: resume the Tres-owned RAF. */
   start(): void
   /** Close the scheduler window: pause the Tres-owned RAF (zero idle ticks). */

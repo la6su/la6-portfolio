@@ -165,6 +165,16 @@ small project scheduler for that additional policy; continue bridging Cientos
 invalidation into it. Do not replace it with `invalidate()` until equivalent
 idle/visibility behavior is demonstrated.
 
+**Completed frame-clock slice:** Tres's `RafLoopContext` supplies `delta` in
+seconds. `SceneHost` previously substituted `performance.now()`, then
+`Experience/Time` reconstructed delta from a second timestamp clock. The bridge
+now forwards Tres delta in milliseconds; `Experience` retains the existing
+0–100 ms clamp and unit conversion, and the duplicate `Time` wrapper is
+removed. Vue type-check, ESLint, all 73 unit tests, the full Chromium production
+suite (14 passed, 3 opt-in skipped), and the full Firefox suite (13 passed, 4
+opt-in skipped) passed after the change. Exact elapsed-world-time while the
+demand loop is fully stopped is already owned by separate wall-clock timers.
+
 **Completed explicit Works ownership slice:** replaced the `WeakMap<Group,
 ...>` metadata bag in `sceneOwners.ts` with a `SectionGroups.works` owner result.
 The only writer was the Works factory and the only data lived on the Works
@@ -742,7 +752,8 @@ unowned persistent GPU resource remains.
 ## Current checkpoint
 
 - **Active phase**: 0–5. Runtime ownership mapping, async release fixes, and
-  simplification of duplicate helpers/metadata are recorded above.
+  simplification of duplicate helpers/metadata and the second clock are
+  recorded above.
 - **Next action**: continue the source-to-owner/library inventory and simplify
   proven duplicated state/forwarding helpers; audit
   for duplicated lifecycle owners, unreachable code, and abstractions already
@@ -761,7 +772,7 @@ unowned persistent GPU resource remains.
   package. Current production gates: `JLZ_CHROMIUM_PATH=/usr/bin/chromium bun
 run test:serial` passed after a production build (14 tests, 2 opt-in renderer
   scenarios skipped); Playwright Firefox passed its production suite (13
-  passed, 3 Chromium-only scenarios skipped). The separate
+  passed, 4 opt-in scenarios skipped). The separate
   `JLZ_RENDERER_INIT_FAILURE_CHROME=1` run passed in production Chromium with
   WebGPU and WebGL disabled. Reduced motion covers boot, CSS transition state, dynamic Lab
   controls and scene-free entrance; mobile/desktop overflow checks passed at

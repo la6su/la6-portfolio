@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import { Sizes } from './Sizes'
-import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer, type RenderSurface } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
@@ -67,7 +66,6 @@ export class Experience {
   scene!: THREE.Scene
   sizes!: Sizes
   /** Per-frame delta clamp — internal to the loop host. */
-  private time!: Time
   camera!: Camera
   renderer!: Renderer
   private contentReveal!: ContentReveal
@@ -197,7 +195,6 @@ export class Experience {
     private page: () => PageId = () => 'home',
   ) {
     this.sizes = new Sizes()
-    this.time = new Time()
     // SceneHost is the single scene + camera owner. Experience adopts those
     // instances for cinematic state and never creates a fallback world.
     this._host = host
@@ -263,7 +260,7 @@ export class Experience {
           else this._host.loop.stop()
         },
       },
-      { onFrame: (time) => this.update(time), isSettled: () => this._isLoopSettled() },
+      { onFrame: (deltaMs) => this.update(deltaMs), isSettled: () => this._isLoopSettled() },
     )
     // Tres/Cientos invalidate calls (for example CameraControls changes)
     // enter the same demand path as internal activity.
@@ -766,13 +763,13 @@ export class Experience {
     this._scheduler.invalidate('breath')
   }
 
-  update(time: number) {
+  update(deltaMs: number) {
     // A later invalidation is allowed to make one diagnostic/recovery attempt
     // after a failed frame; the failed frame itself must not keep the loop
     // alive indefinitely.
     this._updateFailed = false
     try {
-      this._updateInner(time)
+      this._updateInner(deltaMs)
     } catch (err) {
       this._needsRender = false
       this._updateFailed = true
@@ -786,12 +783,12 @@ export class Experience {
   private _updateErrorLogged = false
   private _updateFailed = false
 
-  private _updateInner(time: number) {
+  private _updateInner(deltaMs: number) {
     const frameTiming = this._frameTiming
     const frameStart = frameTiming ? performance.now() : 0
-    this.time.update(time)
-    const dt = this.time.delta / 1000
-    this._fpsTracker.observe(this.time.delta)
+    const frameDeltaMs = THREE.MathUtils.clamp(deltaMs, 0, 100)
+    const dt = frameDeltaMs / 1000
+    this._fpsTracker.observe(frameDeltaMs)
     // Section state deadlines (ready → viewing → passed) advance here —
     // the machine owns the policy, the frame path just advances the clock.
     this.coordinator?.updateSections(dt)
