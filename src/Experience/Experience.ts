@@ -97,7 +97,6 @@ export class Experience {
   // its typed bus commands, the reduced-motion forwarding and the render swap.
   private _showreel!: ShowreelController
   // Cached route/theme state applied when lazy Contact stages are created.
-  private _contactCyprusActive = false
   private _contactIsLight = false
 
   // Owns navigation, menu, overlay, project controls, and UI event wiring.
@@ -224,10 +223,6 @@ export class Experience {
       camera: this._host.camera,
       host: this._host.stages,
       isContactLight: () => this._contactIsLight,
-      isCyprusActive: () => this._contactCyprusActive,
-      setCyprusActive: (active) => {
-        this._contactCyprusActive = active
-      },
       reducedMotion: () => this._reducedMotion,
       syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
     })

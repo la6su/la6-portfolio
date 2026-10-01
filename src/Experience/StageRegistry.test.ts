@@ -12,6 +12,26 @@ function deferred<T>() {
 }
 
 describe('StageRegistry resource teardown', () => {
+  it('owns Cyprus activation for the contact section', () => {
+    const stage = new ContactCyprusStage()
+    const setActive = vi.spyOn(stage, 'setActive')
+    const registry = new StageRegistry({
+      currentPage: () => 'contact',
+      camera: {} as never,
+      host: {} as SceneStagePorts,
+      isContactLight: () => false,
+      reducedMotion: () => false,
+      syncRouteVisuals: vi.fn(),
+    })
+    registry.owners.contactCyprus.stage = stage
+
+    registry.setContactCyprusStageSection(2)
+    registry.setContactCyprusStageSection(1)
+
+    expect(setActive).toHaveBeenNthCalledWith(1, true)
+    expect(setActive).toHaveBeenNthCalledWith(2, false)
+  })
+
   it('waits for the Vue host to detach a route stage before disposing it', async () => {
     const detached = deferred<void>()
     const events: string[] = []
@@ -30,8 +50,6 @@ describe('StageRegistry resource teardown', () => {
       camera: {} as never,
       host: ports,
       isContactLight: () => false,
-      isCyprusActive: () => true,
-      setCyprusActive: vi.fn(),
       reducedMotion: () => false,
       syncRouteVisuals: vi.fn(),
     })

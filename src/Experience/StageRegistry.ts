@@ -6,10 +6,8 @@
 // this owner directly through the UI host's typed getter.
 //
 // Every stage mounts through the declarative host ports (SceneStagePorts) —
-// no runtime `scene.add`. The polarity cache (contactIsLight / cyprusActive)
-// stays on Experience — the theme listener writes it per event; the
-// contracts read it through the context so a lazy stage cannot miss the
-// current polarity.
+// no runtime `scene.add`. Contact polarity comes from Experience's theme
+// listener; the Cyprus target state belongs to this route-stage owner.
 
 import type { Camera } from 'three'
 import type { PageId } from '../core/routeManifest'
@@ -36,15 +34,15 @@ interface StageRegistryContext {
   host: SceneStagePorts
   /** The effective text polarity (theme-listener cache on Experience). */
   isContactLight: () => boolean
-  /** The target Cyprus-active state (the Agros frame replaces the cube). */
-  isCyprusActive: () => boolean
-  setCyprusActive: (active: boolean) => void
   reducedMotion: () => boolean
   /** Route-visual reconciliation after a late Cyprus activation. */
   syncRouteVisuals: () => void
 }
 
 export class StageRegistry {
+  /** Whether the Agros frame currently replaces the shared contact cube. */
+  private _cyprusActive = false
+
   /** Stable lifecycle state for each independently lazy route stage. */
   readonly owners = {
     worksPlane: createLazyStageOwner<WorksPlaneStage>(),
@@ -240,7 +238,7 @@ export class StageRegistry {
       configure: (stage) => {
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this._ctx.camera)
-        stage.setActive(this._ctx.currentPage() === 'contact' && this._ctx.isCyprusActive())
+        stage.setActive(this._ctx.currentPage() === 'contact' && this._cyprusActive)
         stage.prewarm()
       },
       release: async (stage) => {
@@ -248,7 +246,7 @@ export class StageRegistry {
         stage.dispose()
       },
       onDispose: () => {
-        this._ctx.setCyprusActive(false)
+        this._cyprusActive = false
       },
     }
   }
@@ -263,14 +261,14 @@ export class StageRegistry {
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
-    this._ctx.setCyprusActive(this._ctx.currentPage() === 'contact' && index === 2)
+    this._cyprusActive = this._ctx.currentPage() === 'contact' && index === 2
     const stage = this.owners.contactCyprus.stage
-    stage?.setActive(this._ctx.isCyprusActive())
-    if (this._ctx.isCyprusActive() && !stage) {
+    stage?.setActive(this._cyprusActive)
+    if (this._cyprusActive && !stage) {
       const initialization = this.ensureContactCyprusStageInitialized()
       const request = this.owners.contactCyprus.request
       void initialization.then(() => {
-        if (request !== this.owners.contactCyprus.request || !this._ctx.isCyprusActive()) return
+        if (request !== this.owners.contactCyprus.request || !this._cyprusActive) return
         this._ctx.syncRouteVisuals()
       })
     }
