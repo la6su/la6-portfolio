@@ -273,7 +273,7 @@ async function boot(): Promise<void> {
         baku: host.baku,
         introFrames: host.introFrames,
         cursorTrail: host.cursorTrail,
-        replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+        replaceRenderer: (renderer, mode) => sceneHost.replaceRenderer(renderer, mode),
         loop: host.loop,
         stages: host.stages,
       },

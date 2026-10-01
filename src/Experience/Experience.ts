@@ -60,7 +60,7 @@ import { traceDevLifecycle } from '../core/devLifecycleTrace'
 type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> & {
   renderer: RenderSurface
   sizes: SceneHostReady['context']['sizes']
-  replaceRenderer(renderer: RenderSurface): void
+  replaceRenderer(renderer: RenderSurface, mode: SceneHostReady['mode']): void
 }
 
 export class Experience {
@@ -553,7 +553,7 @@ export class Experience {
     await this.renderer.init({
       instance: this._host.renderer,
       mode: this._host.mode,
-      onInstanceReplaced: (instance) => this._host.replaceRenderer(instance),
+      onInstanceReplaced: (instance, mode) => this._host.replaceRenderer(instance, mode),
     })
     if (!this.isLifecycleCurrent(token)) {
       throw new DOMException('Experience initialization was cancelled.', 'AbortError')

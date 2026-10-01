@@ -50,7 +50,7 @@ export interface AdoptedRenderer {
   instance: RenderSurface;
   mode: FinalMode;
   /** Sync the live instance after a device-loss recovery swap. */
-  onInstanceReplaced?: (instance: RenderSurface) => void;
+  onInstanceReplaced?: (instance: RenderSurface, mode: FinalMode) => void;
 }
 
 export class Renderer {
@@ -78,8 +78,7 @@ export class Renderer {
   // The persistent SceneHost canvas is Vue-owned DOM. The replacement hook
   // keeps the Tres context in sync after device-loss recovery re-creates the
   // renderer on that same canvas.
-  private _onInstanceReplaced: ((instance: RenderSurface) => void) | null =
-    null;
+  private _onInstanceReplaced: ((instance: RenderSurface, mode: FinalMode) => void) | null = null;
   // Failure-state DOM owner. Keep one overlay per renderer and remove it on
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
   private _unsupportedOverlay: HTMLElement | null = null;
@@ -321,7 +320,7 @@ export class Renderer {
       this.attachDeviceLossRecovery(this.instance);
       // Keep Tres context aligned with the live replacement. The loop needs
       // no re-attachment because the pipeline reads the adopted instance.
-      this._onInstanceReplaced?.(this.instance);
+      this._onInstanceReplaced?.(this.instance, plan.mode);
       // The old PMREM environment died with the lost device — ask Experience
       // to regenerate it (and re-bind it to the glass cube).
       eventBus.emit("jlz:renderer-recovered");

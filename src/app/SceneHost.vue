@@ -349,15 +349,12 @@ async function onReady(context: TresContext): Promise<void> {
   dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
   resolved = true
   liveRenderer = renderer
-  unbindRendererOwner = sceneHost.bindRendererOwner((replacement) => {
+  unbindRendererOwner = sceneHost.bindRendererOwner((replacement, mode) => {
     liveRenderer = replacement
     // Device-loss recovery may land on a different backend (webgpu → webgl);
     // re-publish the cap so the Tres size manager keeps agreeing with the
     // Renderer owner after the swap.
-    dprCap.value = maxDprForMode(
-      planUnifiedBackend(inspectUnifiedBackend(replacement)).mode,
-      DeviceCapability.getInstance().isMobile,
-    )
+    dprCap.value = maxDprForMode(mode, DeviceCapability.getInstance().isMobile)
   })
   sceneHost.resolve({
     scene: context.scene.value,

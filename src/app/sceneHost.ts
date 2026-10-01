@@ -119,7 +119,7 @@ interface SceneHostState {
   resolve?: (value: SceneHostReady) => void
   reject?: (error: unknown) => void
   context: TresContext | null
-  rendererOwner?: (renderer: UnifiedRenderSurface) => void
+  rendererOwner?: (renderer: UnifiedRenderSurface, mode: FinalMode) => void
 }
 
 const state: SceneHostState = { settled: false, context: null }
@@ -151,16 +151,16 @@ export const sceneHost = {
    * RenderScheduler keeps driving the replacement through the Renderer
    * owner boundary.
    */
-  replaceRenderer(renderer: UnifiedRenderSurface): void {
+  replaceRenderer(renderer: UnifiedRenderSurface, mode: FinalMode): void {
     if (state.context) state.context.renderer.instance = renderer
-    state.rendererOwner?.(renderer)
+    state.rendererOwner?.(renderer, mode)
   },
   /**
    * Register the Vue host's live-renderer slot. Renderer recovery happens
    * behind the Experience owner boundary, so the host must follow the
    * replacement before a later Vue unmount disposes its resources.
    */
-  bindRendererOwner(owner: (renderer: UnifiedRenderSurface) => void): () => void {
+  bindRendererOwner(owner: (renderer: UnifiedRenderSurface, mode: FinalMode) => void): () => void {
     state.rendererOwner = owner
     return () => {
       if (state.rendererOwner === owner) state.rendererOwner = undefined
