@@ -39,7 +39,7 @@ describe('StageRegistry resource teardown', () => {
     const dispose = vi.spyOn(stage, 'dispose').mockImplementation(() => {
       events.push('dispose')
     })
-    registry.slots.contactCyprus.setStage(stage)
+    registry.owners.contactCyprus.stage = stage
 
     const teardown = registry.disposeContactCyprusStage()
     const finalTeardown = registry.dispose()

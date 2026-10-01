@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createLazyStageSlot, disposeLazyStage, ensureLazyStage } from './LazyStage'
+import { createLazyStageOwner, disposeLazyStage, ensureLazyStage } from './LazyStage'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -13,13 +13,13 @@ function deferred<T>() {
 
 describe('lazy stage teardown', () => {
   it('releases once when disposal races an asynchronous host mount', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const mounted = deferred<void>()
     const dispose = vi.fn()
     const stage: { dispose(): void } = { dispose }
     const contract = {
       label: 'pending mount',
-      owner: slot.owner,
+      owner: slot,
       create: () => stage,
       attach: () => mounted.promise,
       configure: vi.fn(),
@@ -36,7 +36,7 @@ describe('lazy stage teardown', () => {
   })
 
   it('waits for declared-node detachment before disposing an async release', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const mounted = deferred<void>()
     const detached = deferred<void>()
     const events: string[] = []
@@ -47,7 +47,7 @@ describe('lazy stage teardown', () => {
     }
     const contract = {
       label: 'async release',
-      owner: slot.owner,
+      owner: slot,
       create: () => stage,
       attach: () => mounted.promise,
       configure: vi.fn(),
@@ -76,7 +76,7 @@ describe('lazy stage teardown', () => {
   })
 
   it('keeps a replacement stage when a disposed stage load fails late', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const lateLoad = deferred<void>()
     const firstDispose = vi.fn()
     const secondDispose = vi.fn()
@@ -87,7 +87,7 @@ describe('lazy stage teardown', () => {
     const release = vi.fn((stage: { dispose(): void }) => stage.dispose())
     const contract = {
       label: 'late route load',
-      owner: slot.owner,
+      owner: slot,
       create: () => (creations++ === 0 ? firstStage : secondStage),
       attach: () => undefined,
       load: (stage: { dispose(): void }) =>
@@ -102,12 +102,12 @@ describe('lazy stage teardown', () => {
 
     const secondInitialization = ensureLazyStage(contract)
     await secondInitialization
-    expect(slot.getStage()).toBe(secondStage)
+    expect(slot.stage).toBe(secondStage)
 
     lateLoad.reject(new Error('late asset failure'))
     await firstInitialization
 
-    expect(slot.getStage()).toBe(secondStage)
+    expect(slot.stage).toBe(secondStage)
     expect(release).toHaveBeenCalledTimes(1)
     expect(release).toHaveBeenCalledWith(firstStage)
     expect(secondDispose).not.toHaveBeenCalled()
@@ -116,13 +116,13 @@ describe('lazy stage teardown', () => {
   })
 
   it('releases a stage once when its dynamic import resolves after disposal', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const imported = deferred<{ dispose(): void }>()
     const dispose = vi.fn()
     const stage: { dispose(): void } = { dispose }
     const contract = {
       label: 'pending import',
-      owner: slot.owner,
+      owner: slot,
       create: () => imported.promise,
       attach: vi.fn(),
       configure: vi.fn(),
@@ -140,7 +140,7 @@ describe('lazy stage teardown', () => {
   })
 
   it('waits for a late stage mount to detach before teardown completes', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const imported = deferred<{ dispose(): void }>()
     const detached = deferred<void>()
     const dispose = vi.fn()
@@ -148,7 +148,7 @@ describe('lazy stage teardown', () => {
     let teardown!: Promise<void>
     const contract = {
       label: 'creation before mount',
-      owner: slot.owner,
+      owner: slot,
       create: () =>
         imported.promise.then((value) => {
           queueMicrotask(() => {
@@ -183,7 +183,7 @@ describe('lazy stage teardown', () => {
   })
 
   it('releases a stale async creation without disturbing a replacement stage', async () => {
-    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const slot = createLazyStageOwner<{ dispose(): void }>()
     const staleCreation = deferred<{ dispose(): void }>()
     const staleDispose = vi.fn()
     const replacementDispose = vi.fn()
@@ -193,7 +193,7 @@ describe('lazy stage teardown', () => {
     const configure = vi.fn()
     const contract = {
       label: 'replacement during creation',
-      owner: slot.owner,
+      owner: slot,
       create: () => (creations++ === 0 ? staleCreation.promise : replacement),
       attach: vi.fn(),
       configure,
@@ -210,7 +210,7 @@ describe('lazy stage teardown', () => {
 
     expect(staleDispose).toHaveBeenCalledTimes(1)
     expect(replacementDispose).not.toHaveBeenCalled()
-    expect(slot.getStage()).toBe(replacement)
+    expect(slot.stage).toBe(replacement)
     expect(configure).toHaveBeenCalledTimes(1)
     expect(configure).toHaveBeenCalledWith(replacement)
   })

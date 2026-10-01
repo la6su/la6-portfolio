@@ -4,7 +4,7 @@
 // manifesto ink) used to repeat the same ~30-line ensure/dispose flow inside
 // Experience: request counter, promise memoization, stale-guard, attach,
 // post-init wiring, failure containment with an exact per-stage release
-// order. This module owns that flow once over the owner-backed slots in
+// order. This module owns that flow once over the stage owners in
 // StageRegistry. The route-specific contracts stay with that registry.
 //
 // The per-stage variation is expressed as a contract:
@@ -17,56 +17,27 @@
 
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 
-/** Function-backed view over the state held by one lazy-stage slot. */
+/** Mutable lifecycle state and terminal cleanup owner for one lazy stage. */
 export interface LazyStageOwner<T> {
-  getStage: () => T | null
-  setStage: (stage: T | null) => void
-  getPromise: () => Promise<void> | null
-  setPromise: (promise: Promise<void> | null) => void
-  /** Live request id, for stale guards. */
-  getRequest: () => number
-  /** Invalidate any in-flight creation; returns the new request id. */
-  advanceRequest: () => number
+  /** Current instance and memoized ensure flow. */
+  stage: T | null
+  promise: Promise<void> | null
+  /** Invalidates all async continuations from earlier requests. */
+  request: number
   /** Run terminal cleanup at most once and expose its completion. */
   release: (stage: T, cleanup: (stage: T) => void | Promise<void>) => Promise<void>
   /** Wait for every release already started by this stage owner. */
   waitForReleases: () => Promise<void>
 }
 
-/** Owner-backed slot: the three lazy-stage fields (stage reference, memoized
- *  init promise, request id) that every route-owned stage used to keep
- *  hand-copied on Experience. The slot owns them once; Experience keeps one
- *  slot field per stage and hands `slot.owner` to its contract, so a new
- *  lazy stage is one field + one contract instead of a field triple plus an
- *  11-line owner adapter. */
-export interface LazyStageSlot<T> {
-  /** The LazyStageOwner view for a LazyStageContract. */
-  readonly owner: LazyStageOwner<T>
-  /** Current stage reference (null until created / after dispose). */
-  getStage(): T | null
-  /** Set the stage reference (test seeding; production writes go through the contract flow). */
-  setStage(stage: T | null): void
-  /** Live request id, for external stale guards (e.g. the Cyprus section flip). */
-  getRequest(): number
-}
-
-export function createLazyStageSlot<T extends object>(): LazyStageSlot<T> {
-  let stage: T | null = null
-  let promise: Promise<void> | null = null
-  let request = 0
+/** One route-stage owner; state is plain data, cleanup behavior lives here. */
+export function createLazyStageOwner<T extends object>(): LazyStageOwner<T> {
   const releases = new WeakMap<object, Promise<void>>()
   const pendingReleases = new Set<Promise<void>>()
-  const owner: LazyStageOwner<T> = {
-    getStage: () => stage,
-    setStage: (value) => {
-      stage = value
-    },
-    getPromise: () => promise,
-    setPromise: (value) => {
-      promise = value
-    },
-    getRequest: () => request,
-    advanceRequest: () => ++request,
+  return {
+    stage: null,
+    promise: null,
+    request: 0,
     release: (value, cleanup) => {
       const existing = releases.get(value)
       if (existing) return existing
@@ -87,20 +58,12 @@ export function createLazyStageSlot<T extends object>(): LazyStageSlot<T> {
     },
     waitForReleases: () => Promise.all([...pendingReleases]).then(() => undefined),
   }
-  return {
-    owner,
-    getStage: () => stage,
-    setStage: (value) => {
-      stage = value
-    },
-    getRequest: () => request,
-  }
 }
 
 export interface LazyStageContract<T extends object> {
   /** DEV diagnostic label, e.g. `'WorksPlaneStage'`. */
   label: string
-  /** Mutable owner state (a {@link createLazyStageSlot} instance). */
+  /** Mutable owner state (a {@link createLazyStageOwner} instance). */
   owner: LazyStageOwner<T>
   /**
    * Produce the instance — synchronously, or after a dynamic import. The
@@ -159,15 +122,15 @@ function releaseLazyStage<T extends object>(
 export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>): Promise<void> {
   const { owner } = contract
   const release = (stage: T): Promise<void> => releaseLazyStage(contract, stage)
-  const memoized = owner.getPromise()
+  const memoized = owner.promise
   if (memoized) return memoized
-  const request = owner.advanceRequest()
+  const request = ++owner.request
 
   const fail = async (error: unknown, stage: T | null): Promise<void> => {
     if (stage) await release(stage)
-    if (request === owner.getRequest()) {
-      owner.setStage(null)
-      owner.setPromise(null)
+    if (request === owner.request) {
+      owner.stage = null
+      owner.promise = null
     }
     if (import.meta.env.DEV) {
       console.error(`[Experience] ${contract.label} init failed:`, error)
@@ -175,7 +138,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   }
 
   const settle = async (stage: T): Promise<void> => {
-    if (request !== owner.getRequest() || owner.getStage() !== stage) {
+    if (request !== owner.request || owner.stage !== stage) {
       // The route disposed this stage while its init was still in flight.
       // Release the late result too, so resources created after the first
       // dispose are freed as well.
@@ -192,14 +155,14 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   // The same guard now applies to synchronous and imported stages: a Tres
   // mount may finish after route leave and must not start asset loading.
   const attachAndLoad = (stage: T): Promise<T> => {
-    owner.setStage(stage)
+    owner.stage = stage
     try {
       const attached = contract.attach(stage)
       const loadIfCurrent = (): Promise<unknown> | undefined => {
-        if (request === owner.getRequest() && owner.getStage() === stage) {
+        if (request === owner.request && owner.stage === stage) {
           return contract.load?.(
             stage,
-            () => request === owner.getRequest() && owner.getStage() === stage,
+            () => request === owner.request && owner.stage === stage,
           )
         }
       }
@@ -214,7 +177,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
 
   let created: T | null | Promise<T | null>
   try {
-    created = contract.create(() => request === owner.getRequest())
+    created = contract.create(() => request === owner.request)
   } catch (error) {
     fail(error, null)
     return Promise.resolve()
@@ -223,7 +186,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   let activeStage: T | null = null
   const mount = (stage: T | null): Promise<T | null> => {
     if (!stage) return Promise.resolve(null)
-    if (request !== owner.getRequest()) {
+    if (request !== owner.request) {
       return release(stage).then(() => null)
     }
     activeStage = stage
@@ -233,7 +196,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   const settled = pending.then(
     async (stage) => {
       if (!stage) {
-        if (request === owner.getRequest()) owner.setPromise(null)
+        if (request === owner.request) owner.promise = null
         return
       }
       try {
@@ -244,7 +207,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
     },
     (error: unknown) => fail(error, activeStage),
   )
-  owner.setPromise(settled)
+  owner.promise = settled
   return settled
 }
 
@@ -256,11 +219,11 @@ export function disposeLazyStage<T extends object>(
   contract: LazyStageContract<T>,
 ): Promise<void> {
   const { owner } = contract
-  owner.advanceRequest()
-  const stage = owner.getStage()
+  owner.request++
+  const stage = owner.stage
   const release = stage ? releaseLazyStage(contract, stage) : owner.waitForReleases()
-  if (stage) owner.setStage(null)
-  owner.setPromise(null)
+  if (stage) owner.stage = null
+  owner.promise = null
   contract.onDispose?.()
   // Let a create() continuation already queued for this turn reach mount().
   // It may have produced a stage just before disposal but not assigned it to

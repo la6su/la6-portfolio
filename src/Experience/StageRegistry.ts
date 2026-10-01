@@ -15,7 +15,7 @@ import type { Camera } from 'three'
 import type { PageId } from '../core/routeManifest'
 import type { SceneStagePorts } from '../app/sceneHost'
 import {
-  createLazyStageSlot,
+  createLazyStageOwner,
   createImportedLazyStage,
   disposeLazyStage,
   ensureLazyStage,
@@ -46,37 +46,36 @@ interface StageRegistryContext {
 }
 
 export class StageRegistry {
-  /** Per-stage slot state (stage reference + memoized promise + request id).
-   *  Public readonly: the test seed pre-sets stages through these slots. */
-  readonly slots = {
-    worksPlane: createLazyStageSlot<WorksPlaneStage>(),
-    contactTypography: createLazyStageSlot<ContactTypographyStage>(),
-    contactCyprus: createLazyStageSlot<ContactCyprusStage>(),
-    contactHalo: createLazyStageSlot<ContactHaloStage>(),
-    manifestoInk: createLazyStageSlot<ManifestoInkStage>(),
-    labGamepad: createLazyStageSlot<LabExperimentObject>(),
+  /** Stable lifecycle state for each independently lazy route stage. */
+  readonly owners = {
+    worksPlane: createLazyStageOwner<WorksPlaneStage>(),
+    contactTypography: createLazyStageOwner<ContactTypographyStage>(),
+    contactCyprus: createLazyStageOwner<ContactCyprusStage>(),
+    contactHalo: createLazyStageOwner<ContactHaloStage>(),
+    manifestoInk: createLazyStageOwner<ManifestoInkStage>(),
+    labGamepad: createLazyStageOwner<LabExperimentObject>(),
   }
 
   constructor(private readonly _ctx: StageRegistryContext) {}
 
-  /** Stage references read through their slots (null until created / after dispose). */
+  /** Current stage references, or null until creation / after disposal. */
   public get worksPlaneStage(): WorksPlaneStage | null {
-    return this.slots.worksPlane.getStage()
+    return this.owners.worksPlane.stage
   }
   public get contactTypographyStage(): ContactTypographyStage | null {
-    return this.slots.contactTypography.getStage()
+    return this.owners.contactTypography.stage
   }
   public get contactCyprusStage(): ContactCyprusStage | null {
-    return this.slots.contactCyprus.getStage()
+    return this.owners.contactCyprus.stage
   }
   public get contactHaloStage(): ContactHaloStage | null {
-    return this.slots.contactHalo.getStage()
+    return this.owners.contactHalo.stage
   }
   public get manifestoInkStage(): ManifestoInkStage | null {
-    return this.slots.manifestoInk.getStage()
+    return this.owners.manifestoInk.stage
   }
   public get labGamepad(): LabExperimentObject | null {
-    return this.slots.labGamepad.getStage()
+    return this.owners.labGamepad.stage
   }
 
   /** Lazily create rich `/works` media only on that route, never on first
@@ -85,7 +84,7 @@ export class StageRegistry {
   private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
     return {
       label: 'WorksPlaneStage',
-      owner: this.slots.worksPlane.owner,
+      owner: this.owners.worksPlane,
       create: createImportedLazyStage(
         () => import('./World/WorksPlaneStage'),
         ({ WorksPlaneStage }) => WorksPlaneStage,
@@ -131,7 +130,7 @@ export class StageRegistry {
   private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
     return {
       label: 'ContactTypographyStage',
-      owner: this.slots.contactTypography.owner,
+      owner: this.owners.contactTypography,
       create: createImportedLazyStage(
         () => import('./World/ContactTypographyStage'),
         ({ ContactTypographyStage }) => ContactTypographyStage,
@@ -163,7 +162,7 @@ export class StageRegistry {
   private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
     return {
       label: 'ContactHaloStage',
-      owner: this.slots.contactHalo.owner,
+      owner: this.owners.contactHalo,
       create: createImportedLazyStage(
         () => import('./World/ContactHaloStage'),
         ({ ContactHaloStage }) => ContactHaloStage,
@@ -197,7 +196,7 @@ export class StageRegistry {
   private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
     return {
       label: 'ManifestoInkStage',
-      owner: this.slots.manifestoInk.owner,
+      owner: this.owners.manifestoInk,
       create: createImportedLazyStage(
         () => import('./World/ManifestoInkStage'),
         ({ ManifestoInkStage }) => ManifestoInkStage,
@@ -232,7 +231,7 @@ export class StageRegistry {
   private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
     return {
       label: 'ContactCyprusStage',
-      owner: this.slots.contactCyprus.owner,
+      owner: this.owners.contactCyprus,
       create: createImportedLazyStage(
         () => import('./World/ContactCyprusStage'),
         ({ ContactCyprusStage }) => ContactCyprusStage,
@@ -266,13 +265,13 @@ export class StageRegistry {
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
     this._ctx.setCyprusActive(this._ctx.currentPage() === 'contact' && index === 2)
-    const stage = this.slots.contactCyprus.getStage()
+    const stage = this.owners.contactCyprus.stage
     stage?.setActive(this._ctx.isCyprusActive())
     if (this._ctx.isCyprusActive() && !stage) {
       const initialization = this.ensureContactCyprusStageInitialized()
-      const request = this.slots.contactCyprus.getRequest()
+      const request = this.owners.contactCyprus.request
       void initialization.then(() => {
-        if (request !== this.slots.contactCyprus.getRequest() || !this._ctx.isCyprusActive()) return
+        if (request !== this.owners.contactCyprus.request || !this._ctx.isCyprusActive()) return
         this._ctx.syncRouteVisuals()
       })
     }
@@ -285,7 +284,7 @@ export class StageRegistry {
   private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
     return {
       label: 'LabGamepad',
-      owner: this.slots.labGamepad.owner,
+      owner: this.owners.labGamepad,
       create: () => {
         const experiment = getLabExperiment('lab')
         // No isCurrent guard on the resolved object: the manifest load may
