@@ -184,6 +184,15 @@ accessible fallback. There were no other consumers or reporting transport.
 Global runtime errors now follow native browser behavior; startup failures keep
 their existing app-shell handling. No replacement abstraction was added.
 
+**Retained-boundary audit:** `SceneCoordinator` has route visibility,
+story-to-world transforms, prewarming, animation demand policy, and frame
+fan-out; `SceneFramePass` owns a distinct per-frame algorithm. They are not
+argument-forwarding facades, so no merge is justified by their current call
+graph. The typed `EventBus` also remains justified for events crossing the
+classic HTML shell, Vue router/views, and independently owned runtime/UI
+controllers. Continue looking for pairs that share the same owner before
+changing it; event count or file size alone is not duplication.
+
 **Completed explicit Works ownership slice:** replaced the `WeakMap<Group,
 ...>` metadata bag in `sceneOwners.ts` with a `SectionGroups.works` owner result.
 The only writer was the Works factory and the only data lived on the Works
