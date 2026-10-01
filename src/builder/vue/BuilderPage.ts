@@ -1,14 +1,5 @@
-// src/builder/vue/BuilderPage.ts — The public surface for a builder document
-// (Phase 9).
-//
-// Renders a full `BuilderDocument` through the trusted element registry
-// (`./elements.ts`): each root node (section) is one `BuilderElement`. This
-// is the component the public routes render (Phase 9 slice 5) and the admin
-// editor preview renders in builder mode — the same typed registry in both
-// contexts, per the page-builder boundary (`docs/PAGE_BUILDER.md`).
-//
-// Stateless and SSR-safe: it owns no editor state, so it is safe in the
-// production public graph and in `renderToString` output alike.
+// Public rendering surface for a BuilderDocument. Published pages and the
+// admin preview share the same typed element registry. Stateless and SSR-safe.
 
 import { h, type Component, type PropType } from 'vue'
 

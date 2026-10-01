@@ -16,8 +16,6 @@ import { BlurFade } from './BlurFade'
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
 import { carouselOf, particlesOf } from './sceneOwners'
-// worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
-// called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
@@ -36,13 +34,7 @@ import {
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
 import type { SceneHostReady } from '../app/sceneHost'
-// ContentReveal owns per-section auto/inverse themes and sends this runtime
-// jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
-// Phase 8 slice 1: lights + ground are no longer World members — Experience
-// creates these scene owners and owns their disposal. Slice 2: the six
-// stable section groups are owned by the SectionGroups owner (attached to
-// the World before init).
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
@@ -55,15 +47,12 @@ import type { BakuCarousel } from './World/BakuCarousel'
 import type { ServicesStage } from './World/ServicesStage'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { contentRoot } from '../core/contentRoot'
-// DissolveOverlay removed — cover transition in ProjectDetail replaces it.
+import { devDiagnostic } from '../core/devDiagnostic'
 
 /**
- * Phase 7: the persistent SceneHost readiness state handed to Experience by
- * `entry-app.ts`. The scene, camera and renderer instances are the ONES
- * owned by the SceneHost (Tres root); Experience adopts them. Phase 8
- * slice 10 removed the `attachWorld` primitive slot — the SceneCoordinator
- * adds its section groups + scene owners to the Tres scene directly.
- * `replaceRenderer` syncs the Tres context after a device-loss recovery.
+ * Instances and scene roots borrowed from the persistent SceneHost. Experience
+ * adopts them without constructing a parallel scene or camera. `replaceRenderer`
+ * keeps Tres context aligned after device-loss recovery.
  *
  * Derived from the bridge's own `SceneHostReady` so a host capability is
  * declared once (sceneHost.ts): Experience drops the Tres context/backend
@@ -89,37 +78,23 @@ export class Experience {
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
   private _frameTiming: FrameTiming | null = null
-  // Phase 8 slice 10: the scene-coordination engine left the legacy `World`
-  // into the SceneCoordinator owner (since split into SectionStateMachine /
-  // SceneTransformPass / SceneFramePass — NEXT item 4.1). Experience creates
-  // it (buildWorld) and is the single disposal owner; it injects the scene
-  // owners as getters over its own fields. The legacy `World` class +
-  // `SectionSceneFactory` leave production.
+  // Coordinates section state, transforms and frame passes over the adopted
+  // scene owners. Experience constructs and disposes this coordinator.
   public coordinator!: SceneCoordinator
-  // Phase 8 slice 1: the lights + ground scene owners (created in buildWorld,
-  // entering the Tres-owned scene; Experience is the single disposal owner).
+  // Experience owns these controllers; their scene nodes are declared in Vue.
   private lights!: CinematicLights
   private ground!: GroundPlane
-  // Phase 8 slice 2: the six stable section groups owner (the coordinator's
-  // frame pass reads them via the owner getter).
+  // Adopts the six stable section roots declared by SceneHost.
   private sectionGroups!: SectionGroups
-  // Phase 8 slice 3: the ambient pavilion owner. Vue owns its construction
-  // and terminal disposal; the coordinator forwards its per-frame update.
+  // Vue owns the ambient pavilion nodes; the coordinator forwards updates.
   private envSphere!: EnvSphere
-  // Phase 8 slice 4 → declarative boot-static boundary: the glass cube
-  // behavior controller around the BakuCubeOwner node (the frame pass
-  // reads/writes it through the owners bag's baku getter).
+  // Behavior controller around the Vue-declared boot cube.
   private baku!: SplashCube
-  // Phase 8 slice 5 → declarative boot-static boundary: the intro light
-  // frames + cursor trail behavior controllers around their host nodes (the
-  // frame pass reads/writes them through the owners bag's getters).
+  // Behavior controllers around Vue-declared intro frames and cursor trail.
   private particleBurst!: ParticleBurst
   private drawTrail!: DrawTrail
-  // Phase 8 slice 6: the project stream owner. The carousel is attached to the
-  // declarative Works root (its disposal lives in
-  // the SectionGroups owner's BakuCarousel-first ordering); Experience owns
-  // the reference + init, and the frame pass drives it through the owners
-  // bag's carousel getter.
+  // Carousel declared under the Works root; SectionGroups owns its disposal
+  // ordering and Experience owns initialization and per-frame coordination.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
   // StageRegistry owns the six route stages and their lifecycle.
@@ -128,9 +103,7 @@ export class Experience {
   // Showreel render mode (ShowreelController.ts): the lazy GPU-side theater,
   // its typed bus commands, the reduced-motion forwarding and the render swap.
   private _showreel!: ShowreelController
-  // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
-  // Agros frame replaces the shared cube) + the effective text polarity
-  // cached so a lazy Contact stage cannot miss it.
+  // Cached route/theme state applied when lazy Contact stages are created.
   private _contactCyprusActive = false
   private _contactIsLight = false
 
@@ -138,8 +111,7 @@ export class Experience {
   // here, so the flag lives on Experience — not on the ExperienceUI host).
   private _projectOverlayPreloaded = false
 
-  // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
-  // project controls, UI-facing window handlers) live in ExperienceUI.
+  // Owns navigation, menu, overlay, project controls, and UI event wiring.
   private features!: ExperienceUI
   private readonly _host: ExperienceHost
   private _destroyed = false
@@ -161,28 +133,25 @@ export class Experience {
   private _mouseTrailRafPending = false
   private _mouseTrailRafId: number | null = null
   public sfx: SfxSystem = new SfxSystem()
-  /** Cinematic story track (owned by ExperienceUI, Phase 7 slice 4). */
+  /** Cinematic story track owned by ExperienceUI. */
   private get _storyNav() {
     return this.features?.storyNav ?? null
   }
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
-  // A4: ambient breathing — one refresh frame every ~2.5 s while the scene
-  // stays idle. Phase 7: the loop stops when settled, so the per-frame dt
+  // Ambient breathing requests one refresh frame every ~2.5 s while idle.
+  // The loop stops when settled, so the per-frame dt
   // accumulator can no longer advance; the breath is a wall-clock timer that
   // raises demand + fires a typed 'breath' invalidation on the scheduler.
   private _breathTimer: ReturnType<typeof setTimeout> | null = null
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // synchronized with prefers-reduced-motion (updated in init)
   private _reducedMotionUnsub: (() => void) | null = null
-  // Phase 7 (ADR 0004) / ADR 0005: the single demand-loop policy. The frame
-  // callback installs into the persistent Tres loop through the SceneHost
-  // port (the renderer's setAnimationLoop boundary is gone); the scheduler
-  // still starts the loop on invalidation and stops it after the settled
-  // frame (zero idle ticks, zero settled draws). Hidden-tab pause/resume is
-  // owned here too.
+  // Single demand-loop policy installed into Tres through SceneHost. The
+  // scheduler starts on invalidation, stops after a settled frame, and owns
+  // hidden-tab pause/resume.
   private _scheduler!: RenderScheduler
-  /** Ecosystem wake path (ADR 0005): Tres/Cientos `invalidate()` demands. */
+  /** Converts Tres/Cientos invalidate calls into scheduler demand. */
   private _unsubExternalInvalidate: (() => void) | null = null
   /** Terminal render-failure gate (device-loss budget exhausted). */
   private _onWebGLFailed: (() => void) | null = null
@@ -203,7 +172,7 @@ export class Experience {
   // after renderer.init() and re-applied after a device-loss recovery.
   private _environment!: SceneEnvironment
 
-  // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
+  // `jlz:webgl-ready` may only fire after the
   // initial scene's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
   // invalidation guarantees a frame; the frame resolves this exactly once.
   private _firstRenderResolve: (() => void) | null = null
@@ -219,13 +188,9 @@ export class Experience {
     return this._firstRenderPromise
   }
   // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
-  // One-way (never restore) — restoring causes a GPU spike that re-triggers
-  // low FPS. User can manually restore via DevPanel (future) or page reload.
+  // One-way: restoring particle counts can cause a GPU spike and re-trigger
+  // the low-FPS condition.
   private _particleReductionApplied = false
-  // (startAudioHandler removed — AudioSystem deleted, was dead code)
-
-  // SECTION_LABELS removed — the cinematic navigator derives labels from the
-  // rendered, translated section headings.
   constructor(
     private _ui: UIManager,
     host: ExperienceHost,
@@ -249,6 +214,8 @@ export class Experience {
     this._showreel = new ShowreelController({
       isDestroyed: () => this._destroyed,
       reducedMotion: () => this._reducedMotion,
+      mountTheater: (theater) => this._host.stages.showreelTheater.mount(theater),
+      unmountTheater: (theater) => this._host.stages.showreelTheater.unmount(theater),
     })
     // The stage registry reads the live route/camera/polarity/motion state at
     // its own lazy-init time — a stage can be created on any route at any
@@ -266,8 +233,8 @@ export class Experience {
       syncRouteVisuals: () => this.coordinator.syncRouteVisuals(),
     })
 
-    // Phase 7 slice 4: the former UI features reach the scene through a
-    // narrow getter-based port (the scene + owners only exist after init).
+    // Scene owners are initialized asynchronously, so UI access crosses a
+    // narrow getter-based port.
     this.features = new ExperienceUI({
       page: () => this.currentPage(),
       coordinator: () => this.coordinator,
@@ -276,18 +243,14 @@ export class Experience {
       sfx: () => this.sfx,
       raise: (reason) => this._raiseRenderDemand(reason),
       reducedMotion: () => this._reducedMotion,
-      // Phase 8 slice 6: the carousel init moved to Experience (World no
-      // longer owns scene object init); the UI reaches it through the port.
+      // The UI requests initialization through the composition root.
       ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
       stages: () => this._stages,
     })
 
-    // Phase 7 (ADR 0004) / ADR 0005: construct the single loop policy. The
-    // driver edge targets the persistent Tres loop through the SceneHost
-    // port — non-null installs the frame callback (window open), null stops
-    // the loop (window closed). `autoVisibility` (default, DOM present)
-    // pauses the loop while the tab is hidden and resumes it with exactly
-    // one invalidation.
+    // Install one demand scheduler into the persistent Tres loop. A callback
+    // opens the loop window; null closes it. Visibility pauses the loop and
+    // resumes it with one invalidation.
     this._scheduler = new RenderScheduler(
       {
         setLoop: (cb) => {
@@ -298,21 +261,19 @@ export class Experience {
       },
       { onFrame: (time) => this.update(time), isSettled: () => this._isLoopSettled() },
     )
-    // Ecosystem wake path (ADR 0005): Tres/Cientos `invalidate()` calls
-    // (CameraControls change events, future helpers) raise the same typed
-    // demand as internal activity, so external components can open windows.
+    // Tres/Cientos invalidate calls (for example CameraControls changes)
+    // enter the same demand path as internal activity.
     this._unsubExternalInvalidate = this._host.loop.onExternalInvalidate(() =>
       this._raiseRenderDemand('external'),
     )
-    // ADR 0005: a terminal device-loss failure stops the loop through the
-    // event (the old Renderer.setAnimationLoop(null) boundary is gone).
+    // A terminal device-loss failure stops the loop through the event bus.
     this._onWebGLFailed = () => {
       this._renderDisabled = true
       this._scheduler.settleNow()
     }
     eventBus.on('jlz:webgl-failed', this._onWebGLFailed)
 
-    // Wire resize → world (A-001/A-004: World.resize was empty + never called)
+    // Fan one viewport snapshot out to the scene owners.
     this._onSizesResize = () => {
       this.resizeSceneOwners()
       this._raiseRenderDemand('resize')
@@ -323,19 +284,14 @@ export class Experience {
   private resizeSceneOwners(): void {
     // Sizes is the single viewport listener. Fan the already-updated snapshot
     // out synchronously so the camera, renderer and route owners observe one
-    // coherent frame size. This leaves a single adapter point for the future
-    // Tres context-size bridge.
+    // coherent frame size.
     this.camera?.resize()
     this.renderer?.resize()
     this.coordinator?.resize(this.sizes.width, this.sizes.height)
-    // Phase 8 slice 7: the /works stage resize moved out of World.resize —
-    // forwarded directly (the stage is lazy; null until /works is reached).
+    // Route stages are lazy and may not exist until their route is reached.
     this._stages.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
-    // Phase 8 slice 8: the Contact typography resize moved out of
-    // World.resize — forwarded directly (lazy; null until /contact is
-    // reached).
-    // The lazy Cyprus stage owns a viewport-dependent map scale and must
-    // follow later orientation/address-bar viewport changes too.
+    // Cyprus owns a viewport-dependent map scale and follows orientation and
+    // address-bar viewport changes too.
     this._stages.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
@@ -383,14 +339,10 @@ export class Experience {
     }
   }
 
-  private async buildWorld(token: number): Promise<void> {
+  private async buildScene(token: number): Promise<void> {
     if (!this.isLifecycleCurrent(token)) return
-    // Phase 8 slice 10: the scene-coordination engine (previously the
-    // `World` class) is the SceneCoordinator. It receives the scene owners as
-    // getters over Experience's own fields — the lazy route owners change
-    // identity per route, so only a getter stays current. All the
-    // temporary `attach*` adapters the World carried for its slices leave
-    // production with this owner.
+    // Route owners are lazy and can change identity, so the coordinator reads
+    // them through getters rather than capturing stale instances.
     this.coordinator = new SceneCoordinator(
       this.scene,
       {
@@ -411,29 +363,26 @@ export class Experience {
       },
       () => this.currentPage(),
     )
-    // Phase 8 slice 2: the six stable section groups enter the Tres-owned
-    // scene directly under their own owner (fresh per coordinator instance).
-    // The coordinator reads them through its sceneGroups getter; init() needs
-    // them (carousel prewarm + final visibility), so build before init.
+    // Adopt the six section roots mounted by Vue/Tres before Experience
+    // initialization. This controller does not create or attach scene nodes.
     this.sectionGroups = new SectionGroups(
       this.scene,
-      undefined,
       () => this.currentPage(),
       () => this._storyNav?.getSide() ?? 'center',
       this._host.sectionRoots,
     )
     const servicesStage = this._host.servicesStage
     this.servicesStage = servicesStage
-    // Phase 8 slice 6: the project stream (BakuCarousel) attaches to the
-    // declarative Works root; its reference + init + per-frame drive
-    // belong to Experience. The coordinator frame path reads it through the
-    // carousel owner getter.
+    // The carousel is declared under the Works root. Experience initializes
+    // it and the coordinator drives it through the owner getter.
     const worksGroup = this.sectionGroups.at(WORKS_SLOT_INDEX)
     this.carousel = carouselOf(worksGroup) ?? null
+    if (this.carousel) await this._host.stages.carousel.mount(this.carousel)
+    const particles = worksGroup ? particlesOf(worksGroup) : undefined
+    if (particles) await this._host.stages.particles.mount(particles)
     if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
-    // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
-    // Tres-owned scene under its own owner; the coordinator frame path
-    // forwards its per-frame colour-lerp update.
+    // The coordinator forwards per-frame color interpolation to the
+    // Vue-owned ambient pavilion.
     const envSphere = this._host.envSphere
     this.envSphere = envSphere
     // Declarative boot-static boundary: the glass cube, the intro light
@@ -455,62 +404,27 @@ export class Experience {
     this.ground = new GroundPlane(this._host.ground)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
-    // Phase 8 slice 6: the home-carousel init await moved out of
-    // World.init() to this same boundary. The home stream must finish texture
+    // The home carousel finishes texture
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup
     // — ExperienceUI calls the idempotent method on every route change.
     if (this.currentPage() === 'home') await this.ensureCarouselInitialized()
     if (!this.isLifecycleCurrent(token)) return
-    // Phase 8 slice 7: the /works stage init moved out of World.init() to this
-    // same boundary (lazy — created only when /works is the entry route; the
-    // route can dispose it while its texture decode is still pending).
-    if (this.currentPage() === 'works') void this._stages.ensureWorksPlaneStageInitialized()
-    // Phase 8 slice 8: the Contact typography + Cyprus stage inits moved out of
-    // World.init() to this same boundary (lazy — created only when /contact
-    // is the entry route; the route can dispose them while their inits are
-    // still pending). The Draco decode + transparent material warm-up start
-    // while Contact's first frame (or the splash) is on screen, so Agros has
-    // no first-use model decode or shader-compile hitch.
-    if (this.currentPage() === 'contact') {
-      void this._stages.ensureContactTypographyStageInitialized()
-      void this._stages.ensureContactHaloStageInitialized()
-      // `ensureContactCyprusStageInitialized()` owns the prewarm after its
-      // request/identity guard. Do not attach a second continuation here: a
-      // stale entry-route promise could otherwise prewarm a newer stage.
-      void this._stages.ensureContactCyprusStageInitialized()
-    }
-    // The /manifesto ink wash follows the same entry-route contract: the
-    // initial deep-link fires jlz:route-change before this subscription
-    // exists, so the entry route must ensure its own lazy stage here.
-    if (this.currentPage() === 'manifesto') void this._stages.ensureManifestoInkStageInitialized()
+    this.prewarmCurrentRouteStages()
     if (!this.isLifecycleCurrent(token)) return
-    // Phase 8 slice 9: the Lab object's lazy creation moved out of
-    // World.syncRouteVisuals() to this same boundary (created once on the first
-    // /lab visit; the entry route triggers it here, the UI route handler
-    // triggers it on navigation). It is a static object — never disposed per
-    // route leave, only on final destroy.
-    if (this.currentPage() === 'lab') void this._stages.ensureLabGamepad()
-    // Phase 8 slice 10: the World's TresJS primitive slot goes away with the
-    // legacy World — the coordinator's sections enter the Tres scene directly
-    // (init() adds them); every route-owned lazy stage reaches the scene
-    // through its own declarative host port (StageRegistry contracts).
+    // The coordinator initializes section behavior; route-owned stages enter
+    // the scene through their declarative host ports.
     await this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
     if (!this.isLifecycleCurrent(token)) return
-    // Phase 8 slice 1: the lights + ground scene owners. They enter the
-    // Tres-owned scene directly (the World no longer constructs or disposes
-    // them), and the intro-section steps World.init() used to run for them
-    // (first-section light targets + ground color/opacity) run here — still
-    // before the first rendered frame, so the boot frame is unchanged.
+    // Apply the initial section's light and ground state before the first
+    // rendered frame.
     const firstCfg = this.coordinator.getConfig(
       this.coordinator.sections[1]?.phaseConfig?.id ?? 'sec_intro',
     )
     if (firstCfg) {
       this.lights.changeSection(firstCfg)
       this.ground.applyInitialConfig(firstCfg.ground)
-      // Phase 8 slice 3: EnvSphere starts on section 1 (intro) — default
-      // weights match. isLight=false (dark); the first jlz:theme-applied
-      // event corrects it.
+      // Start on the intro palette; the initial theme event resolves polarity.
       this.envSphere.changeSection(1, false)
     }
   }
@@ -519,21 +433,21 @@ export class Experience {
     return this.page?.() ?? 'home'
   }
 
-  /** Initialize the home-only carousel once, including after a deep-link
-   *  visit. Phase 8 slice 6: moved from World — Experience owns the
-   *  carousel reference (see `buildWorld`); World no longer owns scene
-   *  object init.
-   *
-   *  Deliberately NOT on the LazyStage contract (2026-09-25 decision,
-   *  closes the NEXT.md "lazy lifecycle consistency" item): the carousel
-   *  instance is created and disposed by the SectionGroups owner (works
-   *  section factory), not here. LazyStage's failure path calls
-   *  `setStage(null)` + `release` — nulling the live scene-graph reference
-   *  and releasing an owner that SectionGroups still owns — and its
-   *  re-create-on-dispose semantics do not apply to a home-only owner that
-   *  is never disposed per route. Only the init retries here; the
-   *  conversion would add the second abstraction layer this item was
-   *  gated against. */
+  /** Start the current route's stage while shared media warms. */
+  private prewarmCurrentRouteStages(): void {
+    const page = this.currentPage()
+    if (page === 'works') void this._stages.ensureWorksPlaneStageInitialized()
+    if (page === 'contact') {
+      void this._stages.ensureContactTypographyStageInitialized()
+      void this._stages.ensureContactHaloStageInitialized()
+      void this._stages.ensureContactCyprusStageInitialized()
+    }
+    if (page === 'manifesto') void this._stages.ensureManifestoInkStageInitialized()
+    if (page === 'lab') void this._stages.ensureLabGamepad()
+  }
+
+  /** Initialize the persistent home carousel once, including after a deep link.
+   *  SectionGroups owns its scene object and disposal; Experience owns init. */
   public ensureCarouselInitialized(): Promise<void> {
     if (this._carouselInitPromise) return this._carouselInitPromise
     const carousel = this.carousel
@@ -541,8 +455,7 @@ export class Experience {
 
     const initPromise = carousel.init().then(
       () => {
-        if (import.meta.env.DEV)
-          console.info('[Experience] BakuCarousel initialized (works section)')
+        devDiagnostic('info', '[Experience] BakuCarousel initialized (works section)')
       },
       (err) => {
         if (this._carouselInitPromise === initPromise) this._carouselInitPromise = null
@@ -561,7 +474,7 @@ export class Experience {
   async init() {
     if (this._destroyed) return
     const token = this.lifecycleToken()
-    // Install recovery ownership before the first renderer/world await. A
+    // Install recovery ownership before the first renderer/scene await. A
     // device-loss event can arrive during any async initialization gap.
     this.installRendererRecovery()
     // `input` is a module singleton shared by Camera and DrawTrail. Reattach
@@ -577,8 +490,7 @@ export class Experience {
     )
     this.contentReveal = new ContentReveal(() => this.currentPage())
     this.cursor = new Cursor(this.sfx)
-    // Phase 7: the cursor's own pointer/hover handlers are loop wake sources
-    // (its spring keeps moving after the scene has settled).
+    // Cursor pointer/hover input wakes the loop while its spring settles.
     this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
     // Glitch eyebrow — on section change, animate the active section's
     // [data-eyebrow] number with NoiseText random-symbol scramble.
@@ -612,7 +524,7 @@ export class Experience {
       onInstanceReplaced: (instance) => this._host.replaceRenderer(instance),
     })
     if (!this.isLifecycleCurrent(token)) return
-    await this.buildWorld(token)
+    await this.buildScene(token)
     if (!this.isLifecycleCurrent(token)) return
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on every section change with
@@ -629,8 +541,7 @@ export class Experience {
       // The scene input port: the typed ThemeAppliedPort detail that
       // ContentReveal dispatches on every section change / theme toggle.
       const sectionIdx = detail.sectionIndex
-      // Phase 8 slice 3: the EnvSphere is the Experience-owned scene owner —
-      // the coordinator gate below still guards the coordinator-bound syncs.
+      // Keep the ambient environment aligned with the active section theme.
       if (this.envSphere) {
         if (detail.snap) {
           this.envSphere.snapToSection(sectionIdx, detail.isLight)
@@ -671,9 +582,8 @@ export class Experience {
     // preserves the previous environment (see SceneEnvironment.apply).
     this._environment.apply()
 
-    // Phase 7 slice 4: the former UI features (CinematicNav, UIMenu,
-    // overlay, project controls, UI-facing window handlers) are created and
-    // wired by ExperienceUI at this legacy timing (after world + env).
+    // Initialize navigation, menus, overlays and project controls after the
+    // scene and environment are ready.
     this.features.init()
 
     // DevPanel — created AFTER nav so it can read current section
@@ -682,9 +592,7 @@ export class Experience {
         this._frameTiming = new FrameTiming()
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         this.devPanel = new DevPanelCtor(this)
-        // Dev-only runtime probe: resource snapshot PLUS the single loop
-        // driver's diagnostics (Phase 7 acceptance: the loop must be
-        // inactive after the settled frame — zero settled draws).
+        // Dev-only probe exposes resource and loop diagnostics.
         ;(
           window as unknown as {
             __jlzRuntimeSnapshot?: () => {
@@ -705,9 +613,8 @@ export class Experience {
             resources: this.devPanel.getResourceSnapshot(),
             loop: this._scheduler.diagnostics,
             configIds: this.coordinator.configIds,
-            // Settled-idle evidence (Phase 7+ gates): the exact demand state
-            // behind the settle decision — which flag (if any) keeps the
-            // single loop driver from stopping after the settled frame.
+            // Expose the demand state that determines whether the loop can
+            // settle after its current frame.
             demand: {
               needsRender: this._needsRender,
               cursorSettled: this.cursor?.isSettled ?? null,
@@ -716,7 +623,7 @@ export class Experience {
             timing: this._frameTiming?.snapshot() ?? null,
           }
         }
-        console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
+        devDiagnostic('info', '[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
       } catch (e) {
         console.warn('[Experience] DevPanel init failed:', e)
       }
@@ -745,22 +652,15 @@ export class Experience {
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-    // Phase 7 (ADR 0004) / ADR 0005: the loop is demand-driven — the
-    // scheduler (built in the constructor) owns the frame policy: the frame
-    // callback starts on the first 'first-frame' invalidation and stops
-    // after the settled frame (zero settled draws), running inside the
-    // persistent Tres loop via the SceneHost SceneLoopPort. WebGPURenderer
-    // on the WebGPU backend still paces through setAnimationLoop
-    // (swap-chain sync) — the driver, not the start/stop policy, is
-    // unchanged from Phase 6.
+    // The scheduler starts the frame callback on first invalidation and stops
+    // after a settled frame. Tres remains the single loop host, while the
+    // renderer keeps its normal swap-chain pacing.
     this._scheduler.invalidate('first-frame')
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
-    // DrawTrail.update() runs inside world.update(needsRender) — if
-    // _needsRender is false, the trail doesn't update. On the Works section
-    // (idx=3), we want the trail to follow the cursor in real time, so we
-    // set _needsRender=true on mousemove. Throttled via rAF flag to avoid
-    // 200+ events/sec flooding the render loop.
+    // Wake the scene trail on mousemove only while Works is visible. Throttle
+    // pointer events through rAF so high-frequency input does not flood the
+    // demand scheduler.
     this._mouseTrailRafPending = false
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
@@ -776,17 +676,7 @@ export class Experience {
     }
     window.addEventListener('mousemove', this._onMouseMoveForTrail, { passive: true })
 
-    // (AudioSystem removed — was functionally dead: source field never
-    //  assigned, getBass/getMid/getTreble had zero callers, update() ran
-    //  every frame computing zeros. SfxSystem is alive via Cursor.ts.)
-
-    // Phase 7 slice 4: the former UI features (sound default + toggle,
-    // language sync, open-project / project-navigate / route-change /
-    // wobble-pulse / page-section / works-plane-tap / goto-section-by-hash
-    // handlers, CinematicNav + UIMenu) are wired by ExperienceUI at this
-    // legacy init timing — see ExperienceUI.init().
-
-    // Phase 7 readiness contract: await the initial scene's FIRST SUCCESSFUL
+    // Await the initial scene's first successful
     // RENDER. The 'first-frame' invalidation above guarantees a frame (a
     // hidden tab resumes with exactly one invalidation); the bounded timeout
     // keeps the splash from hanging on a path that never renders. The factory
@@ -802,7 +692,7 @@ export class Experience {
    * the coordinator's typography sync. The event handler adds the per-group
    * particles blending pass; the init replay adds the envSphere section snap —
    * those stay at their call sites. Optional chaining is deliberate: the init
-   * replay can run before the lazy world stages exist.
+   * replay can run before the lazy route stages exist.
    */
   private _syncPolaritySurfaces(isLight: boolean): void {
     this.ground?.syncTheme(isLight)
@@ -823,7 +713,7 @@ export class Experience {
   }
 
   /**
-   * Post-frame settle decision for the single loop driver (ADR 0004): the
+   * Post-frame settle decision for the single loop driver: the
    * loop may stop after this frame only when the draw gate would have been
    * a no-op (demand clear AND nothing active — the demandSettles 14-flag
    * set) AND the cursor spring has converged (it needs frames even when the
@@ -839,7 +729,7 @@ export class Experience {
     )
   }
 
-  // ── A4 ambient breath (wall-clock, Phase 7) ──
+  // ── Ambient breath (wall-clock timer) ──
   /**
    * Arm the ~2.5 s breath timer while the scene is idle, or drop it while
    * active / hidden / reduced-motion. Called on every frame with the
@@ -953,9 +843,8 @@ export class Experience {
     // ── Zoom pulse active ──
     const camPulsing = this.camera.isPulsing
 
-    // The per-frame activity snapshot — the demand decision below is the
-    // pure renderDemand contract (single source of the 14-flag OR /
-    // 10-flag breath-idle sets, unit-locked against the legacy logic).
+    // This snapshot is the single input to the render-demand and idle-breath
+    // policies, keeping activity collection separate from policy decisions.
     const activity = this._activitySnapshot
     activity.nav = navActive
     activity.carousel = carouselActive
@@ -978,7 +867,7 @@ export class Experience {
 
     // ── A4: Ambient breathing ──
     // When fully idle (no particles/nav/carousel/…), one refresh frame every
-    // ~2.5 s so the scene doesn't look frozen. Phase 7: the loop stops when
+    // ~2.5 s so the scene doesn't look frozen. The loop stops when
     // settled, so a per-frame dt accumulator can never advance — the breath
     // is a wall-clock timer (see _scheduleBreath) that raises demand and
     // fires a typed 'breath' invalidation on the scheduler. Respects
@@ -1015,20 +904,15 @@ export class Experience {
       }
     }
 
-    // (setEnvAndCamera call removed — SplashCube method was a no-op.
-    //  envMap comes from CubeCamera, cameraPos was never read.)
-
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
     const idx = this.coordinator.currentSectionIndex
     // Give the frame pass the camera ref for DrawTrail unprojection + the
     // ServicesStage head-tracking (every frame — the pass re-reads it).
     this.coordinator.setCamera(this.camera.instance)
-    // Phase 8 slice 7: the /works stage camera moved out of World.setCamera —
-    // forwarded directly (the stage is lazy; null until /works is reached).
+    // Update the lazy Works camera controller when that route has been loaded.
     this._stages.worksPlaneStage?.setCamera(this.camera.instance)
-    // Phase 8 slice 8: the Contact stage cameras moved out of World.setCamera
-    // (Experience owns both lazy stages).
+    // Update the lazy Contact camera controller when it has been loaded.
     this._stages.contactCyprusStage?.setCamera(this.camera.instance)
 
     // Dispatch section-change on EVERY section index change (not just context).
@@ -1037,10 +921,8 @@ export class Experience {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
       const cfgForSection = this.coordinator.getConfig(worldState.currentPhase)
-      // Phase 8 slice 1: section-arrival light targets (was the legacy
-      // transform's arrival step — same frame, same config).
-      // Initial sync excluded: buildWorld's intro step already set the target
-      // (exactly what the legacy World.init did).
+      // The initial sync is excluded because buildScene already applied the
+      // intro light target before the first frame.
       if (!isInitialSectionSync && cfgForSection) {
         this.lights.changeSection(cfgForSection)
       }
@@ -1088,14 +970,14 @@ export class Experience {
       // pipeline, so section transitions no longer snap the grade.
       this.renderer.postManager.applyPreset(cfg.id, cfg.post)
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
-      // Subtle camera shake on section transition — softer (was 0.04, 0.4)
+      // Subtle camera shake on section transition.
       if (!this._reducedMotion) this.camera.shake(0.02, 0.6)
       this.currentSectionContext = cfg.context
-      // A-009: Apply Baku material from worldState (was computed but never applied)
+      // Apply the material palette resolved for this section.
       if (this.baku) {
         this.baku.updateMaterial(worldState.bakuMaterial)
       }
-      // A-015: Per-section cursor follow (works=0.22, others=0.15)
+      // Follow the Works cards more closely than the other sections.
       const cursorFollow = idx === WORKS_SLOT_INDEX ? 0.22 : 0.15
       this.camera.setCursorFollow(cursorFollow)
     }
@@ -1104,9 +986,8 @@ export class Experience {
     // (BakuCarousel). The carousel is a child of sceneGroups[3] (Works idx 3
     // in 6-section layout) and manages its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
-    // Note: _bakuCarouselActive is now computed BEFORE the _needsRender check
-    // (above, in the activity snapshot) — was a race condition where stale
-    // value caused carousel.update() to never run, morph stalled at ~0.35.
+    // Carousel activity is sampled before the render gate so a morph started
+    // by this frame's transform pass advances immediately.
     // Sync FullscreenOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._projectOverlayPreloaded) {
       this._projectOverlayPreloaded = true
@@ -1126,10 +1007,8 @@ export class Experience {
       this.ground.setSectionVisible(this.coordinator.currentSectionIndex === 4)
     }
 
-    // Per-section camera smoothing — only when rendering. The gate is the
-    // contract's shouldRender (demand set OR anything active); it is 1:1
-    // with the legacy `if (this._needsRender)` because the anyActivity OR
-    // above already raised the flag for any active source.
+    // Apply camera and renderer work only when explicit demand or active scene
+    // behavior requires a frame.
     if (shouldRender(this._needsRender, activity)) {
       const smoothing = cfg?.camSmoothing ?? DEFAULT_CAMERA_SMOOTHING
       const cameraStart = frameTiming ? performance.now() : 0
@@ -1137,7 +1016,6 @@ export class Experience {
       this.lights.update(dt)
       this.camera.update(dt)
       const cameraDuration = frameTiming ? performance.now() - cameraStart : 0
-      // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       const rendererStart = frameTiming ? performance.now() : 0
       // While the showreel theater is open it OWNS the frame: its private
       // scene renders through the same renderer + post pipeline, the world
@@ -1153,7 +1031,7 @@ export class Experience {
         renderer: rendererDuration,
         total: performance.now() - frameStart,
       })
-      // Phase 7 readiness: the initial scene's FIRST SUCCESSFUL RENDER — a
+      // Readiness requires the initial scene's first successful render — a
       // frame that threw in renderer.update() never resolves the gate
       // (update() catches and keeps booting), so `jlz:webgl-ready` can only
       // fire after a real draw. Resolves exactly once.
@@ -1162,9 +1040,8 @@ export class Experience {
         this._firstRenderResolve = null
         resolve()
       }
-      // Clear the demand flag only when nothing is still active — the same
-      // 14-flag settle set, now the contract's demandSettles (unit-locked
-      // against the legacy inline AND-NOT).
+      // Keep demand raised while any activity remains; otherwise the next
+      // scheduler pass can settle.
       if (demandSettles(activity)) {
         this._needsRender = false
       }
@@ -1185,14 +1062,10 @@ export class Experience {
     }
 
     // NOTE: do NOT call requestAnimationFrame here — the persistent Tres
-    // loop (driven by the scheduler through the SceneLoopPort, ADR 0005) is
+    // loop (driven by the scheduler through the SceneLoopPort) is
     // the one RAF host. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.
   }
-
-  // (setSplashProgress removed — dead method, zero callers. Was calling
-  //  SplashCube.setProgress which was also a no-op.)
-  // (triggerSplashOpener removed — Phase 7 slice 4: owned by ExperienceUI.)
 
   destroy() {
     if (this._destroyed) return
@@ -1249,11 +1122,10 @@ export class Experience {
     // The showreel controller unsubscribes its commands and disposes the
     // theater with the render owner (video element, texture, quad).
     this._showreel?.dispose()
-    // Phase 7 slice 4: the former UI features (their window listeners, the
-    // menu, the overlay and the story nav) tear down through ExperienceUI.
+    // UI event listeners, menu, overlay and story navigation belong to
+    // ExperienceUI.
     this.features.destroy()
-    // Phase 8 slice 1: the lights + ground scene owners (Experience is their
-    // single disposal owner — the legacy World no longer disposes them).
+    // Experience owns these controller lifetimes.
     this.lights?.dispose()
     this.ground?.dispose()
     // Vue owns the ambient pavilion and its borrowed EnvSky material.
@@ -1263,39 +1135,43 @@ export class Experience {
     this.baku?.dispose()
     this.particleBurst?.dispose()
     this.drawTrail?.dispose()
-    // The six route-owned lazy stages die through their registry owner, in
-    // the legacy destroy order (works plane → typography → cyprus → halo →
-    // ink → lab). disposeLazyStage retires in-flight import generations
-    // before renderer teardown, so a module resolving after root destruction
-    // can neither attach a stage nor retain its TSL material graph.
-    this._stages?.dispose()
+    // The registry invalidates pending route-stage imports before renderer
+    // teardown, so late completions cannot attach nodes or retain TSL graphs.
+    const stageTeardown = this._stages.dispose()
+    // Release the render pipeline and abort recovery now. SceneHost's
+    // renderer instance is deferred until its declarative Vue owners unmount.
+    this.renderer.dispose()
     // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
-    // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
-    // disposal ordering + Works particle texture live in the owner).
+    // Dispose carousel and particle resources before the adopted roots.
     this.sectionGroups?.dispose()
     this.coordinator?.dispose()
-    // Last-resort sweep for cold-cache failures and in-flight loads that had
-    // no owner card yet. In-flight entries self-dispose when they settle.
-    disposeAllCaseTextures()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy
-    // Renderer.dispose() cleans up the resize listener AND the pipeline
-    // AND the renderer instance (was previously only instance.dispose()).
-    this.renderer.dispose()
     this.camera.destroy()
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
     input.destroy()
     this.sfx.dispose()
-    // The scene environment PMREM texture — disposed + reference cleared by
-    // its owner (was a leak on HMR teardown before the owner existed).
+    // Release the generated PMREM texture through its owner.
     this._environment?.disposeCurrent()
-  }
 
-  // (ensureProjectControls / getCarousel / onProjectSelect removed — Phase 7
-  //  slice 4: owned by ExperienceUI. The BakuCarousel card click is the SOLE
-  //  entry point for the fullscreen FullscreenOverlay, as before.)
+    // Stage ports wait for Vue/Tres to remove each declared subtree before
+    // disposing its adopted GPU resources. Keep the backend alive until that
+    // release sequence completes; the scheduler is already stopped above.
+    const finishRendererTeardown = (): void => {
+      // Last-resort sweep for cold-cache failures and in-flight loads that had
+      // no owner card yet. In-flight entries self-dispose when they settle.
+      disposeAllCaseTextures()
+    }
+    void stageTeardown.then(
+      finishRendererTeardown,
+      (error: unknown) => {
+        console.error('[Experience] stage teardown failed:', error)
+        finishRendererTeardown()
+      },
+    )
+  }
 }

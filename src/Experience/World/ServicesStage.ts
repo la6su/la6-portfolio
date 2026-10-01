@@ -1,13 +1,10 @@
 import * as THREE from 'three'
 import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
 
-/** Four finite assembly states: direction, architecture, choreography, workflow.
- * SceneCoordinator owns attachment and demand updates. Terminal disposal
- * belongs to ServicesStageOwner.vue on persistent-host unmount; a runtime
- * destroy only drops the Experience reference without disposing.
- */
-export class ServicesStage extends THREE.Group {
+/** Animation/material controller for the declarative services scene. */
+export class ServicesStage {
   private disposed = false
+  private root: THREE.Group | null = null
   private readonly metal = new MeshStandardNodeMaterial({
     color: 0x71858f,
     metalness: 0.65,
@@ -26,14 +23,16 @@ export class ServicesStage extends THREE.Group {
   private state = -1
   private settled = true
 
-  constructor() {
-    super()
-    this.name = 'services-assembly'
-    this.visible = false
-  }
-
   private parts: THREE.Mesh[] = []
   private rings: THREE.Mesh[] = []
+
+  get visible(): boolean {
+    return this.root?.visible ?? false
+  }
+
+  set visible(value: boolean) {
+    if (this.root) this.root.visible = value
+  }
 
   get metalMaterial(): MeshStandardNodeMaterial {
     return this.metal
@@ -45,7 +44,8 @@ export class ServicesStage extends THREE.Group {
     return this.ringMaterials
   }
 
-  adopt(nodes: { parts: THREE.Mesh[]; rings: THREE.Mesh[] }): void {
+  adopt(nodes: { root: THREE.Group; parts: THREE.Mesh[]; rings: THREE.Mesh[] }): void {
+    this.root = nodes.root
     this.parts = nodes.parts
     this.rings = nodes.rings
   }
@@ -60,9 +60,10 @@ export class ServicesStage extends THREE.Group {
     dt: number,
     reduced: boolean,
   ): void {
+    if (this.disposed || !this.root) return
     camera.getWorldPosition(this.worldPosition)
-    this.position.copy(this.worldPosition)
-    this.quaternion.copy(camera.quaternion)
+    this.root.position.copy(this.worldPosition)
+    this.root.quaternion.copy(camera.quaternion)
     const height = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 5
     const mobile = camera.aspect < 1.2
     const scale = Math.min(height * 0.27, height * camera.aspect * 0.29)
@@ -90,10 +91,10 @@ export class ServicesStage extends THREE.Group {
     this.rings.forEach((ring, index) => {
       ring.rotation.y += dt * (0.08 + index * 0.025)
     })
-    this.scale.setScalar(scale)
+    this.root.scale.setScalar(scale)
     this.offset.set(mobile ? 0 : height * camera.aspect * 0.22, mobile ? height * 0.05 : 0, -5)
     this.offset.applyQuaternion(camera.quaternion)
-    this.position.add(this.offset)
+    this.root.position.add(this.offset)
   }
 
   dispose(): void {
@@ -104,7 +105,6 @@ export class ServicesStage extends THREE.Group {
     this.ringMaterials.forEach((material) => material.dispose())
     this.rings.length = 0
     this.parts.length = 0
-    this.clear()
-    this.removeFromParent()
+    this.root = null
   }
 }

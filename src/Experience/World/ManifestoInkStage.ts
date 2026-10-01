@@ -34,10 +34,8 @@ export class ManifestoInkStage extends PointerInkStage {
         // halo — the reading page keeps the wash closer to rest).
         const focus = pointer.mul(vec2(0.5, 0.22))
         const stretched = p.sub(focus).mul(vec2(0.72, 1.25))
-        const pool = (smoothstep as any)(0.95, 0.12, length(stretched))
-        const strata = sin(p.x.mul(3.2).add(time.mul(0.22))).mul(
-          sin(p.y.mul(2.2).sub(time.mul(0.18))).mul(0.6),
-        )
+        const pool = smoothstep(0.95, 0.12, length(stretched))
+        const strata = sin(p.x.mul(3.2).add(time.mul(0.22))).mul(sin(p.y.mul(2.2).sub(time.mul(0.18))).mul(0.6))
         const breath = sin(time.mul(0.42)).mul(0.5).add(0.5)
         return pool
           .mul(0.78)

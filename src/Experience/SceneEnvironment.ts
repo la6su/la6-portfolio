@@ -22,6 +22,7 @@
 // so both owners must be read lazily at apply time.
 
 import * as THREE from 'three'
+import { devDiagnostic } from '../core/devDiagnostic'
 import { PMREMGenerator as WebGPUPMREMGenerator } from 'three/webgpu'
 
 interface SceneEnvironmentOwners {
@@ -132,11 +133,10 @@ export class SceneEnvironment {
       if (previousEnvironment && previousEnvironment !== nextEnvironment) {
         previousEnvironment.dispose()
       }
-      if (import.meta.env.DEV) {
-        console.info(
-          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
-        )
-      }
+      devDiagnostic(
+        'info',
+        '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
+      )
     } catch (e) {
       if (nextEnvironment) {
         scene.environment = previousEnvironment ?? null

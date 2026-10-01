@@ -104,14 +104,13 @@ const positionNode = Fn(() => {
 
   <h2>The catch</h2>
   <p>
-    TSL is still evolving. The API has breaking changes between three.js minor versions. We pin
-    three.js to <code>0.184</code> and update deliberately. The type definitions in
-    <code>src/types/tsl.ts</code> are our adapter shim — they smooth over the rough edges.
+    TSL evolves alongside three.js, so upgrades need deliberate validation across the supported
+    render backends. The narrow type adapters in <code>src/types/tsl-helpers.ts</code> keep declaration
+    gaps at one boundary instead of spreading casts through shader graphs.
   </p>
   <p>
-    Documentation is sparse. The best reference is the three.js examples and the TSL source itself.
-    We've built up a library of project UI patterns and
-    <code>docs/ARCHITECTURE.md</code> — the hard-won lessons are recorded there.
+    The three.js examples and TSL source are useful references alongside the official documentation.
+    Project-specific shader patterns live with the scene components and their TSL helpers.
   </p>
 
   <h2>The verdict</h2>

@@ -177,10 +177,8 @@ export class ParticleBurst {
     this._disposed = true
     this._active = false
     this._mesh.visible = false
-    // The TSL trace material is controller-created — it dies here. The mesh
-    // and its Tres-built geometry stay with the Vue host (they leave the
-    // scene with IntroLightFramesOwner's unmount).
-    ;(this._mesh.material as THREE.Material).dispose()
+    // The Tres-declared instanced node owns its current geometry/material and
+    // disposes them when IntroLightFramesOwner unmounts it.
     this._segments.length = 0
   }
 }

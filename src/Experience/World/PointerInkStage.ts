@@ -12,7 +12,7 @@
 // shared plane geometry refcounted across concurrent stage instances.
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial, type UniformNode } from 'three/webgpu'
+import { MeshBasicNodeMaterial, type Node, type UniformNode } from 'three/webgpu'
 import { Fn, float, uniform } from 'three/tsl'
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
@@ -26,7 +26,7 @@ interface PointerInkUniforms {
 
 /** Authored voice of a pointer-reactive ink stage. */
 interface PointerInkStageConfig {
-  /** Group name (`<name>-stage` convention is the subclass's choice). */
+  /** Scene root name (`<name>-stage` convention is the subclass's choice). */
   stageName: string
   meshName: string
   meshPosition: readonly [number, number, number]
@@ -39,9 +39,13 @@ interface PointerInkStageConfig {
   /** Pointer NDC → plane-local focus scale. */
   focusScale: readonly [number, number]
   /** Damping voice: energy rise, exponential decay, pointer chase. */
-  damping: { readonly rise: number; readonly decay: number; readonly chase: number }
+  damping: {
+    readonly rise: number
+    readonly decay: number
+    readonly chase: number
+  }
   /** The authored ink field — one subgraph feeding color and opacity. */
-  inkField: (u: PointerInkUniforms) => ReturnType<typeof float>
+  inkField: (u: PointerInkUniforms) => Node<'float'>
 }
 
 // One buffer per plane size can serve concurrent stage instances, but its
@@ -69,10 +73,12 @@ function releaseGeometry(width: number, height: number): void {
   sharedGeometries.delete(key)
 }
 
-export class PointerInkStage extends THREE.Group {
+export class PointerInkStage {
   private active = false
   private disposed = false
   private reducedMotion = prefersReducedMotion()
+  private root: THREE.Group | null = null
+  private inkMesh: THREE.Mesh | null = null
 
   // Reveal damp (0 hidden → 1 shown) — exponential, no timeline to rewind.
   private reveal = 0
@@ -85,8 +91,8 @@ export class PointerInkStage extends THREE.Group {
   private energy = 0
 
   protected readonly config: PointerInkStageConfig
-  private readonly material: MeshBasicNodeMaterial
-  private readonly inkMesh: THREE.Mesh
+  readonly material: MeshBasicNodeMaterial
+  readonly geometry: THREE.PlaneGeometry
 
   // Per-instance uniform nodes — JS-advanced only on rendered frames so the
   // breathing clock respects the demand-driven loop (never global `time`).
@@ -97,9 +103,7 @@ export class PointerInkStage extends THREE.Group {
   protected readonly _tintUni: UniformNode<'color', THREE.Color>
 
   constructor(config: PointerInkStageConfig) {
-    super()
     this.config = config
-    this.name = config.stageName
 
     const time = uniform(0)
     const pointer = uniform(new THREE.Vector2(0, 0))
@@ -127,20 +131,48 @@ export class PointerInkStage extends THREE.Group {
     })()
 
     this.material = mat
-    this.inkMesh = new THREE.Mesh(acquireGeometry(config.planeSize[0], config.planeSize[1]), mat)
-    this.inkMesh.name = config.meshName
-    this.inkMesh.frustumCulled = false
-    this.inkMesh.renderOrder = 1
-    this.inkMesh.position.set(...config.meshPosition)
-    this.inkMesh.scale.setScalar(0.001)
-    this.add(this.inkMesh)
-    this.visible = false
+    this.geometry = acquireGeometry(config.planeSize[0], config.planeSize[1])
 
     this._timeUni = time
     this._pointerUni = pointer
     this._energyUni = energy
     this._revealUni = reveal
     this._tintUni = tint
+  }
+
+  get stageName(): string {
+    return this.config.stageName
+  }
+
+  get meshName(): string {
+    return this.config.meshName
+  }
+
+  get meshPosition(): readonly [number, number, number] {
+    return this.config.meshPosition
+  }
+
+  get visible(): boolean {
+    return this.root?.visible ?? false
+  }
+
+  bindNodes(root: THREE.Group, inkMesh: THREE.Mesh): void {
+    if (this.disposed) return
+    this.root = root
+    this.inkMesh = inkMesh
+    root.name = this.config.stageName
+    root.visible = this.active
+    inkMesh.name = this.config.meshName
+    inkMesh.frustumCulled = false
+    inkMesh.renderOrder = 1
+    inkMesh.position.set(...this.config.meshPosition)
+    inkMesh.scale.setScalar(0.001)
+  }
+
+  unbindNodes(root: THREE.Group): void {
+    if (this.root !== root) return
+    this.root = null
+    this.inkMesh = null
   }
 
   get isAnimating(): boolean {
@@ -153,7 +185,7 @@ export class PointerInkStage extends THREE.Group {
   setActive(active: boolean): void {
     if (this.disposed) return
     this.active = active
-    this.visible = active
+    if (this.root) this.root.visible = active
     if (this.reducedMotion) {
       this.settleReducedMotion()
       return
@@ -164,7 +196,7 @@ export class PointerInkStage extends THREE.Group {
       // and the next entrance would look like an instantaneous toggle.
       this.reveal = 0
       this._revealUni.value = 0
-      this.inkMesh.scale.setScalar(0.001)
+      this.inkMesh?.scale.setScalar(0.001)
       this.energy = 0
       this._energyUni.value = 0
     }
@@ -212,7 +244,7 @@ export class PointerInkStage extends THREE.Group {
     const revealTarget = this.active ? 1 : 0
     this.reveal += (revealTarget - this.reveal) * Math.min(1, dt * 3.2)
     this._revealUni.value = this.reveal
-    this.inkMesh.scale.setScalar(Math.max(0.001, this.reveal))
+    this.inkMesh?.scale.setScalar(Math.max(0.001, this.reveal))
   }
 
   /** Snap the authored motion to its settled state (preference or idle). */
@@ -223,15 +255,17 @@ export class PointerInkStage extends THREE.Group {
     this._pointerUni.value.set(0, 0)
     this._energyUni.value = 0
     this._revealUni.value = this.reveal
-    this.inkMesh.scale.setScalar(Math.max(0.001, this.reveal))
+    this.inkMesh?.scale.setScalar(Math.max(0.001, this.reveal))
   }
 
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.active = false
+    if (this.root) this.root.visible = false
     this.material.dispose()
     releaseGeometry(this.config.planeSize[0], this.config.planeSize[1])
-    this.removeFromParent()
+    this.root = null
+    this.inkMesh = null
   }
 }

@@ -22,7 +22,7 @@ import {
   generateBuilderComponentLess,
   generateBuilderThemeLess,
   getBuilderUIKitComponents,
-} from '../src/builder/compiler'
+} from '../src/builder/compiler.ts'
 import {
   BUILDER_DOCUMENTS_VERSION,
   findBuilderDocument,
@@ -31,8 +31,8 @@ import {
   upsertBuilderDocument,
   validateBuilderDocuments,
   type BuilderDocuments,
-} from '../src/builder/documents'
-import { validateBuilderDocument } from '../src/builder/schema'
+} from '../src/builder/documents.ts'
+import { validateBuilderDocument } from '../src/builder/schema.ts'
 
 const MAX_DOCUMENT_BYTES = 256 * 1024
 

@@ -13,6 +13,7 @@
 
 import * as THREE from 'three'
 import type { Section } from '../core/Section'
+import { devDiagnostic } from '../core/devDiagnostic'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig } from '../core/WorldConfig'
@@ -144,12 +145,11 @@ export class SceneCoordinator {
     // Phase 8 slice 8: the Contact typography + Cyprus stage inits live in
     // Experience (it owns both lazy stages; the route can enter /contact
     // before their init resolves).
-    if (import.meta.env.DEV) {
-      console.debug(
-        '[SceneCoordinator] init — scene group visibility:',
-        this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
-      )
-    }
+    devDiagnostic(
+      'debug',
+      '[SceneCoordinator] init — scene group visibility:',
+      this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
+    )
   }
 
   /** Rebuild the page-specific section/config contract after SPA navigation. */

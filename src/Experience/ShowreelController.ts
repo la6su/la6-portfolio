@@ -24,6 +24,8 @@ interface ShowreelControllerContext {
   isDestroyed: () => boolean
   /** A theater created after a reduced-motion flip must match the state. */
   reducedMotion: () => boolean
+  mountTheater: (theater: ShowreelTheater) => Promise<void>
+  unmountTheater: (theater: ShowreelTheater) => Promise<void>
 }
 
 export class ShowreelController {
@@ -31,6 +33,8 @@ export class ShowreelController {
   private _openUnsub: (() => void) | null = null
   private _closeUnsub: (() => void) | null = null
   private _togglePlayUnsub: (() => void) | null = null
+  private _opening: Promise<ShowreelTheater | null> | null = null
+  private _requestedOpen = false
 
   constructor(private readonly _ctx: ShowreelControllerContext) {}
 
@@ -39,10 +43,13 @@ export class ShowreelController {
   public bind(): void {
     this._openUnsub = eventBus.on('jlz:showreel-open', () => {
       if (this._ctx.isDestroyed()) return
-      this.ensure()
-      this._theater?.open()
+      this._requestedOpen = true
+      void this.ensure().then((theater) => {
+        if (theater && this._requestedOpen && !this._ctx.isDestroyed()) theater.open()
+      })
     })
     this._closeUnsub = eventBus.on('jlz:showreel-close', () => {
+      this._requestedOpen = false
       this._theater?.close()
     })
     this._togglePlayUnsub = eventBus.on('jlz:showreel-toggle-play', () => {
@@ -51,13 +58,34 @@ export class ShowreelController {
   }
 
   /** Lazily create the theater on the first open request. */
-  private ensure(): void {
-    if (this._theater || this._ctx.isDestroyed()) return
-    this._theater = new ShowreelTheater(
+  private ensure(): Promise<ShowreelTheater | null> {
+    if (this._opening) return this._opening
+    if (this._theater) return Promise.resolve(this._theater)
+    if (this._ctx.isDestroyed()) return Promise.resolve(null)
+    const theater = new ShowreelTheater(
       '/assets/video/coming-soon.mp4',
       '/assets/video/coming-soon-cover.jpg',
     )
-    this._theater.setReducedMotion(this._ctx.reducedMotion())
+    theater.setReducedMotion(this._ctx.reducedMotion())
+    this._theater = theater
+    const opening = this._ctx.mountTheater(theater).then(() => {
+      if (this._ctx.isDestroyed() || this._theater !== theater) {
+        return this._ctx.unmountTheater(theater).then(() => {
+          theater.dispose()
+          return null
+        })
+      }
+      return theater
+    }).catch(() => {
+      if (this._theater === theater) this._theater = null
+      theater.dispose()
+      return null
+    })
+    this._opening = opening
+    void opening.then(() => {
+      if (this._opening === opening) this._opening = null
+    })
+    return opening
   }
 
   /** Per-frame activity flag for the demand snapshot. */
@@ -84,6 +112,7 @@ export class ShowreelController {
   /** Unsubscribe the commands and dispose the theater (video element, its
    *  texture and the quad die here). */
   public dispose(): void {
+    this._requestedOpen = false
     if (this._openUnsub) {
       this._openUnsub()
       this._openUnsub = null
@@ -96,7 +125,11 @@ export class ShowreelController {
       this._togglePlayUnsub()
       this._togglePlayUnsub = null
     }
-    this._theater?.dispose()
+    const theater = this._theater
     this._theater = null
+    if (theater) {
+      void this._ctx.unmountTheater(theater).finally(() => theater.dispose())
+    }
+    this._opening = null
   }
 }

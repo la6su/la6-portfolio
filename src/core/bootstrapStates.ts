@@ -1,7 +1,6 @@
 // src/core/bootstrapStates.ts — Phase 3 pure bootstrap state machine.
 //
-// The target bootstrap is an explicit state machine (docs/ARCHITECTURE.md,
-// "Bootstrap and failure handling"):
+// Bootstrap proceeds through an explicit state machine:
 //
 //   shell-painted
 //     -> app-loading

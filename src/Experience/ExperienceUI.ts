@@ -193,7 +193,7 @@ export class ExperienceUI {
           } else {
             // Works owns eight decoded 1440×810 textures. Keeping an inactive
             // stage alive makes that GPU allocation look like a navigation leak.
-            stages.disposeWorksPlaneStage()
+            void stages.disposeWorksPlaneStage()
           }
           if (newPage === 'contact') {
             stages.setContactCyprusStageSection(0)
@@ -207,9 +207,9 @@ export class ExperienceUI {
               this.host.raise('nav')
             })
           } else {
-            stages.disposeContactTypographyStage()
-            stages.disposeContactCyprusStage()
-            stages.disposeContactHaloStage()
+            void stages.disposeContactTypographyStage()
+            void stages.disposeContactCyprusStage()
+            void stages.disposeContactHaloStage()
             coordinator.setContactSceneSection(0)
           }
           if (newPage === 'manifesto') {
@@ -218,11 +218,10 @@ export class ExperienceUI {
               this.host.raise('nav')
             })
           } else {
-            stages.disposeManifestoInkStage()
+            void stages.disposeManifestoInkStage()
           }
-          // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
-          // (created once on the first /lab visit; never disposed per route leave —
-          // the coordinator's `syncRouteVisuals` already hides it off-route).
+          // The Lab object loads once on its first /lab visit and stays mounted
+          // between routes; the coordinator hides it while off-route.
           if (newPage === 'lab') void stages.ensureLabGamepad()
           this.host.raise('nav')
         })().catch((error: unknown) => {

@@ -1,27 +1,5 @@
-// src/app/sceneHost.ts — Phase 7: the persistent SceneHost bridge.
-//
-// `SceneHost.vue` (the persistent Tres root mounted by AppShell) creates the
-// one canvas, the one renderer (through the custom renderer factory) and the
-// one camera, mounts the Tres context, and resolves this bridge ONCE — after
-// renderer initialization and actual-backend inspection. `entry-app.ts`
-// awaits the bridge before constructing `Experience`, and `Experience`
-// adopts the scene, camera and renderer instances (the readiness handshake:
-// `jlz:webgl-ready` can only fire after this resolves AND the initial
-// scene's first successful render — the factory return alone never satisfies
-// readiness).
-//
-// Phase 8 slice 10 removed the legacy `worldObject` primitive slot; the
-// scene owners and every route-owned lazy stage now enter the Tres-owned
-// scene through declarative adapters (`<primitive>` stage slots + the
-// declarative components).
-//
-// ADR 0005 (Tres-native demand loop): the persistent Tres loop is the one RAF
-// host. The RenderScheduler opens/closes activity windows on it through the
-// `SceneLoopPort`, and its frame callback runs inside Tres's before-render
-// hooks — so `useLoop` subscribers (Cientos components included) share the
-// loop. The render STEP itself stays on the Experience pipeline: SceneHost
-// replaces Tres's default render function with a frame-accounting delegate
-// and translates ecosystem `invalidate()` calls into scheduler demands.
+// SceneHost publishes the initialized Tres context and lifecycle ports to
+// Experience after the renderer and backend are ready.
 
 import type * as THREE from 'three'
 import type { TresContext } from '@tresjs/core'
@@ -42,11 +20,12 @@ import type { LabExperimentObject } from '../Experience/Lab/manifest'
 import type { BakuCubeNodes } from '../Experience/World/SplashCube'
 import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
 import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
+import type { JunniParticles } from '../Experience/World/JunniParticles'
+import type { BakuCarousel } from '../Experience/World/BakuCarousel'
+import type { ShowreelTheater } from '../Experience/World/ShowreelTheater'
 
 /**
- * The Tres-native loop port (ADR 0005). The RenderScheduler is still the
- * single demand-loop owner (AGENTS.md); the port is only the edge to the
- * Tres-owned RAF that replaced the renderer's `setAnimationLoop` driver.
+ * Adapter between the demand scheduler and Tres's render loop.
  */
 export interface SceneLoopPort {
   /** Install (or clear) the scheduler's frame callback (before-render bridge). */
@@ -94,6 +73,9 @@ export interface SceneStagePorts {
   contactTypography: StagePort<ContactTypographyStage>
   contactCyprus: StagePort<ContactCyprusStage>
   labGamepad: StagePort<LabExperimentObject>
+  particles: StagePort<JunniParticles>
+  carousel: StagePort<BakuCarousel>
+  showreelTheater: StagePort<ShowreelTheater>
 }
 
 /** The readiness state published once the persistent Tres root is live. */
@@ -142,11 +124,7 @@ interface SceneHostState {
 
 const state: SceneHostState = { settled: false, context: null }
 
-/**
- * The one-shot scene-host signal. Production code must never create a second
- * Tres root (AGENTS.md: exactly one canvas, renderer and loop owner); the
- * bridge is module-scoped to enforce that.
- */
+/** One-shot signal for the persistent Tres root. */
 export const sceneHost = {
   ready: new Promise<SceneHostReady>((resolve, reject) => {
     state.resolve = resolve

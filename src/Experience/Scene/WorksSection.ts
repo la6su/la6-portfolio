@@ -1,8 +1,9 @@
 // src/Experience/Scene/WorksSection.ts — the Works section contents
 // (slot 3, the cube back face).
 //
-// The Tres root is declarative. This creator attaches the live BakuCarousel
-// and JunniParticles to that root; SectionGroups owns their disposal.
+// The Tres root and particle node are declarative. This creator attaches the
+// BakuCarousel and records the particle controller; SectionGroups owns both
+// controllers' resources.
 
 import * as THREE from 'three'
 import { JunniParticles } from '../World/JunniParticles'
@@ -10,7 +11,6 @@ import { BakuCarousel } from '../World/BakuCarousel'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { sectionGroupAttachmentsOf, setSectionGroupAttachments } from '../sceneOwners'
-import { keepSceneObjectVisible } from '../sceneRuntimeState'
 
 /** Attach the Works content to its declarative scene root. */
 export function attachWorksSection(
@@ -36,8 +36,6 @@ export function attachWorksSection(
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
-  keepSceneObjectVisible(carousel)
-  g.add(carousel)
   setSectionGroupAttachments(g, { carousel, ownedTextures })
 
   // JunniParticles — exact junni Section3 params:
@@ -53,8 +51,6 @@ export function attachWorksSection(
     texture: particleTexture,
     textureTiles: [6, 1],
   })
-  keepSceneObjectVisible(particles)
-  g.add(particles)
   setSectionGroupAttachments(g, {
     ...sectionGroupAttachmentsOf(g),
     particles,

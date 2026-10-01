@@ -1,44 +1,95 @@
-import { defineConfig } from '@playwright/test'
+import { defineConfig } from "@playwright/test";
 
 // A physical WebGL recovery gate: use the installed Chrome with WebGPU
 // disabled so the production automatic policy constructs WebGPURenderer on
 // WebGLBackend. CI and the regular suite retain Playwright Chromium defaults.
-const webglRecoveryChrome = process.env.JLZ_WEBGL_RECOVERY_CHROME === '1'
-const webglRecoveryOzone = process.env.JLZ_WEBGL_OZONE ?? 'wayland'
+const webglRecoveryChrome = process.env.JLZ_WEBGL_RECOVERY_CHROME === "1";
+const webglRecoveryOzone = process.env.JLZ_WEBGL_OZONE ?? "wayland";
+const webglRecoverySoftware = process.env.JLZ_WEBGL_RECOVERY_SOFTWARE === "1";
+const rendererInitFailure =
+  process.env.JLZ_RENDERER_INIT_FAILURE_CHROME === "1";
+const hostTeardownTest = process.env.JLZ_HOST_TEARDOWN_TEST === "1";
+const localChromiumPath = process.env.JLZ_CHROMIUM_PATH;
+const crossBrowserMatrix =
+  Boolean(process.env.CI) || process.env.JLZ_CROSS_BROWSER_MATRIX === "1";
+
+const chromiumProject = {
+  name: "chromium",
+  use: webglRecoveryChrome
+    ? {
+        browserName: "chromium" as const,
+        ...(localChromiumPath ? {} : { channel: "chrome" as const }),
+        headless: false,
+        launchOptions: {
+          ...(localChromiumPath ? { executablePath: localChromiumPath } : {}),
+          args: [
+            "--disable-features=WebGPU",
+            "--enable-features=UseOzonePlatform",
+            `--ozone-platform=${webglRecoveryOzone}`,
+            ...(webglRecoverySoftware
+              ? [
+                  "--enable-unsafe-swiftshader",
+                  "--use-angle=swiftshader",
+                  "--disable-gpu-sandbox",
+                ]
+              : []),
+          ],
+        },
+      }
+    : {
+        browserName: "chromium" as const,
+        ...(localChromiumPath
+          ? {
+              launchOptions: {
+                executablePath: localChromiumPath,
+                args: [
+                  "--no-sandbox",
+                  "--enable-unsafe-webgpu",
+                  "--enable-unsafe-swiftshader",
+                  "--use-angle=swiftshader",
+                  "--disable-gpu-sandbox",
+                  ...(rendererInitFailure
+                    ? ["--disable-webgpu", "--disable-webgl"]
+                    : []),
+                ],
+              },
+            }
+          : rendererInitFailure
+            ? {
+                launchOptions: {
+                  args: ["--disable-webgpu", "--disable-webgl"],
+                },
+              }
+            : {}),
+      },
+};
+
+const projects = crossBrowserMatrix
+  ? [
+      chromiumProject,
+      { name: "firefox", use: { browserName: "firefox" as const } },
+      { name: "webkit", use: { browserName: "webkit" as const } },
+    ]
+  : [chromiumProject];
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   use: {
-    baseURL: 'http://127.0.0.1:4173',
-    trace: 'on-first-retry',
+    baseURL: "http://127.0.0.1:4173",
+    trace: "on-first-retry",
   },
   webServer: {
     command: webglRecoveryChrome
-      ? 'bunx vite --host 127.0.0.1 --port 4173'
-      : 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173',
+      ? "bun run dev --host 127.0.0.1 --port 4173"
+      : hostTeardownTest
+        ? "bun run dev --host 127.0.0.1 --port 4173"
+        : "bun run build && bun run preview --host 127.0.0.1 --port 4173",
     port: 4173,
-    reuseExistingServer: !process.env.CI && !webglRecoveryChrome,
+    reuseExistingServer:
+      !process.env.CI && !webglRecoveryChrome && !hostTeardownTest,
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: webglRecoveryChrome
-        ? {
-            browserName: 'chromium',
-            channel: 'chrome',
-            headless: false,
-            launchOptions: {
-              args: [
-                '--disable-features=WebGPU',
-                '--enable-features=UseOzonePlatform',
-                `--ozone-platform=${webglRecoveryOzone}`,
-              ],
-            },
-          }
-        : { browserName: 'chromium' },
-    },
-  ],
-})
+  projects,
+});

@@ -17,10 +17,34 @@ const study = computed(() => CASE_STUDY_BY_PROJECT.get(projectId.value))
 const projectIndex = computed(() => PROJECTS.findIndex((item) => item.id === projectId.value))
 const project = computed(() => PROJECTS[projectIndex.value])
 const language = ref(getLang())
+const applyCaseStudyMeta = (): void => {
+  const title = project.value ? `${project.value.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
+  const description = study.value?.outcome ?? 'Independent creative technology studies.'
+  document.title = title
+  document.documentElement.lang = getLang() === 'RU' ? 'ru' : 'en'
+  for (const [selector, value] of [
+    ['meta[name="description"]', description],
+    ['meta[property="og:title"]', title],
+    ['meta[property="og:description"]', description],
+    ['meta[property="og:type"]', 'article'],
+  ]) {
+    const node = document.head.querySelector<HTMLMetaElement>(selector!)
+    if (node) node.content = value!
+  }
+  const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (canonical) canonical.href = `${window.location.origin}/works/${projectId.value}`
+}
 const unsubscribe = eventBus.on('jlz:lang-change', () => {
   language.value = getLang()
+  queueMicrotask(applyCaseStudyMeta)
 })
-onBeforeUnmount(unsubscribe)
+const unsubscribeRoute = eventBus.on('jlz:route-change', ({ page }) => {
+  if (page === 'works') applyCaseStudyMeta()
+})
+onBeforeUnmount(() => {
+  unsubscribe()
+  unsubscribeRoute()
+})
 const labels = computed(() =>
   language.value === 'RU'
     ? {
@@ -73,35 +97,12 @@ watch(
   },
   { flush: 'post' },
 )
-watch(
-  [project, study],
-  () => {
-    const title = project.value ? `${project.value.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
-    document.title = title
-    const description = study.value?.outcome ?? 'Independent creative technology studies.'
-    for (const [selector, value] of [
-      ['meta[name="description"]', description],
-      ['meta[property="og:title"]', title],
-      ['meta[property="og:description"]', description],
-      ['meta[property="og:type"]', 'article'],
-    ]) {
-      const node = document.head.querySelector<HTMLMetaElement>(selector!)
-      if (node) node.content = value!
-    }
-    const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-    if (canonical) canonical.href = `${window.location.origin}/works/${projectId.value}`
-  },
-  { immediate: true, flush: 'post' },
-)
+watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
 </script>
 
 <template>
   <main id="spa-content" ref="rootEl" class="uk-position-relative" data-page-view="content">
-    <article
-      class="jlz-page jlz-case-study-page"
-      data-page-view="case-study"
-      :data-case-project="projectId"
-    >
+    <article class="jlz-page jlz-case-study-page" data-page-view="case-study" :data-case-project="projectId">
       <ContactFooter mode="content" />
       <template v-if="study && project">
         <section
@@ -118,8 +119,12 @@ watch(
               <span>0{{ index + 1 }} / {{ chapter }}</span>
             </header>
             <div class="jlz-works-heading">
-              <p class="jlz-works-discipline">{{ index === 0 ? labels.study : project.title }}</p>
-              <h1 v-if="index === 0" class="jlz-works-title">{{ project.title }}</h1>
+              <p class="jlz-works-discipline">
+                {{ index === 0 ? labels.study : project.title }}
+              </p>
+              <h1 v-if="index === 0" class="jlz-works-title">
+                {{ project.title }}
+              </h1>
               <h2 v-else class="jlz-works-title jlz-case-title">
                 {{ index === 1 ? labels.question : index === 2 ? labels.material : labels.result }}
               </h2>
@@ -128,7 +133,9 @@ watch(
               <template v-if="index === 0">
                 <p class="jlz-works-premise">{{ study.outcome }}</p>
                 <p class="jlz-works-context">{{ study.role }}</p>
-                <p class="jlz-works-discipline uk-margin-top">{{ study.stack.join(' / ') }}</p>
+                <p class="jlz-works-discipline uk-margin-top">
+                  {{ study.stack.join(' / ') }}
+                </p>
                 <dl class="jlz-case-facts uk-description-list uk-margin-top">
                   <template v-for="item in study.constraints" :key="item">
                     <dt>{{ item }}</dt>
@@ -144,7 +151,9 @@ watch(
                     <a class="uk-accordion-title" href="#">{{ labels.constraints }}</a>
                     <div class="uk-accordion-content">
                       <ul class="uk-list">
-                        <li v-for="item in study.constraints" :key="item">{{ item }}</li>
+                        <li v-for="item in study.constraints" :key="item">
+                          {{ item }}
+                        </li>
                       </ul>
                     </div>
                   </li>
@@ -170,11 +179,7 @@ watch(
                     {{ study.media[0].caption ?? 'Project material / review state' }}
                   </figcaption>
                 </figure>
-                <button
-                  type="button"
-                  class="uk-button uk-button-text jlz-works-enter"
-                  @click="open"
-                >
+                <button type="button" class="uk-button uk-button-text jlz-works-enter" @click="open">
                   {{ labels.view }} ⤢
                 </button>
               </template>

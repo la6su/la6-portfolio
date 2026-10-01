@@ -93,7 +93,7 @@ export class ShowreelTheater {
   private readonly _glitchUni: UniformNode<'float', number>
 
   private readonly material: MeshBasicNodeMaterial
-  private readonly quad: THREE.Mesh
+  private quad: THREE.Mesh | null = null
 
   constructor(
     private readonly videoSrc: string,
@@ -177,11 +177,6 @@ export class ShowreelTheater {
     })()
 
     this.material = mat
-    this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat)
-    this.quad.name = 'showreel-theater-quad'
-    this.quad.frustumCulled = false
-    this.scene.add(this.quad)
-
     this._progressUni = progress
     this._timeUni = time
     this._videoAspectUni = videoAspect
@@ -197,6 +192,26 @@ export class ShowreelTheater {
 
   get currentPhase(): ShowreelPhase {
     return this.disposed ? 'closed' : this.phase
+  }
+
+  /** The TresPortal leaf is Vue-owned; the controller only supplies behavior/material. */
+  get quadMaterial(): MeshBasicNodeMaterial {
+    return this.material
+  }
+
+  bindQuad(quad: THREE.Mesh): void {
+    if (this.disposed) return
+    if (quad.material !== this.material)
+      throw new Error('Showreel theater quad mounted with an unexpected material.')
+    if (this.quad && this.quad !== quad)
+      throw new Error('Showreel theater can only adopt one Vue-declared quad.')
+    this.quad = quad
+    quad.name = 'showreel-theater-quad'
+    quad.frustumCulled = false
+  }
+
+  unbindQuad(quad: THREE.Mesh): void {
+    if (this.quad === quad) this.quad = null
   }
 
   /** True while the theater must keep drawing frames. */
@@ -307,10 +322,9 @@ export class ShowreelTheater {
     this.video?.pause()
     this.videoTexture?.dispose()
     this.posterTexture?.dispose()
-    this.material.dispose()
-    this.quad.geometry.dispose()
-    this.quad.removeFromParent()
-    this.scene.clear()
+    // Tres owns the portal quad and its material/geometry. This controller
+    // owns the video/poster textures and HTML media element only.
+    this.quad = null
     this.video?.remove()
     this.video = null
     this.videoTexture = null

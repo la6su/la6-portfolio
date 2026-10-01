@@ -79,12 +79,17 @@ type TSLVec2 = any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TSLVec3 = any
 
-export class JunniParticles extends THREE.InstancedMesh {
+export class JunniParticles {
   private _disposed = false
   private _time = 0
   private readonly _baseCount: number
   private readonly _range: THREE.Vector3
   private _reduced = false
+  private _mesh: THREE.InstancedMesh | null = null
+  private _visible = true
+  private _count: number
+  geometry: THREE.BufferGeometry
+  readonly material: SpriteNodeMaterial
 
   // Per-instance uniforms. Stored as unknown — TSL node types in three 0.184
   // .d.ts are incomplete; we access .value through UniformVal cast.
@@ -264,23 +269,49 @@ export class JunniParticles extends THREE.InstancedMesh {
     mat.colorNode = colorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
 
-    super(geo, mat, count)
-    this.name = 'particles'
-    this.frustumCulled = false
-
-    // Instance matrices — identity (position comes from positionNode)
-    const dummy = new THREE.Object3D()
-    for (let i = 0; i < count; i++) {
-      dummy.position.set(0, 0, 0)
-      dummy.scale.setScalar(1)
-      dummy.updateMatrix()
-      this.setMatrixAt(i, dummy.matrix)
-    }
-    this.instanceMatrix.needsUpdate = true
-
+    this.geometry = geo
+    this.material = mat
+    this._count = count
     this._baseCount = count
     this._range = range
     this._uTime = uTime
+  }
+
+  get count(): number { return this._count }
+  get mesh(): THREE.InstancedMesh | null { return this._mesh }
+  get visible(): boolean { return this._visible }
+  set visible(value: boolean) {
+    this._visible = value
+    if (this._mesh) this._mesh.visible = value
+  }
+
+  /** Adopt the Vue/Tres-declared instance node; this controller owns its resources. */
+  bindMesh(mesh: THREE.InstancedMesh): void {
+    if (mesh.geometry !== this.geometry || mesh.material !== this.material)
+      throw new Error('JunniParticles owner mounted with unexpected geometry or material.')
+    if (this._mesh && this._mesh !== mesh)
+      throw new Error('JunniParticles can only own one mounted instance node.')
+    this._mesh = mesh
+    mesh.name = 'particles'
+    mesh.frustumCulled = false
+    mesh.visible = this._visible
+    mesh.count = this._count
+    this.writeIdentityMatrices(mesh)
+  }
+
+  unbindMesh(mesh: THREE.InstancedMesh): void {
+    if (this._mesh === mesh) this._mesh = null
+  }
+
+  private writeIdentityMatrices(mesh: THREE.InstancedMesh): void {
+    const dummy = new THREE.Object3D()
+    for (let i = 0; i < this._count; i++) {
+      dummy.position.set(0, 0, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(i, dummy.matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
   }
 
   /** Advance the particle animation. Call each frame while rendering. */
@@ -310,7 +341,7 @@ export class JunniParticles extends THREE.InstancedMesh {
    */
   setCount(newCount: number, markReduced = true): void {
     if (this._disposed) return
-    if (newCount === this.count) return
+    if (newCount === this._count) return
     if (newCount < 1) newCount = 1
 
     this.geometry.dispose()
@@ -328,17 +359,12 @@ export class JunniParticles extends THREE.InstancedMesh {
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
     geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
     this.geometry = geo
-
-    const dummy = new THREE.Object3D()
-    for (let i = 0; i < newCount; i++) {
-      dummy.position.set(0, 0, 0)
-      dummy.scale.setScalar(1)
-      dummy.updateMatrix()
-      this.setMatrixAt(i, dummy.matrix)
+    this._count = newCount
+    if (this._mesh) {
+      this._mesh.geometry = geo
+      this._mesh.count = newCount
+      this.writeIdentityMatrices(this._mesh)
     }
-    this.instanceMatrix.needsUpdate = true
-
-    this.count = newCount
     if (markReduced) this._reduced = newCount < this._baseCount
   }
 
@@ -353,8 +379,9 @@ export class JunniParticles extends THREE.InstancedMesh {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    this.visible = false
     this.geometry.dispose()
-    ;(this.material as THREE.Material).dispose()
-    this.removeFromParent()
+    this.material.dispose()
+    this._mesh = null
   }
 }

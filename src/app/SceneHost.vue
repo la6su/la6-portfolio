@@ -1,46 +1,36 @@
 <script setup lang="ts">
-// src/app/SceneHost.vue — Phase 7: the persistent Tres root.
+// Persistent Tres root: owns the canvas and renderer across route changes.
+// Experience adopts its scene and drives it through Tres's on-demand loop.
 //
-// Mounted ONCE by AppShell (outside RouterView, so route navigation never
-// remounts the scene root). It owns, each with exactly one owner:
-//
-// - the canvas (the Vue-rendered `<canvas>` inside TresCanvas — the single
-//   canvas, e2e `canvas.canvas`);
-// - the renderer (the custom renderer factory — the single construction
-//   owner; Tres awaits its async `init()` before the ready event);
-// - the camera (declared by `CinematicCamera`, passed to Experience through
-//   the bridge and adopted by its cinematic controller);
-// - the scene (the Tres context scene — Experience stops creating its own);
-//
-// and resolves the `sceneHost` bridge after renderer init + actual-backend
-// inspection (software-adapter re-creation through the pure
-// `planUnifiedBackend` policy). Scene owners enter Tres through explicit
-// `primitive` adapters (`:dispose="null"` — Experience stays the single
-// disposal owner). RenderMode is `on-demand` and the Tres loop is the one
-// RAF host (ADR 0005): the `RenderScheduler` (ADR 0004) owns its start/stop
-// through the `SceneLoopPort`, the frame callback runs in the before-render
-// hooks, and the render STEP stays on the Experience pipeline via the
-// replaced Tres render function. On-demand avoids manual mode's delayed
-// advance().
-//
-import { computed, defineAsyncComponent, onBeforeUnmount, ref, toValue, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  onBeforeUnmount,
+  onUnmounted,
+  ref,
+  toValue,
+  watch,
+} from 'vue'
 import { useRoute } from 'vue-router'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
-import type { PerspectiveCamera } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { setLabCameraActive } from '../core/labCameraPolicy'
 import {
   createUnifiedWebGPUInstance,
+  deferRendererDisposal,
+  disposeUnifiedRendererNow,
   initUnifiedWebGPUInstance,
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import { sceneHost, type SceneLoopPort, type SceneStagePorts } from './sceneHost'
+import { sceneHost, type SceneLoopPort } from './sceneHost'
+import { traceDevLifecycle } from '../core/devLifecycleTrace'
 import { createReadySlot, readyNode } from './readySlot'
-import { createStageSlot } from './stageSlot'
+import { useSceneStages } from './useSceneStages'
 import CinematicLights from './scene/CinematicLights.vue'
 import CinematicCamera from './scene/CinematicCamera.vue'
 import GroundPlane from './scene/GroundPlane.vue'
@@ -52,21 +42,17 @@ import IntroLightFramesOwner from './scene/IntroLightFramesOwner.vue'
 import CursorTrailOwner from './scene/CursorTrailOwner.vue'
 import EnvSky from './scene/EnvSky.vue'
 import WorksStageOwner from './scene/WorksStageOwner.vue'
+import ContactCyprusStageOwner from './scene/ContactCyprusStageOwner.vue'
+import ContactTypographyStageOwner from './scene/ContactTypographyStageOwner.vue'
+import PointerInkStageOwner from './scene/PointerInkStageOwner.vue'
+import ShowreelTheaterOwner from './scene/ShowreelTheaterOwner.vue'
 import type { CinematicLightsNodes } from '../Experience/World/Lights'
 import type { GroundPlaneNode } from '../Experience/Scene/GroundPlane'
-import type { Group } from 'three'
 import type { ServicesStage } from '../Experience/World/ServicesStage'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { BakuCubeNodes } from '../Experience/World/SplashCube'
 import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
 import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
-import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
-import type { WorksInstallation } from '../Experience/World/WorksInstallation'
-import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
-import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
-import type { ManifestoInkStage } from '../Experience/World/ManifestoInkStage'
-import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
-import type { LabExperimentObject } from '../Experience/Lab/manifest'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
@@ -84,11 +70,10 @@ const forceWebGLBackendForTest =
 // re-apply the stale cap over the finalized one on every resize/zoom.
 const dprCap = ref(DeviceCapability.getInstance().maxDpr)
 
-// Single renderer-construction owner (Phase 7): the custom renderer factory.
+// Keep renderer construction in one place, including Tres re-setup/HMR.
 // Construction is synchronous (Tres awaits the instance's `init()` itself);
 // the backend is inspected AFTER init in `onReady`. The unified
-// `WebGPURenderer` is the only class constructed (Phase 6 production default;
-// the dev-forced classic `?renderer=webgl` QA owner was removed in Phase 10).
+// `WebGPURenderer` serves both WebGPU and WebGL backend modes.
 const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface => {
   // Idempotent re-invocation guard: the Tres canvas is a persistent root,
   // but a re-setup (HMR or a topology change) would re-invoke the factory.
@@ -100,6 +85,10 @@ const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface =>
   }
   const canvas = toValue(ctx.canvas) ?? document.createElement('canvas')
   const renderer = createUnifiedWebGPUInstance(canvas, forceWebGLBackendForTest)
+  // TresJS 5.9.2 disposes its renderer manager before unmounting the custom
+  // Vue scene tree. Defer that automatic call; SceneHost flushes it after all
+  // declarative owners have released their GPU resources.
+  deferredRendererDisposals.set(renderer, deferRendererDisposal(renderer))
   // Tres may report an initialization error before `onReady`; retain the
   // created owner so that the error path can release it as well.
   createdRenderer = renderer
@@ -112,6 +101,7 @@ let disposed = false
 let lifecycleGeneration = 0
 let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
+const deferredRendererDisposals = new WeakMap<object, () => void>()
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
 
@@ -145,6 +135,7 @@ const loopPort: SceneLoopPort = {
 // `@ready="slot.resolve"`, and `onReady` awaits the nodes it needs (sync
 // fast path when the node already mounted).
 const cameraSlot = createReadySlot<PerspectiveCamera>()
+const worksRootSlot = createReadySlot<Group>()
 const lightsSlot = createReadySlot<CinematicLightsNodes>()
 const groundSlot = createReadySlot<GroundPlaneNode>()
 const sectionRootsSlot = createReadySlot<readonly Group[]>()
@@ -153,7 +144,7 @@ const envSphereSlot = createReadySlot<EnvSphere>()
 const bakuSlot = createReadySlot<BakuCubeNodes>()
 const introFramesSlot = createReadySlot<IntroLightFramesNodes>()
 const cursorTrailSlot = createReadySlot<CursorTrailNodes>()
-const envSkySlot = createReadySlot<unknown>()
+const envSkySlot = createReadySlot<Mesh<PlaneGeometry, MeshBasicMaterial>>()
 /** Template-facing alias: the env sphere must mount before the sky plane. */
 const envSphereNode = envSphereSlot.value
 /** Template-facing alias: the controls need the resolved cinematic camera. */
@@ -208,6 +199,7 @@ onBeforeUnmount(() => {
 // camera-controls/stdlib dependency surface loads only when the exploration
 // policy first activates on the Lab route (async component = lazy chunk).
 const LabCameraControls = defineAsyncComponent(() => import('./scene/LabCameraControls.vue'))
+const LabGamepadOwner = defineAsyncComponent(() => import('./scene/LabGamepadOwner.vue'))
 
 // Cold-start wake: camera-controls' own pointer handlers only dispatch
 // events — the first drag must open a scheduler window itself. The wrapped
@@ -218,62 +210,33 @@ function onLabControlsStart(): void {
   liveManager?.invalidate()
 }
 
-// ── Declarative stage slots (mount/unmount boundaries) ──
-// One slot per stage family replaces the hand-written mount/unmount pairs.
-// The works installation is a child of the works stage, so its port keeps the
-// two-level guard (the child never attaches to — or outlives — a retired stage).
-const worksStageSlot = createStageSlot<WorksPlaneStage>({ isAlive: () => !disposed })
-const worksInstallationSlot = createStageSlot<WorksInstallation>({ isAlive: () => !disposed })
-const contactHaloSlot = createStageSlot<ContactHaloStage>({ isAlive: () => !disposed })
-const manifestoInkSlot = createStageSlot<ManifestoInkStage>({ isAlive: () => !disposed })
-const contactTypographySlot = createStageSlot<ContactTypographyStage>({
-  isAlive: () => !disposed,
-})
-const contactCyprusSlot = createStageSlot<ContactCyprusStage>({ isAlive: () => !disposed })
-const labGamepadSlot = createStageSlot<LabExperimentObject>({ isAlive: () => !disposed })
-
-// Top-level aliases keep the template's declarative bindings unchanged
-// (setup-scope refs auto-unwrap, so `:object` receives the raw object).
-const declarativeWorksStage = worksStageSlot.object
-const declarativeWorksInstallation = worksInstallationSlot.object
-const declarativeContactHalo = contactHaloSlot.object
-const declarativeManifestoInk = manifestoInkSlot.object
-const declarativeContactTypography = contactTypographySlot.object
-const declarativeContactCyprus = contactCyprusSlot.object
-const declarativeLabGamepad = labGamepadSlot.object
-
-const stages: SceneStagePorts = {
-  works: {
-    mountStage: (stage) => worksStageSlot.mount(stage),
-    unmountStage: async (stage) => {
-      if (worksStageSlot.object.value !== stage) return
-      // The installation is a child of this stage. Clear the child boundary
-      // with its parent so a later stage can never inherit a retired installation.
-      worksInstallationSlot.object.value = null
-      await worksStageSlot.unmount(stage)
-    },
-    mountInstallation: (stage, installation) => {
-      if (worksStageSlot.object.value !== stage) return Promise.resolve()
-      return worksInstallationSlot.mount(installation)
-    },
-    unmountInstallation: (stage, installation) => {
-      if (worksStageSlot.object.value !== stage) return Promise.resolve()
-      return worksInstallationSlot.unmount(installation)
-    },
-  },
-  contactHalo: contactHaloSlot,
-  manifestoInk: manifestoInkSlot,
-  contactTypography: contactTypographySlot,
-  contactCyprus: contactCyprusSlot,
-  labGamepad: labGamepadSlot,
-}
+const {
+  stages,
+  declarativeWorksStage,
+  declarativeWorksInstallation,
+  declarativeContactHalo,
+  declarativeManifestoInk,
+  declarativeContactTypography,
+  declarativeContactCyprus,
+  declarativeLabGamepad,
+  declarativeParticles,
+  declarativeCarousel,
+  declarativeShowreelTheater,
+  clear: clearSceneStages,
+} = useSceneStages(() => !disposed, () => worksRootSlot.value.value)
 
 const disposedRenderers = new WeakSet<object>()
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
   if (!renderer || disposedRenderers.has(renderer)) return
   disposedRenderers.add(renderer)
-  renderer.dispose()
+  const flushDeferredDispose = deferredRendererDisposals.get(renderer)
+  if (flushDeferredDispose) {
+    deferredRendererDisposals.delete(renderer)
+    flushDeferredDispose()
+    return
+  }
+  disposeUnifiedRendererNow(renderer)
 }
 
 async function onReady(context: TresContext): Promise<void> {
@@ -313,6 +276,7 @@ async function onReady(context: TresContext): Promise<void> {
   const lights = await readyNode(lightsSlot)
   const ground = await readyNode(groundSlot)
   const sectionRoots = await readyNode(sectionRootsSlot)
+  await readyNode(worksRootSlot)
   const servicesStage = await readyNode(servicesStageSlot)
   const envSphere = await readyNode(envSphereSlot)
   const baku = await readyNode(bakuSlot)
@@ -323,9 +287,8 @@ async function onReady(context: TresContext): Promise<void> {
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
   // The scene is the decorative visual layer over the semantic route content:
-  // hidden from the accessibility tree (AGENTS.md: canvas hidden). The
-  // wrapper carries the same attribute; the e2e contract asserts it on the
-  // canvas element (TresCanvas does not forward fallthrough attributes).
+  // Canvas output is decorative; the route content remains independently
+  // available to assistive technology.
   canvas.setAttribute('aria-hidden', 'true')
   let renderer = context.renderer.instance as UnifiedRenderSurface
   createdRenderer = renderer
@@ -337,6 +300,7 @@ async function onReady(context: TresContext): Promise<void> {
     // dispose the dead instance and swap in the replacement.
     disposeRendererOnce(renderer)
     const candidate = createUnifiedWebGPUInstance(canvas, true)
+    deferredRendererDisposals.set(candidate, deferRendererDisposal(candidate))
     createdRenderer = candidate
     try {
       await initUnifiedWebGPUInstance(candidate)
@@ -359,8 +323,7 @@ async function onReady(context: TresContext): Promise<void> {
     disposeRendererOnce(renderer)
     return
   }
-  // The backend decision is final here (SceneHost owns planUnifiedBackend).
-  // Publish the finalized DPR cap into the TresCanvas prop so both DPR
+  // Publish the selected backend's DPR cap so Tres and the renderer agree.
   // writers (Tres's size manager and the Renderer owner) agree from now on.
   dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
   resolved = true
@@ -414,12 +377,19 @@ onBeforeUnmount(() => {
   liveManager = null
   frameCallback = null
   externalInvalidateHandler = null
+  clearSceneStages()
+})
+
+// Scene children release their adopted GPU resources during unmount. Keep the
+// final renderer disposal until Vue has unmounted TresCanvas and those owners;
+// otherwise the backend is torn down while its declarative resource owners are
+// still running their before-unmount cleanup.
+onUnmounted(() => {
   disposeRendererOnce(liveRenderer)
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
+  if (import.meta.env.DEV) traceDevLifecycle('scene-host:renderer-disposed')
   liveRenderer = null
   createdRenderer = null
-  worksStageSlot.object.value = null
-  worksInstallationSlot.object.value = null
 })
 </script>
 
@@ -443,7 +413,12 @@ onBeforeUnmount(() => {
       />
       <CinematicLights @ready="lightsSlot.resolve" />
       <GroundPlane @ready="groundSlot.resolve" />
-      <SectionGroupRoots @ready="sectionRootsSlot.resolve" />
+      <SectionGroupRoots
+        :particles="declarativeParticles"
+        :carousel="declarativeCarousel"
+        @ready="sectionRootsSlot.resolve"
+      />
+      <ShowreelTheaterOwner :theater="declarativeShowreelTheater" />
       <ServicesStageOwner @ready="servicesStageSlot.resolve" />
       <EnvSphereOwner @ready="envSphereSlot.resolve" />
       <BakuCubeOwner @ready="bakuSlot.resolve" />
@@ -454,22 +429,21 @@ onBeforeUnmount(() => {
         :material="envSphereNode.skyMaterial"
         @ready="envSkySlot.resolve"
       />
-      <primitive v-if="declarativeContactHalo" :object="declarativeContactHalo" :dispose="null" />
-      <primitive v-if="declarativeManifestoInk" :object="declarativeManifestoInk" :dispose="null" />
-      <primitive
+      <PointerInkStageOwner v-if="declarativeContactHalo" :stage="declarativeContactHalo" />
+      <PointerInkStageOwner v-if="declarativeManifestoInk" :stage="declarativeManifestoInk" />
+      <ContactTypographyStageOwner
         v-if="declarativeContactTypography"
-        :object="declarativeContactTypography"
-        :dispose="null"
+        :stage="declarativeContactTypography"
       />
-      <primitive
+      <ContactCyprusStageOwner
         v-if="declarativeContactCyprus"
-        :object="declarativeContactCyprus"
-        :dispose="null"
+        :stage="declarativeContactCyprus"
       />
-      <primitive v-if="declarativeLabGamepad" :object="declarativeLabGamepad" :dispose="null" />
+      <LabGamepadOwner v-if="declarativeLabGamepad" :stage="declarativeLabGamepad" />
       <WorksStageOwner
         :stage="declarativeWorksStage"
         :installation="declarativeWorksInstallation"
+        @root-ready="worksRootSlot.resolve"
       />
     </TresCanvas>
   </div>

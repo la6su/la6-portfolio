@@ -28,8 +28,19 @@ interface CaseLayout {
 const WIDE_LAYOUT: CaseLayout = { x: 0.19, y: -0.015, z: -3.8, scale: 0.43 }
 const STACKED_LAYOUT: CaseLayout = { x: 0, y: 0.015, z: -3.8, scale: 0.84 }
 
-export class WorksPlaneStage extends THREE.Group {
+export interface WorksCaseCard {
+  key: string
+  projectIndex: number
+  textureUrl: string
+  texture: THREE.Texture
+}
+
+export class WorksPlaneStage {
   private cards: CasePlane[] = []
+  private cardAssets: WorksCaseCard[] = []
+  private readonly cardListeners = new Set<(cards: readonly WorksCaseCard[]) => void>()
+  private cardsMounted: Promise<void> | null = null
+  private resolveCardsMounted: (() => void) | null = null
   private installation: WorksInstallation | null = null
   private themeUnsub: (() => void) | null = null
   private inverse = false
@@ -37,6 +48,7 @@ export class WorksPlaneStage extends THREE.Group {
     return getWorksCaseProject() ?? WORKS_ROOMS[this._sectionIndex]!.projectIndex
   }
   private _camera: THREE.Camera | null = null
+  private _root: THREE.Group | null = null
   private _raycaster = new THREE.Raycaster()
   private _ndc = new THREE.Vector2()
   private _sectionIndex = 0
@@ -67,14 +79,60 @@ export class WorksPlaneStage extends THREE.Group {
   private _installationProject = -1
 
   constructor() {
-    super()
-    this.name = 'works-plane-stage'
-    this.visible = false
-    this.renderOrder = 3
     this.themeUnsub = eventBus.on('jlz:theme-applied', ({ isLight }) => {
       this.inverse = isLight
       this.installation?.setInverse(isLight)
     })
+  }
+
+  /** Adopt the stable root declared by Vue/Tres before loading route assets. */
+  mount(root: THREE.Group): void {
+    if (this._disposed) throw new Error('Cannot mount a disposed WorksPlaneStage.')
+    if (this._root && this._root !== root) {
+      throw new Error('WorksPlaneStage is already mounted to another scene root.')
+    }
+    this._root = root
+    root.visible = false
+    root.renderOrder = 3
+  }
+
+  /** Subscribe the Vue owner to route-local leaves produced after texture load. */
+  subscribeSceneCards(listener: (cards: readonly WorksCaseCard[]) => void): () => void {
+    if (this._disposed) {
+      listener([])
+      return () => undefined
+    }
+    this.cardListeners.add(listener)
+    listener(this.cardAssets)
+    return () => this.cardListeners.delete(listener)
+  }
+
+  private publishSceneCards(): void {
+    for (const listener of this.cardListeners) listener(this.cardAssets)
+  }
+
+  waitForCards(): Promise<void> {
+    return this.cardsMounted ?? Promise.resolve()
+  }
+
+  adoptCard(projectIndex: number, card: CasePlane): void {
+    if (this._disposed || this.cards.includes(card)) return
+    const asset = this.cardAssets.find((item) => item.projectIndex === projectIndex)
+    if (!asset) return
+    card.setReducedMotion(this._reducedMotion)
+    setWorksCardMetadata(card.mesh, { projectIndex, textureUrl: asset.textureUrl })
+    card.setReveal(0)
+    this._reveal.set(card, 0)
+    this.cards.push(card)
+    this.cards.sort(
+      (left, right) =>
+        (worksCardMetadataOf(left.mesh)?.projectIndex ?? -1) -
+        (worksCardMetadataOf(right.mesh)?.projectIndex ?? -1),
+    )
+    if (this.cards.length === this.cardAssets.length) {
+      this.resolveCardsMounted?.()
+      this.resolveCardsMounted = null
+    }
   }
 
   /** Settle route-local reveals and card transforms at the owner boundary. */
@@ -89,7 +147,7 @@ export class WorksPlaneStage extends THREE.Group {
     const cardCount = this.cards.length
     for (let index = 0; index < cardCount; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
+      const projectIndex = worksCardMetadataOf(card.mesh)?.projectIndex ?? -1
       const targetReveal = activeProject === projectIndex ? 1 : 0
       this._reveal.set(card, targetReveal)
       card.setReveal(targetReveal)
@@ -100,12 +158,13 @@ export class WorksPlaneStage extends THREE.Group {
 
   get isAnimating(): boolean {
     if (this._disposed || !this._active) return false
+    if (this.cards.length < this.cardAssets.length) return true
 
     if (this.installation?.isAnimating) return true
     const activeProject = this.activeProject
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
+      const projectIndex = worksCardMetadataOf(card.mesh)?.projectIndex ?? -1
       const shouldBeVisible = activeProject === projectIndex
       const reveal = this._reveal.get(card) ?? 0
       // Include departing cards and their cloth pulses: hidden cards still
@@ -118,6 +177,8 @@ export class WorksPlaneStage extends THREE.Group {
 
   async init(): Promise<void> {
     if (this._initialized || this._disposed) return
+    const root = this._root
+    if (!root) throw new Error('WorksPlaneStage must adopt its Tres root before init().')
     this._initialized = true
 
     let textures: THREE.Texture[]
@@ -146,33 +207,25 @@ export class WorksPlaneStage extends THREE.Group {
       return
     }
 
-    const stagedCards: CasePlane[] = []
     try {
-      textures.forEach((texture, index) => {
-        const plane = new CasePlane(texture)
-        plane.setReducedMotion(this._reducedMotion)
-        setWorksCardMetadata(plane, {
-          projectIndex: index,
-          textureUrl: PROJECTS[index]!.textureUrl,
-        })
-        plane.setReveal(0)
-        stagedCards.push(plane)
-        this._reveal.set(plane, 0)
-        this.add(plane)
-      })
+      this.cardAssets = textures.map((texture, index) => ({
+        key: `${index}:${PROJECTS[index]!.textureUrl}`,
+        projectIndex: index,
+        textureUrl: PROJECTS[index]!.textureUrl,
+        texture,
+      }))
       this.installation = new WorksInstallation()
       this.installation.setInverse(this.inverse)
       this.installation.setProject(this.activeProject)
       this.installation.setRoom(this._sectionIndex, this._reducedMotion)
-      this.cards = stagedCards
+      this.cardsMounted = new Promise<void>((resolve) => {
+        this.resolveCardsMounted = resolve
+      })
+      this.publishSceneCards()
       this._layoutDirty = true
       this._installationProject = -1
     } catch (error) {
-      stagedCards.forEach((card) => {
-        card.removeFromParent()
-        card.dispose()
-      })
-      this._reveal.clear()
+      this.cardAssets = []
       textures.forEach((texture, index) => releaseCaseTexture(PROJECTS[index]!.textureUrl, texture))
       this._initialized = false
       throw error
@@ -210,7 +263,7 @@ export class WorksPlaneStage extends THREE.Group {
     const changed = active !== this._active || nextSection !== this._sectionIndex
     this._active = active
     this._sectionIndex = nextSection
-    this.visible = active
+    if (this._root) this._root.visible = active
     if (changed) {
       this._layoutDirty = true
       this.installation?.setProject(this.activeProject)
@@ -246,16 +299,17 @@ export class WorksPlaneStage extends THREE.Group {
     this._ndc.y = -(clientY / window.innerHeight) * 2 + 1
     this._raycaster.setFromCamera(this._ndc, this._camera)
     const hits = this._raycaster.intersectObjects(
-      this.cards.filter((card) => card.visible),
+      this.cards.filter((card) => card.visible).map((card) => card.mesh),
       false,
     )
-    const hit = hits[0]?.object as CasePlane | undefined
+    const hit = hits[0]?.object
     if (!hit) return -1
     return worksCardMetadataOf(hit)?.projectIndex ?? -1
   }
 
   update(dt: number): void {
-    if (this._disposed || !this._camera || !this._active) return
+    const root = this._root
+    if (this._disposed || !root || !this._camera || !this._active) return
 
     // Keep the stage in camera-local space while remaining a child of World.
     this._camera.getWorldPosition(this._tmpCameraPosition)
@@ -264,8 +318,8 @@ export class WorksPlaneStage extends THREE.Group {
       !this._lastCameraQuaternion.equals(this._camera.quaternion)
     const layoutDirty = this._layoutDirty || cameraChanged
     if (!layoutDirty && !this.isAnimating) return
-    this.position.copy(this._tmpCameraPosition)
-    this.quaternion.copy(this._camera.quaternion)
+    root.position.copy(this._tmpCameraPosition)
+    root.quaternion.copy(this._camera.quaternion)
 
     const activeProject = this.activeProject
     if (this._installationProject !== activeProject) {
@@ -284,7 +338,7 @@ export class WorksPlaneStage extends THREE.Group {
     }
     for (let index = 0; index < this.cards.length; index += 1) {
       const card = this.cards[index]!
-      const projectIndex = worksCardMetadataOf(card)?.projectIndex ?? -1
+      const projectIndex = worksCardMetadataOf(card.mesh)?.projectIndex ?? -1
       const isVisible = activeProject === projectIndex
       const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
@@ -368,17 +422,24 @@ export class WorksPlaneStage extends THREE.Group {
     this._disposed = true
     this._active = false
     this._camera = null
-    this.cards.forEach((card) => {
-      const url = worksCardMetadataOf(card)?.textureUrl
-      if (url) releaseCaseTexture(url, card.texture ?? undefined)
-      card.dispose()
+    if (this._root) this._root.visible = false
+    this.cardsMounted = null
+    this.resolveCardsMounted?.()
+    this.resolveCardsMounted = null
+    this.cardAssets.forEach((card) => {
+      releaseCaseTexture(card.textureUrl, card.texture)
     })
+    this.cardAssets = []
     this.cards = []
+    this.publishSceneCards()
+    this.cardListeners.clear()
     this.themeUnsub?.()
     this.themeUnsub = null
     this.installation?.dispose()
     this.installation = null
     this._reveal.clear()
-    this.clear()
+    // The group and card meshes belong to Vue; card components retire their
+    // own materials and shared-geometry leases as their VNodes unmount.
+    this._root = null
   }
 }

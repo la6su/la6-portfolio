@@ -1,9 +1,15 @@
 // ContactCyprusStage — camera-local 3D location marker for Contact / Agros.
 
 import * as THREE from 'three'
-import { DRACOLoader, DRACO_GLTF_CONFIG } from 'three/addons/loaders/DRACOLoader.js'
+import {
+  DRACOLoader,
+  DRACO_GLTF_CONFIG,
+} from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { disposeMaterialDeep } from '../../Utils/dispose'
+import {
+  disposeMaterialsDeep,
+  disposeObject3DResources,
+} from '../../Utils/dispose'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { smoothstep01 } from '../../Utils/easing'
 
@@ -16,7 +22,14 @@ const SCALE_OUT_TO = 1.025
  * Keeping it camera-local gives Agros a stable hero composition independent
  * of the shared six-slot world's camera interpolation.
  */
-export class ContactCyprusStage extends THREE.Group {
+export type ContactCyprusModelPublisher = (
+  model: THREE.Group | null,
+) => void | Promise<void>
+
+/** Behavior controller for the Vue-declared Contact root and GLTF child. */
+export class ContactCyprusStage {
+  private _root: THREE.Group | null = null
+  private _publishModel: ContactCyprusModelPublisher | null = null
   private _camera: THREE.Camera | null = null
   private _model: THREE.Group | null = null
   private _materials: THREE.MeshPhysicalMaterial[] = []
@@ -35,7 +48,11 @@ export class ContactCyprusStage extends THREE.Group {
   private _disposed = false
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
-  private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
+  private _lastCameraPosition = new THREE.Vector3(
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+  )
   private _lastCameraQuaternion = new THREE.Quaternion(
     Number.NaN,
     Number.NaN,
@@ -43,10 +60,20 @@ export class ContactCyprusStage extends THREE.Group {
     Number.NaN,
   )
 
-  constructor() {
-    super()
-    this.name = 'contact-cyprus-stage'
-    this.visible = false
+  bindRoot(root: THREE.Group, publishModel: ContactCyprusModelPublisher): void {
+    if (this._disposed) return
+    this._root = root
+    this._publishModel = publishModel
+    root.name = 'contact-cyprus-stage'
+    root.visible = false
+    if (this._model) void publishModel(this._model)
+  }
+
+  unbindRoot(root: THREE.Group): void {
+    if (this._root !== root) return
+    this._publishModel?.(null)
+    this._publishModel = null
+    this._root = null
   }
 
   async load(): Promise<void> {
@@ -83,6 +110,20 @@ export class ContactCyprusStage extends THREE.Group {
       // toward the viewer before adding the small authored perspective tilt.
       model.rotation.set(1.05, -0.3, 0.04)
 
+      // glTF nodes can share source materials and textures. Release the source
+      // material graph as one collection before assigning route-owned glass
+      // materials, so shared resources are disposed only once.
+      const sourceMaterials = new Set<THREE.Material>()
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        if (!mesh.isMesh) return
+        const meshMaterials = Array.isArray(mesh.material)
+          ? mesh.material
+          : [mesh.material]
+        meshMaterials.forEach((material) => sourceMaterials.add(material))
+      })
+      disposeMaterialsDeep(sourceMaterials)
+
       model.traverse((object) => {
         const mesh = object as THREE.Mesh
         if (!mesh.isMesh) return
@@ -93,8 +134,6 @@ export class ContactCyprusStage extends THREE.Group {
         // Transmission, thickness and IOR refract the already-rendered scene;
         // roughness turns that into restrained frosted distortion rather than
         // a perfectly clear lens. WebGL2 receives the equivalent physical path.
-        const sourceMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-        sourceMaterials.forEach((material) => disposeMaterialDeep(material))
         const material = new THREE.MeshPhysicalMaterial({
           color: 0xc4e9c8,
           transmission: 0.82,
@@ -121,10 +160,14 @@ export class ContactCyprusStage extends THREE.Group {
       })
 
       this._model = model
-      this.add(model)
+      await this._publishModel?.(model)
+      if (this._disposed) return
       this.setPresentation(this._opacity, this._scale)
     } catch (error) {
-      this.disposeModel(model)
+      if (this._model === model) {
+        this._model = null
+        this.disposeModel(model)
+      } else if (!this._disposed) this.disposeModel(model)
       this._materials = []
       throw error
     }
@@ -135,7 +178,12 @@ export class ContactCyprusStage extends THREE.Group {
     if (this._camera === camera) return
     this._camera = camera
     this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
-    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
+    this._lastCameraQuaternion.set(
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+    )
   }
 
   setActive(active: boolean): void {
@@ -154,7 +202,7 @@ export class ContactCyprusStage extends THREE.Group {
     this._fadeElapsed = 0
     if (active) this._prewarmFramePending = false
     this.setPresentation(this._fadeFrom, this._scaleFrom)
-    if (active && this._model) this.visible = true
+    if (active && this._model && this._root) this._root.visible = true
     if (this._reducedMotion) {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
@@ -169,7 +217,8 @@ export class ContactCyprusStage extends THREE.Group {
     this._fadeElapsed = FADE_DURATION_SECONDS
     this._prewarmFramePending = false
     this.setPresentation(this._targetOpacity, this._targetScale)
-    this.visible = this._targetOpacity > 0 && this._model !== null
+    if (this._root)
+      this._root.visible = this._targetOpacity > 0 && this._model !== null
   }
 
   /** True while the map is fading between Contact frames. */
@@ -195,13 +244,13 @@ export class ContactCyprusStage extends THREE.Group {
     if (this._disposed) return
     if (!this._model || this._targetOpacity > 0) return
     this._prewarmFramePending = true
-    this.visible = true
+    if (this._root) this._root.visible = true
   }
 
   resize(width: number, height: number): void {
     if (this._disposed) return
     const scale = THREE.MathUtils.clamp(width / height / 1.78, 0.78, 1.2)
-    this.scale.setScalar(scale)
+    this._root?.scale.setScalar(scale)
   }
 
   update(dt: number): void {
@@ -211,7 +260,10 @@ export class ContactCyprusStage extends THREE.Group {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
     } else if (this.isAnimating) {
-      this._fadeElapsed = Math.min(FADE_DURATION_SECONDS, this._fadeElapsed + dt)
+      this._fadeElapsed = Math.min(
+        FADE_DURATION_SECONDS,
+        this._fadeElapsed + dt,
+      )
       const progress = this._fadeElapsed / FADE_DURATION_SECONDS
       const eased = smoothstep01(progress)
       this.setPresentation(
@@ -220,7 +272,8 @@ export class ContactCyprusStage extends THREE.Group {
       )
     }
 
-    if (!this.visible || !this._camera) {
+    const root = this._root
+    if (!root?.visible || !this._camera) {
       // Hidden: the pending prewarm frame can never render, so it is
       // unreachable — clear the flag. Without this, `isAnimating()` stays
       // true forever after a lazy init that lands on a non-Agros section
@@ -238,14 +291,14 @@ export class ContactCyprusStage extends THREE.Group {
       !this._lastCameraPosition.equals(this._cameraPosition) ||
       !this._lastCameraQuaternion.equals(this._camera.quaternion)
     if (!this.isAnimating && !cameraChanged) return
-    this.position.copy(this._cameraPosition)
-    this.quaternion.copy(this._camera.quaternion)
+    root.position.copy(this._cameraPosition)
+    root.quaternion.copy(this._camera.quaternion)
     this._lastCameraPosition.copy(this._cameraPosition)
     this._lastCameraQuaternion.copy(this._camera.quaternion)
 
     if (this._prewarmFramePending) {
       this._prewarmFramePending = false
-      this.visible = false
+      if (this._root) this._root.visible = false
     }
   }
 
@@ -263,7 +316,8 @@ export class ContactCyprusStage extends THREE.Group {
       this._model?.scale.setScalar(this._modelBaseScale * this._scale)
       this._appliedScale = this._scale
     }
-    this.visible = this._opacity > 0.001 || this._targetOpacity > 0.001
+    if (this._root)
+      this._root.visible = this._opacity > 0.001 || this._targetOpacity > 0.001
   }
 
   dispose(): void {
@@ -272,22 +326,23 @@ export class ContactCyprusStage extends THREE.Group {
     this._active = false
     this._prewarmFramePending = false
     this._camera = null
+    this._publishModel?.(null)
+    this._publishModel = null
+    if (this._root) this._root.visible = false
     this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
-    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
+    this._lastCameraQuaternion.set(
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+    )
     if (this._model) this.disposeModel(this._model)
     this._model = null
     this._materials = []
-    this.clear()
-    this.removeFromParent()
+    this._root = null
   }
 
   private disposeModel(model: THREE.Object3D): void {
-    model.traverse((object) => {
-      const mesh = object as THREE.Mesh
-      if (!mesh.isMesh) return
-      mesh.geometry.dispose()
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-      materials.forEach((material) => disposeMaterialDeep(material))
-    })
+    disposeObject3DResources(model)
   }
 }

@@ -15,6 +15,15 @@ import { BlurFade } from '../Experience/BlurFade'
 import { eventBus } from '../core/EventBus'
 import { prefersReducedMotion } from '../core/motionPolicy'
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+function focusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true',
+  )
+}
+
 export interface OverlayOptions {
   // Poster image URL (textureUrl) — decoded before the overlay reveals
   poster?: string
@@ -60,6 +69,11 @@ export class FullscreenOverlay {
 
   private readonly _onModalHide = (): void => {
     this.handleHide()
+  }
+  private readonly _onModalHidden = (): void => {
+    const target = this._restoreFocus
+    this._restoreFocus = null
+    if (target?.isConnected) target.focus({ preventScroll: true })
   }
 
   constructor() {
@@ -130,11 +144,6 @@ export class FullscreenOverlay {
       eventBus.emit('jlz:close-nav')
       eventBus.emit('jlz:fullscreen-change', { open: true })
       document.body.classList.add('jlz-media-layer-open')
-      // Store the element that had focus before the overlay opened so we can
-      // restore it on close (B-2 a11y fix).
-      if (document.activeElement instanceof HTMLElement) {
-        this._restoreFocus = document.activeElement
-      }
       document.addEventListener('keydown', this._keydownHandler!)
       document.addEventListener('focusin', this._focusTrapHandler!)
       // Double-rAF fallback: more reliable than fixed timeout.
@@ -169,13 +178,30 @@ export class FullscreenOverlay {
       this.container.querySelector<HTMLElement>('.jlz-fs-close')?.focus({ preventScroll: true })
     })
     UIkit.util.on(this.container, 'hide', this._onModalHide)
+    UIkit.util.on(this.container, 'hidden', this._onModalHidden)
     // Keyboard: Escape + ArrowLeft/Right (prev/next)
     // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents CinematicNav's window keydown from
     // also firing, so project arrows do not move the story behind the modal.
     this._keydownHandler = (e: KeyboardEvent) => {
-      // Track Shift+Tab so the focus trap can wrap in the correct direction.
-      if (e.key === 'Tab') this._lastShiftTab = e.shiftKey
+      if (e.key === 'Tab') {
+        this._lastShiftTab = e.shiftKey
+        const dialog = this.container.querySelector<HTMLElement>('.uk-modal-dialog')
+        if (!dialog) return
+        const focusables = focusableElements(dialog)
+        const first = focusables[0]
+        const last = focusables.at(-1)
+        if (!first || !last) {
+          e.preventDefault()
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus({ preventScroll: true })
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus({ preventScroll: true })
+        }
+        return
+      }
       if (e.key === 'Escape') {
         // Own Escape while the fullscreen surface is active. UIkit may also
         // receive the key through its modal adapter, but stopping propagation
@@ -204,9 +230,7 @@ export class FullscreenOverlay {
       if (dialog.contains(e.target as Node)) return
       // Focus escaped the dialog — route it back.
       e.preventDefault()
-      const focusables = dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      )
+      const focusables = focusableElements(dialog)
       if (focusables.length === 0) return
       // If Shift+Tab on the first element → wrap to the last; otherwise → first.
       const first = focusables[0]!
@@ -234,9 +258,6 @@ export class FullscreenOverlay {
     // callback into the next media item.
     this._perOpenOnClose?.()
     this._perOpenOnClose = null
-    // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
-    this._restoreFocus?.focus({ preventScroll: true })
-    this._restoreFocus = null
     // Remove keyboard listener when modal closes — clean lifecycle, no
     // stale listeners intercepting events while the overlay is hidden.
     document.removeEventListener('keydown', this._keydownHandler!)
@@ -254,6 +275,9 @@ export class FullscreenOverlay {
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
+    // Capture before UIkit handles the show event; it may move focus into the
+    // modal before this overlay's event callbacks run.
+    this._restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     UIkit.modal(this.container).show()
   }
   /** Preload content into the overlay WITHOUT showing it.
@@ -361,6 +385,7 @@ export class FullscreenOverlay {
       // Run the same idempotent cleanup synchronously before destroying the
       // component so body scroll, focus and the per-open callback are settled.
       this.handleHide()
+      this._restoreFocus = null
     }
     this._listeners.abort()
     // The title reveal is an independent RAF owner. A preloaded/hidden

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { markRaw, onMounted, shallowRef } from 'vue'
+import { markRaw, onBeforeUnmount, onMounted, shallowRef } from 'vue'
 import { BufferAttribute, BufferGeometry, type Group, type Mesh } from 'three'
+import { traceDevLifecycle } from '../../core/devLifecycleTrace'
 import type { CursorTrailNodes } from '../../Experience/World/DrawTrail'
 
 const emit = defineEmits<{ ready: [nodes: CursorTrailNodes] }>()
@@ -12,13 +13,22 @@ const ribbon = shallowRef<Mesh | null>(null)
 // controller replaces it with the hand-built ribbon geometry at adoption —
 // long before the mesh is ever visible or rendered.
 const placeholderGeometry = markRaw(new BufferGeometry())
-placeholderGeometry.setAttribute('position', new BufferAttribute(new Float32Array(0), 3))
+placeholderGeometry.setAttribute(
+  'position',
+  new BufferAttribute(new Float32Array(0), 3),
+)
 
 onMounted(() => {
   if (!root.value || !ribbon.value) {
     throw new Error('Declarative cursor trail did not mount completely.')
   }
   emit('ready', { root: root.value, ribbon: ribbon.value })
+})
+
+onBeforeUnmount(() => {
+  placeholderGeometry.dispose()
+  if (import.meta.env.DEV)
+    traceDevLifecycle('scene-owner:cursor-placeholder-disposed')
 })
 </script>
 

@@ -27,16 +27,12 @@ export const BUILDER_PAGE_PREFIX = '/p'
 
 /** The static path of one published builder document. */
 export function builderPagePath(slug: string, locale: BuilderLocale = 'EN'): string {
-  return locale === 'RU' ? `${BUILDER_PAGE_PREFIX}/${slug}/ru` : `${BUILDER_PAGE_PREFIX}/${slug}`
+  return locale === 'RU' ? `${BUILDER_PAGE_PREFIX}/${slug}/ru/` : `${BUILDER_PAGE_PREFIX}/${slug}`
 }
 
 /** Escape a value for use inside a double-quoted HTML attribute. */
 function esc(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 /**

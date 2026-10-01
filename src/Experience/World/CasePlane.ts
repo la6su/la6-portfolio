@@ -3,12 +3,11 @@
 // A real 3D plane (not a CSS card). The TSL vertex field turns an explicit
 // pulse (card tap/open) into a brief wobble across the surface.
 //
-// PER-INSTANCE MATERIALS: Each CasePlane creates its own MeshBasicNodeMaterial
-// with its own uniform buffers and texture binding. This is required because
-// BakuCarousel renders 3+ visible cards simultaneously — a shared material
-// would make all cards show the last card's texture and uniform values.
+// PER-INSTANCE MATERIALS: Each card gets its own MeshBasicNodeMaterial,
+// uniform buffers and texture binding. BakuCarousel renders multiple cards at
+// once, so sharing a material would make them all show the last texture.
 //
-// The shared geometry (PlaneGeometry) is still reused — only materials differ.
+// Shared geometry is leased across cards; per-card owners release their lease.
 //
 // CLOTH WOBBLE SHADER:
 //   Low-frequency harmonic cloth simulation in the vertex shader.
@@ -27,17 +26,26 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 let sharedGeometry: THREE.PlaneGeometry | null = null
 let sharedGeometryUsers = 0
 
-function acquireGeometry(): THREE.PlaneGeometry {
-  sharedGeometry ??= new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
-  sharedGeometryUsers += 1
-  return sharedGeometry
+export interface CasePlaneGeometryLease {
+  readonly geometry: THREE.PlaneGeometry
+  release(): void
 }
 
-function releaseGeometry(): void {
-  sharedGeometryUsers -= 1
-  if (sharedGeometryUsers !== 0) return
-  sharedGeometry?.dispose()
-  sharedGeometry = null
+export function acquireCasePlaneGeometry(): CasePlaneGeometryLease {
+  sharedGeometry ??= new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
+  sharedGeometryUsers += 1
+  let released = false
+  return {
+    geometry: sharedGeometry,
+    release() {
+      if (released) return
+      released = true
+      sharedGeometryUsers -= 1
+      if (sharedGeometryUsers !== 0) return
+      sharedGeometry?.dispose()
+      sharedGeometry = null
+    },
+  }
 }
 
 /**
@@ -54,88 +62,85 @@ export const CLOTH_PARAMS = {
   wobbleSmoothing: 8.0,
 } as const
 
-export class CasePlane extends THREE.Mesh {
+export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
+  const time = uniform(0)
+  const state = uniform(new THREE.Vector2(0, 0))
+  const material = new MeshBasicNodeMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    fog: false,
+    toneMapped: false,
+    map: mapTexture,
+  })
+  material.positionNode = Fn(() => {
+    const local = positionLocal
+    const wobble = state.y
+    const edgeDist = max(abs(local.x), abs(local.y.mul(1.78))).clamp(0.0, 1.0)
+    const edgeFade = smoothstep(0.0, 0.5, edgeDist)
+    const cornerBoost = abs(local.x).mul(abs(local.y)).mul(3.5).max(0.0).min(1.0)
+    const clothMask = edgeFade.add(cornerBoost.mul(0.4)).max(0.0).min(1.2)
+    const h1 = sin(local.x.mul(2.5).add(time.mul(1.8)))
+    const h2 = sin(local.x.mul(1.8).sub(local.y.mul(1.2)).add(time.mul(1.2)))
+    const ripple = h1.add(h2.mul(0.45)).mul(wobble).mul(0.022).mul(clothMask)
+    const rippleZ = ripple.mul(0.25)
+    return vec3(local.x, local.y.add(ripple), local.z.add(rippleZ))
+  })()
+  material.opacityNode = Fn(() => state.x)()
+  return { material, time, state }
+}
+
+export type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
+
+export class CasePlane {
+  readonly mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>
+  private readonly _resources: CasePlaneMaterialResources
+  private readonly _geometryLease: CasePlaneGeometryLease
   private _disposed = false
   private _wobbleValue = 0
   private _wobbleTarget = 0
   private _myReveal = 0
-  private _texture: THREE.Texture
+  private _texture: THREE.Texture | null
   private _reducedMotion = prefersReducedMotion()
 
   // Per-instance uniform nodes — each material has its own GPU uniform buffer.
-  // Typed as `any` because TSL uniform node types are complex generics that
-  // TypeScript can't infer through parameter passing. The actual TSL API
-  // calls (.x, .y, .z, .mul(), .value) work correctly at runtime.
-  private readonly _timeUni: any
-  private readonly _stateUni: any // x=reveal, y=wobble
+  private readonly _timeUni: CasePlaneMaterialResources['time']
+  private readonly _stateUni: CasePlaneMaterialResources['state']
 
-  constructor(mapTexture: THREE.Texture) {
-    // Per-instance uniforms — created here so TSL closures capture the
-    // correct typed references (not shared across instances).
-    const time = uniform(0)
-    const state = uniform(new THREE.Vector2(0, 0)) // x=reveal, y=wobble
-
-    const mat = new MeshBasicNodeMaterial({
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      fog: false,
-      toneMapped: false,
-      map: mapTexture,
-    })
-
-    // Vertex: low-frequency cloth wobble driven by per-instance uniforms.
-    //
-    // TWO sine harmonics create a natural, physical cloth ripple:
-    //   H1: spatial 2.5, temporal 1.8 Hz — primary wave, 1-2 visible ripples
-    //   H2: spatial 1.8, temporal 1.2 Hz — slow cross-wave for organic feel
-    //
-    // Edge falloff: center stays stable (eye focus), edges/corners wobble more.
-    // The clothMask controls displacement: Y for visible ripple,
-    // Z gets 25% depth for subtle parallax.
-    mat.positionNode = Fn(() => {
-      const local = positionLocal
-      const wobble = state.y
-
-      // Edge distance from center (0 at center, 1 at edges/corners)
-      const edgeDist = max(abs(local.x), abs(local.y.mul(1.78))).clamp(0.0, 1.0)
-      // Edges and corners wobble MORE than center — like cloth held at center
-      const edgeFade = (smoothstep as any)(0.0, 0.5, edgeDist)
-      // Corner emphasis: corners get extra displacement
-      const cornerBoost = abs(local.x).mul(abs(local.y)).mul(3.5).max(0.0).min(1.0)
-      const clothMask = edgeFade.add(cornerBoost.mul(0.4)).max(0.0).min(1.2)
-
-      // Harmonic 1: primary wave — 1-2 visible ripples across the card
-      const h1 = sin(local.x.mul(2.5).add(time.mul(1.8)))
-      // Harmonic 2: slow cross-wave for organic, non-mechanical feel
-      const h2 = sin(local.x.mul(1.8).sub(local.y.mul(1.2)).add(time.mul(1.2)))
-
-      // Composite: H1 dominates, H2 adds subtle cross-movement
-      const ripple = h1
-        .add(h2.mul(0.45))
-        .mul(wobble)
-        .mul(0.022) // visible amplitude
-        .mul(clothMask)
-
-      const rippleZ = ripple.mul(0.25)
-      return vec3(local.x, local.y.add(ripple) as any, local.z.add(rippleZ) as any)
-    })()
-
-    // Opacity: a straight reveal fade. No radial mask — a center-out circle
-    // read as a directional wipe from whichever corner the plane happened
-    // to occupy. A plain opacity fade is neutral.
-    ;(mat as any).opacityNode = Fn(() => {
-      return state.x
-    })()
-
-    super(acquireGeometry(), mat)
+  constructor(
+    mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>,
+    mapTexture: THREE.Texture,
+    resources: CasePlaneMaterialResources,
+    geometryLease: CasePlaneGeometryLease,
+  ) {
+    if (mesh.geometry !== geometryLease.geometry || mesh.material !== resources.material) {
+      throw new Error('CasePlane must adopt geometry and material from its resource owner.')
+    }
+    this.mesh = mesh
+    this._resources = resources
+    this._geometryLease = geometryLease
     this._texture = mapTexture
-    this.name = 'works-case-plane'
-    this.frustumCulled = false
-    this.renderOrder = 2
+    this._timeUni = resources.time
+    this._stateUni = resources.state
+    this.mesh.name = 'works-case-plane'
+    this.mesh.frustumCulled = false
+    this.mesh.renderOrder = 2
+  }
 
-    this._timeUni = time
-    this._stateUni = state
+  get position(): THREE.Vector3 {
+    return this.mesh.position
+  }
+  get rotation(): THREE.Euler {
+    return this.mesh.rotation
+  }
+  get scale(): THREE.Vector3 {
+    return this.mesh.scale
+  }
+  get visible(): boolean {
+    return this.mesh.visible
+  }
+  set visible(value: boolean) {
+    this.mesh.visible = value
   }
 
   get isAnimating(): boolean {
@@ -184,8 +189,7 @@ export class CasePlane extends THREE.Mesh {
 
     this._timeUni.value += dt
     this._wobbleTarget *= Math.exp(-dt * CLOTH_PARAMS.wobbleDecay)
-    this._wobbleValue +=
-      (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
+    this._wobbleValue += (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
 
     this._stateUni.value.y = this._wobbleValue
   }
@@ -194,14 +198,17 @@ export class CasePlane extends THREE.Mesh {
     return this._texture
   }
 
-  dispose(): void {
+  removeFromParent(): this {
+    this.mesh.removeFromParent()
+    return this
+  }
+
+  dispose(detach = true): void {
     if (this._disposed) return
     this._disposed = true
-    // Dispose the per-instance material and release the shared geometry when
-    // the final card owner retires.
-    const mat = this.material as MeshBasicNodeMaterial
-    mat.dispose()
-    releaseGeometry()
-    this.removeFromParent()
+    this._resources.material.dispose()
+    this._geometryLease.release()
+    this._texture = null
+    if (detach) this.removeFromParent()
   }
 }

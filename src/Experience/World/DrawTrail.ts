@@ -174,9 +174,10 @@ export class DrawTrail {
       this._uniforms,
     )
 
-    // The Tres-mounted leaf carries placeholder default resources until the
-    // behavior owns the ribbon graph; neither placeholder ever rendered, so
-    // they hold no GPU resources and are reclaimed by the GC.
+    // The Tres-mounted leaf carries an owner placeholder until this controller
+    // replaces its geometry/material. The node's Tres disposal boundary owns
+    // the currently assigned ribbon resources; CursorTrailOwner separately
+    // retires its displaced placeholder geometry.
     this.geometry = new THREE.BufferGeometry()
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3))
     this.geometry.setAttribute('uv', new THREE.BufferAttribute(this.uvs, 2))
@@ -339,10 +340,7 @@ export class DrawTrail {
     this._geometryDirty = false
     this._hasCameraBasis = false
     this._hasCameraWorld = false
-    // The ribbon geometry + TSL signal material are controller-created —
-    // they die here. The declarative root/ribbon nodes stay with the Vue
-    // host (they leave the scene with CursorTrailOwner's unmount).
-    this.geometry.dispose()
-    ;(this._ribbon.material as THREE.Material).dispose()
+    // The Tres-declared mesh owns whichever geometry/material are assigned to
+    // it at host teardown. This controller only retires animation state.
   }
 }

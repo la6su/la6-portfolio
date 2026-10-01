@@ -1,4 +1,4 @@
-import type { BuilderElementType, BuilderNode } from './schema'
+import type { BuilderElementType, BuilderNode } from './schema.ts'
 
 type BuilderFieldType = 'text' | 'textarea' | 'select' | 'url'
 

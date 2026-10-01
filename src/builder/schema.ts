@@ -1,5 +1,5 @@
-import { validateBuilderTheme, type BuilderTheme } from './style'
-import { BUILDER_SOURCE_FIELDS, BUILDER_SOURCE_IDS } from './sources'
+import { validateBuilderTheme, type BuilderTheme } from './style.ts'
+import { BUILDER_SOURCE_FIELDS, BUILDER_SOURCE_IDS } from './sources.ts'
 
 const BUILDER_DOCUMENT_VERSION = 2 as const
 

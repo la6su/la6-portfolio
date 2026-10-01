@@ -1,5 +1,5 @@
-import { PROJECTS } from '../Data/Projects'
-import { localizedProp, type BuilderLocale } from './localization'
+import { PROJECTS } from '../Data/Projects.ts'
+import { localizedProp, type BuilderLocale } from './localization.ts'
 
 export const BUILDER_SOURCE_IDS = ['projects'] as const
 

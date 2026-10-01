@@ -1,5 +1,5 @@
-import type { BuilderDocument } from './schema'
-import { DEFAULT_BUILDER_THEME } from './style'
+import type { BuilderDocument } from './schema.ts'
+import { DEFAULT_BUILDER_THEME } from './style.ts'
 
 export const DEFAULT_BUILDER_DOCUMENT: BuilderDocument = {
   version: 2,

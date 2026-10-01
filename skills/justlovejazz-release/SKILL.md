@@ -6,8 +6,9 @@ description: Verify and publish a scoped JUSTLOVEJAZZ change when the user reque
 # JUSTLOVEJAZZ release
 
 Inspect the working tree and final diff; preserve unrelated work. Follow
-[Development](../../docs/DEVELOPMENT.md) for the complete runtime release gate
-and the documentation-only exception. Run `git diff --check` before delivery.
+`AGENTS.md` and the current phase/checkpoint in `NEXT.md`. Run the relevant
+checks for changed behavior and `git diff --check` before delivery. Do not
+claim hardware/browser gates unless they were actually run.
 
 When publication is requested, use a scoped non-default branch, stage only
 intended files, write a Conventional Commit, push and open a PR against `main`.

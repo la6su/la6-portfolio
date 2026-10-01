@@ -1,4 +1,5 @@
-import type * as THREE from 'three'
+import type { Group } from 'three'
+import type { LabGamepadResources } from '../World/LabGamepad'
 
 /**
  * A Lab experiment owns only the object it adds to the shared world. It must
@@ -10,7 +11,13 @@ import type * as THREE from 'three'
  * rendered frames, a `setReducedMotion` settle hook and a `resetMotion` for
  * clean route re-entry. SceneCoordinator calls these defensively.
  */
-export interface LabExperimentObject extends THREE.Object3D {
+export interface LabExperimentObject {
+  /** Visibility port mirrored by the Vue-owned scene root. */
+  visible: boolean
+  /** Resources supplied as props to the experiment's declarative owner. */
+  readonly resources: LabGamepadResources
+  bindNodes(root: Group, crankPivot: Group): void
+  unbindNodes(root: Group): void
   dispose(): void
   isAnimating?: boolean
   update?(dt: number): void

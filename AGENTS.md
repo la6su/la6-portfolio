@@ -6,13 +6,15 @@ Vite and Bun. Product is EN/RU; code/docs are English. Versions and commands:
 
 Positioning: distinctive business solutions through data-informed creative
 direction, automation, speed, performance and style. The name is a creativity
-metaphor, not a music theme; [BRAND](docs/BRAND.md) owns the direction.
+metaphor, not a music theme.
 
 ## Work
 
 - Inspect Git status; preserve unrelated changes. Source/tests override prose.
-- Follow the user's task; [NEXT](NEXT.md) is the only queue. Keep only unfinished
-  work there, including a checkpoint when needed. No session logs or parallel plans.
+- Follow the user's task; [NEXT](NEXT.md) is the canonical living refactor plan
+  and only work queue. Keep its status and checkpoint current as work completes;
+  do not create session logs or parallel plans. The plan is grounded in the
+  current source tree and the user's selected TresJS reference, not removed docs.
 - Prefer the smallest complete solution. Remove obsolete paths; avoid speculative 
 - abstractions and compatibility layers.
 - Read docs by task, not as a startup bundle. Use deterministic checks and

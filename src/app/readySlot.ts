@@ -1,9 +1,5 @@
-// src/app/readySlot.ts — one declarative scene-node ready slot.
-//
-// Every declarative node under TresCanvas reports itself to SceneHost the
-// same way: a live shallow value plus a one-shot promise the host awaits
-// before resolving the bridge. One slot factory replaces the
-// let/resolver/promise triple a node used to need (ADR 0005 DX pass).
+// A scene-node readiness handshake: expose a shallow value for the template
+// and a promise for the host initialization path.
 import { shallowRef, type ShallowRef } from 'vue'
 
 interface ReadySlot<T> {

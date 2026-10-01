@@ -9,8 +9,8 @@
 // shared by the dev plugin (save / delete / load) and the
 // unit tests so there is one validation decision, not one per consumer.
 
-import { DEFAULT_BUILDER_DOCUMENT } from './default-document'
-import { SAFE_BUILDER_SLUG, validateBuilderDocument, type BuilderDocument } from './schema'
+import { DEFAULT_BUILDER_DOCUMENT } from './default-document.ts'
+import { SAFE_BUILDER_SLUG, validateBuilderDocument, type BuilderDocument } from './schema.ts'
 
 /** The on-disk collection format version. */
 export const BUILDER_DOCUMENTS_VERSION = 1 as const

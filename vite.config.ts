@@ -3,10 +3,12 @@ import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
-import { existsSync, readFileSync } from 'fs'
-import { jlzAdminPlugin } from './admin/vite-plugin'
-import { publishedPages, validateBuilderDocuments } from './src/builder/documents'
-import { BLOG_ARTICLES } from './src/core/blogPages'
+import { existsSync, readFileSync } from 'node:fs'
+import { jlzAdminPlugin } from './admin/vite-plugin.ts'
+import { publishedPages, validateBuilderDocuments } from './src/builder/documents.ts'
+import { BLOG_ARTICLES } from './src/core/blogPages.ts'
+
+const root = import.meta.dirname
 
 const VUE_FEATURE_FLAGS = {
   __VUE_OPTIONS_API__: 'false',
@@ -26,13 +28,13 @@ const VUE_FEATURE_FLAGS = {
 // ═══════════════════════════════════════════════════════════════════════
 
 // Approved (`published: true`) Page Builder documents → static `/p/<slug>`
-// and `/p/<slug>/ru`
+// and `/p/<slug>/ru/`
 // routes (Phase 9, slice 5). The closed set is the admin-owned collection
 // (`src/builder/generated/documents.json`); the publish pipeline
 // (`scripts/publish-builder-pages.mjs`) renders these into the Vite build
 // inputs below and the sitemap generator consumes the same set.
 const publishedBuilderSlugs = (() => {
-  const collectionPath = resolve(__dirname, 'src/builder/generated/documents.json')
+  const collectionPath = resolve(root, 'src/builder/generated/documents.json')
   if (!existsSync(collectionPath)) return [] as string[]
   const validation = validateBuilderDocuments(
     JSON.parse(readFileSync(collectionPath, 'utf8')) as unknown,
@@ -58,8 +60,8 @@ export default defineConfig(() => ({
     // the only evaluated core is the optimizer's shared three/webgpu chunk
     // (see src/three-webgpu-compat.ts for the matching UniformsUtils seam).
     alias: [
-      { find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') },
-      { find: /^three-stdlib$/, replacement: resolve(__dirname, 'src/three-stdlib-compat.ts') },
+      { find: /^three$/, replacement: resolve(root, 'src/three-webgpu-compat.ts') },
+      { find: /^three-stdlib$/, replacement: resolve(root, 'src/three-stdlib-compat.ts') },
     ],
   },
   define: VUE_FEATURE_FLAGS,
@@ -74,7 +76,9 @@ export default defineConfig(() => ({
   build: {
     target: 'es2023',
     outDir: 'dist',
-    chunkSizeWarningLimit: 1000,
+    // Three's WebGPU entry is intentionally one shared chunk. Its gzipped
+    // transfer budget is enforced after build by check-build-budgets.ts.
+    chunkSizeWarningLimit: 1200,
     cssCodeSplit: true,
     rollupOptions: {
       // Multi-page entry: index (/) → blog (/blog).
@@ -89,12 +93,12 @@ export default defineConfig(() => ({
       // (`src/core/blogMeta.ts`). Vite rewrites the stylesheet URL and ships
       // the body as static HTML (no application bundle, no 3D).
       input: {
-        index: resolve(__dirname, 'index.html'),
-        blog: resolve(__dirname, 'blog.html'),
+        index: resolve(root, 'index.html'),
+        blog: resolve(root, 'blog.html'),
         ...Object.fromEntries(
           BLOG_ARTICLES.map((article) => [
             `blog/${article.slug}`,
-            resolve(__dirname, `blog/${article.slug}.html`),
+            resolve(root, `blog/${article.slug}.html`),
           ]),
         ),
         // Published builder documents (SSG output of
@@ -103,11 +107,11 @@ export default defineConfig(() => ({
         ...Object.fromEntries([
           ...publishedBuilderSlugs.map((slug) => [
             `p/${slug}`,
-            resolve(__dirname, `p/${slug}.html`),
+            resolve(root, `p/${slug}.html`),
           ]),
           ...publishedBuilderSlugs.map((slug) => [
             `p/${slug}/ru`,
-            resolve(__dirname, `p/${slug}/ru/index.html`),
+            resolve(root, `p/${slug}/ru/index.html`),
           ]),
         ]),
       },
@@ -219,6 +223,7 @@ export default defineConfig(() => ({
             //    rolldown's automatic chunking. Order matters — most
             //    specific paths first.
             {
+              debugName: 'application source chunks',
               name(id) {
                 if (id.includes('/src/core/Section')) return 'chunk-sections'
                 if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
@@ -294,7 +299,7 @@ export default defineConfig(() => ({
         // documented `bun run dev` flow has no prerender/ yet. Serve the bare
         // template instead of failing every dev request — the Vue client
         // replaces the shell content on mount either way.
-        const prerenderPath = resolve(__dirname, 'prerender', 'home.html')
+        const prerenderPath = resolve(root, 'prerender', 'home.html')
         const prerender = existsSync(prerenderPath) ? readFileSync(prerenderPath, 'utf8') : ''
         return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
       },

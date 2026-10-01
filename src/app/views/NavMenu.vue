@@ -37,6 +37,13 @@ import { NAV_ITEMS } from '../navItems'
         <span class="jlz-menu-sheet__index uk-text-meta uk-text-uppercase" aria-hidden="true"
           >Index / 07</span
         >
+        <button
+          class="uk-close-large"
+          type="button"
+          uk-close
+          data-close-cinematic-sheet
+          aria-label="Close navigation"
+        ></button>
       </div>
       <!-- Main 2-column grid: stat | top-level navigation -->
       <div class="jlz-menu-grid uk-grid uk-grid-medium uk-flex uk-flex-middle" uk-grid>

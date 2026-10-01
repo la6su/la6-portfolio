@@ -1309,9 +1309,15 @@
 
           loader.classList.add('is-exiting')
 
-          window.setTimeout(() => {
+          let fallbackTimer = 0
+          const removeLoader = (event) => {
+            if (event && (event.target !== loader || event.animationName !== 'loader-exit')) return
+            window.clearTimeout(fallbackTimer)
+            loader.removeEventListener('animationend', removeLoader)
             loader.remove()
-          }, 780)
+          }
+          loader.addEventListener('animationend', removeLoader)
+          fallbackTimer = window.setTimeout(() => removeLoader(), 1300)
         })
       })()
     </script>

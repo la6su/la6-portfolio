@@ -2,6 +2,7 @@ import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 import { contentRoot } from './core/contentRoot'
+import { devDiagnostic } from './core/devDiagnostic'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 import { getCurrentPage } from './core/routePage'
@@ -51,10 +52,7 @@ import { initI18n, toggleLang, getLang } from './core/i18n'
 // the Vue router mounts and before the splash Enter button
 // is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
 // and for navigation tests regardless of whether `experience.init()` succeeds.
-;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (
-  event,
-  detail,
-) => {
+;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (event, detail) => {
   ;(eventBus.emit as (name: string, detail?: unknown) => void).call(eventBus, event, detail)
 }
 
@@ -105,7 +103,7 @@ function showEnterButton(): void {
 }
 
 // ── Show a load error when 3D fails to initialize ──
-// Replaces the Enter button with an error message + retry link and flips the
+// Replaces the Enter button with an error message + scene-free continuation and flips the
 // splash status row to SIGNAL LOST. This runs if Experience.init() throws
 // (jlz:webgl-failed) or if jlz:webgl-ready doesn't fire within 60s (init
 // hung; the watchdog below owns the 60s budget). The Enter button must NEVER appear when 3D isn't ready — clicking it
@@ -126,13 +124,42 @@ function showLoadError(): void {
         <div class="jlz-boot-gate" role="alert">
           <p class="jlz-boot-gate__head">Signal lost</p>
           <p class="jlz-boot-gate__text">
-            The 3D experience couldn't load. Your browser may not support
-            WebGL2, or the GPU is unavailable.
+            The 3D experience couldn't load. Continue to the portfolio without
+            the interactive scene, or retry after enabling hardware acceleration.
           </p>
           <span class="jlz-boot-gate__code">ERR:GPU — WEBGL2 ADAPTER NOT REACHABLE</span>
+          <button class="jlz-boot-gate__action" type="button" data-jlz-continue-without-scene>
+            Continue without 3D
+          </button>
           <a class="jlz-boot-gate__action" href="/">Retry</a>
         </div>
       `
+      parent.querySelector<HTMLButtonElement>('[data-jlz-continue-without-scene]')?.addEventListener(
+        'click',
+        () => {
+          const loader = document.getElementById('jlz-app-loader')
+          if (!loader) return
+          loader.setAttribute('aria-busy', 'false')
+          loader.classList.add('is-exiting')
+          eventBus.emit('jlz:splash-entered')
+          let fallbackTimer = 0
+          const removeLoader = (event?: AnimationEvent): void => {
+            if (event && (event.target !== loader || event.animationName !== 'loader-exit')) return
+            if (!loader.isConnected) return
+            window.clearTimeout(fallbackTimer)
+            loader.removeEventListener('animationend', removeLoader)
+            loader.remove()
+            const main = document.querySelector<HTMLElement>('#spa-content')
+            if (main) {
+              main.tabIndex = -1
+              main.focus({ preventScroll: true })
+            }
+          }
+          loader.addEventListener('animationend', removeLoader)
+          fallbackTimer = window.setTimeout(() => removeLoader(), 1300)
+        },
+        { once: true },
+      )
     }
   }
 }
@@ -391,8 +418,7 @@ async function boot(): Promise<BootResult> {
     )
     await runtime.init()
     if (import.meta.env.DEV) {
-      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () =>
-        runtime.destroy()
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
     }
     // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
     // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
@@ -400,11 +426,10 @@ async function boot(): Promise<BootResult> {
     // TSL-post-on-WebGLBackend claim is made. (The dev-forced classic
     // `?renderer=webgl` parity QA owner that compared the two paths was
     // removed in Phase 10; the automatic software-adapter fallback remains.)
-    if (import.meta.env.DEV) {
-      console.info(
-        `[entry-app] Phase 7 host ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
-      )
-    }
+    devDiagnostic(
+      'info',
+      `[entry-app] SceneHost ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
+    )
     progress(95)
     // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
     await new Promise((resolve) => setTimeout(resolve, 150))
@@ -616,9 +641,7 @@ function setupTitleObserver(): void {
   _titleObserver?.disconnect()
   if (prefersReducedMotion()) return
 
-  const titles = contentRoot().querySelectorAll<HTMLElement>(
-    '.studio-title:not([data-blur-fade="off"])',
-  )
+  const titles = contentRoot().querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
     (entries) => {

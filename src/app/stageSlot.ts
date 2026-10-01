@@ -1,14 +1,6 @@
-// src/app/stageSlot.ts — one declarative stage mount/unmount boundary.
-//
-// SceneHost mounts runtime-owned stage objects into the Tres scene at the
-// request of the Experience runtime (Works plane stage + its installation,
-// contact halo, manifesto ink). The boundary is identical for every stage:
-// an aliveness guard (a disposed host never attaches), a raw store (three
-// objects must never become Vue reactive proxies), an identity-checked
-// unmount (a stale detach from a retired request is a no-op) and a
-// nextTick flush (the template's <primitive> mounts before the runtime
-// proceeds). One slot factory replaces the hand-written mount/unmount pair
-// each stage used to need (ADR 0005 DX pass; sibling of readySlot.ts).
+// Shared mount/unmount boundary for lazily created Three.js scene stages.
+// It guards host teardown, keeps objects raw, ignores stale detach requests
+// and waits for Vue to apply each scene-tree change.
 import { markRaw, nextTick, shallowRef, type ShallowRef } from 'vue'
 import type { StagePort } from './sceneHost'
 

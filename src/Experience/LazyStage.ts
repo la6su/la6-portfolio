@@ -15,8 +15,6 @@
 //   release  — teardown in the exact per-stage order (dispose ↔ detach)
 //   onDispose— extra invalidation (e.g. the Cyprus active flag)
 
-import type { Object3D } from 'three'
-
 /** Function-backed view over the state held by one lazy-stage slot. */
 export interface LazyStageOwner<T> {
   getStage: () => T | null
@@ -27,6 +25,10 @@ export interface LazyStageOwner<T> {
   getRequest: () => number
   /** Invalidate any in-flight creation; returns the new request id. */
   advanceRequest: () => number
+  /** Run terminal cleanup at most once and expose its completion. */
+  release: (stage: T, cleanup: (stage: T) => void | Promise<void>) => Promise<void>
+  /** Wait for every release already started by this stage owner. */
+  waitForReleases: () => Promise<void>
 }
 
 /** Owner-backed slot: the three lazy-stage fields (stage reference, memoized
@@ -46,10 +48,12 @@ export interface LazyStageSlot<T> {
   getRequest(): number
 }
 
-export function createLazyStageSlot<T>(): LazyStageSlot<T> {
+export function createLazyStageSlot<T extends object>(): LazyStageSlot<T> {
   let stage: T | null = null
   let promise: Promise<void> | null = null
   let request = 0
+  const releases = new WeakMap<object, Promise<void>>()
+  const pendingReleases = new Set<Promise<void>>()
   const owner: LazyStageOwner<T> = {
     getStage: () => stage,
     setStage: (value) => {
@@ -61,6 +65,25 @@ export function createLazyStageSlot<T>(): LazyStageSlot<T> {
     },
     getRequest: () => request,
     advanceRequest: () => ++request,
+    release: (value, cleanup) => {
+      const existing = releases.get(value)
+      if (existing) return existing
+
+      let complete!: () => void
+      const completion = new Promise<void>((resolve) => {
+        complete = resolve
+      })
+      releases.set(value, completion)
+      pendingReleases.add(completion)
+      void completion.then(() => pendingReleases.delete(completion))
+      try {
+        void Promise.resolve(cleanup(value)).then(complete, complete)
+      } catch {
+        complete()
+      }
+      return completion
+    },
+    waitForReleases: () => Promise.all([...pendingReleases]).then(() => undefined),
   }
   return {
     owner,
@@ -72,7 +95,7 @@ export function createLazyStageSlot<T>(): LazyStageSlot<T> {
   }
 }
 
-export interface LazyStageContract<T extends Object3D> {
+export interface LazyStageContract<T extends object> {
   /** DEV diagnostic label, e.g. `'WorksPlaneStage'`. */
   label: string
   /** Mutable owner state (a {@link createLazyStageSlot} instance). */
@@ -90,7 +113,7 @@ export interface LazyStageContract<T extends Object3D> {
   /** Route wiring after the stale guard passes. */
   configure: (stage: T) => void
   /** Release resources in the exact per-stage order (dispose ↔ detach). */
-  release: (stage: T) => void
+  release: (stage: T) => void | Promise<void>
   /** Extra invalidation when the owner is disposed. */
   onDispose?: () => void
 }
@@ -101,11 +124,30 @@ export interface LazyStageContract<T extends Object3D> {
  * an import continuation must never construct GPU resources for a retired
  * request. One helper instead of one hand-copied lambda per stage.
  */
-export function createImportedLazyStage<T extends Object3D, M>(
+export function createImportedLazyStage<T extends object, M>(
   load: () => Promise<M>,
   pick: (module: M) => new () => T,
 ): (isCurrent: () => boolean) => Promise<T | null> {
   return (isCurrent) => load().then((module) => (isCurrent() ? new (pick(module))() : null))
+}
+
+function releaseLazyStage<T extends object>(
+  contract: LazyStageContract<T>,
+  stage: T,
+): Promise<void> {
+  return contract.owner.release(stage, (value) => {
+    try {
+      return Promise.resolve(contract.release(value)).catch((error: unknown) => {
+        if (import.meta.env.DEV) {
+          console.error(`[Experience] ${contract.label} release failed:`, error)
+        }
+      })
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error(`[Experience] ${contract.label} release failed:`, error)
+      }
+    }
+  })
 }
 
 /**
@@ -113,14 +155,15 @@ export function createImportedLazyStage<T extends Object3D, M>(
  * resolves after configure() (never rejects — failure is contained) and is
  * memoized until the stage settles, fails or is disposed.
  */
-export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<T>): Promise<void> {
+export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>): Promise<void> {
   const { owner } = contract
+  const release = (stage: T): Promise<void> => releaseLazyStage(contract, stage)
   const memoized = owner.getPromise()
   if (memoized) return memoized
   const request = owner.advanceRequest()
 
-  const fail = (error: unknown, stage: T | null): void => {
-    if (stage) contract.release(stage)
+  const fail = async (error: unknown, stage: T | null): Promise<void> => {
+    if (stage) await release(stage)
     if (request === owner.getRequest()) {
       owner.setStage(null)
       owner.setPromise(null)
@@ -130,12 +173,12 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
     }
   }
 
-  const settle = (stage: T): void => {
+  const settle = async (stage: T): Promise<void> => {
     if (request !== owner.getRequest() || owner.getStage() !== stage) {
       // The route disposed this stage while its init was still in flight.
       // Release the late result too, so resources created after the first
       // dispose are freed as well.
-      contract.release(stage)
+      await release(stage)
       return
     }
     contract.configure(stage)
@@ -177,23 +220,22 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
   const mount = (stage: T | null): Promise<T | null> => {
     if (!stage) return Promise.resolve(null)
     if (request !== owner.getRequest()) {
-      contract.release(stage)
-      return Promise.resolve(null)
+      return release(stage).then(() => null)
     }
     activeStage = stage
     return attachAndLoad(stage)
   }
   const pending = created instanceof Promise ? created.then(mount) : mount(created)
   const settled = pending.then(
-    (stage) => {
+    async (stage) => {
       if (!stage) {
         if (request === owner.getRequest()) owner.setPromise(null)
         return
       }
       try {
-        settle(stage)
+        await settle(stage)
       } catch (error) {
-        fail(error, stage)
+        await fail(error, stage)
       }
     },
     (error: unknown) => fail(error, activeStage),
@@ -206,14 +248,15 @@ export function ensureLazyStage<T extends Object3D>(contract: LazyStageContract<
  * Dispose the stage, invalidate any in-flight creation and reset the owner
  * state so a later ensure re-creates it from scratch.
  */
-export function disposeLazyStage<T extends Object3D>(contract: LazyStageContract<T>): void {
+export function disposeLazyStage<T extends object>(
+  contract: LazyStageContract<T>,
+): Promise<void> {
   const { owner } = contract
   owner.advanceRequest()
   const stage = owner.getStage()
-  if (stage) {
-    contract.release(stage)
-    owner.setStage(null)
-  }
+  const release = stage ? releaseLazyStage(contract, stage) : owner.waitForReleases()
+  if (stage) owner.setStage(null)
   owner.setPromise(null)
   contract.onDispose?.()
+  return Promise.all([release, owner.waitForReleases()]).then(() => undefined)
 }

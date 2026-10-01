@@ -1,4 +1,4 @@
-import type { Project } from '../core/types'
+import type { Project } from '../core/types.ts'
 
 export { type Project }
 

@@ -2,7 +2,7 @@
 #
 # Deploy target: justlovejazz.dev (configure your host to serve these rules).
 # Netlify & Cloudflare Pages read _headers automatically. For Caddy/nginx,
-# translate to Cache-Control response headers (see docs/DEPLOY.md if added).
+# translate to Cache-Control response headers.
 #
 # Strategy:
 #   - Fingerprinted assets (vite emits [name]-[hash].js/.css) → immutable, 1 year.

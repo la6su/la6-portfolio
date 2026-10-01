@@ -1,5 +1,5 @@
-import { BUILDER_CATALOG } from './catalog'
-import type { BuilderDocument, BuilderNode } from './schema'
+import { BUILDER_CATALOG } from './catalog.ts'
+import type { BuilderDocument, BuilderNode } from './schema.ts'
 
 const BASE_UIKIT_COMPONENTS = new Set([
   'base',

@@ -26,6 +26,7 @@ import AppShell from './AppShell.vue'
 import { jlzRouteRecords, pageForPath } from './routes'
 
 let mounted = false
+let unmountMountedVueApp: (() => void) | null = null
 
 /** Own the direct-entry hash handoff until the renderer is ready. */
 export function createDeferredInitialHashGate(): {
@@ -86,10 +87,10 @@ export function createSingleFrameOwner(): {
 /** Mount the public Vue application on `#app` and take over navigation. */
 export async function mountVueApp(): Promise<void> {
   if (mounted) return
-  mounted = true
 
   const root = document.getElementById('app')
   if (!root) throw new Error('Missing app element #app')
+  mounted = true
 
   const router = createRouter({
     history: createWebHistory(),
@@ -104,6 +105,8 @@ export async function mountVueApp(): Promise<void> {
   const routeTransition = new RouteTransition()
   const initialHashGate = createDeferredInitialHashGate()
   const hashNavigationFrame = createSingleFrameOwner()
+  const appUnsubs: Array<() => void> = []
+  let disposed = false
   // The initial navigation skips the cover: the legacy `initRouter`
   // rendered the first page without the transition (no prior document to
   // cover), and a synchronous first commit leaves no startup gap in which
@@ -187,26 +190,33 @@ export async function mountVueApp(): Promise<void> {
     // back slot — the legacy contract never had this window because its
     // first render and listener wiring landed in one synchronous call.
     await routerReady
+    if (disposed) return
     await router.push(path)
+    if (disposed) return
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
-  // jlz:navigate — strict in-app navigation REQUEST from UI controls and tests.
-  // Registered once at mount (app-lifetime listener, never removed — matches
-  // the legacy window listener that lived until page unload).
-  eventBus.on('jlz:navigate', ({ path }) => {
-    if (path) void navigateToPath(path)
-  })
+  // jlz:navigate — strict in-app navigation request from UI controls/tests.
+  // Its lifetime matches this router app and is released by unmountVueApp().
+  appUnsubs.push(
+    eventBus.on('jlz:navigate', ({ path }) => {
+      if (path) void navigateToPath(path)
+    }),
+  )
 
   // jlz:lang-change — re-apply translations + per-page meta to the live DOM.
-  eventBus.on('jlz:lang-change', () => {
-    applyTranslations()
-    applyMetaTags(pageForPath(router.currentRoute.value.path))
-  })
+  appUnsubs.push(
+    eventBus.on('jlz:lang-change', () => {
+      applyTranslations()
+      applyMetaTags(pageForPath(router.currentRoute.value.path))
+    }),
+  )
 
   // Anchor click capture — port of the legacy document capture handler.
   const onClick = (event: MouseEvent): void => {
-    const anchorEl = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
+    const anchorEl = (event.target as HTMLElement)?.closest(
+      'a[href]',
+    ) as HTMLAnchorElement | null
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
     if (!href) return
@@ -229,14 +239,51 @@ export async function mountVueApp(): Promise<void> {
   }
   document.addEventListener('click', onClick, true)
 
-  await routerReady
-  // A fresh client render (createApp) replaces `#app`'s content on mount:
-  // the build-time prerender (vite `prerender-index`) keeps the home route
-  // shell available before JS boots (SEO, the no-scene contract, the
-  // domcontentloaded e2e assertions), and the SFC re-renders the identical
-  // DOM (locked by the parity suite) — a deliberate replace, not a
-  // hydration: the prerendered HTML is not a clean hydration target for
-  // Vue's condensed client render.
-  app.mount(root)
-  ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady = true
+  let appMounted = false
+  unmountMountedVueApp = () => {
+    if (disposed) return
+    disposed = true
+    hashNavigationFrame.cancel()
+    initialHashGate.invalidate()
+    appUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
+    document.removeEventListener('click', onClick, true)
+    routeTransition.dispose()
+    if (appMounted) app.unmount()
+    appMounted = false
+    if (
+      (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady
+    ) {
+      delete (window as unknown as { __jlzRouterReady?: boolean })
+        .__jlzRouterReady
+    }
+    mounted = false
+    unmountMountedVueApp = null
+  }
+
+  try {
+    await routerReady
+    // A fresh client render (createApp) replaces `#app`'s content on mount:
+    // the build-time prerender keeps the home route shell available before JS
+    // boots, and the SFC re-renders identical DOM rather than hydrating it.
+    app.mount(root)
+    appMounted = true
+    ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady =
+      true
+  } catch (error) {
+    unmountMountedVueApp()
+    throw error
+  }
+
+  if (import.meta.env.DEV) {
+    window.__jlzTestUnmountVueApp = () => {
+      window.__jlzRuntimeDestroy?.()
+      unmountMountedVueApp?.()
+      delete window.__jlzTestUnmountVueApp
+    }
+  }
+}
+
+/** Release the app-level listeners and timers before unmounting its Vue tree. */
+export function unmountVueApp(): void {
+  unmountMountedVueApp?.()
 }

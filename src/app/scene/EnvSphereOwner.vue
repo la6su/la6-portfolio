@@ -1,22 +1,47 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, shallowRef, markRaw } from 'vue'
-import { EnvSphere } from '../../Experience/World/EnvSphere'
+import { markRaw, onBeforeUnmount, onMounted } from 'vue'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import { traceDevLifecycle } from '../../core/devLifecycleTrace'
+import {
+  EnvSphere,
+  PAVILION_ROUNDING,
+  PAVILION_SURFACES,
+} from '../../Experience/World/EnvSphere'
 
 const emit = defineEmits<{ ready: [owner: EnvSphere] }>()
-const owner = shallowRef<EnvSphere | null>(null)
+const owner = markRaw(new EnvSphere())
+const surfaces = PAVILION_SURFACES.map((surface) => ({
+  ...surface,
+  geometry: markRaw(
+    new RoundedBoxGeometry(
+      ...surface.size,
+      PAVILION_ROUNDING.segments,
+      PAVILION_ROUNDING.radius,
+    ),
+  ),
+}))
 
-onMounted(() => {
-  const sphere = markRaw(new EnvSphere())
-  owner.value = sphere
-  emit('ready', sphere)
-})
+onMounted(() => emit('ready', owner))
 
 onBeforeUnmount(() => {
-  owner.value?.dispose()
-  owner.value = null
+  surfaces.forEach(({ geometry }) => geometry.dispose())
+  owner.dispose()
+  if (import.meta.env.DEV) traceDevLifecycle('scene-owner:env-sphere-disposed')
 })
 </script>
 
 <template>
-  <primitive v-if="owner" :object="owner" :dispose="null" />
+  <TresGroup name="env-pavilion">
+    <TresMesh
+      v-for="surface in surfaces"
+      :key="surface.name"
+      :name="surface.name"
+      :geometry="surface.geometry"
+      :material="owner.materials[surface.material]"
+      :position="surface.position"
+      :render-order="-1000"
+      :frustum-culled="false"
+      :dispose="null"
+    />
+  </TresGroup>
 </template>

@@ -1,0 +1,645 @@
+import { expect, test } from "@playwright/test";
+
+const projectTextures = [
+  "/assets/projects/ebb-vibes/cover-studio-v2.jpg",
+  "/assets/projects/mono-sunday/cover-studio-v2.jpg",
+  "/assets/projects/till-at-night/cover-studio-v2.jpg",
+  "/assets/projects/nocturne-blue/cover-studio-v2.jpg",
+];
+
+test("public SPA routes render on direct entry with route metadata", async ({
+  page,
+}) => {
+  const routes = [
+    ["/", "home"],
+    ["/services", "services"],
+    ["/works", "works"],
+    ["/manifesto", "manifesto"],
+    ["/lab", "lab"],
+    ["/contact", "contact"],
+    ["/works/porsche-911-spider", "case-study"],
+  ] as const;
+
+  for (const [path, view] of routes) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await expect(page.locator(`[data-page-view="${view}"]`)).toHaveCount(1);
+    if (path === "/") {
+      await expect(page.locator('[data-page-view="home"] h1')).toHaveCount(1);
+    }
+    await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
+      "content",
+      "",
+    );
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+    );
+  }
+});
+
+test("language toggle updates translated content and document metadata", async ({
+  page,
+}) => {
+  await page.goto("/services", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as Window & { __jlzRouterReady?: boolean }).__jlzRouterReady,
+    ),
+  );
+
+  const toggle = page.locator("#cfg-lang");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  const englishTitle = await page.title();
+  await toggle.click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+  await expect(page.locator(".jlz-lang-value")).toContainText("RU");
+  await expect(page).not.toHaveTitle(englishTitle);
+  await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
+    "content",
+    "",
+  );
+
+  await toggle.click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page).toHaveTitle(englishTitle);
+});
+
+test("unknown direct path falls back to home and browser history restores routes", async ({
+  page,
+}) => {
+  await page.goto("/this-route-does-not-exist", {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(page.locator('[data-page-view="home"]')).toHaveCount(1);
+  await expect(page).toHaveURL(/\/this-route-does-not-exist$/);
+
+  await page.goto("/services", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
+  await page
+    .locator(".jlz-topbar__brand")
+    .evaluate((element: HTMLAnchorElement) => element.click());
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('[data-page-view="home"]')).toHaveCount(1);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/services$/);
+  await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
+});
+
+test("standalone blog and builder routes publish valid static documents", async ({
+  page,
+}) => {
+  const paths = [
+    "/blog",
+    "/blog/undercurrent-webgpu-fluid",
+    "/blog/glassmorphism-webgpu",
+    "/blog/on-demand-rendering",
+    "/blog/tsl-changes-everything",
+    "/p/studio-page",
+    "/p/studio-page/ru/",
+  ];
+
+  for (const path of paths) {
+    const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+    expect(response?.status(), `${path} should be published`).toBe(200);
+    await expect(page.locator("html")).toHaveAttribute(
+      "lang",
+      path.includes("/ru/") ? "ru" : "en",
+    );
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+    );
+
+    if (path.startsWith("/p/")) {
+      await expect(page.locator("script")).toHaveCount(0);
+    }
+  }
+});
+
+test("blog article links point to published blog routes", async ({
+  page,
+  request,
+}) => {
+  const articles = [
+    "/blog/undercurrent-webgpu-fluid",
+    "/blog/glassmorphism-webgpu",
+    "/blog/on-demand-rendering",
+    "/blog/tsl-changes-everything",
+  ];
+  const linkedPaths = new Set<string>(["/blog"]);
+
+  for (const article of articles) {
+    await page.goto(article, { waitUntil: "domcontentloaded" });
+    const links = await page
+      .locator('a[href^="/blog"]')
+      .evaluateAll((anchors) =>
+        anchors.map(
+          (anchor) => new URL((anchor as HTMLAnchorElement).href).pathname,
+        ),
+      );
+    links.forEach((path) => linkedPaths.add(path));
+  }
+
+  for (const path of linkedPaths) {
+    const response = await request.get(path);
+    expect(response.status(), `${path} should resolve`).toBe(200);
+  }
+});
+
+test("Works lazy scene survives repeated route mount and release cycles", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  const textureResponses = new Map<string, number>();
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("response", (response) => {
+    const path = new URL(response.url()).pathname;
+    if (projectTextures.includes(path))
+      textureResponses.set(path, response.status());
+  });
+
+  await page.goto("/works", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+  await expect(page.locator('[data-page-view="works"]')).toHaveCount(1);
+  await page.waitForFunction((paths) => {
+    const resources = performance.getEntriesByType("resource");
+    return paths.every((path) =>
+      resources.some((resource) => new URL(resource.name).pathname === path),
+    );
+  }, projectTextures);
+
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    await page
+      .locator(".jlz-topbar__brand")
+      .evaluate((element: HTMLAnchorElement) => element.click());
+    await page.waitForFunction(() => location.pathname === "/");
+    await expect(page.locator('[data-page-view="home"]')).toHaveCount(1);
+
+    await page
+      .locator(".jlz-works-entrance")
+      .evaluate((element: HTMLAnchorElement) => element.click());
+    await page.waitForFunction(() => location.pathname === "/works");
+    await expect(page.locator('[data-page-view="works"]')).toHaveCount(1);
+    await expect(page.locator("#app canvas")).toHaveCount(1);
+  }
+
+  expect(Object.fromEntries(textureResponses)).toEqual(
+    Object.fromEntries(projectTextures.map((path) => [path, 200])),
+  );
+  expect(errors).toEqual([]);
+});
+
+test("Contact scene survives repeated route mount and release cycles", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  let cyprusAssetStatus: number | undefined;
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("response", (response) => {
+    if (new URL(response.url()).pathname === "/assets/gltf/cyprus_3d.glb") {
+      cyprusAssetStatus = response.status();
+    }
+  });
+
+  await page.goto("/contact", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+  await expect(page.locator('[data-page-view="contact"]')).toHaveCount(1);
+  await page.waitForFunction(() =>
+    performance
+      .getEntriesByType("resource")
+      .some(
+        (resource) =>
+          new URL(resource.name).pathname === "/assets/gltf/cyprus_3d.glb",
+      ),
+  );
+
+  expect(cyprusAssetStatus).toBe(200);
+
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    await page
+      .locator(".jlz-topbar__brand")
+      .evaluate((element: HTMLAnchorElement) => element.click());
+    await page.waitForFunction(() => location.pathname === "/");
+    await page.goBack();
+    await page.waitForFunction(() => location.pathname === "/contact");
+    await expect(page.locator('[data-page-view="contact"]')).toHaveCount(1);
+    await expect(page.locator("#app canvas")).toHaveCount(1);
+  }
+  expect(errors).toEqual([]);
+});
+
+test("Lab route mounts its lazy 3D experiment without browser errors", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+
+  await page.goto("/lab", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+  await expect(page.locator('[data-page-view="lab"]')).toHaveCount(1);
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector("canvas");
+    return Boolean(canvas && canvas.width > 0 && canvas.height > 0);
+  });
+
+  expect(errors).toEqual([]);
+});
+
+test("Showreel lazily mounts its TresPortal scene and closes cleanly", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+  const trigger = page.locator("#jlz-showreel-trigger");
+  await trigger.evaluate((element: HTMLButtonElement) => element.click());
+  const consolePanel = page.locator("#jlz-showreel-console");
+  await expect(consolePanel).toHaveAttribute("data-state", "open");
+  await page.keyboard.press("Escape");
+  await expect(consolePanel).toHaveAttribute("data-state", "closed");
+  await trigger.evaluate((element: HTMLButtonElement) => element.click());
+  await expect(consolePanel).toHaveAttribute("data-state", "open");
+  await page.keyboard.press("Escape");
+  await expect(consolePanel).toHaveAttribute("data-state", "closed");
+  expect(errors).toEqual([]);
+});
+
+test("navigation sheet moves focus in and restores it after Escape", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+
+  const launcher = page.locator("#jlz-menu-launcher");
+  await launcher.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-cinematic-sheet",
+    "menu",
+  );
+  const close = page.getByRole("button", { name: "Close navigation" });
+  await expect(close).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("body")).not.toHaveAttribute(
+    "data-cinematic-sheet",
+    "menu",
+  );
+  await expect(launcher).toBeFocused();
+});
+
+test("fullscreen project overlay traps and restores keyboard focus", async ({
+  page,
+}) => {
+  await page.goto("/works", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+
+  const trigger = page.getByRole("button", { name: "View material" }).first();
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", {
+    name: "Fullscreen project viewer",
+  });
+  await expect(dialog).toBeVisible();
+  const close = dialog.getByRole("button", { name: "Close" });
+  await expect(close).toBeFocused();
+
+  await page.locator(".jlz-fs-next").focus();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test("reduced-motion preference reaches the shell and cinematic controls", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+
+  expect(
+    await page.evaluate(
+      () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    ),
+  ).toBe(true);
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-reduced-motion",
+    "1",
+  );
+  const enter = page.locator("#jlz-splash-enter");
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 20_000 });
+  await enter.click();
+  await expect(page.locator("#jlz-app-loader")).toHaveCount(0, {
+    timeout: 2_000,
+  });
+  await expect
+    .poll(() =>
+      page
+        .locator(".jlz-storyline")
+        .evaluate((element) => getComputedStyle(element).transitionDuration),
+    )
+    .toMatch(/^(0s|0ms)$/);
+
+  await page.goto("/lab", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="lab"]')).toHaveCount(1);
+  const canvas = page.locator("#app canvas");
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => getComputedStyle(element).pointerEvents),
+    )
+    .toBe("none");
+  const hasFinePointer = await page.evaluate(
+    () => window.matchMedia("(pointer: fine)").matches,
+  );
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  expect(
+    await page.evaluate(
+      () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    ),
+  ).toBe(false);
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => getComputedStyle(element).pointerEvents),
+    )
+    .toBe(hasFinePointer ? "auto" : "none");
+});
+
+test("key routes avoid horizontal overflow at mobile and desktop widths", async ({
+  page,
+}) => {
+  const routes = [
+    "/",
+    "/services",
+    "/works",
+    "/contact",
+    "/blog",
+    "/p/studio-page",
+  ];
+  const viewports = [
+    { width: 390, height: 844 },
+    { width: 1280, height: 900 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    for (const path of routes) {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      if (path.startsWith("/blog") || path.startsWith("/p/")) {
+        await expect(page.locator("h1").first()).toBeVisible();
+      } else {
+        const view = path === "/" ? "home" : path.slice(1);
+        await expect(page.locator(`[data-page-view="${view}"]`)).toHaveCount(1);
+      }
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      );
+      expect(overflow, `${path} overflows at ${viewport.width}px`).toBe(false);
+    }
+  }
+});
+
+test("coarse-pointer touch scroll stays on the semantic route", async ({
+  browser,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "This real touch injection uses the Chromium DevTools Protocol.",
+  );
+  const context = await browser.newContext({
+    baseURL: "http://127.0.0.1:4173",
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  try {
+    const page = await context.newPage();
+    await page.goto("/");
+    await page.waitForFunction(() => {
+      const runtime = window as Window & {
+        __jlzHost?: object;
+        __jlzRouterReady?: boolean;
+      };
+      return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+    });
+    const enter = page.locator("#jlz-splash-enter");
+    await expect(enter).toHaveClass(/is-ready/, { timeout: 20_000 });
+    await enter.click();
+    await expect(page.locator("#jlz-app-loader")).toHaveCount(0, {
+      timeout: 2_000,
+    });
+    expect(
+      await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches),
+    ).toBe(true);
+
+    const canvas = page.locator("#app canvas");
+    await expect(canvas).toHaveAttribute("aria-hidden", "true");
+    await expect
+      .poll(() =>
+        canvas.evaluate((element) => getComputedStyle(element).pointerEvents),
+      )
+      .toBe("none");
+    await expect
+      .poll(() =>
+        page
+          .locator("#spa-content")
+          .evaluate((element) => getComputedStyle(element).touchAction),
+      )
+      .toContain("pan-y");
+
+    const session = await context.newCDPSession(page);
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: 195, y: 700, id: 1 }],
+    });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: 195, y: 220, id: 1 }],
+    });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await expect
+      .poll(() =>
+        page.locator("#spa-content").evaluate((element) => element.scrollTop),
+      )
+      .toBeGreaterThan(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test("Renderer initialization failure reaches the accessible boot error state", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    process.env.JLZ_RENDERER_INIT_FAILURE_CHROME !== "1" ||
+      testInfo.project.name !== "chromium",
+    "Run with JLZ_RENDERER_INIT_FAILURE_CHROME=1 to disable both browser GPU APIs.",
+  );
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".jlz-boot-gate")).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator("#jlz-splash-enter")).toHaveCount(0);
+  await expect(page.locator(".jlz-boot-gate")).toHaveAttribute("role", "alert");
+  await page.getByRole("button", { name: "Continue without 3D" }).click();
+  await expect(page.locator("#jlz-app-loader")).toHaveCount(0, {
+    timeout: 2_000,
+  });
+  await expect(page.locator('[data-page-view="home"]')).toHaveCount(1);
+  await expect(page.locator('[data-page-view="home"]')).toBeFocused();
+  expect(pageErrors).toEqual([]);
+});
+
+test("Renderer recovers from WebGL context loss on the persistent canvas", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    process.env.JLZ_WEBGL_RECOVERY_CHROME !== "1" ||
+      testInfo.project.name !== "chromium",
+    "Run with JLZ_WEBGL_RECOVERY_CHROME=1 in the physical Chrome recovery project.",
+  );
+
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (
+      message.type() === "error" &&
+      !message.text().startsWith("[Renderer] WebGPU device lost")
+    ) {
+      errors.push(message.text());
+    }
+  });
+
+  await page.goto("/?force-webgl-backend", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const probe = (window as Window & { __jlzHost?: JlzHostProbe }).__jlzHost;
+    return Boolean(
+      probe && probe.mode === "webgl" && probe.backend === "WebGLBackend",
+    );
+  });
+  await page.waitForFunction(
+    () =>
+      typeof (window as Window & { __jlzRuntimeDestroy?: () => void })
+        .__jlzRuntimeDestroy === "function",
+    undefined,
+    { timeout: 20_000 },
+  );
+  await page.locator("#app canvas").evaluate(async (canvas) => {
+    const gl = canvas.getContext("webgl2");
+    const extension = gl?.getExtension("WEBGL_lose_context");
+    if (!extension) throw new Error("WEBGL_lose_context is unavailable.");
+    canvas.dataset.recoveryCanvas = "persistent";
+    const contextLost = new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(
+        () => reject(new Error("WebGL context loss timed out.")),
+        5_000,
+      );
+      canvas.addEventListener(
+        "webglcontextlost",
+        (event) => {
+          event.preventDefault();
+          window.clearTimeout(timeout);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+    extension.loseContext();
+    await contextLost;
+    extension.restoreContext();
+  });
+
+  const recovered = await page
+    .waitForFunction(
+      () =>
+        (window as Window & { __jlzHost?: JlzHostProbe }).__jlzHost
+          ?.recovered === true,
+      undefined,
+      { timeout: 15_000 },
+    )
+    .then(
+      () => true,
+      () => false,
+    );
+  if (!recovered) {
+    const failure = await page
+      .locator(".renderer-unsupported")
+      .innerText()
+      .catch(() => "no failure UI");
+    throw new Error(
+      `Renderer did not recover. Failure UI: ${failure}. Browser errors: ${errors.join(" | ")}`,
+    );
+  }
+  await expect(page.locator("#app canvas")).toHaveCount(1);
+  await expect(page.locator("#app canvas")).toHaveAttribute(
+    "data-recovery-canvas",
+    "persistent",
+  );
+  expect(errors).toEqual([]);
+});

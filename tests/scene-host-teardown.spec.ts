@@ -1,0 +1,71 @@
+import { expect, test } from "@playwright/test";
+
+test.skip(
+  process.env.JLZ_HOST_TEARDOWN_TEST !== "1",
+  "Lifecycle trace hooks are available only in the dedicated Vite dev teardown run.",
+);
+
+test("SceneHost releases declared owners before disposing its renderer", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    window.__jlzTestLifecycleTrace = [];
+  });
+  await page.goto("/");
+  await expect(page.locator("#jlz-splash-enter")).toHaveClass(/is-ready/, {
+    timeout: 60_000,
+  });
+  await page.waitForFunction(
+    () => typeof window.__jlzTestUnmountVueApp === "function",
+  );
+
+  await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
+
+  const anchorWasIntercepted = await page.evaluate(() => {
+    const anchor = document.createElement("a");
+    anchor.href = "/works";
+    document.body.append(anchor);
+    const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+    let interceptedByApp = false;
+    const preventNavigation = (event: MouseEvent) => {
+      interceptedByApp = event.defaultPrevented;
+      event.preventDefault();
+    };
+    document.addEventListener("click", preventNavigation, true);
+    anchor.dispatchEvent(click);
+    document.removeEventListener("click", preventNavigation, true);
+    anchor.remove();
+    window.__jlzEmit?.("jlz:navigate", { path: "/works" });
+    return interceptedByApp;
+  });
+  expect(anchorWasIntercepted).toBe(false);
+  await expect
+    .poll(() => new URL(page.url()).pathname, { timeout: 700 })
+    .toBe("/");
+
+  const trace = await page.evaluate(() => window.__jlzTestLifecycleTrace ?? []);
+  const backendDispose = trace.lastIndexOf("renderer:backend-disposed");
+  const rendererDispose = trace.indexOf("scene-host:renderer-disposed");
+  expect(backendDispose).toBeGreaterThanOrEqual(0);
+  expect(rendererDispose).toBeGreaterThanOrEqual(0);
+  for (const ownerRelease of [
+    "scene-owner:env-sphere-disposed",
+    "scene-owner:env-sky-disposed",
+    "scene-owner:cursor-placeholder-disposed",
+    "scene-owner:showreel-quad-unbound",
+  ]) {
+    const releaseIndex = trace.indexOf(ownerRelease);
+    expect(
+      releaseIndex,
+      `${ownerRelease} should run during host teardown`,
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      releaseIndex,
+      `${ownerRelease} should precede backend disposal`,
+    ).toBeLessThan(backendDispose);
+  }
+  expect(backendDispose).toBeLessThan(rendererDispose);
+  expect(pageErrors).toEqual([]);
+});

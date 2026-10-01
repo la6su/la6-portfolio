@@ -1,13 +1,9 @@
-// src/core/worldSlots.ts — Phase 3 canonical world-slot contract.
-//
-// The world retains the stable six-slot model described in
-// docs/ARCHITECTURE.md ("Routes and world slots"). This module is the
-// framework-neutral readonly tuple that owns the shared slot facts:
+// Canonical six-slot model shared by routes, navigation and the 3D scene.
+// This framework-neutral tuple owns the shared slot facts:
 //
 //   - the slot IDs in stable index order;
-//   - each slot's story range (contiguous fifths of the story track; the
-//     menu sheet pins to [5/5, 6/5] so it stays clamped-active at full
-//     scroll — see SceneCoordinator.updateTransform's >= 1.0 special case);
+//   - each slot's story range (the menu sheet pins to [5/5, 6/5] so it remains
+//     active at the end of the story track);
 //   - each slot's DOM section anchor;
 //   - each slot's SplashCube face rotation (Y, radians).
 //
@@ -16,9 +12,8 @@
 // slot model is a single-source change. Pure by design: no DOM, Three, DOM
 // datasets or globals — unit-testable without a browser.
 //
-// Note the deliberate naming trap, documented in ARCHITECTURE.md: slot 0 is
-// the runtime `lab` slot but publicly renders the Contact finale. The
-// product role below keeps that fact explicit next to the ID.
+// Slot 0 is the runtime `lab` slot but publicly renders the Contact finale;
+// keep the product role explicit beside its stable ID.
 
 type WorldSlotId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 
@@ -27,7 +22,7 @@ interface WorldSlotDef {
   readonly index: number
   /** Canonical slot ID. Slot 0 is `lab` even though it publicly shows Contact. */
   readonly id: WorldSlotId
-  /** Product role, per the ARCHITECTURE.md six-slot table. */
+  /** User-facing role of this slot. */
   readonly role: string
   /** Exclusive story track range [start, end) in fifths of the full track. */
   readonly range: readonly [number, number]

@@ -1,5 +1,5 @@
 {
-  "name": "la6su",
+  "name": "la6-portfolio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,12 +7,14 @@
     "dev": "vite --host",
     "type-check": "tsc --noEmit",
     "type-check:vue": "vue-tsc --noEmit -p tsconfig.json",
-    "build": "tsc && node scripts/prerender-home.mjs && node scripts/prerender-blog.mjs && node scripts/publish-builder-pages.mjs && bun scripts/generate-sitemap.ts && vite build",
+    "build": "tsc && node scripts/prerender-home.mjs && node scripts/prerender-blog.mjs && node scripts/publish-builder-pages.mjs && bun scripts/generate-sitemap.ts && vite build && bun scripts/check-build-budgets.ts",
     "budget:build": "bun scripts/check-build-budgets.ts",
+    "analyze:bundle": "bun scripts/bundle-breakdown.ts",
     "check:stdlib": "node scripts/check-stdlib-modules.mjs",
-    "docs:check": "bun scripts/check-docs.ts",
     "preview": "vite preview",
     "test:serial": "playwright test --workers=1 --reporter=line",
+    "test:matrix": "bun scripts/test-browser-matrix.ts",
+    "test:host-teardown": "bun scripts/test-host-teardown.ts",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "wait:preview": "bun scripts/wait-for-url.ts http://127.0.0.1:4173/ 60000",
@@ -25,47 +27,46 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.0",
-    "@types/node": "^25.9.5",
-    "@types/three": "0.185.4",
-    "@types/uikit": "^3.23.0",
-    "@vitejs/plugin-vue": "6.0.8",
-    "@vue/server-renderer": "3.5.41",
-    "@vue/test-utils": "2.4.11",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.8.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "26.6.3",
+    "@types/three": "0.186.0",
+    "@types/uikit": "^3.23.1",
+    "@vitejs/plugin-vue": "6.0.9",
+    "@vue/server-renderer": "3.5.43",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.8.0",
+    "globals": "^17.12.0",
     "jsdom": "^29.1.1",
-    "less": "^4.8.1",
-    "prettier": "^3.9.6",
+    "less": "^4.9.1",
+    "prettier": "^3.9.9",
     "source-map-js": "1.2.1",
     "tweakpane": "^4.0.5",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.65.0",
-    "vite": "^8.1.5",
-    "vitest": "^4.1.10",
-    "vue-tsc": "3.3.10"
+    "typescript-eslint": "^8.71.0",
+    "vite": "8.3.1",
+    "vitest": "^4.1.11",
+    "vue-tsc": "3.3.11"
   },
-  "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
+  "description": "EN/RU portfolio built with Vue 3, TresJS and Three.js TSL, featuring declarative 3D scenes powered by WebGPU.",
   "dependencies": {
-    "@tresjs/cientos": "5.9.0",
-    "@tresjs/core": "5.9.0",
+    "@tresjs/cientos": "5.9.2",
+    "@tresjs/core": "5.9.2",
     "camera-controls": "3.1.2",
-    "three": "0.185.1",
-    "uikit": "^3.25.20",
-    "vue": "3.5.41",
-    "vue-router": "5.2.0"
+    "three": "0.186.1",
+    "uikit": "^3.25.25",
+    "vue": "3.5.43",
+    "vue-router": "5.3.1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/la6su/justlovejazz.git"
+    "url": "git+https://github.com/la6su/la6-portfolio.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "la6su",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/la6su/justlovejazz/issues"
+    "url": "https://github.com/la6su/la6-portfolio/issues"
   },
-  "homepage": "https://github.com/la6su/justlovejazz#readme"
+  "homepage": "https://github.com/la6su/la6-portfolio#readme"
 }

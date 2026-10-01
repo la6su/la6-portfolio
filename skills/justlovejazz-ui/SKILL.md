@@ -5,16 +5,18 @@ description: Apply JUSTLOVEJAZZ interface, theme, accessibility and visual QA co
 
 # JUSTLOVEJAZZ UI
 
-Read the affected Vue/DOM owner and relevant [brand/theme](../../docs/BRAND.md) section. UIkit supplies the baseline; use project
-styles for the authored 3D shell. Route DOM lives in `src/app/views/`, with
-lifecycle in `src/app/useJlzPage.ts`; the old string templates are gone.
+Read `AGENTS.md`, the current phase in `NEXT.md`, and the affected Vue/DOM
+owner. UIkit supplies the baseline; use project styles for the authored 3D
+shell. Route DOM lives in `src/app/views/`, with lifecycle in
+`src/app/useJlzPage.ts`.
 
 `CinematicNav` owns story reveal/scrolling. `FullscreenOverlay` owns fullscreen
 interaction. Keep one focus/state owner; scene interaction stays semantic in
 DOM. Theme and motion use typed ports, not body-state inference.
 
-For builder work, read [Page Builder](../../docs/PAGE_BUILDER.md). Change typed
-Style fields, validation, compiler and preview together. Never hand-edit
+For builder work, follow the current schema, validation, compiler, and preview
+contracts in `src/builder/`. Change typed Style fields, validation, compiler
+and preview together. Never hand-edit
 `*.generated.less` or import `admin/` into the public app.
 
 ## Verification
@@ -29,5 +31,5 @@ Choose representative coverage for the changed surface:
 Pass the ready splash Enter control before route screenshots; wait for the
 intended scene/story state. Check contrast, clipping and console errors.
 Style changes also need preview widths/locales, save/compile/reload, undo, and
-production output without the admin graph. Use [Development](../../docs/DEVELOPMENT.md)
-for commands and backend evidence limits.
+production output without the admin graph. Use `package.json` for commands and
+`NEXT.md` for backend evidence limits.

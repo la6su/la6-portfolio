@@ -10,17 +10,15 @@ belong to `package.json`/`bun.lock`. Use `uk-*` classes and component attributes
 UIkit owns its behavior, focus and ARIA through the Vue lifecycle boundary.
 Override Less variables/hooks rather than creating a competing state machine.
 
-[Brand/theme](../../docs/BRAND.md) owns token/assembly paths. Keep
-`src/core/brandTokens.ts` aligned with Less and its parity tests. Product icons
+`src/core/brandTokens.ts` and the Less source own the current theme tokens and
+assembly. Keep them aligned with their parity checks. Product icons
 come from `registerConsoleIcons()`; the full official icon plugin belongs to
 `admin/style-icons.ts`. Verify inserted SVGs after UIkit's async update.
 Commissioner headings use natural case; monospace metadata may use uppercase.
 
 ## Builder workflow
 
-Read [Page Builder](../../docs/PAGE_BUILDER.md) for schema, save and publishing.
-Use YOOtheme's catalogue/outline/preview/grouped-inspector/Style organization
-as a UX reference, not another runtime dependency.
+Use `src/builder/` as the current schema, save, and publishing implementation.
 
 - `catalog.ts` owns element defaults and grouped fields; the inspector consumes
   those groups without duplicating them.

@@ -40,12 +40,12 @@ useJlzPage('home', () => rootEl.value)
           <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="01"
             >01</span
           >
-          <h2
+          <h1
             class="studio-title uk-heading-xlarge uk-margin-small-top uk-margin-remove-bottom"
             data-i18n="home.studio.title"
           >
             Studio
-          </h2>
+          </h1>
           <p class="uk-text-lead uk-margin-small-top" data-i18n="home.studio.lead">
             Technology with a point of view.
           </p>

@@ -8,7 +8,7 @@
 // drives its per-section material state, and releases only controller state on
 // destroy. The node itself remains owned by `GroundPlane.vue`.
 //
-// The ground plane belongs to the contact state (AGENTS.md): section index 4
+// The ground plane follows the active section config: section index 4
 // is the only section where it is visible — the per-frame gate stays on the
 // Experience frame path, as before.
 

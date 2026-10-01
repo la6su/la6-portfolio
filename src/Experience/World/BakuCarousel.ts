@@ -24,8 +24,7 @@ import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { smoothstep01 } from '../../Utils/easing'
-import { carouselCardMetadataOf, setCarouselCardMetadata } from './cardMetadata'
-import { keepSceneObjectVisible } from '../sceneRuntimeState'
+import { carouselCardMetadataOf } from './cardMetadata'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -50,10 +49,21 @@ const MOMENTUM_DECAY = 0.84 // per-frame velocity decay after drag release
 const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const SNAP_STEP = 1
 
-export class BakuCarousel extends THREE.Group {
+export interface BakuCarouselCardAsset {
+  key: string
+  projectIndex: number
+  textureUrl: string
+  texture: THREE.Texture
+}
+
+export class BakuCarousel {
   /** Wake the shared demand-driven renderer after pointer-driven state changes. */
   onActivity: (() => void) | null = null
   private cards: CasePlane[] = []
+  private cardAssets: BakuCarouselCardAsset[] = []
+  private readonly cardListeners = new Set<(cards: readonly BakuCarouselCardAsset[]) => void>()
+  private _root: THREE.Group | null = null
+  private _visible = true
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
   private _morphTarget = 0
@@ -97,9 +107,44 @@ export class BakuCarousel extends THREE.Group {
   constructor(
     private readonly page: () => PageId = () => 'home',
     private readonly storySide: () => StorySide = () => 'center',
-  ) {
-    super()
-    this.name = 'baku-carousel'
+  ) {}
+
+  get visible(): boolean { return this._visible }
+  get sceneRoot(): THREE.Group | null { return this._root }
+  set visible(value: boolean) {
+    this._visible = value
+    if (this._root) this._root.visible = value
+  }
+
+  bindRoot(root: THREE.Group): void {
+    if (this._root && this._root !== root) throw new Error('BakuCarousel is already mounted.')
+    this._root = root
+    root.name = 'baku-carousel'
+    root.visible = this._visible
+  }
+
+  unbindRoot(root: THREE.Group): void {
+    if (this._root === root) this._root = null
+  }
+
+  subscribeCards(listener: (cards: readonly BakuCarouselCardAsset[]) => void): () => void {
+    this.cardListeners.add(listener)
+    listener(this.cardAssets)
+    return () => this.cardListeners.delete(listener)
+  }
+
+  private publishCards(): void {
+    for (const listener of this.cardListeners) listener(this.cardAssets)
+  }
+
+  adoptCard(card: CasePlane): void {
+    if (this._disposed || this.cards.includes(card)) return
+    const url = carouselCardMetadataOf(card.mesh)?.textureUrl
+    if (!url || !this.cardAssets.some((asset) => asset.textureUrl === url)) return
+    card.setReducedMotion(this._reducedMotion)
+    this.cards.push(card)
+    this.cards.sort((a, b) => (carouselCardMetadataOf(a.mesh)?.textureIndex ?? 0) - (carouselCardMetadataOf(b.mesh)?.textureIndex ?? 0))
+    this.onActivity?.()
   }
 
   /** Activate the slider — start morphing from cube faces to case planes. */
@@ -212,32 +257,19 @@ export class BakuCarousel extends THREE.Group {
     }
     const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
 
-    const stagedCards: CasePlane[] = []
     try {
-      CARD_TEXTURE_URLS.forEach((url, i) => {
-        const tex = urlToTexture.get(url)!
-        const plane = new CasePlane(tex)
-        plane.setReducedMotion(this._reducedMotion)
-        plane.scale.setScalar(CARD_SCALE)
-        setCarouselCardMetadata(plane, {
-          textureIndex: i,
-          textureUrl: url,
-          projectIndex: i % PROJECTS.length,
-        })
-        // Keep cards visible through SectionGroups' geometry-hiding step.
-        keepSceneObjectVisible(plane)
-        stagedCards.push(plane)
-        this.add(plane)
-      })
-
-      this.cards = stagedCards
+      this.cardAssets = CARD_TEXTURE_URLS.map((url, index) => ({
+        key: `${index}:${url}`,
+        projectIndex: index % PROJECTS.length,
+        textureUrl: url,
+        texture: urlToTexture.get(url)!,
+      }))
+      this.publishCards()
       this.addEventListeners()
+      this.onActivity?.()
     } catch (error) {
-      stagedCards.forEach((card) => {
-        card.removeFromParent()
-        card.dispose()
-      })
       uniqueUrls.forEach((url, index) => releaseCaseTexture(url, uniqueTextures[index]))
+      this.cardAssets = []
       this.initialized = false
       throw error
     }
@@ -340,7 +372,7 @@ export class BakuCarousel extends THREE.Group {
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i]!
       if (card.visible) {
-        hitTargets.push(card)
+        hitTargets.push(card.mesh)
       }
     }
     const intersects = this._raycaster.intersectObjects(hitTargets, false)
@@ -349,8 +381,8 @@ export class BakuCarousel extends THREE.Group {
       const idx = carouselCardMetadataOf(hit)?.projectIndex ?? -1
       if (idx < 0) return
       // Unified cloth wobble pulse — same as WorksPlaneStage.openProject()
-      const hitCard = hit as CasePlane
-      hitCard.pulse(CLOTH_PARAMS.pulseAmount)
+      const hitCard = this.cards.find((card) => card.mesh === hit)
+      hitCard?.pulse(CLOTH_PARAMS.pulseAmount)
       // Open the overlay directly with the unified cinematic reveal — no
       // 3D plane-to-fullscreen handoff (it caused a double effect).
       this._onCardClick?.(idx)
@@ -485,6 +517,7 @@ export class BakuCarousel extends THREE.Group {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    this.visible = false
     if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
     if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
     if (this.pointerUpHandler) {
@@ -513,15 +546,14 @@ export class BakuCarousel extends THREE.Group {
     // Release refcounted textures via the cache. Each unique URL is released
     // once; the cache disposes the GPU texture when the last consumer drops.
     const releasedUrls = new Set<string>()
-    for (const card of this.cards) {
-      const url = carouselCardMetadataOf(card)?.textureUrl
-      if (url && !releasedUrls.has(url)) {
-        releaseCaseTexture(url, card.texture ?? undefined)
-        releasedUrls.add(url)
-      }
-      card.dispose()
+    for (const asset of this.cardAssets) {
+      if (releasedUrls.has(asset.textureUrl)) continue
+      releaseCaseTexture(asset.textureUrl, asset.texture)
+      releasedUrls.add(asset.textureUrl)
     }
     this.cards = []
-    this.clear()
+    this.cardAssets = []
+    this.cardListeners.clear()
+    this._root = null
   }
 }

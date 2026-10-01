@@ -1,6 +1,6 @@
 // tsl-helpers.ts — Typed boundary for the TSL API surface this project uses.
 //
-// three 0.185 ships near-complete TSL types, so production code consumes
+// Three.js ships near-complete TSL types, so production code consumes
 // pass()/bloom()/swizzles without blind `as any` widening. The two residual
 // gaps in the shipped types — component swizzle getters like `.x` (the
 // runtime Proxy exposes them but the declarations do not) and smoothstep()

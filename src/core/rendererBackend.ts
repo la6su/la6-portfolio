@@ -55,7 +55,7 @@ export function planUnifiedBackend(facts: BackendFacts): UnifiedPlan {
 // bounded so a flapping device cannot loop forever.
 export const MAX_DEVICE_LOST_RECOVERIES = 1
 
-type DeviceLostAction = 'recover' | 'exhausted'
+type DeviceLostAction = 'recover' | 'exhausted' | 'ignore'
 
 /**
  * Decide whether a device-loss event may still trigger recovery.
@@ -64,6 +64,8 @@ type DeviceLostAction = 'recover' | 'exhausted'
 export function deviceLostAction(
   attemptsSoFar: number,
   max: number = MAX_DEVICE_LOST_RECOVERIES,
+  recoveryInProgress = false,
 ): DeviceLostAction {
+  if (recoveryInProgress) return 'ignore'
   return attemptsSoFar < max ? 'recover' : 'exhausted'
 }

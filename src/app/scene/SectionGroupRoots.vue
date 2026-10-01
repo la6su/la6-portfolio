@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from 'vue'
 import type { Group } from 'three'
+import type { JunniParticles } from '../../Experience/World/JunniParticles'
+import type { BakuCarousel } from '../../Experience/World/BakuCarousel'
+import { WORLD_SLOTS } from '../../core/worldSlots'
+import JunniParticlesOwner from './JunniParticlesOwner.vue'
+import BakuCarouselOwner from './BakuCarouselOwner.vue'
+
+defineProps<{ particles: JunniParticles | null; carousel: BakuCarousel | null }>()
 
 const emit = defineEmits<{ ready: [groups: Group[]] }>()
 const groups = shallowRef<Group[]>([])
-const names = [
-  'section-lab',
-  'section-intro',
-  'section-about',
-  'section-works',
-  'section-contact',
-  'section-menu',
-]
+const names = WORLD_SLOTS.map(({ id }) => `section-${id}`)
 
 onMounted(() => {
   const mounted = groups.value
@@ -22,5 +22,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <TresGroup v-for="name in names" :key="name" ref="groups" :name="name" />
+  <TresGroup v-for="(name, index) in names" :key="name" ref="groups" :name="name" :visible="index === 1">
+    <BakuCarouselOwner v-if="index === 3 && carousel" :carousel="carousel" />
+    <JunniParticlesOwner v-if="index === 3 && particles" :stage="particles" />
+  </TresGroup>
 </template>

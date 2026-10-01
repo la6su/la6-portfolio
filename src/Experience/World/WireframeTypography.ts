@@ -9,25 +9,25 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
 import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
 import { easeOutCubic } from '../../Utils/easing'
-import { keepSceneObjectVisible } from '../sceneRuntimeState'
 
 const bubbleFont = new FontLoader().parse(fontJson as never)
 
-type FloatingGlyph = {
-  mesh: THREE.Mesh
+export interface TypographyGlyph {
+  geometry: THREE.BufferGeometry
   x: number
   phase: number
 }
 
-export class WireframeTypography extends THREE.Group {
+export class WireframeTypography {
   private time = 0
   private revealElapsed = 0
   private revealProgress = 0
   private active = false
   private reducedMotion = false
   private disposed = false
-  private glyphs: FloatingGlyph[] = []
-  private material = new THREE.MeshPhysicalMaterial({
+  private glyphs: TypographyGlyph[] = []
+  private meshes: THREE.Mesh[] = []
+  readonly material = new THREE.MeshPhysicalMaterial({
     color: 0xf4efff,
     emissive: 0x08050c,
     emissiveIntensity: 0.05,
@@ -43,9 +43,6 @@ export class WireframeTypography extends THREE.Group {
   })
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
-    super()
-    this.name = 'bubble-text'
-
     const geometries = [...text].map((letter) => this.createGlyph(letter, size))
     const spacing = size * 0.075
     const widths = geometries.map((geometry) => {
@@ -59,15 +56,35 @@ export class WireframeTypography extends THREE.Group {
     geometries.forEach((geometry, index) => {
       const width = widths[index] ?? 0
       geometry.center()
-      const mesh = new THREE.Mesh(geometry, this.material)
-      keepSceneObjectVisible(mesh)
-      mesh.frustumCulled = false
       const x = cursor + width / 2
-      this.glyphs.push({ mesh, x, phase: index * 1.71 })
-      this.add(mesh)
-      mesh.scale.setScalar(0)
+      this.glyphs.push({ geometry, x, phase: index * 1.71 })
       cursor += width + spacing
     })
+  }
+
+  get renderGlyphs(): readonly TypographyGlyph[] {
+    return this.glyphs
+  }
+
+  bindMeshes(meshes: readonly THREE.Mesh[]): void {
+    if (this.disposed) return
+    if (meshes.length !== this.glyphs.length) {
+      throw new Error('Wireframe typography must bind one Vue mesh per glyph.')
+    }
+    this.meshes = [...meshes]
+    this.meshes.forEach((mesh, index) => {
+      mesh.frustumCulled = false
+      mesh.position.set(this.glyphs[index]!.x, 0, 0)
+      mesh.scale.setScalar(0)
+    })
+    if (this.active && this.reducedMotion) this.settleReducedMotion()
+  }
+
+  unbindMeshes(meshes: readonly THREE.Mesh[]): void {
+    if (this.meshes.length !== meshes.length || this.meshes.some((mesh, index) => mesh !== meshes[index])) {
+      return
+    }
+    this.meshes = []
   }
 
   private createGlyph(letter: string, size: number): THREE.BufferGeometry {
@@ -100,7 +117,7 @@ export class WireframeTypography extends THREE.Group {
     this.revealElapsed = 0
     this.revealProgress = 0
     if (!active) {
-      for (const { mesh } of this.glyphs) mesh.scale.setScalar(0)
+      for (const mesh of this.meshes) mesh.scale.setScalar(0)
     } else if (this.reducedMotion) {
       this.settleReducedMotion()
     }
@@ -131,7 +148,9 @@ export class WireframeTypography extends THREE.Group {
     const revealDelay = 0.72
     const revealDuration = 0.72
     this.revealProgress = easeOutCubic((this.revealElapsed - revealDelay) / revealDuration)
-    for (const { mesh, x, phase } of this.glyphs) {
+    for (const [index, { x, phase }] of this.glyphs.entries()) {
+      const mesh = this.meshes[index]
+      if (!mesh) continue
       const bob = Math.sin(this.time * 1.05 + phase)
       const sway = Math.sin(this.time * 0.62 + phase * 1.3)
       const breathe = (1 + Math.sin(this.time * 1.3 + phase) * 0.06) * this.revealProgress
@@ -147,7 +166,9 @@ export class WireframeTypography extends THREE.Group {
 
   private settleReducedMotion(): void {
     this.revealProgress = 1
-    for (const { mesh, x } of this.glyphs) {
+    for (const [index, { x }] of this.glyphs.entries()) {
+      const mesh = this.meshes[index]
+      if (!mesh) continue
       mesh.position.set(x, 0, 0)
       mesh.rotation.set(0, 0, 0)
       mesh.scale.setScalar(1)
@@ -158,9 +179,9 @@ export class WireframeTypography extends THREE.Group {
     if (this.disposed) return
     this.disposed = true
     this.active = false
-    for (const { mesh } of this.glyphs) mesh.geometry.dispose()
+    for (const { geometry } of this.glyphs) geometry.dispose()
     this.material.dispose()
     this.glyphs = []
-    this.clear()
+    this.meshes = []
   }
 }

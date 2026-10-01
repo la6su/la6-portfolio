@@ -91,6 +91,8 @@ export class StageRegistry {
       load: async (stage, isCurrent) => {
         await stage.init()
         if (!isCurrent()) return
+        await stage.waitForCards()
+        if (!isCurrent()) return
         const installation = stage.installationOwner
         if (installation) await this._ctx.host().works.mountInstallation(stage, installation)
       },
@@ -99,10 +101,12 @@ export class StageRegistry {
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this._ctx.camera().instance)
       },
-      release: (stage) => {
+      release: async (stage) => {
         const installation = stage.installationOwner
-        if (installation) void this._ctx.host().works.unmountInstallation(stage, installation)
-        void this._ctx.host().works.unmountStage(stage)
+        if (installation) {
+          await this._ctx.host().works.unmountInstallation(stage, installation)
+        }
+        await this._ctx.host().works.unmountStage(stage)
         stage.dispose()
       },
     }
@@ -115,8 +119,8 @@ export class StageRegistry {
   /** Dispose the /works case-plane stage when leaving /works.
    *  Frees ~40-50 MB of GPU textures + TSL materials. The stage is lazily
    *  re-created on the next /works visit. */
-  public disposeWorksPlaneStage(): void {
-    disposeLazyStage(this._worksPlaneStageContract())
+  public disposeWorksPlaneStage(): Promise<void> {
+    return disposeLazyStage(this._worksPlaneStageContract())
   }
 
   /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
@@ -134,10 +138,10 @@ export class StageRegistry {
         stage.setActive(this._ctx.currentPage() === 'contact')
         stage.setTheme(this._ctx.isContactLight())
       },
-      release: (stage) => {
-        void this._ctx.host().contactTypography.unmount(stage)
-        // The stage's dispose() also self-detaches (a harmless no-op after
-        // the Vue-host unmount flush).
+      release: async (stage) => {
+        await this._ctx.host().contactTypography.unmount(stage)
+        // The Vue owner removes its declared root; the controller disposes
+        // only the dynamically generated glyph geometry and shared material.
         stage.dispose()
       },
     }
@@ -147,8 +151,8 @@ export class StageRegistry {
     return ensureLazyStage(this._contactTypographyStageContract())
   }
 
-  public disposeContactTypographyStage(): void {
-    disposeLazyStage(this._contactTypographyStageContract())
+  public disposeContactTypographyStage(): Promise<void> {
+    return disposeLazyStage(this._contactTypographyStageContract())
   }
 
   /** Lazily load the Contact ink halo so the TSL graph stays out of the
@@ -167,8 +171,10 @@ export class StageRegistry {
         stage.setReducedMotion(this._ctx.reducedMotion())
         stage.setActive(this._ctx.currentPage() === 'contact')
       },
-      release: (stage) => {
-        void this._ctx.host().contactHalo.unmount(stage)
+      release: async (stage) => {
+        await this._ctx.host().contactHalo.unmount(stage)
+        // Vue removes the declared root/mesh; dispose retires the TSL
+        // material and this owner's shared geometry lease.
         stage.dispose()
       },
     }
@@ -178,8 +184,8 @@ export class StageRegistry {
     return ensureLazyStage(this._contactHaloStageContract())
   }
 
-  public disposeContactHaloStage(): void {
-    disposeLazyStage(this._contactHaloStageContract())
+  public disposeContactHaloStage(): Promise<void> {
+    return disposeLazyStage(this._contactHaloStageContract())
   }
 
   /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
@@ -201,8 +207,10 @@ export class StageRegistry {
         stage.setReducedMotion(this._ctx.reducedMotion())
         stage.setActive(this._ctx.currentPage() === 'manifesto')
       },
-      release: (stage) => {
-        void this._ctx.host().manifestoInk.unmount(stage)
+      release: async (stage) => {
+        await this._ctx.host().manifestoInk.unmount(stage)
+        // Vue removes the declared root/mesh; dispose retires the TSL
+        // material and this owner's shared geometry lease.
         stage.dispose()
       },
     }
@@ -212,8 +220,8 @@ export class StageRegistry {
     return ensureLazyStage(this._manifestoInkStageContract())
   }
 
-  public disposeManifestoInkStage(): void {
-    disposeLazyStage(this._manifestoInkStageContract())
+  public disposeManifestoInkStage(): Promise<void> {
+    return disposeLazyStage(this._manifestoInkStageContract())
   }
 
   /** Lazily load the Contact location asset instead of keeping it in the home
@@ -234,10 +242,8 @@ export class StageRegistry {
         stage.setActive(this._ctx.currentPage() === 'contact' && this._ctx.isCyprusActive())
         stage.prewarm()
       },
-      release: (stage) => {
-        void this._ctx.host().contactCyprus.unmount(stage)
-        // The stage's dispose() also self-detaches (a harmless no-op after
-        // the Vue-host unmount flush).
+      release: async (stage) => {
+        await this._ctx.host().contactCyprus.unmount(stage)
         stage.dispose()
       },
       onDispose: () => {
@@ -250,8 +256,8 @@ export class StageRegistry {
     return ensureLazyStage(this._contactCyprusStageContract())
   }
 
-  public disposeContactCyprusStage(): void {
-    disposeLazyStage(this._contactCyprusStageContract())
+  public disposeContactCyprusStage(): Promise<void> {
+    return disposeLazyStage(this._contactCyprusStageContract())
   }
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
@@ -289,8 +295,8 @@ export class StageRegistry {
       configure: (stage) => {
         stage.visible = this._ctx.currentPage() === 'lab'
       },
-      release: (stage) => {
-        void this._ctx.host().labGamepad.unmount(stage)
+      release: async (stage) => {
+        await this._ctx.host().labGamepad.unmount(stage)
         stage.dispose()
       },
     }
@@ -301,8 +307,8 @@ export class StageRegistry {
   }
 
   /** Invalidate any in-flight load and dispose the live object (final teardown). */
-  public disposeLabGamepad(): void {
-    disposeLazyStage(this._labGamepadContract())
+  public disposeLabGamepad(): Promise<void> {
+    return disposeLazyStage(this._labGamepadContract())
   }
 
   /** Forward a live preference change to every mounted route stage. */
@@ -316,14 +322,15 @@ export class StageRegistry {
     this.labGamepad?.setReducedMotion?.(reduced)
   }
 
-  /** Final teardown: the six lazy-stage disposes in the legacy destroy order
-   *  (works plane → typography → cyprus → halo → ink → lab). */
-  public dispose(): void {
-    this.disposeWorksPlaneStage()
-    this.disposeContactTypographyStage()
-    this.disposeContactCyprusStage()
-    this.disposeContactHaloStage()
-    this.disposeManifestoInkStage()
-    this.disposeLabGamepad()
+  /** Final teardown waits for every route-stage owner to detach and release. */
+  public dispose(): Promise<void> {
+    return Promise.all([
+      this.disposeWorksPlaneStage(),
+      this.disposeContactTypographyStage(),
+      this.disposeContactCyprusStage(),
+      this.disposeContactHaloStage(),
+      this.disposeManifestoInkStage(),
+      this.disposeLabGamepad(),
+    ]).then(() => undefined)
   }
 }

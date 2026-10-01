@@ -35,10 +35,8 @@ export class ContactHaloStage extends PointerInkStage {
         // than the plane so the pool center stays inside the frame on wide
         // screens).
         const focus = pointer.mul(vec2(0.62, 0.34))
-        const pool = (smoothstep as any)(0.95, 0.12, length(p.sub(focus)))
-        const drift = sin(p.x.mul(2.6).add(time.mul(0.5))).mul(
-          sin(p.y.mul(1.9).sub(time.mul(0.35))),
-        )
+        const pool = smoothstep(0.95, 0.12, length(p.sub(focus)))
+        const drift = sin(p.x.mul(2.6).add(time.mul(0.5))).mul(sin(p.y.mul(1.9).sub(time.mul(0.35))))
         const breath = sin(time.mul(0.55)).mul(0.5).add(0.5)
         return pool
           .mul(0.8)
