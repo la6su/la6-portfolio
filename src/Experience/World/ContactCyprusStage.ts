@@ -11,7 +11,6 @@ import {
   disposeObject3DResources,
 } from '../../Utils/dispose'
 import { prefersReducedMotion } from '../../core/motionPolicy'
-import { smoothstep01 } from '../../Utils/easing'
 
 const FADE_DURATION_SECONDS = 0.52
 const SCALE_IN_FROM = 0.96
@@ -264,7 +263,7 @@ export class ContactCyprusStage {
         this._fadeElapsed + dt,
       )
       const progress = this._fadeElapsed / FADE_DURATION_SECONDS
-      const eased = smoothstep01(progress)
+      const eased = THREE.MathUtils.smoothstep(progress, 0, 1)
       this.setPresentation(
         THREE.MathUtils.lerp(this._fadeFrom, this._targetOpacity, eased),
         THREE.MathUtils.lerp(this._scaleFrom, this._targetScale, eased),

@@ -23,7 +23,6 @@ import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 import { prefersReducedMotion } from '../../core/motionPolicy'
-import { smoothstep01 } from '../../Utils/easing'
 import { carouselCardMetadataOf } from './cardMetadata'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
@@ -446,7 +445,7 @@ export class BakuCarousel {
     }
 
     // Eased morph for animations (smoothstep gives ease-in/ease-out)
-    const easedT = smoothstep01(this._morphT)
+    const easedT = THREE.MathUtils.smoothstep(this._morphT, 0, 1)
 
     // Continue the released drag velocity as carousel momentum.
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
@@ -492,7 +491,7 @@ export class BakuCarousel {
           : slot > 0
             ? 0.2 + Math.min(distance - 1, 2) * 0.055
             : 0.4 + Math.min(distance - 1, 2) * 0.04
-      const localReveal = smoothstep01((easedT - delay) / 0.55)
+      const localReveal = THREE.MathUtils.smoothstep((easedT - delay) / 0.55, 0, 1)
       card.position.copy(this._tmpStreamPos)
       const entranceDirection = distance < 0.5 ? 0 : Math.sign(slot)
       card.position.x += entranceDirection * (1 - localReveal) * 0.28

@@ -104,7 +104,7 @@ export function renderBuilderPageDocument(
     '    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />',
     `    <meta name="twitter:image:alt" content="${title} preview" />`,
     '',
-    '    <link rel="preload" href="/fonts/commissioner-variable.ttf" as="font" type="font/ttf" crossorigin />',
+    '    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin />',
     '    <link rel="stylesheet" href="/fonts/commissioner.css" />',
     `    <link rel="stylesheet" href="/src/assets/builder/${esc(document.slug)}.less" />`,
   ]

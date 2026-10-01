@@ -1,11 +1,11 @@
 // src/core/PostProcessingManager.ts
 // Section-aware post-processing controller with quality tiers + crossfade.
 
+import * as THREE from 'three'
 import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
 import type { PostParams } from './postParams'
 import { NEUTRAL_GRADE } from './postParams'
-import { lerp } from '../Utils/easing'
 
 /**
  * The section-authored subset of the canonical PostParams: the four intensity
@@ -171,18 +171,30 @@ export class PostProcessingManager {
     if (!this._crossfadeActive) return
     const factor = Math.min(dt * this.crossfadeSpeed, 1)
 
-    this.display.bloom = lerp(this.display.bloom, this.current.bloom, factor)
-    this.display.vignette = lerp(this.display.vignette, this.current.vignette, factor)
-    this.display.grain = lerp(this.display.grain, this.current.grain, factor)
-    this.display.chromatic = lerp(this.display.chromatic, this.current.chromatic, factor)
-    this.display.bloomRadius = lerp(this.display.bloomRadius, this.current.bloomRadius, factor)
-    this.display.bloomThreshold = lerp(
+    this.display.bloom = THREE.MathUtils.lerp(this.display.bloom, this.current.bloom, factor)
+    this.display.vignette = THREE.MathUtils.lerp(
+      this.display.vignette,
+      this.current.vignette,
+      factor,
+    )
+    this.display.grain = THREE.MathUtils.lerp(this.display.grain, this.current.grain, factor)
+    this.display.chromatic = THREE.MathUtils.lerp(
+      this.display.chromatic,
+      this.current.chromatic,
+      factor,
+    )
+    this.display.bloomRadius = THREE.MathUtils.lerp(
+      this.display.bloomRadius,
+      this.current.bloomRadius,
+      factor,
+    )
+    this.display.bloomThreshold = THREE.MathUtils.lerp(
       this.display.bloomThreshold,
       this.current.bloomThreshold,
       factor,
     )
-    this.display.refract = lerp(this.display.refract, this.current.refract, factor)
-    this.display.border = lerp(this.display.border, this.current.border, factor)
+    this.display.refract = THREE.MathUtils.lerp(this.display.refract, this.current.refract, factor)
+    this.display.border = THREE.MathUtils.lerp(this.display.border, this.current.border, factor)
     this.lerpTint(this.display.gradeShadows, this.current.gradeShadows, factor)
     this.lerpTint(this.display.gradeHighlights, this.current.gradeHighlights, factor)
     if (this.displayMatchesCurrent(0.001)) {
@@ -206,9 +218,9 @@ export class PostProcessingManager {
     to: [number, number, number],
     t: number,
   ): void {
-    target[0] = lerp(target[0], to[0], t)
-    target[1] = lerp(target[1], to[1], t)
-    target[2] = lerp(target[2], to[2], t)
+    target[0] = THREE.MathUtils.lerp(target[0], to[0], t)
+    target[1] = THREE.MathUtils.lerp(target[1], to[1], t)
+    target[2] = THREE.MathUtils.lerp(target[2], to[2], t)
   }
 
   private displayMatchesCurrent(epsilon = 0): boolean {

@@ -26,6 +26,18 @@ test("public SPA routes render on direct entry with route metadata", async ({
     await expect(page.locator(`[data-page-view="${view}"]`)).toHaveCount(1);
     if (path === "/") {
       await expect(page.locator('[data-page-view="home"] h1')).toHaveCount(1);
+      const fontPath = "/fonts/commissioner-variable.woff2";
+      const fontResponse = await page.request.get(fontPath);
+      expect(fontResponse.headers()["content-type"]).toContain("font/woff2");
+      expect(
+        await page.evaluate(async () => {
+          const faces = await document.fonts.load(
+            "600 16px Commissioner",
+            "Portfolio",
+          );
+          return faces.some((face) => face.status === "loaded");
+        }),
+      ).toBe(true);
     }
     await expect(page.locator('meta[name="description"]')).not.toHaveAttribute(
       "content",
@@ -124,6 +136,21 @@ test("standalone blog and builder routes publish valid static documents", async 
       "href",
       new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
     );
+    if (path === "/blog") {
+      const response = await page.request.get(
+        "/fonts/commissioner-variable.woff2",
+      );
+      expect(response.headers()["content-type"]).toContain("font/woff2");
+      expect(
+        await page.evaluate(async () => {
+          const faces = await document.fonts.load(
+            "600 16px Commissioner",
+            "Портфолио",
+          );
+          return faces.some((face) => face.status === "loaded");
+        }),
+      ).toBe(true);
+    }
 
     if (path.startsWith("/p/")) {
       await expect(page.locator("script")).toHaveCount(0);

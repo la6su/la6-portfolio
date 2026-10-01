@@ -16,7 +16,7 @@
 
 // (DeviceCapability import removed — mobile detection now handled by CSS
 //  @media (pointer: coarse) in main.less, which is more reliable than JS.)
-import { lerp } from '../Utils/easing'
+import * as THREE from 'three'
 
 // CSS variables are the source of truth; these defaults keep canvas painting
 // usable if the theme stylesheet has not loaded yet.
@@ -334,12 +334,12 @@ export class Cursor {
 
     // Radius — smooth expand/shrink + click bump
     const targetR = this.isStuck ? this.targetRadius : this.baseRadius
-    this.currentRadius = lerp(this.currentRadius, targetR, 0.12)
+    this.currentRadius = THREE.MathUtils.lerp(this.currentRadius, targetR, 0.12)
     // Bump: lerp bumpScale back to 1 after click
-    this.bumpScale = lerp(this.bumpScale, this.bumpTarget, 0.2)
+    this.bumpScale = THREE.MathUtils.lerp(this.bumpScale, this.bumpTarget, 0.2)
 
     // Fill progress — 0 = stroke only, 1 = filled
-    this.fillProgress = lerp(this.fillProgress, this.fillTarget, 0.12)
+    this.fillProgress = THREE.MathUtils.lerp(this.fillProgress, this.fillTarget, 0.12)
 
     // Draw cursor — ONLY when something changed (avoids redraw when idle)
     const moved =

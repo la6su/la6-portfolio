@@ -56,6 +56,92 @@ and [primitive disposal behavior](https://docs.tresjs.org/api/advanced/primitive
    GPU, WebGPU, WebGL recovery, or hardware performance verification unless it
    was actually performed and record the environment and result.
 
+## Architecture simplification audit — active work order
+
+The reference is used for its practical Vue/Tres scene-composition style:
+hierarchy and stable props belong in Vue components; behavior that needs Three
+APIs stays in a small focused controller. The reference repository itself is a
+large ecosystem with plugins, stores, editors, and publishing systems; those
+features are outside this portfolio's scope. Do not copy its framework layers.
+
+Audit evidence (2026-10-01): the scene tree is mostly Vue-declared, but the
+imperative runtime is still distributed across `Experience.ts` (1177 lines),
+`SceneCoordinator.ts` (324), `SceneFramePass.ts` (157),
+`SceneTransformPass.ts` (436), `StageRegistry.ts` (336), and `LazyStage.ts`
+(262), plus the SceneHost/Experience ports. These numbers are prompts to review
+ownership and indirection, not line-count targets. Prior extractions created
+working boundaries, but the current code and tests must justify each retained
+layer. Do not split large files merely to reduce line count.
+
+### Decision rules
+
+- Retain one owner for each capability. Tres/Vue owns scene-node construction
+  and component lifetime; Three owns rendering primitives and renderer
+  resource APIs; Cientos owns its controls/helpers. Project code should only
+  bridge requirements these libraries do not provide.
+- Keep custom logic where product behavior is specific: story-to-world mapping,
+  WebGPU/WebGLBackend selection and recovery, demand scheduling, TSL effects,
+  portfolio transitions, accessibility behavior, and async cleanup of route
+  assets. These are not replaced by declarative syntax alone.
+- Treat a module/class as a simplification candidate when it only forwards
+  arguments, mirrors state owned elsewhere, exists only for a one-call path,
+  or duplicates a library contract. Merge it into the actual owner unless it
+  has independent lifetime, domain vocabulary, reuse, or focused tests that
+  clarify behavior.
+- Before removing an abstraction, trace all source/build/test consumers, note
+  the behavior it currently protects, move that behavior to its owning layer,
+  and preserve a focused regression check. Avoid replacement helper layers.
+- Keep public compatibility ports only where Vue component lifecycle and the
+  imperative runtime genuinely cross; remove redundant copies and adapters.
+
+### Ordered audit and refactor batches
+
+1. **Inventory the live execution graph** — start from `entry-app.ts`,
+   `SceneHost.vue`, `Experience`, route views, and builder generators. For each
+   project-owned module, record its capability, callers, owner, and whether a
+   Vue/Tres/Three/library API already covers it. Mark every proposed deletion
+   with repository-wide reference evidence. (In progress.)
+2. **Collapse pass-through boundaries** — review `Experience` ↔
+   `ExperienceUI`/`UIManager`, `SceneCoordinator` ↔ its frame/transform passes,
+   `StageRegistry` ↔ stage slots/useSceneStages, and duplicated readiness/event
+   bridges. Keep distinct algorithms and lifetimes; merge only forwarding
+   facades and duplicated state. Implement one boundary at a time.
+3. **Align scene declarations with the reference** — inspect each owner SFC and
+   controller pair. Stable groups, meshes, lights, camera, and props stay in
+   Vue. Controllers may adopt nodes and own TSL algorithms, async loaders, or
+   generated geometry. Remove manual scene construction/attachment and
+   duplicate Three helpers only when the framework/library supplies the same
+   behavior without breaking cleanup or render semantics.
+4. **Trim runtime policy and utilities** — audit event bus vs local callbacks,
+   custom timing/resize/visibility/render policies, disposal helpers,
+   capability snapshots, and compatibility shims against installed Vue 3,
+   Tres 5, Cientos 5, Three 0.186 APIs. Use one source of truth and delete
+   wrappers whose only role is renaming or forwarding. Preserve measured
+   policies the libraries do not own.
+5. **Review route and content layers** — check router metadata, page metadata,
+   sitemap generation, blog/build-time publication, admin state, and static
+   output for duplicate canonical data or runtime code. Keep generated inputs
+   only where direct-route/deploy behavior requires them.
+6. **Re-run the whole audit after edits** — review every active source file,
+   package script/dependency, Vue owner, and generated route. Record what was
+   removed, what intentionally remains project-owned, and open platform/GPU
+   evidence gaps. Do not call production-ready while an agreed gate is open.
+
+**Completed simplification slice:** removed the project-owned `lerp` and
+`smoothstep01` implementations. Their call sites now use the equivalent
+`THREE.MathUtils.lerp` and `THREE.MathUtils.smoothstep(x, 0, 1)` from the pinned
+Three 0.186 runtime. Kept `easeOutCubic`, for which Three has no equivalent.
+The focused diff is limited to easing call sites and its custom-only helper.
+Vue type-check, lint, and all 73 unit tests pass; the production/browser gate
+passed in system Chromium: 14 tests passed and 3 opt-in renderer scenarios
+skipped. That production run rebuilt and checked budgets, including the Latin
+and Cyrillic Commissioner WOFF2 checks.
+
+**Immediate next slice:** complete batch 1 for the runtime core, then inspect
+the call graph of a concrete pass-through boundary. No module is slated for
+deletion based on file size alone. The WOFF2 conversion is a completed delivery
+optimization, secondary to this architecture work.
+
 ## Architecture target
 
 ```text
@@ -586,6 +672,11 @@ when the scene is disabled or unsupported.
   `cover.webp` consumer used by the builder catalog and showcase. Full
   production Chromium suite, 73 unit tests, and `check:stdlib` passed after the
   cleanup; public media now totals 6515.68 kB.
+- Converted the preloaded Commissioner variable font from TTF (742 KB) to
+  WOFF2 (268 KB, 63.3% smaller), updating CSS, SPA/static-document preloads, and
+  generated blog/builder inputs. Chromium confirms the `font/woff2` response
+  loads weight 600 for both Latin and Cyrillic text on the SPA and standalone
+  blog route. License/source attribution remains in place.
 
 **Work**
 
@@ -616,7 +707,7 @@ unowned persistent GPU resource remains.
 
 - **Active phase**: 0–5. Runtime ownership mapping and the first async release
   race fix are recorded above; no new module boundary was justified by the audit.
-- **Next action**: continue image/texture and font-delivery checks, then audit
+- **Next action**: continue image/texture checks, then audit
   for duplicated lifecycle owners, unreachable code, and abstractions already
   provided by Vue/Tres/Three. Continue keyboard routes beyond the menu/modal,
   orientation/resize and touch-target states. Verify WebKit in CI and
@@ -668,6 +759,11 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
 - Teardown test now destroys Experience and unmounts Vue, then confirms
   EnvSphere, EnvSky, cursor placeholder, and Showreel quad cleanup precede the
   final active backend disposal; navigation events are no longer intercepted.
+  Commissioner TTF → WOFF2 delivery has passed Latin/Cyrillic Chromium font
+  loading checks, the 73-test unit suite, Vue type-check, ESLint, the stdlib
+  audit, and the full system-Chromium production suite (14 passed, 3 opt-in
+  renderer scenarios skipped). Current changes are still in review and need a
+  milestone commit after the architectural slice.
   Replacement WebGPU/WebGL renderer candidates share the SceneHost deferred
   disposal boundary. `bun run type-check:vue`, `bun run lint`, nine focused
   renderer unit tests, 72 unit tests overall, the system-Chromium teardown

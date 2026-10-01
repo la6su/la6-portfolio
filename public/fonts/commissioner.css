@@ -6,5 +6,5 @@
   font-style: oblique -12deg 0deg;
   font-weight: 100 900;
   font-display: swap;
-  src: url('/fonts/commissioner-variable.ttf') format('truetype-variations');
+  src: url('/fonts/commissioner-variable.woff2') format('woff2');
 }

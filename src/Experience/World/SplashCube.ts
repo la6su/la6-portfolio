@@ -26,7 +26,6 @@ import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 import { WORLD_SLOTS } from '../../core/worldSlots'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
-import { smoothstep01 } from '../../Utils/easing'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -411,7 +410,7 @@ export class SplashCube {
     // ── Face rotation animation (absolute lerp from start to target) ──
     if (this._faceLerp < 1) {
       this._faceLerp = Math.min(1, this._faceLerp + dt * 1.8) // ~0.55s at 60fps
-      const ease = smoothstep01(this._faceLerp)
+      const ease = THREE.MathUtils.smoothstep(this._faceLerp, 0, 1)
       this._idleRotY = this._startFaceRotY + this._startFaceDelta * ease
       if (this._faceLerp >= 1) {
         this._idleRotY = this._targetFaceRotY

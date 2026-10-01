@@ -13,7 +13,7 @@ import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig, type SceneTransitionEasing } from '../core/WorldConfig'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
-import { easeOutCubic, smoothstep01 } from '../Utils/easing'
+import { easeOutCubic } from '../Utils/easing'
 import type { SceneCoordinatorOwners } from './sceneOwners'
 import type { SectionStateMachine } from './SectionStateMachine'
 
@@ -362,7 +362,7 @@ export class SceneTransformPass {
    *  Only these two easings are authored in WorldConfig — the config type is
    *  narrowed to match, so no other branches exist. */
   private _applyEasing(t: number, easing: SceneTransitionEasing): number {
-    return easing === 'ease-out' ? easeOutCubic(t) : smoothstep01(t)
+    return easing === 'ease-out' ? easeOutCubic(t) : THREE.MathUtils.smoothstep(t, 0, 1)
   }
 
   private defaultResult(): WorldTransformResult {

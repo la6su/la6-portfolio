@@ -289,7 +289,7 @@ export function renderBlogDocument(
     metaTag('twitter:image', OG_IMAGE),
     metaTag('twitter:image:alt', meta.imageAlt),
     '',
-    '    <link rel="preload" href="/fonts/commissioner-variable.ttf" as="font" type="font/ttf" crossorigin />',
+    '    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin />',
     '    <link rel="stylesheet" href="/fonts/commissioner.css" />',
     '    <link rel="stylesheet" href="/src/assets/blog.less" />',
     ...(meta.ogType === 'article'
