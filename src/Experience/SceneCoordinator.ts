@@ -50,10 +50,8 @@ export class SceneCoordinator {
     return this.owners.sectionGroups()?.groups ?? []
   }
 
-  // ── Live owner read surface ──
-  // Experience creates + disposes every owner; ExperienceUI + the Experience
-  // frame path read them through these getters (narrow read surface, no stored
-  // reference — always live after Experience.init() has built the owners).
+  // ── Live owner reads ──
+  // Lazy route owners are read through getters so replacements stay current.
   public get baku(): SplashCube | null {
     return this.owners.baku()
   }
@@ -66,13 +64,13 @@ export class SceneCoordinator {
   public get worksPlaneStage(): WorksPlaneStage | null {
     return this.owners.worksPlaneStage()
   }
-  public get contactTypographyStage(): ContactTypographyStage | null {
+  private get contactTypographyStage(): ContactTypographyStage | null {
     return this.owners.contactTypographyStage()
   }
-  public get contactHaloStage(): ContactHaloStage | null {
+  private get contactHaloStage(): ContactHaloStage | null {
     return this.owners.contactHaloStage()
   }
-  public get manifestoInkStage(): ManifestoInkStage | null {
+  private get manifestoInkStage(): ManifestoInkStage | null {
     return this.owners.manifestoInkStage()
   }
 
