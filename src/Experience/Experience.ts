@@ -242,6 +242,10 @@ export class Experience {
     this.features = new ExperienceUI({
       page: () => this.currentPage(),
       coordinator: () => this.coordinator,
+      baku: () => this.baku,
+      particleBurst: () => this.particleBurst,
+      carousel: () => this.carousel,
+      worksPlaneStage: () => this._stages.worksPlaneStage,
       camera: () => this.camera,
       sfx: () => this.sfx,
       raise: (reason) => this._raiseRenderDemand(reason),
@@ -819,7 +823,7 @@ export class Experience {
     // transform pass's updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
-    const carousel = this.currentPage() === 'home' ? this.coordinator?.carousel : null
+    const carousel = this.currentPage() === 'home' ? this.carousel : null
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false

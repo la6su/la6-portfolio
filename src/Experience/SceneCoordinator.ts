@@ -14,10 +14,6 @@ import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
 import type { SceneCoordinatorOwners } from './sceneOwners'
-import type { SplashCube } from './World/SplashCube'
-import type { ParticleBurst } from './World/ParticleBurst'
-import type { BakuCarousel } from './World/BakuCarousel'
-import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
@@ -49,20 +45,8 @@ export class SceneCoordinator {
     return this.owners.sectionGroups()?.groups ?? []
   }
 
-  // ── Live owner reads ──
-  // Lazy route owners are read through getters so replacements stay current.
-  public get baku(): SplashCube | null {
-    return this.owners.baku()
-  }
-  public get particleBurst(): ParticleBurst | null {
-    return this.owners.particleBurst()
-  }
-  public get carousel(): BakuCarousel | null {
-    return this.owners.carousel()
-  }
-  public get worksPlaneStage(): WorksPlaneStage | null {
-    return this.owners.worksPlaneStage()
-  }
+  // Live owner reads stay private to the coordinator and its passes. UI
+  // interactions access those controllers through Experience's UI host port.
   private get contactTypographyStage(): ContactTypographyStage | null {
     return this.owners.contactTypographyStage()
   }

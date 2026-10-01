@@ -19,6 +19,10 @@ import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 import { PROJECTS } from '../Data/Projects'
+import type { SplashCube } from './World/SplashCube'
+import type { ParticleBurst } from './World/ParticleBurst'
+import type { BakuCarousel } from './World/BakuCarousel'
+import type { WorksPlaneStage } from './World/WorksPlaneStage'
 
 /**
  * The narrow port ExperienceUI reaches the scene through. Every accessor is
@@ -28,6 +32,10 @@ import { PROJECTS } from '../Data/Projects'
 export interface ExperienceUIHost {
   page: () => PageId
   coordinator: () => SceneCoordinator
+  baku: () => SplashCube
+  particleBurst: () => ParticleBurst
+  carousel: () => BakuCarousel | null
+  worksPlaneStage: () => WorksPlaneStage | null
   camera: () => Camera
   sfx: () => SfxSystem
   /** Raise render demand + wake the single loop driver (typed reason). */
@@ -219,7 +227,7 @@ export class ExperienceUI {
     // Wobble pulse on card click (work cards + carousel).
     this._unsubs.push(
       eventBus.on('jlz:wobble-pulse', () => {
-        this.host.coordinator().baku?.triggerWobblePulse()
+        this.host.baku().triggerWobblePulse()
         // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
         this.host.raise('dirty')
       }),
@@ -260,7 +268,7 @@ export class ExperienceUI {
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       this.ensureProjectControls()
-      const stage = this.host.coordinator().worksPlaneStage
+      const stage = this.host.worksPlaneStage()
       if (!stage) return
       const idx = stage.hitTest(e.clientX, e.clientY)
       if (
@@ -289,11 +297,11 @@ export class ExperienceUI {
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
   triggerSplashOpener(): void {
-    const coordinator = this.host.coordinator()
-    coordinator.baku?.triggerOpener()
+    this.host.baku().triggerOpener()
     if (this.host.reducedMotion()) return
-    coordinator.particleBurst?.trigger(0, 0, 0)
-    if (coordinator.particleBurst?.isActive) this.host.raise('dirty')
+    const particleBurst = this.host.particleBurst()
+    particleBurst.trigger(0, 0, 0)
+    if (particleBurst.isActive) this.host.raise('dirty')
   }
 
   ensureProjectControls(): void {
@@ -315,10 +323,8 @@ export class ExperienceUI {
   private initializeProjectControls(): void {
     if (this.projectUiReady || this._destroyed) return
     // Always prepare project controls — single-page experience.
-    // Experience calls this after buildScene() and coordinator.init(), before
+    // Experience calls this after buildScene() and coordinator initialization, before
     // any user controls can emit project-selection events.
-    const coordinator = this.host.coordinator()
-
     // Project navigation uses one controller for Vue-owned overlay markup.
     const element = document.getElementById('jlz-fs-overlay')
     if (!(element instanceof HTMLDivElement) || !element.isConnected) {
@@ -329,7 +335,7 @@ export class ExperienceUI {
     // The home carousel exists even on a content deep link. Wire it once
     // regardless of the active route, and release the callback with this UI
     // owner so a later Experience can adopt the same scene object safely.
-    const carousel = coordinator.carousel
+    const carousel = this.host.carousel()
     if (carousel) {
       carousel.setCamera(this.host.camera().instance)
       this._unwireCarousel = carousel.onCardClick((idx) => {
@@ -347,8 +353,7 @@ export class ExperienceUI {
     // The carousel exists in the persistent scene, but only participates in
     // project navigation on home.
     if (this.host.page() !== 'home') return null
-    // The reference lives on SceneCoordinator's typed owner boundary.
-    return this.host.coordinator()?.carousel ?? null
+    return this.host.carousel()
   }
 
   /** Select the adjacent project from the one canonical active index. */
