@@ -82,9 +82,7 @@ const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface =>
   // Returning the live instance keeps the single-construction owner and
   // prevents a second renderer on the same canvas — overwriting
   // `createdRenderer` would orphan the previous instance.
-  if (createdRenderer && !disposedRenderers.has(createdRenderer)) {
-    return createdRenderer
-  }
+  if (createdRenderer) return createdRenderer
   const canvas = toValue(ctx.canvas) ?? document.createElement('canvas')
   const renderer = createUnifiedWebGPUInstance(canvas, forceWebGLBackendForTest)
   // TresJS 5.9.2 disposes its renderer manager before unmounting the custom
@@ -241,14 +239,12 @@ const {
   clear: clearSceneStages,
 } = useSceneStages(() => !disposed, () => readyNode(worksRootSlot))
 
-const disposedRenderers = new WeakSet<object>()
-
-function disposeRendererOnce(renderer: UnifiedRenderSurface | null): Promise<void> {
-  if (!renderer || disposedRenderers.has(renderer)) return Promise.resolve()
-  disposedRenderers.add(renderer)
+function disposeHostRenderer(renderer: UnifiedRenderSurface | null): Promise<void> {
+  if (!renderer) return Promise.resolve()
   const flushDeferredDispose = deferredRendererDisposals.get(renderer)
+  if (flushDeferredDispose) deferredRendererDisposals.delete(renderer)
+  if (createdRenderer === renderer) createdRenderer = null
   if (flushDeferredDispose) {
-    deferredRendererDisposals.delete(renderer)
     return flushDeferredDispose()
   }
   return disposeUnifiedRendererNow(renderer)
@@ -315,7 +311,8 @@ async function onReady(context: TresContext): Promise<void> {
     // Software WebGPU adapter (SwiftShader ~2 FPS) → hardware WebGL2 through
     // the same renderer class with its WebGL backend. The canvas is already in the DOM:
     // dispose the dead instance and swap in the replacement.
-    await disposeRendererOnce(renderer)
+    await disposeHostRenderer(renderer)
+    if (!isCurrent()) return
     const candidate = createUnifiedWebGPUInstance(canvas, true)
     deferredRendererDisposals.set(candidate, deferRendererDisposal(candidate))
     createdRenderer = candidate
@@ -326,8 +323,7 @@ async function onReady(context: TresContext): Promise<void> {
     try {
       await initPromise
     } catch (error) {
-      await disposeRendererOnce(candidate)
-      if (createdRenderer === candidate) createdRenderer = null
+      await disposeHostRenderer(candidate)
       onError(error instanceof Error ? error : new Error(String(error)))
       return
     } finally {
@@ -337,7 +333,7 @@ async function onReady(context: TresContext): Promise<void> {
       if (fallbackRendererInit === initPromise) fallbackRendererInit = null
     }
     if (!isCurrent()) {
-      await disposeRendererOnce(candidate)
+      await disposeHostRenderer(candidate)
       return
     }
     renderer = candidate
@@ -346,7 +342,7 @@ async function onReady(context: TresContext): Promise<void> {
     plan = planUnifiedBackend(backend)
   }
   if (!isCurrent()) {
-    await disposeRendererOnce(renderer)
+    await disposeHostRenderer(renderer)
     return
   }
   // Publish the selected backend's DPR cap so Tres and the renderer agree.
@@ -390,10 +386,9 @@ async function onReady(context: TresContext): Promise<void> {
 function onError(error: Error): void {
   if (resolved || disposed) return
   resolved = true
-  void disposeRendererOnce(createdRenderer).catch((disposeError: unknown) => {
+  void disposeHostRenderer(createdRenderer).catch((disposeError: unknown) => {
     console.error('[SceneHost] renderer cleanup failed after initialization error:', disposeError)
   })
-  createdRenderer = null
   sceneHost.reject(error)
 }
 
@@ -422,8 +417,9 @@ onUnmounted(async () => {
   // after init settles before this owner performs its terminal disposal.
   await fallbackRendererInit?.catch(() => undefined)
   try {
-    await disposeRendererOnce(liveRenderer)
-    if (createdRenderer !== liveRenderer) await disposeRendererOnce(createdRenderer)
+    const initialRenderer = createdRenderer
+    await disposeHostRenderer(liveRenderer)
+    if (initialRenderer !== liveRenderer) await disposeHostRenderer(initialRenderer)
   } catch (error) {
     console.error('[SceneHost] renderer cleanup failed during unmount:', error)
   }
