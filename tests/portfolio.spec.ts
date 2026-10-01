@@ -113,6 +113,46 @@ test("unknown direct path falls back to home and browser history restores routes
   await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
 });
 
+test("direct section hashes activate the matching story slot after runtime readiness", async ({
+  page,
+}) => {
+  await page.goto("/manifesto#section-manifesto-clarity", {
+    waitUntil: "domcontentloaded",
+  });
+  await page.waitForFunction(() => {
+    const runtime = window as Window & {
+      __jlzHost?: object;
+      __jlzRouterReady?: boolean;
+    };
+    return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady);
+  });
+
+  const enter = page.locator("#jlz-splash-enter");
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 });
+  const targetSection = page.locator('[data-page-section="manifesto-clarity"]');
+  await expect(targetSection).toHaveClass(/section-active/);
+  await expect(
+    page.locator('#cinematic-nav [data-story-index="2"]'),
+  ).toHaveAttribute("aria-current", "step");
+
+  await enter.click();
+  await page.evaluate(() => {
+    const runtime = window as Window & {
+      __jlzEmit?: (event: string, detail?: unknown) => void;
+    };
+    runtime.__jlzEmit?.("jlz:navigate", {
+      path: "/services#section-services-motionRealtime",
+    });
+  });
+  await expect(page).toHaveURL(/\/services#section-services-motionRealtime$/);
+  await expect(
+    page.locator('[data-page-section="services-motionRealtime"]'),
+  ).toHaveClass(/section-active/);
+  await expect(
+    page.locator('#cinematic-nav [data-story-index="3"]'),
+  ).toHaveAttribute("aria-current", "step");
+});
+
 test("standalone blog and builder routes publish valid static documents", async ({
   page,
 }) => {

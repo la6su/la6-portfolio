@@ -168,10 +168,13 @@ after translation. Keeping that small DOM projection avoids a second set of
 route-specific translated strings. Vue owns the rail root lifetime; the
 controller resets its inert/sheet state and listeners without removing it.
 
-**Next audit:** walk hash navigation, focus, contrast, touch targets,
-resize/orientation, no-scene and renderer-failure states against the router and
-browser-library behavior across EN/RU routes and direct deep links. Run the
-production suite in Safari/WebKit. The local WebKit
+**Established:** production-browser checks cover cold-entry section hashes
+deferred until runtime readiness and in-app hashes to lazy route sections
+after their DOM mounts. Both pass in Chromium and Firefox.
+
+**Next audit:** walk focus, contrast, touch targets, resize/orientation,
+no-scene and renderer-failure states across EN/RU routes. Run the production
+suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
 `libflite1`; CI installs browser dependencies and is the current execution
 path.
@@ -241,10 +244,12 @@ Chromium teardown also passes (1/1). A final ownership check confirmed runtime
 dispose leaves the Vue rail mounted and resets its sheet state; AppShell then
 removes it during unmount. Vue type-check, lint, unit suite (73 tests),
 format checks on changed documentation/test teardown files, and diff checks
-pass after that cleanup.
+pass after that cleanup. A separate production-browser test verifies direct
+section hashes and SPA hashes into a lazy route in Chromium and Firefox (1/1
+each).
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
-hash-navigation/router behavior audit. Make the next code change only after
+focus/accessibility route audit. Make the next code change only after
 identifying a concrete duplicate owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.
 
