@@ -1,12 +1,11 @@
 // src/Experience/SceneFramePass.ts — the demand-gated owner frame fan-out.
 //
-// The third extraction of the NEXT item 4.1 SceneCoordinator split: the
-// per-frame forwarder that advances every scene owner on a demanded frame
+// This pass advances scene owners on a demanded frame
 // and keeps route ownership state synchronized on idle ones (without
 // advancing any animation clock). It owns the camera reference the owners
 // need (DrawTrail unprojection, ServicesStage head-tracking) and the
-// Works stage's active chapter index. SceneCoordinator keeps the
-// frame-facing delegates and the owner read surface.
+// Works stage's active chapter index. SceneCoordinator owns story and route
+// policy, and delegates the frame fan-out here.
 
 import * as THREE from 'three'
 import type { PageId } from '../core/routeManifest'

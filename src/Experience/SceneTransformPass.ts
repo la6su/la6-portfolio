@@ -1,7 +1,6 @@
 // src/Experience/SceneTransformPass.ts — the pooled scroll→world transform.
 //
-// The second extraction of the NEXT item 4.1 SceneCoordinator split: the
-// scroll transform pass owns the GC-free result pool, the revision-keyed
+// The scroll transform pass owns the GC-free result pool, the revision-keyed
 // reuse cache, the range-bucket mapping with per-section easing (including
 // the parity-locked second ease for bg/group fades), the group visibility
 // fade loop with its per-group mesh cache, the arrival fog re-target and

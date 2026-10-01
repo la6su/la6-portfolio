@@ -1,13 +1,12 @@
 // src/Experience/SectionStateMachine.ts — the scroll story state.
 //
-// The sections/config state machine left SceneCoordinator (NEXT item 4.1):
-// this owner holds the Section instances built from the page's PhaseConfig
+// This owner holds the Section instances built from the page's PhaseConfig
 // list, the derived config map, the active-section index and the
 // scroll-driven state policy (READY -> VIEWING -> PASSED thresholds plus
 // the pure sectionIndexAt arrival rule). SceneCoordinator keeps the
 // frame-facing delegates and the scene-side writes (fog, group fades,
-// transforms) — it orchestrates beginRoute/buildSections in its init()
-// and forwards the per-frame deadline advance and config lookups.
+// transforms). SceneCoordinator orchestrates beginRoute/buildSections and
+// delegates section deadline updates and config lookups here.
 
 import { Section, SectionState } from '../core/Section'
 import type { PageId } from '../core/routeManifest'
