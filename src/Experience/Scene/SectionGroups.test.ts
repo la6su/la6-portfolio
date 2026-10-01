@@ -1,14 +1,24 @@
 import * as THREE from 'three'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const attachWorksSection = vi.hoisted(() => vi.fn((root: THREE.Group) => root))
-vi.mock('./WorksSection', () => ({ attachWorksSection }))
+const worksOwners = vi.hoisted(() => ({
+  carousel: { dispose: vi.fn() },
+  particles: { dispose: vi.fn() },
+  ownedTextures: [{ dispose: vi.fn() }],
+}))
+const createWorksSection = vi.hoisted(() => vi.fn(() => worksOwners))
+vi.mock('./WorksSection', () => ({ createWorksSection }))
 
 import { SectionGroups } from './SectionGroups'
 import { WORLD_SLOT_COUNT, WORKS_SLOT_INDEX } from '../../core/worldSlots'
 
 describe('Vue-owned section roots', () => {
-  beforeEach(() => attachWorksSection.mockClear())
+  beforeEach(() => {
+    createWorksSection.mockClear()
+    worksOwners.carousel.dispose.mockClear()
+    worksOwners.particles.dispose.mockClear()
+    worksOwners.ownedTextures[0]?.dispose.mockClear()
+  })
 
   it('adopts exactly the mounted roots and leaves their scene lifetime to Vue', () => {
     const scene = new THREE.Scene()
@@ -21,15 +31,18 @@ describe('Vue-owned section roots', () => {
     const owner = new SectionGroups(scene, () => 'home', () => 'center', roots)
 
     expect(owner.groups).toEqual(roots)
-    expect(owner.at(WORKS_SLOT_INDEX)).toBe(roots[WORKS_SLOT_INDEX])
-    expect(attachWorksSection).toHaveBeenCalledWith(roots[WORKS_SLOT_INDEX], expect.any(Function), expect.any(Function))
+    expect(owner.groups[WORKS_SLOT_INDEX]).toBe(roots[WORKS_SLOT_INDEX])
+    expect(owner.works).toBe(worksOwners)
+    expect(createWorksSection).toHaveBeenCalledWith(expect.any(Function), expect.any(Function))
     expect(scene.children).toEqual(roots)
 
     owner.dispose()
     owner.dispose()
-    expect(owner.at(0)).toBeUndefined()
     expect(scene.children).toEqual(roots)
     expect(roots.every((root) => root.parent === scene)).toBe(true)
+    expect(worksOwners.carousel.dispose).toHaveBeenCalledTimes(1)
+    expect(worksOwners.particles.dispose).toHaveBeenCalledTimes(1)
+    expect(worksOwners.ownedTextures[0]?.dispose).toHaveBeenCalledTimes(1)
   })
 
   it('rejects incomplete roots rather than manufacturing Three groups', () => {
@@ -41,7 +54,7 @@ describe('Vue-owned section roots', () => {
       `Expected ${WORLD_SLOT_COUNT} Vue-owned section roots`,
     )
     expect(scene.children).toHaveLength(WORLD_SLOT_COUNT - 1)
-    expect(attachWorksSection).not.toHaveBeenCalled()
+    expect(createWorksSection).not.toHaveBeenCalled()
   })
 
   it('rejects roots not attached to the Tres-owned scene', () => {

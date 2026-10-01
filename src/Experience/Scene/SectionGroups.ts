@@ -1,15 +1,15 @@
-// Adopts the six section roots declared by SceneGroupRoots.vue and owns only
-// the behavior/resource controllers attached to the Works root.
+// Adopts the six section roots declared by SceneGroupRoots.vue and the
+// behavior/resource owners for the declarative Works subtree.
 
 import * as THREE from 'three'
-import { attachWorksSection } from './WorksSection'
+import { createWorksSection, type WorksSectionOwners } from './WorksSection'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
 import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../../core/worldSlots'
-import { clearSectionGroupAttachments, sectionGroupAttachmentsOf } from '../sceneOwners'
 
 export class SectionGroups {
   readonly groups: THREE.Group[]
+  readonly works: WorksSectionOwners
   private _disposed = false
 
   constructor(
@@ -30,24 +30,15 @@ export class SectionGroups {
     this.groups = [...roots]
     const worksRoot = this.groups[WORKS_SLOT_INDEX]
     if (!worksRoot) throw new Error('Vue-owned Works scene root is missing.')
-    attachWorksSection(worksRoot, page, storySide)
-  }
-
-  at(index: number): THREE.Group | undefined {
-    if (this._disposed) return undefined
-    return this.groups[index]
+    this.works = createWorksSection(page, storySide)
   }
 
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
-    for (const group of this.groups) {
-      const attachments = sectionGroupAttachmentsOf(group)
-      attachments?.carousel?.dispose()
-      attachments?.particles?.dispose()
-      attachments?.ownedTextures?.forEach((texture) => texture.dispose())
-      clearSectionGroupAttachments(group)
-    }
+    this.works.carousel.dispose()
+    this.works.particles.dispose()
+    this.works.ownedTextures.forEach((texture) => texture.dispose())
     // The roots stay mounted in Vue; the persistent host owns their removal.
     this.groups.length = 0
   }

@@ -10,7 +10,8 @@
 
 import * as THREE from 'three'
 import type { PageId } from '../core/routeManifest'
-import { particlesOf, type SceneCoordinatorOwners } from './sceneOwners'
+import { WORKS_SLOT_INDEX } from '../core/worldSlots'
+import type { SceneCoordinatorOwners } from './sceneOwners'
 
 /** The facts the pass reads per frame. Getters, not values: the route, the
  *  active section and the reduced-motion policy can change between frames. */
@@ -131,7 +132,7 @@ export class SceneFramePass {
     // SectionGroups owns a stable array for the lifetime of this frame; reuse
     // one snapshot for carousel visibility and particle drift below.
     const groups = this._ctx.owners.sectionGroups()?.groups ?? []
-    const carouselGroup = groups[3]
+    const carouselGroup = groups[WORKS_SLOT_INDEX]
     // Let a departing slider settle its morph even after the section group
     // falls below the visual fade threshold. Otherwise on-demand rendering
     // can freeze the planes half-folded and keep a persistent render reason.
@@ -146,12 +147,9 @@ export class SceneFramePass {
       }
     }
     if (!this._ctx.isReducedMotion()) {
-      for (const group of groups) {
-        if (!group.visible) continue
-        // Update JunniParticles — GPU-side drift (Works section).
-        const particles = particlesOf(group)
-        if (particles && particles.visible !== false) particles.update(deltaTime)
-      }
+      // JunniParticles is owned only by the Works section.
+      const particles = this._ctx.owners.sectionGroups()?.works.particles
+      if (carouselGroup?.visible && particles?.visible !== false) particles?.update(deltaTime)
     }
   }
 }

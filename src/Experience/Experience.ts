@@ -15,7 +15,6 @@ import { BlurFade } from './BlurFade'
 
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
-import { carouselOf, particlesOf } from './sceneOwners'
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { FrameTiming } from '../core/FrameTiming'
@@ -380,11 +379,9 @@ export class Experience {
     this.servicesStage = servicesStage
     // The carousel is declared under the Works root. Experience initializes
     // it and the coordinator drives it through the owner getter.
-    const worksGroup = this.sectionGroups.at(WORKS_SLOT_INDEX)
-    this.carousel = carouselOf(worksGroup) ?? null
+    this.carousel = this.sectionGroups.works.carousel
     if (this.carousel) await this._host.stages.carousel.mount(this.carousel)
-    const particles = worksGroup ? particlesOf(worksGroup) : undefined
-    if (particles) await this._host.stages.particles.mount(particles)
+    await this._host.stages.particles.mount(this.sectionGroups.works.particles)
     if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
     // The coordinator forwards per-frame color interpolation to the
     // Vue-owned ambient pavilion.
@@ -564,10 +561,7 @@ export class Experience {
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this._syncPolaritySurfaces(detail.isLight)
-          for (const group of this.coordinator.sceneGroups) {
-            const particles = particlesOf(group)
-            if (particles) particles.setBlending(!detail.isLight)
-          }
+          this.sectionGroups?.works.particles.setBlending(!detail.isLight)
         }
         this._raiseRenderDemand('dirty')
       }
@@ -1058,11 +1052,9 @@ export class Experience {
     // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
     if (this._fpsTracker.lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true
-      for (const group of this.coordinator.sceneGroups) {
-        const particles = particlesOf(group)
-        if (particles && !particles.isReduced) {
-          particles.setCount(Math.floor(particles.baseCount / 2))
-        }
+      const particles = this.sectionGroups?.works.particles
+      if (particles && !particles.isReduced) {
+        particles.setCount(Math.floor(particles.baseCount / 2))
       }
     }
 

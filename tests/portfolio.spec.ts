@@ -51,13 +51,15 @@ test("public SPA routes render on direct entry with route metadata", async ({
       const detailPath = "/assets/projects/nocturne-blue/detail.jpg";
       const image = page.locator(".jlz-case-media img");
       await expect(image).toHaveAttribute("src", detailPath);
-      await image.scrollIntoViewIfNeeded();
-      await image.evaluate(async (element: HTMLImageElement) => element.decode());
-      expect(
-        await image.evaluate((element: HTMLImageElement) => element.naturalWidth),
-      ).toBe(1344);
       const response = await page.request.get(detailPath);
       expect(response.headers()["content-type"]).toContain("image/jpeg");
+      const decodedWidth = await page.evaluate(async (src) => {
+        const probe = new Image();
+        probe.src = src;
+        await probe.decode();
+        return probe.naturalWidth;
+      }, detailPath);
+      expect(decodedWidth).toBe(1344);
     }
   }
 });

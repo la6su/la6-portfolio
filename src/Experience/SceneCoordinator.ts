@@ -8,10 +8,11 @@ import { devDiagnostic } from '../core/devDiagnostic'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig } from '../core/WorldConfig'
+import { WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
 import { SceneFramePass, bakuVisibleOnRoute } from './SceneFramePass'
-import { particlesOf, type SceneCoordinatorOwners } from './sceneOwners'
+import type { SceneCoordinatorOwners } from './sceneOwners'
 import type { SplashCube } from './World/SplashCube'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
@@ -183,10 +184,8 @@ export class SceneCoordinator {
     const isAgros = isContact && index === 2
     const isFinal = isContact && index === 3
 
-    for (const group of this.sceneGroups) {
-      const particles = particlesOf(group)
-      if (particles) particles.visible = !isAgros
-    }
+    const particles = this.owners.sectionGroups()?.works.particles
+    if (particles) particles.visible = !isAgros
     this.contactTypographyStage?.setActive(isContact && !isFinal)
     // The halo backs the greeting — it shares the flock's chapter gating.
     this.contactHaloStage?.setActive(isContact && !isFinal)
@@ -202,12 +201,8 @@ export class SceneCoordinator {
    * (white-on-white AdditiveBlending was invisible).
    */
   public hasVisibleParticles(): boolean {
-    for (const group of this.sceneGroups) {
-      if (!group.visible) continue
-      const particles = particlesOf(group)
-      if (particles?.visible) return true
-    }
-    return false
+    const worksGroup = this.sceneGroups[WORKS_SLOT_INDEX]
+    return Boolean(worksGroup?.visible && this.owners.sectionGroups()?.works.particles.visible)
   }
 
   /**

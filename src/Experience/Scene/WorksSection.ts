@@ -1,23 +1,25 @@
 // src/Experience/Scene/WorksSection.ts — the Works section contents
 // (slot 3, the cube back face).
 //
-// The Tres root and particle node are declarative. This creator attaches the
-// BakuCarousel and records the particle controller; SectionGroups owns both
-// controllers' resources.
+// The Tres root and particle node are declarative. This factory creates the
+// behavior/resource owners consumed by Vue's section-root component.
 
 import * as THREE from 'three'
 import { JunniParticles } from '../World/JunniParticles'
 import { BakuCarousel } from '../World/BakuCarousel'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
-import { sectionGroupAttachmentsOf, setSectionGroupAttachments } from '../sceneOwners'
+export interface WorksSectionOwners {
+  carousel: BakuCarousel
+  particles: JunniParticles
+  ownedTextures: THREE.Texture[]
+}
 
-/** Attach the Works content to its declarative scene root. */
-export function attachWorksSection(
-  g: THREE.Group,
+/** Create the behavior and GPU resources for the declarative Works root. */
+export function createWorksSection(
   page: () => PageId = () => 'home',
   storySide: () => StorySide = () => 'center',
-): THREE.Group {
+): WorksSectionOwners {
   // Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
   // Loaded by this creator so the group is the explicit texture owner:
   // multiple SectionGroups instances must never overwrite a module-level
@@ -36,7 +38,6 @@ export function attachWorksSection(
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
-  setSectionGroupAttachments(g, { carousel, ownedTextures })
 
   // JunniParticles — exact junni Section3 params:
   //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=1.0
@@ -51,10 +52,5 @@ export function attachWorksSection(
     texture: particleTexture,
     textureTiles: [6, 1],
   })
-  setSectionGroupAttachments(g, {
-    ...sectionGroupAttachmentsOf(g),
-    particles,
-  })
-
-  return g
+  return { carousel, particles, ownedTextures }
 }

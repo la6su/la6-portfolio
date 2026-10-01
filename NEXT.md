@@ -137,10 +137,14 @@ passed in system Chromium: 14 tests passed and 3 opt-in renderer scenarios
 skipped. That production run rebuilt and checked budgets, including the Latin
 and Cyrillic Commissioner WOFF2 checks.
 
-**Immediate next slice:** complete batch 1 for the runtime core, then inspect
-the call graph of a concrete pass-through boundary. No module is slated for
-deletion based on file size alone. The WOFF2 conversion is a completed delivery
-optimization, secondary to this architecture work.
+**Immediate next slice:** finish batch 1 over the rest of the runtime/app graph,
+then inspect one more call graph for a concrete pass-through boundary. Pay
+particular attention to the hand-built persistent navigation/overlay DOM beside
+the Vue Router shell: determine whether those UIkit-backed owners are cohesive
+imperative behavior or a duplicated UI rendering layer before proposing a Vue
+component migration. No module is slated for deletion based on file size alone.
+The WOFF2 conversion is a completed delivery optimization, secondary to this
+architecture work.
 
 **Completed runtime slice:** `Camera.update()` had read `Device.isMobile` every
 frame through a compatibility alias and static getter that re-ran
@@ -151,6 +155,28 @@ capability detection out of the frame loop and removes a second API for the
 same device state. Vue type-check, ESLint, 73 unit tests, and the production
 system-Chromium suite passed (14 passed, 3 opt-in renderer scenarios skipped),
 including touch-scroll/responsive coverage.
+
+**Verified library boundary:** TresJS 5.9.2 exposes `useLoop` and built-in
+`on-demand` invalidation. Its installed renderer source keeps the RAF loop
+active after ready and gates only renderer calls on a pending-frame counter.
+This portfolio requires zero idle RAF ticks, activity windows that settle
+after the authored animation finishes, and hidden-tab pause/resume. Keep the
+small project scheduler for that additional policy; continue bridging Cientos
+invalidation into it. Do not replace it with `invalidate()` until equivalent
+idle/visibility behavior is demonstrated.
+
+**Completed explicit Works ownership slice:** replaced the `WeakMap<Group,
+...>` metadata bag in `sceneOwners.ts` with a `SectionGroups.works` owner result.
+The only writer was the Works factory and the only data lived on the Works
+slot, but readers searched every group. The slice removes the WeakMap/set/read/
+clear helpers and the redundant `SectionGroups.at()` wrapper; theme, particle
+visibility, frame updates, and low-FPS reduction now address the known Works
+owner directly. Owner disposal remains idempotent and keeps the Vue-owned roots
+mounted. Six focused owner/lifecycle tests, all 73 unit tests, Vue type-check,
+ESLint, `check:stdlib`, production build/budgets, Chromium (14 passed, 3 opt-in
+skipped), and Firefox (13 passed, 4 opt-in skipped) pass. Firefox also exposed
+that the old browser test decoded a hidden `loading="lazy"` image; the test now
+checks src/MIME and decodes the same asset with an eager browser image probe.
 
 ## Architecture target
 
@@ -715,9 +741,10 @@ unowned persistent GPU resource remains.
 
 ## Current checkpoint
 
-- **Active phase**: 0–5. Runtime ownership mapping and the first async release
-  race fix are recorded above; no new module boundary was justified by the audit.
-- **Next action**: continue image/texture checks, then audit
+- **Active phase**: 0–5. Runtime ownership mapping, async release fixes, and
+  simplification of duplicate helpers/metadata are recorded above.
+- **Next action**: continue the source-to-owner/library inventory and simplify
+  proven duplicated state/forwarding helpers; audit
   for duplicated lifecycle owners, unreachable code, and abstractions already
   provided by Vue/Tres/Three. Continue keyboard routes beyond the menu/modal,
   orientation/resize and touch-target states. Verify WebKit in CI and
