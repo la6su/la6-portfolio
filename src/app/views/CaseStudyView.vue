@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
+import { CASE_STUDIES, CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { PROJECTS } from '../../Data/Projects'
 import { setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
@@ -17,6 +17,7 @@ const projectId = computed(() => String(route.params.projectId ?? ''))
 const study = computed(() => CASE_STUDY_BY_PROJECT.get(projectId.value))
 const projectIndex = computed(() => PROJECTS.findIndex((item) => item.id === projectId.value))
 const project = computed(() => PROJECTS[projectIndex.value])
+const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
 const language = ref(getLang())
 const applyCaseStudyMeta = (): void => {
   const title = project.value ? `${project.value.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
