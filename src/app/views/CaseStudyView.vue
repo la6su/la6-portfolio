@@ -116,7 +116,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
         >
           <div class="jlz-works-stage uk-container uk-container-expand">
             <header class="jlz-works-coordinate uk-flex uk-flex-between">
-              <RouterLink class="uk-link-text" to="/works">← {{ labels.back }}</RouterLink>
+              <RouterLink class="uk-link-text" :to="{ name: 'works' }">← {{ labels.back }}</RouterLink>
               <span>0{{ index + 1 }} / {{ chapter }}</span>
             </header>
             <div class="jlz-works-heading">
@@ -187,7 +187,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
               <template v-else>
                 <p class="jlz-works-premise" lang="en">{{ study.result }}</p>
                 <p class="jlz-case-status">{{ labels.status }}</p>
-                <RouterLink to="/contact" class="uk-button uk-button-text jlz-works-enter"
+                <RouterLink :to="{ name: 'contact' }" class="uk-button uk-button-text jlz-works-enter"
                   >{{ labels.contact }} ↗</RouterLink
                 >
                 <nav class="jlz-case-related" :aria-label="labels.next">
@@ -219,7 +219,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
       <section v-else class="jlz-page-section section-active">
         <div class="uk-container">
           <h1>{{ labels.unavailable }}</h1>
-          <RouterLink to="/works">← {{ labels.back }}</RouterLink>
+          <RouterLink :to="{ name: 'works' }">← {{ labels.back }}</RouterLink>
         </div>
       </section>
       <NavMenu mode="content" />

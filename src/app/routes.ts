@@ -24,7 +24,7 @@ const PAGE_VIEWS: Record<PageId, RouteRecordSingleView['component']> = {
  * The application's route records: one per manifest entry plus a catch-all
  * that renders `home` under an unknown stale URL (direct-entry fallback).
  * The catch-all is unreachable from in-app navigation: both entry points
- * (anchor clicks, `jlz:navigate`) strict-resolve before pushing.
+ * (`RouterLink`, `jlz:navigate`) resolve through Vue Router.
  */
 export function jlzRouteRecords(): RouteRecordRaw[] {
   const records: RouteRecordRaw[] = ROUTE_MANIFEST.map((entry) => ({

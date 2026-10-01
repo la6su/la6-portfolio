@@ -9,11 +9,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
-import { isRoutePath, resolveRoute } from '../core/routeManifest'
+import { resolvePagePath } from '../core/routeManifest'
 import { RouteTransition } from '../UI/RouteTransition'
 import AppShell from './AppShell.vue'
 import { jlzRouteRecords } from './routes'
-import { resolvePagePath } from '../core/routeManifest'
 
 let mounted = false
 let unmountMountedVueApp: (() => Promise<void>) | null = null
@@ -101,7 +100,8 @@ export async function mountVueApp(): Promise<void> {
   // The initial navigation skips the cover because there is no previous page
   // to hide. Its flag is consumed synchronously by the first guard.
   let coverNavigation = true
-  router.beforeEach(async () => {
+  router.beforeEach(async (to, from) => {
+    if (to.path === from.path) return
     if (coverNavigation) {
       coverNavigation = false
       return
@@ -110,8 +110,8 @@ export async function mountVueApp(): Promise<void> {
     if (!appMounted) return
     await routeTransition.cover()
   })
-  router.afterEach(() => {
-    if (appMounted) routeTransition.reveal()
+  router.afterEach((to, from) => {
+    if (appMounted && to.path !== from.path) routeTransition.reveal()
   })
   router.onError(() => {
     hashNavigationFrame.cancel()
@@ -169,9 +169,7 @@ export async function mountVueApp(): Promise<void> {
   // Register listeners before initial navigation settles so an early
   // `jlz:navigate` (or anchor click) in the startup gap is not lost.
   const navigateToPath = async (path: string): Promise<void> => {
-    const hashIdx = path.indexOf('#')
-    const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
-    if (!resolveRoute(purePath) && !isRoutePath(purePath)) return
+    if (router.resolve(path).name === 'fallback') return
     // Wait until the initial navigation commits so this push preserves the
     // first history entry and the browser back slot.
     await routerReady
@@ -197,7 +195,7 @@ export async function mountVueApp(): Promise<void> {
     }),
   )
 
-  // Route internal links through Vue Router while preserving native links.
+  // Keep hash-only controls local; Vue Router owns application route links.
   const onClick = (event: MouseEvent): void => {
     const anchorEl = (event.target as HTMLElement)?.closest(
       'a[href]',
@@ -209,17 +207,10 @@ export async function mountVueApp(): Promise<void> {
     if (href.startsWith('#')) {
       event.preventDefault()
       if (href === '#') return
-      const target = document.getElementById(href.slice(1))
-      if (target) {
-        history.pushState(null, '', href)
-        target.scrollIntoView({ behavior: 'smooth' })
-      }
+      const current = router.currentRoute.value
+      void router.push({ path: current.path, query: current.query, hash: href })
+      if (!href.startsWith('#section-')) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' })
       return
-    }
-    const url = new URL(href, window.location.origin)
-    if (url.origin === window.location.origin && isRoutePath(url.pathname)) {
-      event.preventDefault()
-      void navigateToPath(url.pathname + url.hash)
     }
   }
   document.addEventListener('click', onClick, true)

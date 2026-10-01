@@ -44,15 +44,6 @@ export function pathForPage(page: PageId): string {
 }
 
 /**
- * Strict lookup: `undefined` for a path the manifest does not own. Navigation
- * (history push) should only target known paths — unknown paths must be a no-op
- * so a typo in a link never silently lands the user on `home`.
- */
-export function resolveRoute(path: string): PageId | undefined {
-  return PAGE_BY_PATH.get(path)
-}
-
-/**
  * Lenient resolution: the mapped page, or `home` for unknown paths. This is
  * the initial-load behaviour — a shared deep link to a stale or preview path
  * should still present the application at its home face.
@@ -64,11 +55,6 @@ export function resolvePage(path: string): PageId {
 /** Resolve the page shown by a URL, including Works case-study routes. */
 export function resolvePagePath(path: string): PageId {
   return isCaseStudyPath(path) ? 'works' : resolvePage(path)
-}
-
-/** True when the manifest owns the path (strict lookup). */
-export function isRoutePath(path: string): boolean {
-  return PAGE_BY_PATH.has(path) || /^\/works\/[a-z0-9-]+$/.test(path)
 }
 
 /** True for a case-study detail route owned by the works section. */

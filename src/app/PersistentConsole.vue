@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import UIkit from 'uikit'
 import { NAV_ITEMS } from './navItems'
 import { getLang, t, toggleLang } from '../core/i18n'
@@ -96,9 +97,9 @@ function toggleSound(): void {
     }"
   >
     <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
-      <a
+      <RouterLink
         class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none"
-        href="/"
+        :to="{ name: 'home' }"
         aria-label="JUSTLOVEJAZZ — Studio"
         :aria-hidden="fullscreenOpen"
         :inert="fullscreenOpen"
@@ -108,7 +109,7 @@ function toggleSound(): void {
         <span class="jlz-topbar__mode" aria-hidden="true">
           WORLD / {{ String(activeIndex + 1).padStart(2, '0') }}
         </span>
-      </a>
+      </RouterLink>
       <div class="jlz-topbar-controls uk-flex uk-flex-middle">
         <button
           class="uk-icon-button jlz-lang-toggle"
@@ -218,10 +219,10 @@ function toggleSound(): void {
   <div v-else class="jlz-route-fallback">
     <a class="jlz-route-fallback__skip" href="#spa-content">Skip to content</a>
     <header class="jlz-route-fallback__header">
-      <a class="jlz-topbar__brand" href="/" aria-label="JUSTLOVEJAZZ — Studio">
+      <RouterLink class="jlz-topbar__brand" :to="{ name: 'home' }" aria-label="JUSTLOVEJAZZ — Studio">
         <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true" />
         <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
-      </a>
+      </RouterLink>
       <button
         class="uk-icon-button jlz-lang-toggle"
         type="button"
@@ -233,10 +234,10 @@ function toggleSound(): void {
       </button>
     </header>
     <nav aria-label="Portfolio routes" class="jlz-route-fallback__nav">
-      <a v-for="item in NAV_ITEMS" :key="item.href" :href="item.href">
+      <component :is="item.page ? RouterLink : 'a'" v-for="item in NAV_ITEMS" :key="item.num" :to="item.page ? { name: item.page } : undefined" :href="item.href">
         <span class="jlz-route-fallback__number">{{ item.num }}</span>
         {{ t(item.labelKey) }}
-      </a>
+      </component>
     </nav>
   </div>
 </template>

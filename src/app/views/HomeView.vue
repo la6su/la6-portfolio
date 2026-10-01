@@ -2,6 +2,7 @@
 // Home route: its section order matches the cube orientation in
 // `routeManifest.ts`; `data-section` attributes synchronize the 3D scene.
 import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
@@ -123,8 +124,8 @@ useJlzPage('home', () => rootEl.value)
                   Research, design and development in one process.
                 </p>
               </div>
-              <a
-                href="/services"
+              <RouterLink
+                :to="{ name: 'services' }"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
                 <span
@@ -132,7 +133,7 @@ useJlzPage('home', () => rootEl.value)
                   aria-hidden="true"
                 ></span>
                 <span data-i18n="common.explore">Explore</span>
-              </a>
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -178,9 +179,9 @@ useJlzPage('home', () => rootEl.value)
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
-      <a href="/works" class="jlz-works-entrance uk-button uk-button-default">
+      <RouterLink :to="{ name: 'works' }" class="jlz-works-entrance uk-button uk-button-default">
         <span data-i18n="works.enterRooms">Explore the four rooms</span> ↗
-      </a>
+      </RouterLink>
     </section>
 
     <!-- 04 · Manifesto (bottom face -Y) -->
@@ -223,8 +224,8 @@ useJlzPage('home', () => rootEl.value)
                   Make the result clear, fast and distinctive.
                 </p>
               </div>
-              <a
-                href="/manifesto"
+              <RouterLink
+                :to="{ name: 'manifesto' }"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
                 <span
@@ -232,7 +233,7 @@ useJlzPage('home', () => rootEl.value)
                   aria-hidden="true"
                 ></span>
                 <span data-i18n="common.explore">Explore</span>
-              </a>
+              </RouterLink>
             </div>
           </div>
         </div>

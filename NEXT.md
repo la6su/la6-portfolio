@@ -171,7 +171,7 @@ next refactor slices:
 | Surface | Current evidence | Refactor direction |
 | --- | --- | --- |
 | App startup and shell | `index.html`/`entry-shell.ts`/`entry-app.ts`/`app/index.ts` divide splash controls, dynamic imports, Vue mount, router events, readiness timers, HMR teardown, and fallback continuation. Removed the unused reduced-motion DOM mirror and a seven-state transition table that did not govern the one-shot bootstrap and rejected the no-scene continuation. | Draw one startup sequence and assign each transition one owner. Keep the static shell only for work needed before Vue; move the remaining app-owned state into Vue/app startup. Delete forwarding state and events after callers move. |
-| Navigation state | Vue Router is authoritative for URL/view selection. Removed `routePage.ts` mutable mirror and the duplicate case-study path resolver; `resolvePagePath()` in `routeManifest.ts` now maps current pathname to `PageId`. `jlz:route-change` still triggers content theme, navigation rebinding and stage reconciliation. | Trace subscribers and replace the broad event only where a direct router/composable subscription is simpler. Keep scene section navigation as a distinct product contract. |
+| Navigation state | Vue Router is authoritative for URL/view selection. Removed `routePage.ts` mutable mirror, duplicate case-study resolver, and app-wide anchor click interception. In-app links now use named `RouterLink`s; `router.resolve()` validates strict event navigation. Hash-only section controls remain routed to the scene owner. Home prerender now installs the real router records so its links render under the same provider. `jlz:route-change` still triggers content theme, navigation rebinding and stage reconciliation. | Trace subscribers and replace the broad event only where a direct router/composable subscription is simpler. Keep scene section navigation as a distinct product contract. |
 | Runtime composition | `Experience.ts` is ~55 KB and creates renderer-side policy, scene composition, UI, route stages, readiness, diagnostics, recovery integration, and the render-demand loop. `SceneCoordinator`, `SceneTransformPass`, `ExperienceUI`, and `StageRegistry` still form an orchestration graph; removed its one-use `SceneFramePass` forwarding class. | Trace every public method and context field. Collapse pass-through classes and one-use bags into the owning composition module. Retain a boundary only for a distinct algorithm/resource lifecycle or a separately testable contract. Prefer product-level slices over generic manager/registry/pass infrastructure. |
 | Renderer ownership | `SceneHost.vue` owns the Tres canvas/context and initial renderer init; `Experience/Renderer.ts` adopts it and owns backend recovery; `core/unifiedRenderer.ts` owns construction/init/disposal primitives. Initial init and recovery remain split across Tres creation and adopted-renderer lifecycles. Removed duplicated capability fields, unused adopted canvas, repeated backend planning on replacement, and the recovery state boolean. `Renderer.update()` now uses the same `postProcessing` capability as pipeline creation rather than running crossfade/uniform handoff on low-tier WebGPU where the pipeline deliberately renders directly. The live Three backend check remains in `RenderPipeline` as runtime validation. | Produce a state/ownership diagram for initial creation, fallback, recovery and teardown. Continue tracing which owner must touch the Tres context and which renderer policy can move to the creation boundary. Remove recovery branches only with browser-matrix evidence; keep WebGL2 fallback as explicit product behavior. |
 | Post effects | `Renderer.ts` → `PostProcessingManager` → `RenderPipeline` → `WebGPUPostPipeline` splits policy, crossfade, renderer routing, TSL graph construction and resource accounting. WebGLBackend skips the graph. Removed `_webgpuParamsCache`, which duplicated the pipeline's existing parameter snapshot before a synchronous TSL uniform write. Reused `copyPostParams()` for both display snap paths, removing repeated field assignments and tuple-array allocation. Centralized exact and epsilon comparisons in `postParamsMatch()`, keeping one field list for both pipeline change detection and crossfade settling. | Trace each public method and parameter for actual cross-boundary need. Continue looking for repeated policy/state across manager, renderer and TSL owner. Keep the TSL graph isolated from WebGL compatibility only where the backend needs distinct behavior; verify color parity on hardware. |
@@ -702,7 +702,7 @@ remaining audit phases are still active.
    physical WebGPU/WebGL, recovery, resource plateau, idle-render and
    performance evidence on supported hardware.
 
-**Verified after Admin/Builder removal, CSS reachability cleanup and runtime simplification:** 94 unit tests, Vue type-check, ESLint,
+**Verified after Admin/Builder removal, CSS reachability cleanup and runtime simplification:** 97 unit tests, Vue type-check, ESLint,
 stdlib check, production build and bundle budgets pass. The sitemap contains
 11 URLs; Vite builds 357 modules and emits no `/p` pages or editor chunks. The
 Chromium/Firefox production run passed 33/40 tests; 7 renderer tests were
@@ -711,6 +711,13 @@ responsive overflow and scene teardown checks passed.
 The dev Chromium gate passed the force-render loop test and the SceneHost
 owner-before-renderer teardown test. Production output contains no Tweakpane
 or DevPanel UI strings; startup gzip is 3.02 kB.
+
+**Navigation simplification slice:** app links use Vue Router's native link
+handling (including browser modifier clicks); removed the duplicate route
+path gate and document-wide SPA link interception. Home SSR prerender installs
+the actual router provider. Vue type-check, lint, stdlib check, unit suite
+(97/97), production build and focused Chromium route/fallback/hash checks
+(3/3) pass.
 
 ## Follow-on goal policy
 

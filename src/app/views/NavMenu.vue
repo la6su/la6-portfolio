@@ -5,6 +5,7 @@
 defineProps<{ mode: 'home' | 'content' }>()
 
 import { NAV_ITEMS } from '../navItems'
+import { RouterLink } from 'vue-router'
 </script>
 
 <template>
@@ -57,7 +58,9 @@ import { NAV_ITEMS } from '../navItems'
         >
           <ul class="jlz-menu-nav uk-nav uk-nav-default">
             <li v-for="item in NAV_ITEMS" :key="item.num" class="jlz-menu-nav__item">
-              <a
+              <component
+                :is="item.page ? RouterLink : 'a'"
+                :to="item.page ? { name: item.page } : undefined"
                 :href="item.href"
                 class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1"
                 data-magnetic
@@ -66,7 +69,7 @@ import { NAV_ITEMS } from '../navItems'
                 <span class="jlz-menu-nav__num">{{ item.num }}</span>
                 <span class="jlz-menu-nav__label" :data-i18n="item.labelKey">{{ item.label }}</span>
                 <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
-              </a>
+              </component>
             </li>
           </ul>
         </div>

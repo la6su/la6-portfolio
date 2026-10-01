@@ -31,10 +31,19 @@ const server = await createServer({
 })
 
 try {
-  const mod = await server.ssrLoadModule('/src/app/views/HomeView.vue')
-  const { createSSRApp } = await import('vue')
+  const [{ default: HomeView }, { jlzRouteRecords }, { createSSRApp }, { createMemoryHistory, createRouter }] = await Promise.all([
+    server.ssrLoadModule('/src/app/views/HomeView.vue'),
+    server.ssrLoadModule('/src/app/routes.ts'),
+    import('vue'),
+    import('vue-router'),
+  ])
   const { renderToString } = await import('@vue/server-renderer')
-  const html = await renderToString(createSSRApp(mod.default))
+  const router = createRouter({ history: createMemoryHistory(), routes: jlzRouteRecords() })
+  await router.push('/')
+  await router.isReady()
+  const app = createSSRApp(HomeView)
+  app.use(router)
+  const html = await renderToString(app)
   const out = resolve(root, 'prerender', 'home.html')
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, html, 'utf8')
