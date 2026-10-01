@@ -142,6 +142,16 @@ the call graph of a concrete pass-through boundary. No module is slated for
 deletion based on file size alone. The WOFF2 conversion is a completed delivery
 optimization, secondary to this architecture work.
 
+**Completed runtime slice:** `Camera.update()` had read `Device.isMobile` every
+frame through a compatibility alias and static getter that re-ran
+user-agent/screen/touch detection. `DeviceCapability` already owns a
+construction-time snapshot. The composition root now passes that snapshot into
+`Camera`; the unused static getters and alias are removed. This keeps
+capability detection out of the frame loop and removes a second API for the
+same device state. Vue type-check, ESLint, 73 unit tests, and the production
+system-Chromium suite passed (14 passed, 3 opt-in renderer scenarios skipped),
+including touch-scroll/responsive coverage.
+
 ## Architecture target
 
 ```text
@@ -763,7 +773,7 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
   loading checks, the 73-test unit suite, Vue type-check, ESLint, the stdlib
   audit, and the full system-Chromium production suite (14 passed, 3 opt-in
   renderer scenarios skipped). Current changes are still in review and need a
-  milestone commit after the architectural slice.
+  follow-on architecture commit for the camera capability hot path.
   Replacement WebGPU/WebGL renderer candidates share the SceneHost deferred
   disposal boundary. `bun run type-check:vue`, `bun run lint`, nine focused
   renderer unit tests, 72 unit tests overall, the system-Chromium teardown

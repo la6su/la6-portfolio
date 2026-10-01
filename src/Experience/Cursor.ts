@@ -193,10 +193,8 @@ export class Cursor {
         return false
       }
     })()
-    // (Mobile detection removed — CSS @media (pointer: coarse) already hides
-    //  the cursor elements via display:none. The old DeviceCapability.isMobile
-    //  check was hiding the cursor on touch-screen laptops even when a mouse
-    //  was present. CSS media query is more reliable.)
+    // CSS @media (pointer: coarse) owns cursor visibility so a touch-screen
+    // laptop with a mouse can still use the custom cursor.
     if (forceCursor) {
       document.documentElement.classList.add('jlz-force-cursor')
     }

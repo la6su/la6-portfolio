@@ -17,6 +17,7 @@ import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
 import { carouselOf, particlesOf } from './sceneOwners'
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
+import { DeviceCapability } from '../core/DeviceCapability'
 import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
@@ -202,7 +203,11 @@ export class Experience {
     // instances for cinematic state and never creates a fallback world.
     this._host = host
     this.scene = host.scene
-    this.camera = new Camera(this.sizes, host.camera)
+    this.camera = new Camera(
+      this.sizes,
+      host.camera,
+      DeviceCapability.getInstance().isMobile,
+    )
     this.renderer = new Renderer(this.sizes)
     // The env owner reads the renderer + glass cube lazily: it is applied
     // after renderer.init() and again after a device-loss recovery.

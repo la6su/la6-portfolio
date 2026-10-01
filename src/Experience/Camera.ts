@@ -3,7 +3,6 @@ import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
 // (Easings import removed — inline easeInOutQuart, only function used)
-import { Device } from '../core/DeviceCapability'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'
@@ -16,6 +15,7 @@ export class Camera {
   instance: THREE.PerspectiveCamera
   private _disposed = false
   private _reducedMotion = prefersReducedMotion()
+  private readonly _isMobile: boolean
 
   // Owner-scoped scratch/state. These used to live at module scope, which
   // coupled concurrent Camera wrappers during HMR, recovery and tests.
@@ -70,8 +70,10 @@ export class Camera {
   constructor(
     private readonly sizes: Sizes,
     instance: THREE.PerspectiveCamera,
+    isMobile: boolean,
   ) {
     this.instance = instance
+    this._isMobile = isMobile
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
@@ -258,7 +260,6 @@ export class Camera {
     this.springY.pos += this.springY.vel * dt
 
     // ── 2. Build position ──
-    const isMobile = Device.isMobile
     const isHome = getCurrentPage() === 'home'
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
@@ -266,8 +267,8 @@ export class Camera {
     const pos = this.instance.position
 
     // Cursor follow — spring-damper (disabled on mobile + reduced motion)
-    const cursorX = isMobile || reduced ? 0 : this.springX.pos
-    const cursorY = isMobile || reduced ? 0 : this.springY.pos
+    const cursorX = this._isMobile || reduced ? 0 : this.springX.pos
+    const cursorY = this._isMobile || reduced ? 0 : this.springY.pos
 
     // A-015: Per-section cursor follow strength (junni cameraRange pattern).
     // Works section (idx=3) gets stronger follow for interactive feel.
@@ -280,7 +281,7 @@ export class Camera {
     )
 
     // ── 3. Organic shake (continuous handheld) — desktop, non-reduced only ──
-    if (!isMobile && !reduced) {
+    if (!this._isMobile && !reduced) {
       this.organicTime += dt
       const ot = this.organicTime
       const amp = isHome ? 0.0026 : 0.002
@@ -312,7 +313,8 @@ export class Camera {
     }
 
     // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
-    const fovBreath = isHome && !isMobile && !reduced ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
+    const fovBreath =
+      isHome && !this._isMobile && !reduced ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
     // A-002: Portrait FOV adaptation — widen FOV on portrait so objects fit
     const aspect = this.instance.aspect
     const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))

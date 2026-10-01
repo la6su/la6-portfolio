@@ -84,13 +84,6 @@ export class DeviceCapability {
    */
   public isRealWebGPU: boolean = false
 
-  public static get isMobile(): boolean {
-    return detectMobile()
-  }
-  public static get isTouch(): boolean {
-    return navigator.maxTouchPoints > 0
-  }
-
   private constructor() {
     this.isMobile = detectMobile()
     this.isTouch = navigator.maxTouchPoints > 0
@@ -212,6 +205,3 @@ export class DeviceCapability {
     return value * this.config.postMultiplier
   }
 }
-
-// Alias — Camera.ts imports as 'Device'
-export { DeviceCapability as Device }
