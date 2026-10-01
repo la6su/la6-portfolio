@@ -197,8 +197,7 @@ export class SceneCoordinator {
    * Experience uses this to keep on-demand rendering alive so GPU drift
    * (uTime) advances every frame — without it particles freeze on settled
    * sections (only ambient-breath frames every 2.5s).
-   * Currently only Works (home idx 3) creates particles; Intro removed them
-   * (white-on-white AdditiveBlending was invisible).
+   * Currently only Works (home idx 3) creates particles.
    */
   public hasVisibleParticles(): boolean {
     const worksGroup = this.sceneGroups[WORKS_SLOT_INDEX]

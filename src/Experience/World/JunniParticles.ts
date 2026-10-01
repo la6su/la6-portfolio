@@ -1,7 +1,6 @@
 // JunniParticles.ts — GPU-side animated particle field (TSL NodeMaterial).
 //
-// Port of next.junni.co.jp Section3 Sec3Particle to our TSL/WebGPU stack
-// (the vendored reference source was removed; upstream is the junni site).
+// Port of next.junni.co.jp Section3 Sec3Particle to our TSL/WebGPU stack.
 //
 // Section3 behavior (textured sprites + rotation + HSV hue shift):
 //   - Sprite sheet texture (6 frames in a 768×128 atlas → 6×128 tiles)

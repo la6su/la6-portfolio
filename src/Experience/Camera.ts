@@ -2,7 +2,6 @@
 import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
-// (Easings import removed — inline easeInOutQuart, only function used)
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'

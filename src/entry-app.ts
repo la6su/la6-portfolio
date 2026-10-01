@@ -79,10 +79,6 @@ export function initSplashToggles(): void {
   initLangToggle()
 }
 
-// ── Enter button click is wired by inline script in index.html ──
-// (initEnterButton removed — was empty no-op. Click handler is in inline
-//  <script> in index.html. Was called in startApp but did nothing.)
-
 // ── Show Enter button when 3D is ready ──
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
@@ -417,8 +413,6 @@ async function startAppOnce(): Promise<void> {
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
   initSplashToggles()
-  // (initEnterButton call removed — was a no-op.)
-
   // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/
   // removeStyle) into the CSS module — through the reverse proxy, /@vite/client
   // resolves to the Next.js app which returns HTML instead of JS, breaking

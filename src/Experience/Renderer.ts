@@ -141,9 +141,6 @@ export class Renderer {
       this.capabilities.postProcessing,
     );
 
-    // Transmission is disabled on ALL paths (see SplashCube.ts comment).
-    // setTransmissionEnabled() is now a no-op, kept for API compat.
-    //
     // Bounded WebGPU device-loss recovery: a lost device (driver/GPU reset,
     // system memory pressure) re-creates the renderer on the same canvas and
     // rebuilds the post pipeline, up to MAX_DEVICE_LOST_RECOVERIES attempts.

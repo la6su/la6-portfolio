@@ -89,7 +89,6 @@ export class BakuCarousel {
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private controlClickHandler: ((e: MouseEvent) => void) | null = null
-  // (keydownHandler removed — story arrows are owned by CinematicNav.)
   private snapTimer: ReturnType<typeof setTimeout> | null = null
 
   // Momentum is only applied after a deliberate horizontal drag.
@@ -331,9 +330,6 @@ export class BakuCarousel {
         this.scheduleSnap(300) // delayed snap — give momentum time to settle
       }
     }
-    // (keyboard handler removed — story arrows are owned by CinematicNav.
-    //  BakuCarousel navigation is via horizontal pointer drag; card taps are
-    //  raycast by handleTap() and the open is wired by ExperienceUI.)
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)

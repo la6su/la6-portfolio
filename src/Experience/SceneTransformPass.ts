@@ -201,7 +201,6 @@ export class SceneTransformPass {
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
-    // (BG.setProgress removed — bg.color was never read by anyone.)
     // EnvSphere follows the active theme via jlz:theme-applied.
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)

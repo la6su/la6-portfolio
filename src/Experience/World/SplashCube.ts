@@ -118,8 +118,6 @@ export function createBakuShellMaterial(): THREE.MeshPhysicalMaterial {
   })
 }
 
-// (setTransmissionEnabled removed — dead export, zero callers.)
-
 /**
  * The glass shell is CPU-deformed. Updating it every display frame makes the
  * first visible scene compete with renderer and post-pipeline warm-up. The
@@ -127,8 +125,6 @@ export function createBakuShellMaterial(): THREE.MeshPhysicalMaterial {
  * rendering for transforms and upload vertex changes only during reactions.
  */
 const JELLY_UPDATE_INTERVAL = 1 / 30
-
-// (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
 export class SplashCube {
   private _disposed = false
@@ -357,9 +353,6 @@ export class SplashCube {
     this.applyMaterialBlend()
   }
 
-  // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
-  //  Experience.ts call site removed too.)
-
   updateWorldBlend(
     fromColor: THREE.Color,
     toColor: THREE.Color,
@@ -435,7 +428,6 @@ export class SplashCube {
     const openerScale = 1 + this.openerProgress * 0.4
     this._shell.scale.setScalar(openerScale)
 
-    // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
     this.applyMaterialBlend()
 

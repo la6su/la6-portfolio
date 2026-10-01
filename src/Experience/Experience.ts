@@ -802,8 +802,7 @@ export class Experience {
     // to its target face (triggered by rotateToFace on section change).
     const cubeRotating = this.baku?.isRotating ?? false
     // ── Visible JunniParticles need continuous frames ──
-    // Particles only exist on certain sections (Works on home — intro removed
-    // them for white-on-white). Their animation is GPU-side via uTime; if
+    // Particles only exist on Works. Their animation is GPU-side via uTime; if
     // on-demand freezes the loop, drift only advances on ambient-breath
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).

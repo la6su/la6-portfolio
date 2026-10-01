@@ -95,9 +95,10 @@ not currently compatible with the lint matrix.
 
 **Remaining:** identify the deploy consumer for tracked `dist/` (84 tracked
 files in the last audit) before changing its tracking policy; prove clean
-checkout install/build and deployed static routing/cache behavior. `public/`
-headers do not establish whether Cloudflare Pages or Netlify consumes the
-output.
+checkout install/build and deployed static routing/cache behavior. The only
+local GitHub workflow, `.github/workflows/quality.yml`, runs checks and browser
+tests but has no deployment step. `public/` headers do not establish whether
+Cloudflare Pages, Netlify, or another consumer publishes the output.
 
 **Accept when:** frozen install, repository checks, production build/budgets,
 generated-route checks, and the actual deploy contract are reproducible.
@@ -227,9 +228,11 @@ Three's `MathUtils`; unused device getters and compatibility alias, duplicate
 clock, Works WeakMap metadata, and global error tracker were removed. The
 preloaded Commissioner font is WOFF2. Large media was reduced and unreferenced
 assets removed after source/content searches. Frame-owner failures are no
-longer swallowed by the render scheduler. Current source slices passed
-Chromium and Firefox production suites, Vue type-check, lint, and 77 unit
-tests.
+longer swallowed by the render scheduler. Historical comments about removed
+handlers, no-op methods, and effects were removed from active runtime files;
+they no longer describe current ownership or APIs. Current source slices
+passed Chromium and Firefox production suites, Vue type-check, lint, and 77
+unit tests.
 
 **Next audit:** finish source-to-output inventory for assets, routes, scripts,
 CSS, content generators, tests and package scripts. Remove each proven dead or
@@ -255,7 +258,9 @@ singleton guard/import side effect, the duplicate Works pointer wake
 listener/RAF, and the Works room-count literals. These changes are committed.
 The `?no-scene` flag now has one Vue-free source used by bootstrap, SceneHost,
 and both Vue shell controls. `dist/` is restored after build verification and
-remains tracked pending deploy-contract evidence.
+remains tracked pending deploy-contract evidence. The local quality workflow
+was inspected and confirmed not to deploy; the output consumer remains
+unknown, so tracked output stays unchanged.
 
 **Verified locally:** Vue type-check, ESLint, all 77 unit tests, production
 build/budgets on Vite 8.3.2, and the full production Chromium suite (17 passed, 3 opt-in

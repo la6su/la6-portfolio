@@ -14,8 +14,6 @@
 //
 // No GSAP, no paper.js — pure Canvas 2D + custom noise2D.
 
-// (DeviceCapability import removed — mobile detection now handled by CSS
-//  @media (pointer: coarse) in main.less, which is more reliable than JS.)
 import * as THREE from 'three'
 
 // CSS variables are the source of truth; these defaults keep canvas painting
