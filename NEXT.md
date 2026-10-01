@@ -126,9 +126,16 @@ adopts the loaded glTF hierarchy. The similarly named `scene.add` in
 These remain algorithm/resource cases; moving them into the template would
 not simplify ownership. Route-cycle resource evidence is still required.
 
-**Remaining:** prove route-cycle resource plateaus and finish auditing the
-remaining `:dispose="null"`/manual insertion sites for single ownership; keep
-the already reviewed constructors in Vue where they form stable hierarchy.
+**Remaining:** prove route-cycle resource plateaus; keep the already reviewed
+constructors in Vue where they form stable hierarchy.
+
+**Disposal inventory:** reviewed each current `:dispose="null"` scene owner.
+Each suppresses Tres's recursive disposal because the resource is borrowed,
+shared/leased, or released by its stage/controller owner. Services and Lab
+separate SFC-owned geometry from stage-owned material; EnvSky borrows the
+pavilion material; CursorTrail releases its placeholder before Tres disposes
+the replacement ribbon geometry. Removing these opt-outs would duplicate or
+break the existing single-owner cleanup, so no source change was warranted.
 
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
