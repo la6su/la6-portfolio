@@ -169,9 +169,7 @@ export class DeviceCapability {
     // Vulkan/D3D12/Metal handles TSL post-processing well). The original
     // 'medium' cap was a workaround for ANGLE/OpenGL fallback on Chrome/
     // Wayland/NVIDIA — that's a local env issue, not fundamental to WebGPU.
-    // Low-end desktops still fall through to 'low'/'medium' via isLowEndDesktop.
     if (isWebGPU) {
-      if (isLowEndDesktop()) return 'low'
       if (cores >= 8 && dpr >= 1.5) return 'high'
       return 'medium'
     }

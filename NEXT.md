@@ -342,6 +342,9 @@ The bootstrap's one-use `createStyleOwner` and `createReadyEventTimer` wrappers
 were removed: their single style node and cancelable readiness timeout now
 have direct module-local owners. This removes test-only exports and keeps the
 same teardown/reschedule behavior without generic wrapper objects.
+`DeviceCapability.detectTier()` no longer repeats the low-end desktop check
+inside its WebGPU branch after the same predicate already returned at the
+desktop policy boundary; the WebGPU tier result is unchanged.
 
 **Verified locally:** Vue type-check, ESLint, all 80 unit tests, stdlib checks,
 production build/budgets on Vite 8.3.2, and the full production Chromium suite
@@ -376,6 +379,9 @@ project passed (16 passed, 4 opt-in renderer scenarios skipped). TypeScript,
 build budgets, and ESLint also passed. WebKit remains blocked by the recorded
 missing host libraries; physical-GPU behavior remains outside this software
 browser evidence.
+The current policy cleanup also passes all 80 unit tests, Vue/TypeScript build,
+ESLint, and release budgets; removing the unreachable predicate does not
+change tier selection.
 
 **Next actions:**
 
