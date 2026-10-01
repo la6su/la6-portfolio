@@ -161,8 +161,12 @@ Behavior controllers keep media/rendering policies at their existing owners;
 Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
 by the user and the local suite.
 
-**Next audit:** audit hash navigation and remaining dynamic DOM against router
-and browser-library behavior; walk EN/RU routes, direct deep links, hash navigation,
+**Next audit:** CinematicNav still builds its stable story rail with
+`createElement` and appends it into `PersistentConsole.vue`. Trace its focus,
+language, active-state, and sheet behavior before choosing a Vue-owned markup
+boundary; keep scroll observation and story-position policy in the controller.
+Then audit hash navigation against router/browser behavior; walk EN/RU routes,
+direct deep links, hash navigation,
 focus, contrast, touch targets, resize/orientation, no-scene and renderer
 failure states. Run the production suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
