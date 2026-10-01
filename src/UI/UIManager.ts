@@ -1,4 +1,3 @@
-import UIkit from 'uikit'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { registerProductIcons } from '../assets/product-icons'
 import { eventBus } from '../core/EventBus'
@@ -18,9 +17,6 @@ export class UIManager {
 
   constructor() {
     registerProductIcons()
-    if (!window.UIkit) {
-      window.UIkit = UIkit
-    }
   }
 
   /** Initialize persistent UI behavior owners. */

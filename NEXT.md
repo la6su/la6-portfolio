@@ -292,6 +292,14 @@ and case-study routes. The opt-in both-backends-disabled Chromium check also
 confirms the fallback after the real boot failure and route navigation. Vue
 type-check, lint, production build/budgets, and all 73 unit tests pass.
 
+An audit of `UIManager` kept its real overlay adoption, icon registration, and
+Vue teardown bridge; it did not remove the wrapper without evidence. The
+installed `uikit@3.25.25` package's resolved UMD entry assigns its export to
+`globalThis.UIkit` itself, so the manager's second `window.UIkit` assignment
+was redundant and has been removed. Production build/budgets, Vue type-check,
+lint, all 73 unit tests, and Chromium showreel/fullscreen interaction tests
+pass with the reduced manager.
+
 ## Follow-on goal policy
 
 Only after this plan's full release acceptance is evidenced, perform a fresh
