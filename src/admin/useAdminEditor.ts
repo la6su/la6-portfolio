@@ -8,11 +8,9 @@
 // as the mount point.
 //
 // The BuilderStore is a plain (non-reactive) class, so the composable owns a
-// `rev` counter: every action that replaces or mutates the document bumps it,
-// and the panel computeds read it, so the templates repaint exactly when the
-// legacy `renderEditor()` ran. The DOM side is injected as element getters
-// (plus a small effects bundle) so the composable stays unit-testable in
-// jsdom and a future lifecycle-safe preview can share one implementation.
+// `rev` counter: document actions bump it and panel computeds read it to
+// refresh the Vue templates. The DOM side is injected as element getters and
+// a small effects bundle so the composable stays unit-testable in jsdom.
 //
 // UIkit hydration (dynamic `uk-icon` attributes), the preview theme variables
 // and the scroll-into-view helpers are the only browser-DOM effects; they run
@@ -202,10 +200,8 @@ export function useAdminEditor(
     }
   }
 
-  // Refresh the panels after a store action, exactly when the legacy
-  // `renderEditor()` ran: bump the revision so the templates repaint from the
-  // store, then re-apply the preview state, the UIkit hydration pass and the
-  // status / dirty dot update.
+  // Refresh the panels after a store action, then re-apply preview state,
+  // hydrate UIkit icons and update status.
   const refreshPanels = (): void => {
     bump()
     void nextTick(() => {

@@ -118,15 +118,15 @@ export async function mountVueApp(): Promise<void> {
     initialHashGate.invalidate()
   })
 
-  // ── Section-hash dispatch (legacy router contract) ─────────────────────
+  // ── Section-hash dispatch ───────────────────────────────────────────────
   // After navigation settles, a `#section-*` hash must reach the 3D
   // navigation owner (CinematicNav). The initial entry is deferred until
   // `jlz:webgl-ready` — dispatching earlier races the owner's subscription
-  // and leaves the world with stale first-frame state (legacy comment).
+  // and leaves the world with stale first-frame state.
   // Track the very first navigation (regardless of hash): only a direct
   // load that already carries a `#section-` hash defers the dispatch until
   // the 3D navigation owner is ready. In-app hash navigations dispatch on
-  // the next frame, matching the legacy `navigateToPage` contract.
+  // the next frame.
   let firstNavigation = true
   let hashNavigationGeneration = 0
   router.afterEach((to) => {
@@ -143,8 +143,7 @@ export async function mountVueApp(): Promise<void> {
     // A first visit to a lazy route swaps the RouterView component only
     // after the dynamic import resolves — later than one frame. Dispatch
     // once the target section actually exists in the swapped-in route root
-    // (bounded poll); a stale generation or the bound gives up silently,
-    // matching the legacy no-target no-op.
+    // (bounded poll); a stale generation or the bound gives up silently.
     const targetId = to.hash.slice(1)
     let waitedFrames = 0
     const dispatchWhenReady = (): void => {
@@ -167,18 +166,15 @@ export async function mountVueApp(): Promise<void> {
   app.use(router)
   const routerReady = router.isReady()
 
-  // ── In-app navigation (strict, like the legacy `navigateToPage`) ───────
-  // The listeners register BEFORE the initial navigation settles: the
-  // legacy initRouter wired them synchronously at startup, and an early
-  // `jlz:navigate` (or anchor click) in the startup gap must not be lost.
+  // ── In-app navigation ──────────────────────────────────────────────────
+  // Register listeners before initial navigation settles so an early
+  // `jlz:navigate` (or anchor click) in the startup gap is not lost.
   const navigateToPath = async (path: string): Promise<void> => {
     const hashIdx = path.indexOf('#')
     const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
     if (!resolveRoute(purePath) && !isRoutePath(purePath)) return
-    // A push before the initial navigation settles is committed against
-    // the start history entry (replace) and loses the session's first
-    // back slot — the legacy contract never had this window because its
-    // first render and listener wiring landed in one synchronous call.
+    // Wait until the initial navigation commits so this push preserves the
+    // first history entry and the browser back slot.
     await routerReady
     if (disposed) return
     await router.push(path)
@@ -202,7 +198,7 @@ export async function mountVueApp(): Promise<void> {
     }),
   )
 
-  // Anchor click capture — port of the legacy document capture handler.
+  // Route internal links through Vue Router while preserving native links.
   const onClick = (event: MouseEvent): void => {
     const anchorEl = (event.target as HTMLElement)?.closest(
       'a[href]',

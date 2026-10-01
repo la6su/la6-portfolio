@@ -6,8 +6,7 @@
 // that file into `index.html` at build time so the 3D app boots with DOM
 // content already present (SEO, the no-scene contract, domcontentloaded
 // assertions). The prerendered shell is REPLACED — not hydrated — by the Vue
-// client on mount, so the source is the SFC itself (single source of truth);
-// the legacy string templates (src/pages) are the deletion target.
+// client on mount, so the source is the SFC itself (single source of truth).
 //
 // Run as a prebuild step: `node scripts/prerender-home.mjs` before `vite build`.
 import { mkdirSync, writeFileSync } from 'node:fs'
