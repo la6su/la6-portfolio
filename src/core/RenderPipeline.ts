@@ -142,9 +142,9 @@ export class RenderPipeline {
     this._webgpuPipeline = null
     this._webgpuPostFailed = true
 
-    // WebGPU: drop native pipeline + uniform node refs. The native
-    // RenderPipeline does not expose an explicit dispose in r184 — GPU
-    // resources are reclaimed when the renderer is disposed.
+    // Drop this renderer's native post-pipeline and uniform node references.
+    // Three r186's RenderPipeline.dispose() releases its fullscreen material;
+    // renderer teardown owns the underlying backend pipeline resources.
   }
 
   /** Counts the post resources this owner can enumerate for development soaks. */
