@@ -12,6 +12,30 @@ function deferred<T>() {
 }
 
 describe('StageRegistry resource teardown', () => {
+  it('reconciles lazy route resources in their registry owner', async () => {
+    const registry = new StageRegistry({
+      currentPage: () => 'services',
+      camera: {} as never,
+      host: {} as SceneStagePorts,
+      isContactLight: () => false,
+      reducedMotion: () => false,
+      syncRouteVisuals: vi.fn(),
+    })
+    const disposals = [
+      vi.spyOn(registry, 'disposeWorksPlaneStage').mockResolvedValue(),
+      vi.spyOn(registry, 'disposeContactTypographyStage').mockResolvedValue(),
+      vi.spyOn(registry, 'disposeContactCyprusStage').mockResolvedValue(),
+      vi.spyOn(registry, 'disposeContactHaloStage').mockResolvedValue(),
+      vi.spyOn(registry, 'disposeManifestoInkStage').mockResolvedValue(),
+    ]
+    const disposeLab = vi.spyOn(registry, 'disposeLabGamepad')
+
+    await registry.reconcileRoute('services')
+
+    for (const dispose of disposals) expect(dispose).toHaveBeenCalledOnce()
+    expect(disposeLab).not.toHaveBeenCalled()
+  })
+
   it('owns Cyprus activation for the contact section', () => {
     const stage = new ContactCyprusStage()
     const setActive = vi.spyOn(stage, 'setActive')

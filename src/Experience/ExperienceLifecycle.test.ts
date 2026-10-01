@@ -6,9 +6,7 @@ const lifecycle = vi.hoisted(() => ({
   carouselInit: vi.fn(),
   coordinatorInit: vi.fn(),
   prewarmHomeMedia: vi.fn(),
-  ensureContactTypography: vi.fn(),
-  ensureContactHalo: vi.fn(),
-  ensureContactCyprus: vi.fn(),
+  reconcileRoute: vi.fn(),
   createdOwners: [] as string[],
   makeOwner: (name: string) =>
     class {
@@ -87,10 +85,7 @@ function createExperienceHarness(page = 'home'): {
       scene: {},
       _stages: {
         dispose: vi.fn(async () => undefined),
-        ensureContactTypographyStageInitialized:
-          lifecycle.ensureContactTypography,
-        ensureContactHaloStageInitialized: lifecycle.ensureContactHalo,
-        ensureContactCyprusStageInitialized: lifecycle.ensureContactCyprus,
+        reconcileRoute: lifecycle.reconcileRoute,
       },
       renderer: { instance: {}, dispose: vi.fn() },
       camera: { instance: {}, destroy: vi.fn() },
@@ -118,9 +113,7 @@ describe('Experience scene construction cancellation', () => {
     lifecycle.carouselInit.mockReset().mockResolvedValue(undefined)
     lifecycle.coordinatorInit.mockReset().mockResolvedValue(undefined)
     lifecycle.prewarmHomeMedia.mockReset().mockResolvedValue(undefined)
-    lifecycle.ensureContactTypography.mockReset().mockResolvedValue(undefined)
-    lifecycle.ensureContactHalo.mockReset().mockResolvedValue(undefined)
-    lifecycle.ensureContactCyprus.mockReset().mockResolvedValue(undefined)
+    lifecycle.reconcileRoute.mockReset().mockResolvedValue(undefined)
     lifecycle.createdOwners.length = 0
   })
 
@@ -200,6 +193,8 @@ describe('Experience scene construction cancellation', () => {
     await vi.waitFor(() =>
       expect(lifecycle.prewarmHomeMedia).toHaveBeenCalledOnce(),
     )
+    expect(lifecycle.reconcileRoute).toHaveBeenCalledOnce()
+    expect(lifecycle.reconcileRoute).toHaveBeenCalledWith('home')
 
     const teardown = experience.destroy()
     expect(rendererDispose).not.toHaveBeenCalled()

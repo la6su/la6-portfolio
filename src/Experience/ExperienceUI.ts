@@ -176,50 +176,35 @@ export class ExperienceUI {
           coordinator.refreshRouteConfig()
           coordinator.syncRouteVisuals()
           const stages = this.host.stages
+          const routeStagesReady = stages.reconcileRoute(newPage)
           if (newPage === 'home') {
             void this.host.ensureCarouselInitialized().then(() => {
               if (continuationIsCurrent()) this.host.raise('nav')
             })
           }
           if (newPage === 'works') {
-            void stages.ensureWorksPlaneStageInitialized().then(() => {
+            void routeStagesReady.then(() => {
               if (!continuationIsCurrent()) return
               this.host.coordinator.setWorksPlaneStageSection(0)
               this.host.raise('nav')
             })
-          } else {
-            // Works owns eight decoded 1440×810 textures. Keeping an inactive
-            // stage alive makes that GPU allocation look like a navigation leak.
-            void stages.disposeWorksPlaneStage()
           }
           if (newPage === 'contact') {
             stages.setContactCyprusStageSection(0)
             coordinator.setContactSceneSection(0)
-            void Promise.all([
-              stages.ensureContactTypographyStageInitialized(),
-              stages.ensureContactCyprusStageInitialized(),
-              stages.ensureContactHaloStageInitialized(),
-            ]).then(() => {
+            void routeStagesReady.then(() => {
               if (!continuationIsCurrent()) return
               this.host.raise('nav')
             })
           } else {
-            void stages.disposeContactTypographyStage()
-            void stages.disposeContactCyprusStage()
-            void stages.disposeContactHaloStage()
             coordinator.setContactSceneSection(0)
           }
           if (newPage === 'manifesto') {
-            void stages.ensureManifestoInkStageInitialized().then(() => {
+            void routeStagesReady.then(() => {
               if (!continuationIsCurrent()) return
               this.host.raise('nav')
             })
-          } else {
-            void stages.disposeManifestoInkStage()
           }
-          // The Lab object loads once on its first /lab visit and stays mounted
-          // between routes; the coordinator hides it while off-route.
-          if (newPage === 'lab') void stages.ensureLabGamepad()
           this.host.raise('nav')
         } catch (error: unknown) {
           // Ignore synchronous failures from routes superseded during a

@@ -275,6 +275,29 @@ export class StageRegistry {
     this._ctx.syncRouteVisuals()
   }
 
+  /** Keep route-stage creation and disposal policy in one owner. */
+  public reconcileRoute(page: PageId): Promise<void> {
+    if (page !== 'works') void this.disposeWorksPlaneStage()
+    if (page !== 'contact') {
+      void this.disposeContactTypographyStage()
+      void this.disposeContactCyprusStage()
+      void this.disposeContactHaloStage()
+    }
+    if (page !== 'manifesto') void this.disposeManifestoInkStage()
+
+    if (page === 'works') return this.ensureWorksPlaneStageInitialized()
+    if (page === 'contact') {
+      return Promise.all([
+        this.ensureContactTypographyStageInitialized(),
+        this.ensureContactCyprusStageInitialized(),
+        this.ensureContactHaloStageInitialized(),
+      ]).then(() => undefined)
+    }
+    if (page === 'manifesto') return this.ensureManifestoInkStageInitialized()
+    if (page === 'lab') return this.ensureLabGamepad()
+    return Promise.resolve()
+  }
+
   /** Lazily create the Lab experiment object on its first /lab visit. The
    *  object is a static scene object — it is never disposed per route leave,
    *  only on final destroy. Lifecycle flow: LazyStage.ts. */

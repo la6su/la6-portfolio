@@ -361,7 +361,7 @@ export class Experience {
     // — ExperienceUI calls the idempotent method on every route change.
     if (this._host.page() === 'home') await this.ensureCarouselInitialized()
     if (!this.isLifecycleCurrent(token)) return
-    this.prewarmCurrentRouteStages()
+    void this._stages.reconcileRoute(this._host.page())
     if (!this.isLifecycleCurrent(token)) return
     // The coordinator initializes section behavior; route-owned stages enter
     // the scene through their declarative host ports.
@@ -384,19 +384,6 @@ export class Experience {
       // Start on the intro palette; the initial theme event resolves polarity.
       this.envSphere.changeSection(1, false)
     }
-  }
-
-  /** Start the current route's stage while shared media warms. */
-  private prewarmCurrentRouteStages(): void {
-    const page = this._host.page()
-    if (page === 'works') void this._stages.ensureWorksPlaneStageInitialized()
-    if (page === 'contact') {
-      void this._stages.ensureContactTypographyStageInitialized()
-      void this._stages.ensureContactHaloStageInitialized()
-      void this._stages.ensureContactCyprusStageInitialized()
-    }
-    if (page === 'manifesto') void this._stages.ensureManifestoInkStageInitialized()
-    if (page === 'lab') void this._stages.ensureLabGamepad()
   }
 
   /** Initialize the persistent home carousel once, including after a deep link.
