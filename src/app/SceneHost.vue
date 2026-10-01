@@ -102,6 +102,8 @@ let disposed = false
 let lifecycleGeneration = 0
 let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
+let fallbackRendererInitController: AbortController | null = null
+let fallbackRendererInit: Promise<boolean> | null = null
 const deferredRendererDisposals = new WeakMap<object, () => void>()
 let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
@@ -304,13 +306,22 @@ async function onReady(context: TresContext): Promise<void> {
     const candidate = createUnifiedWebGPUInstance(canvas, true)
     deferredRendererDisposals.set(candidate, deferRendererDisposal(candidate))
     createdRenderer = candidate
+    const initController = new AbortController()
+    fallbackRendererInitController = initController
+    const initPromise = initUnifiedWebGPUInstance(candidate, initController.signal)
+    fallbackRendererInit = initPromise
     try {
-      await initUnifiedWebGPUInstance(candidate)
+      await initPromise
     } catch (error) {
       disposeRendererOnce(candidate)
       if (createdRenderer === candidate) createdRenderer = null
       onError(error instanceof Error ? error : new Error(String(error)))
       return
+    } finally {
+      if (fallbackRendererInitController === initController) {
+        fallbackRendererInitController = null
+      }
+      if (fallbackRendererInit === initPromise) fallbackRendererInit = null
     }
     if (!isCurrent()) {
       disposeRendererOnce(candidate)
@@ -372,6 +383,8 @@ function onError(error: Error): void {
 onBeforeUnmount(() => {
   disposed = true
   lifecycleGeneration += 1
+  fallbackRendererInitController?.abort()
+  fallbackRendererInitController = null
   stopTresLoop?.()
   stopTresLoop = null
   unbindRendererOwner?.()
@@ -386,7 +399,11 @@ onBeforeUnmount(() => {
 // final renderer disposal until Vue has unmounted TresCanvas and those owners;
 // otherwise the backend is torn down while its declarative resource owners are
 // still running their before-unmount cleanup.
-onUnmounted(() => {
+onUnmounted(async () => {
+  // The software-adapter path initializes its replacement asynchronously.
+  // Abort above, then let initUnifiedWebGPUInstance release the candidate
+  // after init settles before this owner performs its terminal disposal.
+  await fallbackRendererInit?.catch(() => undefined)
   disposeRendererOnce(liveRenderer)
   if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   if (import.meta.env.DEV) traceDevLifecycle('scene-host:renderer-disposed')
