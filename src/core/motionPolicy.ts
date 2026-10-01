@@ -5,12 +5,8 @@
 // owners can subscribe to the same media query and dispose that subscription
 // with their lifecycle.
 //
-// All scene/UI consumers (Experience, Camera, Lights, SplashCube,
-// ContactCyprusStage, CinematicNav, RouteTransition, entry-app) go through
-// `prefersReducedMotion()`; none infer the preference from DOM datasets.
-// The `documentElement.dataset.reducedMotion` hook written by
-// `entry-shell.ts` is a legacy E2E probe (read by tests/e2e.spec.ts); it has
-// no CSS consumer and no typed-state reader.
+// All scene/UI consumers read the media query through this module; preference
+// state is not mirrored into the DOM.
 
 /** The user's reduced-motion preference (`true` when `prefers-reduced-motion: reduce`). */
 export function prefersReducedMotion(): boolean {

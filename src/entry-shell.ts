@@ -1,22 +1,6 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
 // Boot failures are logged and shown through the shell fallback below.
 
-// Sync reduced-motion dataset SYNCHRONOUSLY at shell load — before any
-// dynamic import. entry-app.ts re-syncs later (idempotent), but if the lazy
-// bootstrap crashes or times out in headless, the dataset is still correct.
-// CSS hooks + E2E tests rely on documentElement.dataset.reducedMotion.
-;((): void => {
-  try {
-    const reduce =
-      typeof window !== 'undefined' && window.matchMedia
-        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        : false
-    document.documentElement.dataset.reducedMotion = reduce ? '1' : '0'
-  } catch {
-    /* matchMedia unavailable — dataset stays unset, app still boots */
-  }
-})()
-
 const startApp = () =>
   import('./entry-app')
     .then((m) => m.startApp())

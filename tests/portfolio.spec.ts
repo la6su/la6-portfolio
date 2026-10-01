@@ -542,10 +542,6 @@ test("reduced-motion preference reaches the shell and cinematic controls", async
       () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     ),
   ).toBe(true);
-  await expect(page.locator("html")).toHaveAttribute(
-    "data-reduced-motion",
-    "1",
-  );
   const enter = page.locator("#jlz-splash-enter");
   await expect(enter).toHaveClass(/is-ready/, { timeout: 20_000 });
   await enter.click();
