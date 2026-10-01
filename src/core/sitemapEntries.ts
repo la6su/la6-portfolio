@@ -1,4 +1,4 @@
-// src/core/sitemapEntries.ts — Default sitemap section assembly (Phase 9).
+// Default sitemap section assembly.
 //
 // Builds the document's default sitemap sections from the manifest-driven
 // sources only: the route manifest (paths) + the page metadata table
@@ -73,7 +73,7 @@ function buildBlogSitemapSections(): SitemapSection[] {
 
 /**
  * The builder section: the approved (`published: true`) documents rendered
- * to the static `/p/<slug>` routes (Phase 9, slice 5). The slugs come from
+ * to the static `/p/<slug>` routes. The slugs come from
  * the admin-owned collection — the build-time generator reads
  * `documents.json` and passes `publishedPages(...)` here. Empty when nothing
  * is published (no section, no entries).

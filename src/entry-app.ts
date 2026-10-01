@@ -37,17 +37,8 @@ function initSoundToggle(): void {
 // ── Config: language toggle EN/RU ──
 import { initI18n, toggleLang, getLang } from './core/i18n'
 
-// ── window.__jlzEmit — typed `jlz:*` port facade for non-module producers ──
-// The Phase 10 raw window `jlz:*` bridge was removed — the app only receives
-// those ports through the typed `eventBus`. Two non-module sites still need to
-// emit a port without importing the TS graph:
-//   • the index.html splash Enter script (classic, kept outside the initial
-//     Vue/Tres/Three/UIkit dependency graph) emits `jlz:splash-entered`;
-//   • the e2e suite (production preview) and the Phase 10 soak (dev) trigger
-//     `jlz:navigate` etc. from outside the app.
-// Both call this facade instead of `window.dispatchEvent`. It is a thin alias
-// over the public, typed `eventBus.emit` and adds no new capability surface
-// (the equivalent raw dispatch existed in production pre-migration).
+// Typed event facade for the classic splash script and browser automation,
+// which cannot import the application module graph.
 // Installed at module scope — the moment entry-app.ts loads, which is before
 // the Vue router mounts and before the splash Enter button
 // is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash

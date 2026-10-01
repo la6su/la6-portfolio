@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// src/app/views/blog/BlogPage.vue — Phase 9, slice 4: the SSG content
+// Standalone blog page content for static rendering.
 // pipeline's page component. Wraps first-party editorial markup (the
 // `content/blog/*.html` sources, loaded through the `?raw` content registry)
 // in the shared `BlogLayout` shell. The body is inlined as trusted static

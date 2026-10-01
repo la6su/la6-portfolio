@@ -1,10 +1,9 @@
-// src/core/motionPolicy.ts — typed motion preference port (Phase 3).
+// Shared policy for the user's reduced-motion preference.
 //
 // The single policy port for the user's reduced-motion preference. Consumers
 // can pull the current value at the moment they need it, while long-lived
 // owners can subscribe to the same media query and dispose that subscription
-// with their lifecycle. The Phase 5 swap to typed Vue state only changes this
-// module's source — consumers stay unchanged.
+// with their lifecycle.
 //
 // All scene/UI consumers (Experience, Camera, Lights, SplashCube,
 // ContactCyprusStage, CinematicNav, RouteTransition, entry-app) go through

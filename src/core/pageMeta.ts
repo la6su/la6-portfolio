@@ -10,8 +10,6 @@
 // source of truth for public paths; the i18n copy keys + sitemap fields come
 // from the pure metadata table (`pageMetaData`).
 //
-// Phase 9: paths are no longer re-declared here; a route rename is a
-// manifest change only.
 
 import { t, getLang } from './i18n'
 import { pathForPage } from './routeManifest'

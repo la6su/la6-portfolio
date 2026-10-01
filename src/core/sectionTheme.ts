@@ -1,4 +1,4 @@
-// src/core/sectionTheme.ts — Phase 3 typed effective-theme port (pure
+// Typed effective-theme port (pure
 // contract).
 //
 // The scene input port that carries the *effective theme* into the scene.

@@ -108,6 +108,9 @@ justifies it, and record the reason in the checkpoint.
 - Repaired the three repository skills that linked to deleted DEVELOPMENT,
   BRAND, and PAGE_BUILDER docs; they now point agents to `AGENTS.md`, `NEXT.md`,
   and current source contracts.
+- Replaced obsolete phase/ADR migration notes across active source with current
+  ownership and behavior explanations. The remaining `Phase 1/2` labels in
+  `Camera.ts` describe the two actual steps of its zoom animation.
 - Added focused unit coverage for render demand, backend policy, stage owners,
   and scene-stage ports.
 - Mapped generated source-side page artifacts and their consumers. Blog and
@@ -205,9 +208,6 @@ justifies it, and record the reason in the checkpoint.
 - Continue the application audit with accessibility, responsive layouts, and
   offline/no-GPU content usability; keep generated blog/builder routes in the
   production browser gate.
-- Replace stale phase-number and historical ADR comments in active source with
-  durable ownership/behavior explanations. Preserve real behavioral
-  constraints and tests; remove archaeology that no longer guides decisions.
 
 **Acceptance**: clean install is reproducible from `bun.lock`; scripts match
 real files; generated-file policy is explicit; no tracked dependency install;
@@ -676,10 +676,9 @@ test:host-teardown` passed in Chromium, and `bun run build` passed with the
 
 - Recent source-audit slices: removed a duplicated runtime theme-token catalogue
   (226 lines); added coverage for repeated `Experience.destroy()` and stale async
-  route-stage creation; replaced phase-history commentary in SceneCoordinator,
-  ExperienceUI and SceneHost with current ownership and runtime contracts. The
-  stage race,
-  teardown test, 73 unit tests, Vue type-check, lint, diff-check, and production
+  route-stage creation; replaced migration commentary across active source
+  with current contracts. The async stage race, repeated teardown browser test,
+  73 unit tests, Vue type-check, lint, diff-check, and production
   build passed. These checks used system Chromium on software WebGL; hardware
   WebGPU and Safari/WebKit gaps above remain open.
 

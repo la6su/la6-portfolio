@@ -1,4 +1,4 @@
-// src/core/routeManifest.ts — Phase 3 pure route contract.
+// Canonical public route and page identifier manifest.
 //
 // The single source of truth for the application's public paths and the
 // `PageId` vocabulary. Vue Router and static publishing resolve against this

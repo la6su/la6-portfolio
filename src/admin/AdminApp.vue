@@ -1,11 +1,11 @@
 <script setup lang="ts">
-// src/admin/AdminApp.vue — Phase 4: the admin editor as a Vue SFC.
+// Admin editor application.
 //
 // The template is a 1:1 port of `admin/index.html` (same ids and classes, so
 // `admin/admin.less` keeps working untouched); the behavior is the
 // `useAdminEditor` composable over the typed `BuilderStore`. The builder
 // document renders through the trusted Vue element registry
-// (`BuilderPage`, Phase 9); the style showcase stays a pure-HTML string
+// (`BuilderPage`); the style showcase stays a pure-HTML string
 // (the builder core is pure) and the SFC hosts it via `v-html`. The editor
 // affordances (selection class, theme variables, UIkit hydration) are DOM
 // effects on the shared `#builder-preview` container in both modes.
@@ -480,7 +480,7 @@ const toggleBuilderLocale = (): void => {
           @click="onPreviewClick"
           @keydown="onPreviewKeydown"
         >
-          <!-- Builder mode: the trusted Vue element registry (Phase 9) —
+          <!-- Builder mode uses the shared Vue element registry —
                real DOM nodes with the delegation attributes. -->
           <BuilderPage
             v-if="mode === 'builder'"

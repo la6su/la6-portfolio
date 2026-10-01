@@ -175,7 +175,7 @@ export class DevPanel {
   private buildSceneFolder(): void {
     const f = this.pane.addFolder({ title: 'Scene', expanded: false })
     f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' }).on('change', (ev) => {
-      // Phase 8 slice 1: the ground is an Experience-owned scene owner.
+      // The ground is an Experience-owned scene resource.
       const exp = this.exp as unknown as { ground?: { object?: { visible: boolean } } }
       if (exp.ground?.object) exp.ground.object.visible = ev.value as boolean
     })

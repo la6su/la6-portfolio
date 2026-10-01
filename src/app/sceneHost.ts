@@ -108,7 +108,7 @@ export interface SceneHostReady {
   baku: BakuCubeNodes
   introFrames: IntroLightFramesNodes
   cursorTrail: CursorTrailNodes
-  /** The Tres-native loop port the RenderScheduler drives (ADR 0005). */
+  /** Loop bridge driven by the demand scheduler through Tres. */
   loop: SceneLoopPort
   /** Declarative stage mount/unmount boundaries (one port per stage family). */
   stages: SceneStagePorts

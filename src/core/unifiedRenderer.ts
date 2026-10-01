@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
 import { traceDevLifecycle } from "./devLifecycleTrace";
 
-/** The concrete renderer class this project constructs (Phase 6 fixed). */
+/** The renderer class constructed and adopted by SceneHost. */
 export type UnifiedRenderSurface = WebGPURenderer;
 
 interface RendererDisposalControl {

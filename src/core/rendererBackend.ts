@@ -28,7 +28,7 @@ type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: true; mode
  * - `WebGPUBackend` + `null` (unknown adapter) → keep as `webgpu`, no re-create
  *   (actual backend is WebGPUBackend; returning webgl desyncs DeviceCapability).
  * - `WebGLBackend` or unknown backend name → keep as `webgl`, no re-create
- *   (scene renders directly, no TSL post — the Phase 2 accepted contract).
+ *   (scene renders directly, no TSL post).
  */
 export function planUnifiedBackend(facts: BackendFacts): UnifiedPlan {
   if (facts.backendName === 'WebGPUBackend') {

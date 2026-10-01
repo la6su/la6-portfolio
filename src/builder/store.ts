@@ -1,4 +1,4 @@
-// src/builder/store.ts — Phase 4 typed builder store.
+// Typed builder document store.
 //
 // The builder editor's mutable state (the document, the selected node, the
 // undo/redo history and the last-saved baseline) used to be module-level

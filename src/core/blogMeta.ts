@@ -1,6 +1,5 @@
-// src/core/blogMeta.ts — per-page head metadata for the static blog pages
-// (Phase 9, slice 4) and the pure document builder that wraps the prerendered
-// SSG body into a standalone HTML document.
+// Per-page head metadata for the static blog pages and the pure document
+// builder that wraps the prerendered SSG body into a standalone HTML document.
 //
 // The blog pages are standalone semantic documents (no 3D app shell, no
 // hydration). This module is the single source for everything that lives in

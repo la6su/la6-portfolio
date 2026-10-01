@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// src/app/scene/LabCameraControls.vue — ADR 0005's first Cientos adoption.
+// Lazy Cientos camera controls for Lab exploration.
 //
 // SceneHost loads this wrapper as an async component ONLY while the Lab
 // camera-exploration policy is active (lab route + fine pointer + motion
@@ -7,7 +7,7 @@
 // of the eager app chunks (the `vendor-lab-controls` chunk rule in
 // vite.config.ts routes it into its own lazy file).
 //
-// Product contract (decided with the ADR 0005 pointer-events queue item):
+// Interaction contract:
 // rotate-only orbit around the authored content target (origin, where the
 // Lab gamepad floats). The wheel stays page scroll — the Cientos default
 // maps it to DOLLY, which would hijack scrolling wherever the Lab section

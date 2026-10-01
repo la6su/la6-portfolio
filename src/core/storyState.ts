@@ -1,4 +1,4 @@
-// src/core/storyState.ts — Phase 3 pure story-state contract.
+// Pure story-state calculations.
 //
 // The story has one continuous input — the native vertical track scroll —
 // and two observers, deliberately on different clocks:

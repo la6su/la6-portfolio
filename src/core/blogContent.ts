@@ -1,4 +1,4 @@
-// src/core/blogContent.ts — Phase 9, slice 4: the blog content registry.
+// Static blog content registry.
 //
 // One entry per static blog page (the index plus every published article):
 // the page key maps to the first-party editorial `<main>` source. The HTML

@@ -32,13 +32,13 @@ export interface BuilderDocument {
   titleRu?: string
   /**
    * SEO description for the published static route (1–300 characters).
-   * Absent on documents created before Phase 9 slice 5 — the publish
+   * Absent on older documents — the publish
    * pipeline falls back to the page title.
    */
   description?: string
   descriptionRu?: string
   /**
-   * The "approved" marker (Phase 9 slice 5): only published documents are
+   * The "approved" marker: only published documents are
    * rendered into the static `/p/<slug>` routes by the publish pipeline.
    * Absent means unpublished.
    */

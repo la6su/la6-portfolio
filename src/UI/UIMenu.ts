@@ -111,7 +111,7 @@ export class UIMenu {
     this.navEl.addEventListener('click', this._clickHandler)
 
     // Wire global listeners (typed eventBus ports — the raw window bridge was
-    // removed in Phase 10).
+    // removed; the app bus is the typed event surface.
     this._unsubs.push(eventBus.on('jlz:lang-change', () => this.updateLangLabel()))
 
     this._unsubs.push(eventBus.on('jlz:theme-change', () => this._syncThemeButton()))

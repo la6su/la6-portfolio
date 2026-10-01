@@ -1,4 +1,4 @@
-// src/core/bootstrapStates.ts — Phase 3 pure bootstrap state machine.
+// Application bootstrap state machine.
 //
 // Bootstrap proceeds through an explicit state machine:
 //

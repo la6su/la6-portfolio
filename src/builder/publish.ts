@@ -1,5 +1,4 @@
-// src/builder/publish.ts — the publish pipeline's pure core (Phase 9,
-// slice 5).
+// Pure core of the publish pipeline.
 //
 // An approved (`published: true`) builder document becomes a standalone
 // static route at `/p/<slug>`: `renderBuilderPageDocument` assembles the

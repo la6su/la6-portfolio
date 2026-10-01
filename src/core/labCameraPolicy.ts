@@ -1,7 +1,7 @@
 // src/core/labCameraPolicy.ts — Lab interactive camera exploration port.
 //
-// ADR 0005's first Cientos adoption: the Lab route hands the camera over to
-// the ecosystem `CameraControls` for orbit exploration. SceneHost owns the
+// The Lab route hands the camera to the ecosystem `CameraControls` for orbit
+// exploration. SceneHost owns the
 // decision (lab route AND a fine pointer AND no reduced-motion preference)
 // and publishes it here once; the consumers read the same typed state:
 //

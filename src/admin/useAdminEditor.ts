@@ -1,4 +1,4 @@
-// src/admin/useAdminEditor.ts — Phase 4 admin editor core as a Vue composable.
+// Admin editor state and actions as a Vue composable.
 //
 // This is the framework-facing half of the SFC migration: every piece of the
 // admin entry's editor logic (the store swap, the mode/viewport/selection
@@ -137,7 +137,7 @@ export function useAdminEditor(
   const draggedNodeId = ref<string | null>(null)
   const dropTargetId = ref<string | null>(null)
   const outlineHost = ref<HTMLElement | null>(null)
-  // The document collection (Phase 9, slice 3): the saved documents and the
+  // Document collection: the saved documents and the
   // slug the loaded document came from (the slug-focusout revert target).
   const documents = ref<Array<{ slug: string; title: string }>>([])
   const loadedSlug = ref(DEFAULT_BUILDER_DOCUMENT.slug)
@@ -325,7 +325,7 @@ export function useAdminEditor(
       const response = await fetch('/__jlz-admin/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // The collection envelope (Phase 9, slice 3): the document is
+        // Collection envelope: the document is
         // upserted by its slug, so several documents can be saved.
         body: JSON.stringify({ slug: store.document.slug, document: store.document }),
       })
@@ -397,7 +397,7 @@ export function useAdminEditor(
     refreshPanels()
   }
 
-  // ── Document collection (Phase 9, slice 3) ──────────────────────────────
+  // ── Document collection ─────────────────────────────────────────────────
   const onSlugInput = (): void => {
     const input = elements.slugInput.value as HTMLInputElement | null
     if (!input) return
@@ -426,7 +426,7 @@ export function useAdminEditor(
     recordCurrentSnapshot()
   }
 
-  // Publish gate + SEO description (Phase 9, slice 5): the document metadata
+  // Publish gate + SEO description: the document metadata
   // that selects a document for the static `/p/<slug>` routes. An empty
   // description clears the field (the pipeline falls back to the title).
   const onPublishedToggle = (): void => {

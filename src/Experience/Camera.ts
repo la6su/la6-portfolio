@@ -55,7 +55,7 @@ export class Camera {
   // A-015: Per-section cursor follow strength
   private _cursorFollowStrength: number | null = null
 
-  // Lab exploration (ADR 0005): true while the previous update() found the
+  // Lab exploration: true while the previous update() found the
   // Lab CameraControls owning the pose. The first frame after the hand-back
   // adopts the orbit pose as the smoothing origin (no authored-framing snap).
   private _yielded = false
@@ -221,7 +221,7 @@ export class Camera {
 
   update(deltaT: number) {
     if (this._disposed) return
-    // ── 0. Lab exploration yield (ADR 0005) ──
+    // ── Lab exploration yield ──
     // While the declarative Lab CameraControls own the camera the cinematic
     // writer yields completely — position, lookAt and fov are the user's.
     if (isLabCameraActive()) {

@@ -1,4 +1,4 @@
-// src/builder/vue/elements.ts — The trusted Vue element registry (Phase 9).
+// Shared Vue element registry for builder documents.
 //
 // One component per builder element type, rendering the exact same markup
 // the framework-neutral string renderer (`src/builder/render.ts`) emits:
@@ -7,7 +7,7 @@
 // `data-builder-id` / `data-builder-type` / `tabindex` editor attributes.
 //
 // The registry is the single typed surface for builder documents in Vue:
-// the admin editor preview and the public route rendering (Phase 9 slice 5)
+// the admin editor preview and the public route rendering
 // both render through it, so an element is implemented once and tested in
 // both contexts (the parity test `src/__tests__/builderVueRegistry.test.ts`
 // locks the registry output against `renderBuilderDocument`).

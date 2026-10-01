@@ -88,7 +88,7 @@ interface StyleGroupDefinition {
 
 const options = (...values: string[]) => values.map((value) => ({ label: value, value }))
 
-// Default document theme: the Neuro Console brand (ADR 0007). The Style
+// Default document theme: the Neuro Console brand. The Style
 // Builder can author any other palette, but this is what new documents start
 // from.
 export const DEFAULT_BUILDER_THEME: BuilderTheme = {

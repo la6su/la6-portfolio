@@ -327,7 +327,7 @@ export class BakuCarousel {
       if (!this.dragMoved && this.dragAxis === 'pending') {
         this.handleTap(e.clientX, e.clientY)
       } else {
-        // Phase 4: momentum — apply velocity decay in update() until threshold
+        // Apply velocity decay in update() until the momentum threshold.
         // scheduleSnap() will fire after momentum settles
         this.scheduleSnap(300) // delayed snap — give momentum time to settle
       }
@@ -448,7 +448,7 @@ export class BakuCarousel {
     // Eased morph for animations (smoothstep gives ease-in/ease-out)
     const easedT = smoothstep01(this._morphT)
 
-    // Phase 4: momentum — apply velocity after drag release
+    // Continue the released drag velocity as carousel momentum.
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
       // Velocity is authored in 60 Hz frame units. Integrate the decaying
       // velocity over the elapsed frame span so the fling travels the same

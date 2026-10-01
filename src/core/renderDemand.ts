@@ -1,14 +1,11 @@
-// src/core/renderDemand.ts — Phase 3 pure render-demand decision contract.
+// Pure render-demand decisions for the demand-driven scene loop.
 //
 // The renderer is demand-driven: the loop draws a
 // frame only while the scene is changing and stops entirely after the
-// settled frame (zero settled draws — ADR 0005). That per-frame decision
-// lives in `Experience.update()`; this contract owns the decision as pure,
-// side-effect-free functions so the scheduler is unit-tested without a
-// renderer, and the loop consumes it without changing any timing.
+// settled frame. `Experience.update()` consumes these pure, side-effect-free
+// functions so the scheduler can be unit-tested without a renderer.
 //
-// Two DELIBERATELY DIFFERENT flag sets are preserved — this is real behavior,
-// not a simplification, and must not be "fixed" when the consumer migrates:
+// Two intentionally different flag sets serve separate decisions:
 //
 //   - `anyActivity` is the 14-flag OR. It is used BOTH to raise render demand
 //     (any active flag re-arms the frame) and to decide whether demand may
@@ -17,16 +14,11 @@
 //     reduced-motion gate. It decides when the ~2.5 s ambient-breath timer
 //     may run. It intentionally EXCLUDES `drawTrail`, `cubeRotating`,
 //     `camPulsing` and `showreel`: those keep the loop alive on their own
-//     and must not also trigger the breath. Phase 7 moves the timer itself to
-//     a wall-clock `setTimeout` owned by the Experience bootstrap; this file
-//     only answers "is the scene idle enough to breathe now".
+//     and must not also trigger the breath. The Experience bootstrap owns the
+//     wall-clock timer; this file only decides when the scene is idle enough.
 //
-// Pure by design: no DOM, timers, renderer or globals. `Experience.update()`
-// now consumes these functions at the exact points where the OR, the breath
-// idle check and the settle AND-NOT used to be inlined — a 1:1
-// source-of-fact swap with unchanged timing (the same flags are read at the
-// same moment; the loop only renders when `shouldRender` says so). Unit-
-// testable without a browser.
+// Pure by design: no DOM, timers, renderer or globals. Unit-testable without
+// a browser; the loop renders only when `shouldRender` says so.
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in

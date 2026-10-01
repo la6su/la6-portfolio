@@ -1,4 +1,4 @@
-// src/core/storyProgress.ts — Phase 3 pure story progress contract.
+// Pure story-progress math shared by scene and navigation.
 //
 // The story is the six-section vertical track: a clamped 0..1 progress value
 // maps to the active section index. The 3D world and the DOM navigation
@@ -9,14 +9,8 @@
 // *end* of a frame while up-scroll arrivals landed immediately after leaving
 // it, a visible direction-dependent second beat).
 //
-// This contract locks that rule as pure, framework-neutral functions so the
-// Phase 5 Vue providers can expose the same story state without re-deriving
-// the math, and so the midpoint semantics (including the `.5` boundary) are
-// unit-locked instead of living only in a comment.
-//
-// Pure by design: no DOM, Three or globals — unit-testable without a browser.
-// `SceneCoordinator.updateTransform` consumes it at the exact point where it
-// inlined the clamp + round before; the read timing is unchanged.
+// Pure, framework-neutral functions keep the midpoint behavior shared and
+// unit-tested without a browser, including the `.5` boundary.
 
 /** Clamp a scroll progress value to [0, 1]; non-finite input settles to 0. */
 export function clampStoryProgress(value: number): number {

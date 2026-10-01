@@ -58,7 +58,7 @@ export class CinematicNav {
   private _reducedMotion = prefersReducedMotion()
 
   /**
-   * Loop-wake port (Phase 7). Native track scrolling is a renderer-loop wake
+   * Loop-wake callback. Native track scrolling is a renderer-loop wake
    * source: the rAF-throttled scroll sync reports activity so the single
    * driver can start the loop on a settled scene. Wired by Experience.
    */
@@ -194,7 +194,7 @@ export class CinematicNav {
       this._scrollFrame = requestAnimationFrame(() => {
         this._scrollFrame = null
         this._syncFromScroll()
-        // Phase 7: native scroll is a loop wake source — report activity so a
+        // Native scroll reports activity so a
         // settled single-driver loop can start advancing the scene.
         this.onActivity?.()
       })

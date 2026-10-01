@@ -1,4 +1,4 @@
-// src/core/pageMetaData.ts — Pure per-page metadata table (Phase 9).
+// Pure per-page metadata table.
 //
 // The single source for a page's i18n copy keys + sitemap fields
 // (changefreq, priority). Pure by design — no DOM, no window — so both the

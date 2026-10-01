@@ -1,4 +1,4 @@
-// src/core/sitemap.ts — Pure sitemap.xml builder (Phase 9).
+// Pure sitemap.xml builder.
 //
 // Builds the document's sitemap from manifest-driven entries. Pure by design
 // — no DOM, no window, no fs — so the build-time generator

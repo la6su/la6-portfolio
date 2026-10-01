@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// src/app/views/blog/BlogLayout.vue — Phase 9, slice 4: the shared shell of
+// Shared standalone blog page shell.
 // the static blog pages (the SSG content pipeline). One layout for the index
 // and the articles; the only variant differences are the secondary nav item
 // (the index links back to the landing page, the articles to the 3D app) and

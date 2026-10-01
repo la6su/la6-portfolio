@@ -1,5 +1,4 @@
-// src/builder/documents.ts — the builder document collection model (Phase 9,
-// slice 3).
+// Builder document collection model.
 //
 // The builder stores a *collection* of documents on disk (the dev plugin
 // owns `src/builder/generated/documents.json`); each document keeps its own
@@ -101,7 +100,7 @@ export function removeBuilderDocument(
 }
 
 /**
- * The "approved" subset of a collection (Phase 9, slice 5): the documents
+ * The "approved" subset of a collection: the documents
  * with `published: true`, in stable slug order. The publish pipeline renders
  * exactly this set into the static `/p/<slug>` routes and the sitemap
  * generator consumes the same list — one source of truth for what is public.

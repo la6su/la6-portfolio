@@ -1,4 +1,4 @@
-// src/builder/commands.ts — Phase 4 structural editor commands.
+// Structural document editing commands.
 //
 // The add / move / duplicate / remove / theme-reset actions used to be inline
 // closures in the admin entry, each wrapping a `store.commit(...)`. They are
