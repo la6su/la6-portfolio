@@ -12,10 +12,10 @@ bun run dev
 ```
 
 `bun run dev` binds Vite to `127.0.0.1` and disables Vite HMR. A reverse proxy
-on the same machine can forward to that loopback address; configure access
-control at the proxy before exposing the development server remotely. For a
-direct local/LAN connection whose proxy forwards WebSockets, use
-`bun run dev:hmr` to enable Vite's built-in hot updates.
+on another machine needs Vite bound to the workstation's private LAN address,
+for example `bun run dev -- --host 192.168.1.20`; restrict access at the proxy
+before exposing the dev server. For direct local/LAN development with Vite's
+built-in hot updates, use `bun run dev:hmr`.
 
 SPA: `/`, `/services`, `/works`, `/works/:projectId`, `/manifesto`, `/lab`,
 `/contact`. Static HTML: `/blog`, `/blog/<slug>`, approved `/p/<slug>` and
