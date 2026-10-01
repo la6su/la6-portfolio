@@ -35,6 +35,30 @@ describe('lazy stage teardown', () => {
     expect(contract.configure).not.toHaveBeenCalled()
   })
 
+  it('reports a failed stage release while allowing teardown to settle', async () => {
+    const slot = createLazyStageOwner<{ dispose(): void }>()
+    const stage = { dispose: vi.fn() }
+    const error = new Error('GPU resource cleanup failed')
+    const report = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const contract = {
+      label: 'failed cleanup',
+      owner: slot,
+      create: () => stage,
+      attach: () => undefined,
+      configure: vi.fn(),
+      release: () => Promise.reject(error),
+    }
+
+    await ensureLazyStage(contract)
+    await expect(disposeLazyStage(contract)).resolves.toBeUndefined()
+
+    expect(report).toHaveBeenCalledWith(
+      '[Experience] failed cleanup release failed:',
+      error,
+    )
+    report.mockRestore()
+  })
+
   it('waits for declared-node detachment before disposing an async release', async () => {
     const slot = createLazyStageOwner<{ dispose(): void }>()
     const mounted = deferred<void>()

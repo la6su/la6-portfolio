@@ -107,9 +107,7 @@ function releaseLazyStage<T extends object>(
         traceDevLifecycle(`scene-stage:${contract.label}:released`)
       }
     } catch (error: unknown) {
-      if (import.meta.env.DEV) {
-        console.error(`[Experience] ${contract.label} release failed:`, error)
-      }
+      console.error(`[Experience] ${contract.label} release failed:`, error)
     }
   })
 }
