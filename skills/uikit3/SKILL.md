@@ -10,8 +10,8 @@ belong to `package.json`/`bun.lock`. Use `uk-*` classes and component attributes
 UIkit owns its behavior, focus and ARIA through the Vue lifecycle boundary.
 Override Less variables/hooks rather than creating a competing state machine.
 
-`src/core/brandTokens.ts` and the Less source own the current theme tokens and
-assembly. Keep them aligned with their parity checks. Product icons
+`src/assets/_import.less` owns the theme tokens; runtime canvas consumers read
+the compiled CSS custom properties. Avoid a second token catalogue. Product icons
 come from `registerConsoleIcons()`; the full official icon plugin belongs to
 `admin/style-icons.ts`. Verify inserted SVGs after UIkit's async update.
 Commissioner headings use natural case; monospace metadata may use uppercase.

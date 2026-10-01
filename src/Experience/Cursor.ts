@@ -16,12 +16,13 @@
 
 // (DeviceCapability import removed — mobile detection now handled by CSS
 //  @media (pointer: coarse) in main.less, which is more reliable than JS.)
-import { brandToken } from '../core/brandTokens'
 import { lerp } from '../Utils/easing'
 
-const CURSOR_ACCENT = brandToken('jlz-color-accent')!
-const CURSOR_ACCENT_GLOW = brandToken('jlz-color-accent-glow')!
-const CURSOR_TEAL = brandToken('jlz-color-signal-teal')!
+// CSS variables are the source of truth; these defaults keep canvas painting
+// usable if the theme stylesheet has not loaded yet.
+const CURSOR_ACCENT = '#ffd60a'
+const CURSOR_ACCENT_GLOW = 'rgba(255, 214, 10, 0.35)'
+const CURSOR_TEAL = '#58e6a9'
 
 /** Elements the cursor snaps/fills on. Shared by the mouseover and mouseout
  *  handlers — the intra-element transition guard (D-14) must consult the

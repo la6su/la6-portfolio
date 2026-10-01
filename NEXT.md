@@ -725,3 +725,12 @@ session-log document should be created.
   the test now guards it directly. `bun run test:unit` passed (24 files / 73
   tests), `bun run type-check:vue`, `bun run lint`, and `git diff --check`
   passed.
+
+- Duplicate theme data removed: the runtime `brandTokens` catalogue repeated
+  the Less theme values but had only three Cursor fallback consumers. Removed
+  the catalogue; Cursor now reads the compiled CSS custom properties and keeps
+  only three defaults for pre-stylesheet startup. Updated the UIkit project
+  skill so future work treats Less/CSS as the single source of truth. A full
+  `bun run build` passed (357 modules, within budgets), along with all 73 unit
+  tests, Vue type-check, ESLint, and `git diff --check`. Generated `dist/` output
+  remains uncommitted per the unresolved deployment-consumer note above.
