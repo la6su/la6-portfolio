@@ -262,6 +262,7 @@ async function boot(): Promise<void> {
       {
         scene: host.scene,
         page: host.page,
+        isLabCameraActive: host.isLabCameraActive,
         camera: host.camera,
         renderer: host.renderer,
         sizes: host.context.sizes,

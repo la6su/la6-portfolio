@@ -201,6 +201,7 @@ export class Experience {
       host.camera,
       DeviceCapability.getInstance().isMobile,
       () => this._host.page() === 'home',
+      host.isLabCameraActive,
     )
     this.renderer = new Renderer(this.viewport)
     // The env owner reads the renderer + glass cube lazily: it is applied

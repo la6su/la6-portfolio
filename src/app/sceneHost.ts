@@ -83,6 +83,8 @@ export interface SceneStagePorts {
 export interface SceneHostReady {
   /** Current semantic page from the persistent Vue Router instance. */
   page: () => PageId
+  /** Whether Lab CameraControls currently own the shared camera pose. */
+  isLabCameraActive: () => boolean
   /** The Tres-owned scene (`context.scene.value`) — the one THREE.Scene. */
   scene: THREE.Scene
   /** The mounted Tres context (loop/size/camera managers). */

@@ -2,7 +2,6 @@
 import * as THREE from 'three'
 import { input } from './Input'
 import { prefersReducedMotion } from '../core/motionPolicy'
-import { isLabCameraActive } from '../core/labCameraPolicy'
 import type { CameraTarget } from '../core/types'
 
 const SP_STIFFNESS = 8
@@ -68,6 +67,7 @@ export class Camera {
     instance: THREE.PerspectiveCamera,
     isMobile: boolean,
     private isHomePage: () => boolean,
+    private isLabCameraActive: () => boolean,
   ) {
     this.instance = instance
     this._isMobile = isMobile
@@ -92,7 +92,7 @@ export class Camera {
     // While the Lab CameraControls own the pose the authored track is stale:
     // smoothing toward it would fight the user's orbit. update() re-adopts
     // the authored state from the live orbit pose on hand-back.
-    if (isLabCameraActive()) return
+    if (this.isLabCameraActive()) return
     if (!target) return
     const lerp = 1 - Math.exp(-smoothing * deltaT)
 
@@ -209,7 +209,7 @@ export class Camera {
     // ── Lab exploration yield ──
     // While the declarative Lab CameraControls own the camera the cinematic
     // writer yields completely — position, lookAt and fov are the user's.
-    if (isLabCameraActive()) {
+    if (this.isLabCameraActive()) {
       this._yielded = true
       return
     }

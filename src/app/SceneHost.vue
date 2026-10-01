@@ -18,7 +18,6 @@ import type { Group, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry }
 import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
-import { setLabCameraActive } from '../core/labCameraPolicy'
 import { noSceneRequested } from '../core/sceneMode'
 import { resolvePagePath } from '../core/routeManifest'
 import type { PageId } from '../core/routeManifest'
@@ -193,7 +192,6 @@ const unobserveMotion = observeReducedMotion((reduced) => {
 watch(
   labCameraActive,
   (active) => {
-    setLabCameraActive(active)
     if (active) document.body.setAttribute('data-lab-camera', 'on')
     else document.body.removeAttribute('data-lab-camera')
   },
@@ -201,7 +199,6 @@ watch(
 )
 onBeforeUnmount(() => {
   unobserveMotion()
-  setLabCameraActive(false)
   document.body.removeAttribute('data-lab-camera')
 })
 
@@ -363,6 +360,7 @@ async function onReady(context: TresContext): Promise<void> {
   })
   sceneHost.resolve({
     page: currentPage,
+    isLabCameraActive: () => labCameraActive.value,
     scene: context.scene.value,
     context,
     renderer,
