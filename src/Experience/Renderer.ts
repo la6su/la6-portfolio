@@ -352,9 +352,10 @@ export class Renderer {
     // updates it on section change. Do NOT touch scene.fog here — that
     // would overwrite the per-section fog with a stale envColor value.
 
-    // Native WebGPU owns the TSL post graph. WebGLBackend is a direct-render
-    // parity path, so skip the otherwise-unused crossfade and uniform writes.
-    if (this.capabilities.isRealWebGPU) {
+    // Advance and upload post state only when the selected backend and quality
+    // tier actually use the TSL graph. The pipeline still verifies the live
+    // Three backend before building or rendering that graph.
+    if (this.capabilities.postProcessing) {
       this.postManager.update(dt);
       // Quality-tier intensity scaling is applied by PostProcessingManager
       // (applyPreset — the single scaling owner). This side hands the
