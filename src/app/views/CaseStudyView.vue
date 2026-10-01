@@ -40,12 +40,8 @@ const unsubscribe = eventBus.on('jlz:lang-change', () => {
   language.value = getLang()
   queueMicrotask(applyCaseStudyMeta)
 })
-const unsubscribeRoute = eventBus.on('jlz:route-change', ({ page }) => {
-  if (page === 'works') applyCaseStudyMeta()
-})
 onBeforeUnmount(() => {
   unsubscribe()
-  unsubscribeRoute()
 })
 const labels = computed(() =>
   language.value === 'RU'
