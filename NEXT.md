@@ -205,6 +205,10 @@ Tres release (2026-09-29); Three 0.186.1 and Vue 3.5.43 also match current npm
 stable tags. Vue 3.6 is still release-candidate tagged, so the stable line is
 retained pending a compatibility audit. Sources: [Tres releases](https://github.com/Tresjs/tres/releases),
 [Three on npm](https://www.npmjs.com/package/three), [Vue versions on npm](https://www.npmjs.com/package/vue?activeTab=versions).
+Latest local quality pass: `vue-tsc` build gate, ESLint, 97/97 unit tests,
+Three-stdlib compatibility check and production bundle budgets all pass. This
+does not replace the remaining Chromium/Firefox/WebKit and physical WebGPU
+acceptance rows below.
 
 The Works stage exposed a concrete mismatch: `StageRegistry` used dynamic import,
 but Vite's broad `World/` manual chunk rule folded `WorksPlaneStage` back into
