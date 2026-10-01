@@ -1,0 +1,45 @@
+import { describe, expect, it, vi } from 'vitest'
+import { NO_ACTIVITY } from '../core/renderDemand'
+import { Experience } from './Experience'
+
+describe('Experience debug continuous rendering', () => {
+  it('wakes the loop and prevents settling until the override is disabled', () => {
+    const requestRender = vi.fn()
+    const runtime = Object.assign(Object.create(Experience.prototype), {
+      _destroyed: false,
+      _debugContinuousRendering: false,
+      _needsRender: false,
+      _updateFailed: false,
+      _renderDisabled: false,
+      _activitySnapshot: { ...NO_ACTIVITY },
+      _raiseRenderDemand: requestRender,
+    }) as {
+      setDebugContinuousRendering: (enabled: boolean) => void
+      needsRender: boolean
+      _isLoopSettled: () => boolean
+    }
+
+    expect(runtime._isLoopSettled()).toBe(true)
+    runtime.setDebugContinuousRendering(true)
+
+    expect(requestRender).toHaveBeenCalledOnce()
+    expect(requestRender).toHaveBeenCalledWith('external')
+    expect(runtime._isLoopSettled()).toBe(false)
+    expect(runtime.needsRender).toBe(true)
+
+    runtime.setDebugContinuousRendering(false)
+    expect(runtime._isLoopSettled()).toBe(true)
+  })
+
+  it('does not wake a destroyed Experience', () => {
+    const requestRender = vi.fn()
+    const runtime = Object.assign(Object.create(Experience.prototype), {
+      _destroyed: true,
+      _debugContinuousRendering: false,
+      _raiseRenderDemand: requestRender,
+    }) as { setDebugContinuousRendering: (enabled: boolean) => void }
+
+    runtime.setDebugContinuousRendering(true)
+    expect(requestRender).not.toHaveBeenCalled()
+  })
+})

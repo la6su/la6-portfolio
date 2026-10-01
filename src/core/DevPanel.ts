@@ -201,9 +201,10 @@ export class DevPanel {
         r.toneMappingExposure = ev.value as number
       },
     )
-    // forceRender is read by the refresh interval (always running since the
-    // constructor) — no change handler needed here.
-    f.addBinding(this.controls, 'forceRender', { label: 'force render' })
+    f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on(
+      'change',
+      (ev) => this.exp.setDebugContinuousRendering(Boolean(ev.value)),
+    )
     f.addButton({ title: 'Reload page' }).on('click', () => location.reload())
   }
 
@@ -240,8 +241,7 @@ export class DevPanel {
         }
       )._storyNav
       this.stats.section = nav?.getSectionIndex() ?? 0
-      const exp = this.exp as unknown as { _needsRender?: boolean }
-      this.stats.rendering = exp?._needsRender ?? false
+      this.stats.rendering = this.exp.needsRender
       this.stats.lowFps = this.exp.lowFps
       this.stats.lang = getLang()
       const resources = this.getResourceSnapshot()
@@ -252,11 +252,6 @@ export class DevPanel {
       this.stats.sceneTextures = resources.scene.textures
       this.stats.postTargets = resources.post.renderTargets
       this.stats.postPasses = resources.post.passes
-
-      // Force render if toggle is on
-      if (this.controls.forceRender && exp) {
-        exp._needsRender = true
-      }
 
       // Actual rendered frames, not the browser's independent rAF cadence.
       if (performance.now() - this._lastRenderedAt > 750) {

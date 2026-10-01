@@ -5,6 +5,51 @@ test.skip(
   "Lifecycle trace hooks are available only in the dedicated Vite dev teardown run.",
 );
 
+test("DevPanel force-render wakes and sustains the Tres loop", async ({ page }) => {
+  await page.addInitScript(() => localStorage.removeItem("jlz:devpanel"));
+  await page.goto("/");
+  await expect(page.locator("#jlz-splash-enter")).toHaveClass(/is-ready/, {
+    timeout: 60_000,
+  });
+
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "d",
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    ),
+  );
+  // Tweakpane's checkbox input has no accessible label in its DOM view; the
+  // ground visibility toggle is first and force-render is the second toggle.
+  const forceRender = page.locator(".tp-ckbv_i").nth(1);
+  await expect(forceRender).toHaveCount(1);
+
+  const before = await page.evaluate(() => {
+    const runtime = window as Window & {
+      __jlzRuntimeSnapshot?: () => { loop: { frames: number } } | null;
+    };
+    return runtime.__jlzRuntimeSnapshot?.()?.loop.frames ?? 0;
+  });
+  await forceRender.check({ force: true });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const runtime = window as Window & {
+            __jlzRuntimeSnapshot?: () => { loop: { frames: number } } | null;
+          };
+          return runtime.__jlzRuntimeSnapshot?.()?.loop.frames ?? 0;
+        }),
+      { timeout: 5_000 },
+    )
+    .toBeGreaterThan(before + 10);
+
+  await forceRender.evaluate((input) => (input as HTMLInputElement).click());
+});
+
 test("SceneHost releases declared owners before disposing its renderer", async ({
   page,
 }) => {

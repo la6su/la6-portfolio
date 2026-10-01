@@ -80,6 +80,12 @@ preserve custom policy only when code or measurements prove the difference.
   Removed the field and its stale-field explanation; current frame gating uses
   the local snapshot. Navigation keeps the threshold-crossing frame open, and
   the following frames stay active through the carousel morph.
+- DevPanel's force-render toggle only assigned Experience's private demand
+  flag. It neither invalidated a settled Tres loop nor kept that loop alive,
+  so the control could not force continuous rendering. It now calls an
+  explicit dev-only Experience control; the scheduler remains active while
+  enabled and settles after it is disabled. The panel reads a public
+  `needsRender` snapshot instead of casting into that private field.
 - The coordinator's camera setter only forwarded a stable camera object each
   frame. The frame pass now receives the persistent Tres camera at construction;
   the per-frame setter and its forwarding API are removed.
@@ -277,9 +283,10 @@ The current lifecycle pass added generation checks immediately after the
 carousel and particle Vue mount awaits in `buildScene()`, and after the
 development-only DevPanel import. A stale initialization now stops before it
 constructs later scene controllers or republishes the runtime diagnostic
-global. Existing 81 unit tests, Vue type-check, ESLint, build and budgets pass;
-dedicated deterministic coverage for teardown during these exact awaits is
-still outstanding.
+global. Five deterministic lifecycle tests cover cancellation during carousel
+mount/init, particle mount, coordinator init and GPU prewarm. The additional
+DevPanel force-render regression tests cover loop wake, continuous activity,
+settling and post-destroy no-op behavior.
 
 **Accept when:** one composition root coordinates runtime; initialization,
 route changes, recovery, and teardown are idempotent and covered by tests;
@@ -461,12 +468,15 @@ remaining audit phases are still active.
    physical WebGPU/WebGL, recovery, resource plateau, idle-render and
    performance evidence on supported hardware.
 
-**Verified after Admin/Builder removal and first CSS reachability cleanup:** 92 unit tests, Vue type-check, ESLint,
+**Verified after Admin/Builder removal, CSS reachability cleanup and runtime simplification:** 94 unit tests, Vue type-check, ESLint,
 stdlib check, production build and bundle budgets pass. The sitemap contains
 11 URLs; Vite builds 357 modules and emits no `/p` pages or editor chunks. The
 Chromium/Firefox production run passed 33/40 tests; 7 renderer tests were
 skipped by their existing opt-in guards. Route, blog, keyboard/focus, touch,
 responsive overflow and scene teardown checks passed.
+The dev Chromium gate passed the force-render loop test and the SceneHost
+owner-before-renderer teardown test. Production output contains no Tweakpane
+or DevPanel UI strings; startup gzip is 3.02 kB.
 
 ## Follow-on goal policy
 

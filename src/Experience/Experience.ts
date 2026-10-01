@@ -137,6 +137,7 @@ export class Experience {
     return this.features?.storyNav ?? null
   }
   private _needsRender = true // start true to render the first frame
+  private _debugContinuousRendering = false
   // Ambient breathing requests one refresh frame every ~2.5 s while idle.
   // The loop stops when settled, so the per-frame dt
   // accumulator can no longer advance; the breath is a wall-clock timer that
@@ -165,6 +166,16 @@ export class Experience {
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean {
     return this._fpsTracker.lowFps
+  }
+  public get needsRender(): boolean {
+    return this._needsRender || this._debugContinuousRendering
+  }
+  /** Developer-only loop override used by DevPanel. */
+  public setDebugContinuousRendering(enabled: boolean): void {
+    if (!import.meta.env.DEV || this._destroyed || enabled === this._debugContinuousRendering)
+      return
+    this._debugContinuousRendering = enabled
+    if (enabled) this._raiseRenderDemand('external')
   }
   // Procedural IBL environment owner (SceneEnvironment.ts): applied once
   // after renderer.init() and re-applied after a device-loss recovery.
@@ -731,7 +742,8 @@ export class Experience {
     return (
       this._updateFailed ||
       this._renderDisabled ||
-      (!this._needsRender &&
+      ((!import.meta.env.DEV || !this._debugContinuousRendering) &&
+        !this._needsRender &&
         demandSettles(this._activitySnapshot) &&
         this.cursor?.isSettled !== false)
     )
@@ -1010,6 +1022,7 @@ export class Experience {
 
     // Apply camera and renderer work only when explicit demand or active scene
     // behavior requires a frame.
+    if (import.meta.env.DEV && this._debugContinuousRendering) this._needsRender = true
     if (shouldRender(this._needsRender, activity)) {
       const smoothing = cfg?.camSmoothing ?? DEFAULT_CAMERA_SMOOTHING
       const cameraStart = frameTiming ? performance.now() : 0
