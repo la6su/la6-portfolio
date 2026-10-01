@@ -189,6 +189,23 @@ for portfolio-specific behavior or a demonstrated compatibility gap. Track the
 before/after source size, dependency graph, and route/startup bundle when a
 change affects architecture or performance.
 
+### Repository metadata and verification gates
+
+`package.json` now names `la6-portfolio`, points at its GitHub repository and
+issue tracker, describes the Vue/Tres/WebGPU+TSL stack with WebGL2 fallback, and
+has searchable project keywords. `LICENSE` exists and matches the MIT package
+metadata. `README.md` documents proxy-safe `dev`, direct HMR mode, routes,
+known content placeholders and quality commands. The production `build` now
+includes Vue SFC/template checking before prerendering; plain `tsc` did not
+catch template identifier errors. Keep browser matrix and GPU checks separate
+because they need real browser/runtime evidence.
+
+As of 2026-10-02, installed Tres core/Cientos 5.9.2 match the latest official
+Tres release (2026-09-29); Three 0.186.1 and Vue 3.5.43 also match current npm
+stable tags. Vue 3.6 is still release-candidate tagged, so the stable line is
+retained pending a compatibility audit. Sources: [Tres releases](https://github.com/Tresjs/tres/releases),
+[Three on npm](https://www.npmjs.com/package/three), [Vue versions on npm](https://www.npmjs.com/package/vue?activeTab=versions).
+
 The Works stage exposed a concrete mismatch: `StageRegistry` used dynamic import,
 but Vite's broad `World/` manual chunk rule folded `WorksPlaneStage` back into
 the shared world bundle, and `SceneHost.onReady()` waited for a Works root on

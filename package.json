@@ -48,7 +48,7 @@
     "vitest": "^4.1.11",
     "vue-tsc": "3.3.11"
   },
-  "description": "EN/RU portfolio built with Vue 3, TresJS and Three.js TSL, featuring declarative 3D scenes powered by WebGPU.",
+  "description": "EN/RU portfolio built with Vue 3 and TresJS, using Three.js WebGPU/TSL with a WebGL2 fallback.",
   "dependencies": {
     "@tresjs/cientos": "5.9.2",
     "@tresjs/core": "5.9.2",
@@ -62,7 +62,15 @@
     "type": "git",
     "url": "git+https://github.com/la6su/la6-portfolio.git"
   },
-  "keywords": [],
+  "keywords": [
+    "portfolio",
+    "vue",
+    "tresjs",
+    "three.js",
+    "webgpu",
+    "tsl",
+    "creative-development"
+  ],
   "author": "la6su",
   "license": "MIT",
   "bugs": {
