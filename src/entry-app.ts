@@ -8,7 +8,6 @@ import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 import { resolvePagePath } from './core/routeManifest'
 // LANG_KEY handled by i18n.ts
-import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -166,7 +165,6 @@ function updateLoaderStatus(value: string): void {
   if (status) status.textContent = value
 }
 
-let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
 let _readyEventTimer: ReturnType<typeof setTimeout> | null = null
 let _bootstrapUnsubs: Array<() => void> = []
@@ -220,54 +218,26 @@ function scheduleReadyEvent(delayMs: number): void {
   }, delayMs)
 }
 
-function transitionBootstrap(next: BootstrapState): boolean {
-  const result = tryTransition(_bootstrapState, next)
-  if (!result) {
-    console.warn(`[entry-app] invalid bootstrap transition: ${_bootstrapState} -> ${next}`)
-    return false
-  }
-  _bootstrapState = result
-  return true
-}
-
-interface BootResult {
-  retryable: boolean
-}
-
-async function boot(): Promise<BootResult> {
-  if (_bootstrapState === 'ready' || _bootstrapState === 'entered') {
-    return { retryable: false }
-  }
-  if (_bootstrapState === 'failed') transitionBootstrap('app-loading')
-  else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
+async function boot(): Promise<void> {
   // DOM-only mode keeps routes and navigation available without creating a
   // scene renderer or canvas.
   if (noSceneRequested) {
     try {
-      transitionBootstrap('renderer-initializing')
       updateLoaderStatus('READY')
-      transitionBootstrap('scene-prewarming')
-      transitionBootstrap('ready')
       eventBus.emit('jlz:webgl-ready')
-      return { retryable: false }
+      return
     } catch (e) {
       console.error('[entry-app] no-scene bootstrap failed:', e)
-      transitionBootstrap('failed')
       eventBus.emit('jlz:webgl-failed')
-      return { retryable: true }
+      throw new Error('DOM-only application bootstrap failed', { cause: e })
     }
   }
 
-  // A failed initialization may retry only before the one-shot SceneHost has
-  // settled. Once it owns a renderer/canvas, a second attempt is unsafe.
+  // Failures before the one-shot SceneHost settles are surfaced to the shell;
+  // after it settles, its mounted Vue owner presents the failure state.
   let experience: import('./Experience/Experience').Experience | null = null
   let sceneHostSettled = false
   try {
-    transitionBootstrap('renderer-initializing')
-    // entry-shell.ts set the reduced-motion dataset synchronously at shell
-    // load (legacy E2E/CSS hook); the preference itself is read on demand
-    // through motionPolicy.prefersReducedMotion().
-
     const bootStart = performance.now()
     updateLoaderStatus('INITIALIZING')
 
@@ -284,7 +254,6 @@ async function boot(): Promise<BootResult> {
     const { sceneHost } = await import('./app/sceneHost')
     sceneHostSettled = true
     const host = await sceneHost.ready
-    transitionBootstrap('scene-prewarming')
     updateLoaderStatus('PREPARING SCENE')
     const { Experience } = await import('./Experience/Experience')
 
@@ -345,9 +314,7 @@ async function boot(): Promise<BootResult> {
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
-    transitionBootstrap('ready')
     scheduleReadyEvent(prefersReducedMotion() ? 0 : readyAt)
-    return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
     try {
@@ -358,10 +325,10 @@ async function boot(): Promise<BootResult> {
     clearHostProbe()
     clearReadyWatchdog()
     clearReadyEventTimer()
-    transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
-    const retryable = !sceneHostSettled
-    return { retryable }
+    // Before SceneHost settles, the shell entry has no mounted app owner to
+    // present recovery UI, so let its independent module-load fallback run.
+    if (!sceneHostSettled) throw new Error('Application bootstrap failed', { cause: e })
   }
 }
 
@@ -421,7 +388,6 @@ async function startAppOnce(): Promise<void> {
   _bootstrapUnsubs.push(
     eventBus.on('jlz:webgl-failed', () => {
       clearReadyWatchdog()
-      if (_bootstrapState !== 'failed') transitionBootstrap('failed')
       showLoadError()
     }),
   )
@@ -439,8 +405,6 @@ async function startAppOnce(): Promise<void> {
 
   _bootstrapUnsubs.push(
     eventBus.on('jlz:splash-entered', () => {
-      transitionBootstrap('entered')
-
       const reveal = () => {
         const root = contentRoot()
 
@@ -520,10 +484,7 @@ async function startAppOnce(): Promise<void> {
     }),
   )
 
-  const result = await boot()
-  if (_bootstrapState === 'failed' && result.retryable) {
-    throw new Error('Application bootstrap failed')
-  }
+  await boot()
 }
 
 // The shell entry calls startApp() exactly once; boot() itself is idempotent
