@@ -105,7 +105,7 @@ plugin wiring, package scripts, and current module ownership. Items marked
 | Public media and budgets | Public runtime assets resolve to app/blog/builder references; `coming-soon.mp4` dominates transfer size (~5.27 MB). `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
 | Release/deployment | CI checks and browser-tests; no deploy workflow or host config exists in repository. `dist/` remains tracked pending identification of its consumer. | Identify host, rewrite/history behavior, cache headers and whether host consumes committed `dist/` or builds source. Reproduce from a clean checkout. | P0 verify: documented release path matches deployment. |
 | Render loop and animation | Tres is the only scene render-loop driver; `RenderScheduler` controls its open/close window. Other RAF users are DOM text reveal, UIkit content refresh, route-hash polling and route announcement. | Keep the one scene loop. Inspect per-call cleanup and whether each DOM animation has an independent cancellation owner during unmount. | P1: no second scene loop or uncanceled callback after owner teardown. |
-| Cross-browser/GPU | Chromium and Firefox software-rendered suites are recorded; WebKit cannot launch on this host and physical WebGPU/recovery evidence is absent. | Run WebKit on declared CI/available host, then WebGPU/WebGL and context recovery on supported physical hardware. | P0 release evidence; do not infer GPU behavior from software renderer runs. |
+| Cross-browser/GPU | Full production suites pass on system Chromium (`JLZ_CHROMIUM_PATH=/usr/bin/chromium`: 17 passed, 3 opt-in skips) and Firefox (16 passed, 4 opt-in skips). WebKit cannot launch: installed MiniBrowser is missing ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl libraries. `nvidia-smi` cannot communicate with a driver in this environment. | Run WebKit in CI/host with declared dependencies, then actual WebGPU/WebGL and context recovery on a machine where the NVIDIA driver is available. | P0 release evidence; software render results do not prove physical-GPU behavior. |
 
 ### Audit execution order
 
@@ -302,12 +302,10 @@ constructing its unavailable WebGL fallback, which Tres reports and the app
 handles as boot failure. Scene-only project and showreel actions are omitted
 in this fallback; case-study and route links remain available.
 
-**Next audit:** walk focus, contrast, touch targets, resize/orientation, and
-renderer-failure navigation across EN/RU routes. Run the production suite in
-Safari/WebKit. The local WebKit
-binary cannot launch because this host lacks `libicu74`, `libxml2`, and
-`libflite1`; CI installs browser dependencies and is the current execution
-path.
+**Next audit:** finish focus, contrast, touch-target and resize/orientation
+walks across EN/RU routes. Chromium and Firefox production suites now pass on
+this host. Run Safari/WebKit in CI or on a host with WebKit's required system
+libraries; its cached binary cannot launch here.
 
 **Accept when:** route/content and accessibility essentials pass desktop and
 mobile production walks in Chromium, Firefox, and Safari/WebKit; the portfolio
@@ -388,12 +386,13 @@ production build and budgets pass. Current limits remain 3.03 kB startup gzip,
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog, both builder locales and sitemap use the staging
 origin; the normal build restored production outputs. Firefox production
-checks passed for direct/lazy route hashes and host teardown. Previous full
-Chromium production coverage passed (17 passed, 3 opt-in renderer cases
-skipped); a rerun cannot start because the Playwright Chromium binary is
-missing. WebKit lacks `libicu74`, `libxml2` and `libflite1` on this host.
-Browser runs use software rendering and do not establish physical-GPU WebGPU,
-device-loss recovery or performance.
+production suite passed (16 passed, 4 opt-in renderer cases skipped), including
+the latest loader status assertion. Full production Chromium passed (17
+passed, 3 opt-in renderer cases skipped) using `/usr/bin/chromium` through
+`JLZ_CHROMIUM_PATH`. The cached WebKit MiniBrowser cannot launch because its
+ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
+`nvidia-smi` cannot reach a GPU driver here. Browser runs use software
+rendering and do not establish physical-GPU WebGPU, recovery or performance.
 
 The route-hash cancellation change and Experience stale-init guards pass build,
 type, lint and unit gates. The loader now reports phases instead of estimated
