@@ -705,18 +705,21 @@ remaining audit phases are still active.
 
 **Next actions:**
 
-1. Complete the source audit for CSS reachability, public media and generated artifacts.
-2. Finish phase 2's `Experience.ts` teardown trace and composition-boundary
-   reduction, including renderer recovery candidates and init failure. Stable
-   scene dependencies now use direct references; stage resources remain lazy.
-3. Finish phase 5's generated-output and LESS selector audit; inspect the
-   5.27 MB video before setting a measurable media budget.
-4. Continue phase 4's EN/RU keyboard, contrast, touch, resize and renderer
-   failure walk; run WebKit in CI or a host with its declared libraries.
-5. Close phase 0 only after identifying the deploy consumer and reproducing
-   clean install/build, routing and cache behavior. Close phases 3/5 only with
-   physical WebGPU/WebGL, recovery, resource plateau, idle-render and
-   performance evidence on supported hardware.
+1. Continue phase 2's runtime composition audit: trace `Experience.ts`,
+   `ExperienceUI`, `SceneCoordinator`, renderer recovery and startup failure;
+   remove boundaries that only forward state and preserve owners with real
+   algorithms or async resource lifecycles.
+2. Finish the phase 3 route-stage and WebGPU/TSL ownership review, including
+   route churn, recovery, disposal and idle-render behavior. Use hardware
+   evidence before changing backend policy.
+3. Close phase 0 only after identifying the deploy consumer and reproducing
+   clean install/build, routing and cache behavior.
+4. Continue phase 4's EN/RU keyboard, touch, resize and renderer-failure walk;
+   run WebKit in CI or a host with its declared libraries.
+5. Defer CSS/style cleanup, selector reachability, and broad codebase
+   minification to the later simplification phase requested by the user. Keep
+   generated output and public-asset checks in the production release audit,
+   but do not make them the current architecture workstream.
 
 **Verified after Admin/Builder removal, CSS reachability cleanup and runtime simplification:** 97 unit tests, Vue type-check, ESLint,
 stdlib check, production build and bundle budgets pass. The sitemap contains
