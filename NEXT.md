@@ -58,7 +58,9 @@ preserve custom policy only when code or measurements prove the difference.
 - Keep `RenderScheduler`: Tres 5.9.2 on-demand gates renderer calls but retains
   its RAF loop; this project also requires zero idle ticks, settled activity
   windows, and hidden-tab pause/resume. Reconsider only if equivalent behavior
-  is verified against installed Tres source and browser evidence.
+  is verified against installed Tres source and browser evidence. Scene-frame
+  exceptions stop that loop once and are reported to native console; a later
+  invalidation can retry the owner.
 - Keep the typed `EventBus` for communication across the classic HTML shell,
   Vue router/views, and independently owned runtime/UI controllers. Do not
   replace it with another abstraction absent a concrete same-owner duplicate.
@@ -82,11 +84,14 @@ acceptance evidence exists.
 ### 0. Repository and production baseline — active
 
 **Established:** repository/package identity matches `la6su/la6-portfolio`;
-current Vue/Tres/Three/Vite dependencies and build scripts are used; installed
+installed matrix is Vue 3.5.43, Vue Router 5.3.1, Tres core/Cientos 5.9.2,
+Three 0.186.1, Vite 8.3.2, plugin-vue 6.0.9, TypeScript 6.0.3; installed
 dependencies are not tracked; generated blog and builder inputs have known
 sources and build consumers; scripts/dependencies and Node/Bun boundaries were
 audited with no proven unused direct dependency. CI contains unit, type, lint,
-repository, and browser jobs.
+repository, and browser jobs. TypeScript 7.0.2 is released, but the installed
+`typescript-eslint` peer range ends below 6.1.0, so a TypeScript 7 upgrade is
+not currently compatible with the lint matrix.
 
 **Remaining:** identify the deploy consumer for tracked `dist/` (84 tracked
 files in the last audit) before changing its tracking policy; prove clean
@@ -214,8 +219,9 @@ remains navigable without GPU initialization.
 Three's `MathUtils`; unused device getters and compatibility alias, duplicate
 clock, Works WeakMap metadata, and global error tracker were removed. The
 preloaded Commissioner font is WOFF2. Large media was reduced and unreferenced
-assets removed after source/content searches. Current source slices passed
-Chromium and Firefox production suites, Vue type-check, lint, and 73 unit
+assets removed after source/content searches. Frame-owner failures are no
+longer swallowed by the render scheduler. Current source slices passed
+Chromium and Firefox production suites, Vue type-check, lint, and 77 unit
 tests.
 
 **Next audit:** finish source-to-output inventory for assets, routes, scripts,
@@ -243,8 +249,8 @@ changes are committed. The `?no-scene` flag now has one Vue-free source used by
 bootstrap, SceneHost, and both Vue shell controls. `dist/` is restored after
 build verification and remains tracked pending deploy-contract evidence.
 
-**Verified locally:** Vue type-check, ESLint, all 76 unit tests, production
-build/budgets, and the full production Chromium suite (17 passed, 3 opt-in
+**Verified locally:** Vue type-check, ESLint, all 77 unit tests, production
+build/budgets on Vite 8.3.2, and the full production Chromium suite (17 passed, 3 opt-in
 renderer scenarios skipped). That includes repeated lazy-stage mount/release,
 route metadata, DOM-only navigation and icons, renderer-failure continuation,
 showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
