@@ -162,15 +162,16 @@ Behavior controllers keep media/rendering policies at their existing owners;
 Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
 by the user and the local suite.
 
-**Next audit:** validate the just-moved story rail's labels, focus, active-state,
-and sheet behavior. `CinematicNav` still projects page headings into button
-labels through direct DOM updates; check whether Vue route state can supply
-those labels without duplicating content lookup. Keep scroll observation and
-story-position policy in the controller.
-Then audit hash navigation against router/browser behavior; walk EN/RU routes,
-direct deep links, hash navigation,
-focus, contrast, touch targets, resize/orientation, no-scene and renderer
-failure states. Run the production suite in Safari/WebKit. The local WebKit
+**Established:** the story rail's active state comes from the existing
+`jlz:story-index-change` event; current page headings supply the rail's labels
+after translation. Keeping that small DOM projection avoids a second set of
+route-specific translated strings. Vue owns the rail root lifetime; the
+controller resets its inert/sheet state and listeners without removing it.
+
+**Next audit:** walk hash navigation, focus, contrast, touch targets,
+resize/orientation, no-scene and renderer-failure states against the router and
+browser-library behavior across EN/RU routes and direct deep links. Run the
+production suite in Safari/WebKit. The local WebKit
 binary cannot launch because this host lacks `libicu74`, `libxml2`, and
 `libflite1`; CI installs browser dependencies and is the current execution
 path.
@@ -236,10 +237,13 @@ controller's duplicate active-class projection. A new active-slot regression
 test exposed a missed initial state callback; `onSectionChange` now sends the
 current slot on registration. The focused test and full Chromium (15 passed,
 3 opt-in skipped) and Firefox (14 passed, 4 skipped) suites pass; dedicated
-Chromium teardown also passes (1/1).
+Chromium teardown also passes (1/1). A final ownership check confirmed runtime
+dispose leaves the Vue rail mounted and resets its sheet state; AppShell then
+removes it during unmount. Vue type-check, lint, unit suite (73 tests),
+format checks on changed documentation/test teardown files, and diff checks
+pass after that cleanup.
 
-**Next action:** audit the remaining direct DOM label projection in
-`CinematicNav`, then continue phase 1's source-to-owner inventory and phase 4's
+**Next action:** continue phase 1's source-to-owner inventory and phase 4's
 hash-navigation/router behavior audit. Make the next code change only after
 identifying a concrete duplicate owner or stable hierarchy still constructed
 outside Vue. Preserve `dist/` until its deployment consumer is established.

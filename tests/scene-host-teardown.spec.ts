@@ -28,6 +28,7 @@ test("SceneHost releases declared owners before disposing its renderer", async (
     window.__jlzRuntimeDestroy?.();
     window.__jlzRuntimeDestroy?.();
   });
+  await expect(page.locator("#cinematic-nav")).toHaveCount(1);
   await page.evaluate(() => window.__jlzTestUnmountVueApp?.());
   await expect(page.locator("#jlz-fs-overlay")).toHaveCount(0);
   await expect(page.locator("#jlz-showreel-console")).toHaveCount(0);

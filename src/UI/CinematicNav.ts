@@ -434,10 +434,7 @@ export class CinematicNav {
       document.removeEventListener('click', this._sheetClickHandler, true)
     this._navButtons = []
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
-    this._mainSections.forEach((section) => {
-      section.inert = false
-    })
-    delete document.body.dataset.cinematicSheet
-    this.el.remove()
+    this._side = 'center'
+    this._applySideState()
   }
 }
