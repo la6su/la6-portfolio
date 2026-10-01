@@ -42,7 +42,6 @@ import BakuCubeOwner from './scene/BakuCubeOwner.vue'
 import IntroLightFramesOwner from './scene/IntroLightFramesOwner.vue'
 import CursorTrailOwner from './scene/CursorTrailOwner.vue'
 import EnvSky from './scene/EnvSky.vue'
-import WorksStageOwner from './scene/WorksStageOwner.vue'
 import ContactCyprusStageOwner from './scene/ContactCyprusStageOwner.vue'
 import ContactTypographyStageOwner from './scene/ContactTypographyStageOwner.vue'
 import PointerInkStageOwner from './scene/PointerInkStageOwner.vue'
@@ -164,6 +163,13 @@ const cameraNode = cameraSlot.value
 // Consumers: the policy port (Experience/Camera), this template's v-if and
 // the `body[data-lab-camera]` CSS port the pass-through layers react to.
 const route = useRoute()
+const hasMountedWorksRoute = ref(route.name === 'works')
+watch(
+  () => route.name,
+  (name) => {
+    if (name === 'works') hasMountedWorksRoute.value = true
+  },
+)
 const pointerQuery =
   typeof window.matchMedia === 'function' ? window.matchMedia('(pointer: fine)') : null
 const pointerFine = ref(pointerQuery?.matches ?? false)
@@ -204,6 +210,9 @@ onBeforeUnmount(() => {
 // policy first activates on the Lab route (async component = lazy chunk).
 const LabCameraControls = defineAsyncComponent(() => import('./scene/LabCameraControls.vue'))
 const LabGamepadOwner = defineAsyncComponent(() => import('./scene/LabGamepadOwner.vue'))
+// The Works scene root and installation only exist on the Works route. Keep
+// that SFC and its stage leaves out of the persistent canvas's startup graph.
+const WorksStageOwner = defineAsyncComponent(() => import('./scene/WorksStageOwner.vue'))
 
 // Cold-start wake: camera-controls' own pointer handlers only dispatch
 // events — the first drag must open a scheduler window itself. The wrapped
@@ -227,7 +236,7 @@ const {
   declarativeCarousel,
   declarativeShowreelTheater,
   clear: clearSceneStages,
-} = useSceneStages(() => !disposed, () => worksRootSlot.value.value)
+} = useSceneStages(() => !disposed, () => readyNode(worksRootSlot))
 
 const disposedRenderers = new WeakSet<object>()
 
@@ -280,7 +289,6 @@ async function onReady(context: TresContext): Promise<void> {
   const lights = await readyNode(lightsSlot)
   const ground = await readyNode(groundSlot)
   const sectionRoots = await readyNode(sectionRootsSlot)
-  await readyNode(worksRootSlot)
   const servicesStage = await readyNode(servicesStageSlot)
   const envSphere = await readyNode(envSphereSlot)
   const baku = await readyNode(bakuSlot)
@@ -460,6 +468,7 @@ onUnmounted(async () => {
       />
       <LabGamepadOwner v-if="declarativeLabGamepad" :stage="declarativeLabGamepad" />
       <WorksStageOwner
+        v-if="hasMountedWorksRoute"
         :stage="declarativeWorksStage"
         :installation="declarativeWorksInstallation"
         @root-ready="worksRootSlot.resolve"

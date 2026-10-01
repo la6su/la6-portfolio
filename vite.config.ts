@@ -199,6 +199,8 @@ export default defineConfig(({ mode }) => {
                 if (id.includes('/src/core/Section')) return 'chunk-sections'
                 if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
                 if (id.includes('/src/Experience/Cursor')) return 'chunk-cursor'
+                if (id.includes('/src/Experience/World/WorksPlaneStage')) return 'chunk-works-stage'
+                if (id.includes('/src/Experience/World/WorksInstallation')) return 'chunk-works-stage'
                 if (id.includes('/src/Experience/World/')) return 'chunk-world'
                 if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'
                 if (id.includes('/src/core/PostProcessingManager')) return 'chunk-post'

@@ -154,7 +154,7 @@ preserve custom policy only when code or measurements prove the difference.
   AppShell unmount. `RouteTransitionView.vue` declares the transition surface;
   the route controller retains only guard timing and cancel policy.
 
-## Full source audit — findings and work queue (2026-10-01)
+## Full source audit — findings and work queue (2026-10-02)
 
 This is the current source-to-runtime audit, not a claim that production
 acceptance is complete. Findings below are grounded in inspected call sites,
@@ -178,6 +178,28 @@ next refactor slices:
 | Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (336 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (271 lines). Vue owns a second set of shallow refs in `useSceneStages.ts`/`stageSlot.ts` so `<primitive>` mounts/unmounts before controller disposal. This may be justified by async imports, `nextTick`, and teardown ordering, but the two ownership layers and per-stage contract repetition need a caller map. | Trace each ensure/dispose route path, every async boundary and what becomes invalid on unmount. Remove unused slot APIs or duplicated stage state; preserve only race cases required by observed call sites. Compare Vue async components/props and Tres lifecycle behavior before replacing custom lazy ownership. |
 | Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` and `core/types.ts` define adjacent contracts; route, sitemap and blog metadata have separate derived registries. | Decide one source record per project and derive card/case/sitemap views from it where fields overlap. Preserve separate authored content only where its meaning differs. Add closed-set checks only at real content boundaries. |
 | Performance and DX | `SceneHost.vue` and `Experience.ts` are large mixed-responsibility modules. `entry-app.ts` statically imports reveal and shell utilities before the app graph is lazy. Scene feature ownership is declarative in many places but controller adoption and disposal conventions vary by owner. | Measure startup and route chunk boundaries. Move expensive scene/feature modules behind the route/feature that needs them; standardize a small SFC + controller convention. Remove hand-built utility behavior when Vue/Tres/Three already provides the same contract. |
+
+### Cross-cutting simplification evidence
+
+The audit must treat active code as a candidate too: for each behavior, identify
+whether Vue, Tres, Three, or an installed utility already owns the same state,
+rendering, lifecycle, scheduling, or DOM contract. Prefer deleting the project
+copy and adapting at the actual framework boundary; preserve custom code only
+for portfolio-specific behavior or a demonstrated compatibility gap. Track the
+before/after source size, dependency graph, and route/startup bundle when a
+change affects architecture or performance.
+
+The Works stage exposed a concrete mismatch: `StageRegistry` used dynamic import,
+but Vite's broad `World/` manual chunk rule folded `WorksPlaneStage` back into
+the shared world bundle, and `SceneHost.onReady()` waited for a Works root on
+every route. `WorksStageOwner` is now a Vue async component mounted on the first
+Works visit, then retained for the persistent canvas lifetime so its one-shot
+root readiness promise cannot point at an unmounted root after route re-entry.
+Stage instances and GPU leaves still follow route lifecycle. Specific Vite
+groups put the Works controller/installation behind that route. The production
+build confirms separate `WorksStageOwner` (2.78 kB) and `chunk-works-stage`
+(10.17 kB) outputs; initial app code now references the owner through a dynamic
+import. Shared Three remains a larger startup cost and is still under audit.
 
 These findings are audit targets, not instructions to mechanically merge files.
 The intended reference from TvT is its practical `src/` organization around
@@ -235,12 +257,16 @@ the installed declarations/source and current upstream docs.
 
 ### Immediate next slice
 
-Continue the route/stage ownership map. The mutable page mirror and bootstrap
-state machine are removed. Trace the remaining `jlz:route-change` consumers,
-then map each `StageRegistry` contract to route entry/leave, lazy mount, active
-state, and terminal release. Simplify the stage lifecycle only after separating
-Vue's render-slot ownership from the controller's async resource ownership.
-Then continue the WebGPU renderer and post-processing audit.
+Continue the broad simplification audit with active code, not just unused
+symbols. Complete a per-stage caller/resource map, then compare the custom
+`LazyStage` and duplicated Vue slot state against Vue async component lifecycle
+and Tres ownership; collapse layers where one framework boundary can own the
+same job without weakening late-load cleanup. In parallel, trace `Experience`,
+renderer recovery, and post-processing call/data flows, deleting pass-through
+policy and repeated state where Tres/Three already provides the behavior.
+Prioritize measurable route startup and WebGPU render-path costs. Keep this plan
+updated with findings, removed code, bundle evidence, and unresolved hardware
+acceptance rather than treating passing existing checks as architecture proof.
 
 ## Phases
 

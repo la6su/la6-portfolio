@@ -21,7 +21,7 @@ import {
   ensureLazyStage,
   type LazyStageContract,
 } from './LazyStage'
-import { WorksPlaneStage } from './World/WorksPlaneStage'
+import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactHaloStage } from './World/ContactHaloStage'
 import type { ManifestoInkStage } from './World/ManifestoInkStage'
@@ -86,7 +86,10 @@ export class StageRegistry {
     return {
       label: 'WorksPlaneStage',
       owner: this.slots.worksPlane.owner,
-      create: () => new WorksPlaneStage(),
+      create: createImportedLazyStage(
+        () => import('./World/WorksPlaneStage'),
+        ({ WorksPlaneStage }) => WorksPlaneStage,
+      ),
       attach: (stage) => this._ctx.host().works.mountStage(stage),
       load: async (stage, isCurrent) => {
         await stage.init()

@@ -12,7 +12,7 @@ import type { JunniParticles } from '../Experience/World/JunniParticles'
 import type { BakuCarousel } from '../Experience/World/BakuCarousel'
 import type { ShowreelTheater } from '../Experience/World/ShowreelTheater'
 
-export function useSceneStages(isAlive: () => boolean, getWorksRoot: () => Group | null) {
+export function useSceneStages(isAlive: () => boolean, getWorksRoot: () => Group | Promise<Group>) {
   const worksStageSlot = createStageSlot<WorksPlaneStage>({ isAlive })
   const worksInstallationSlot = createStageSlot<WorksInstallation>({ isAlive })
   const contactHaloSlot = createStageSlot<ContactHaloStage>({ isAlive })
@@ -28,8 +28,7 @@ export function useSceneStages(isAlive: () => boolean, getWorksRoot: () => Group
     works: {
       mountStage: async (stage) => {
         if (!isAlive()) return
-        const root = getWorksRoot()
-        if (!root) throw new Error('The declarative Works scene root is not ready.')
+        const root = await getWorksRoot()
         stage.mount(root)
         await worksStageSlot.mount(stage)
       },
