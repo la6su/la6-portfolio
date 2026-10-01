@@ -1,11 +1,9 @@
 // src/Experience/Input.ts
 import * as THREE from 'three'
 
-// Module-private: every consumer takes the `input` singleton below — keeping
-// the class unexported makes a second instance unrepresentable.
+// Module-private input owner. The module exports one instance; consumers
+// cannot construct another one.
 class Input {
-  static instance: Input | undefined
-
   mouse: THREE.Vector2 = new THREE.Vector2()
   private started = false
 
@@ -13,13 +11,6 @@ class Input {
   private readonly _onMouseMove = (event: MouseEvent) => {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-  }
-
-  constructor() {
-    if (Input.instance) return Input.instance
-    Input.instance = this
-
-    this.start()
   }
 
   /** Reattach the singleton listener after an explicit runtime teardown. */

@@ -120,7 +120,9 @@ focused tests. The unused global error tracker is removed. Route-specific
 stage contracts remain separate from the generic stale-request lifecycle.
 The fullscreen behavior controller is released when its Vue host unmounts.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
-the unreferenced `twitter` product icon module was removed.
+the unreferenced `twitter` product icon module was removed. Module-private
+pointer input is one ES-module instance and starts only in `Experience.init()`;
+it no longer installs a global listener during module evaluation.
 
 **Next audit:** trace `Experience.ts` end to end and test every remaining
 boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
@@ -222,14 +224,17 @@ The application shell and stable scene hierarchy are Vue/Tres-owned. Behavior
 controllers remain for Three algorithms, browser/media policy, route-guard
 timing, and lifecycle work that the framework does not supply. Recent audits
 removed duplicate renderer-query parsing, a redundant UIkit global assignment,
-the unused project icon registration, a DOM-only UIManager subscription, and
-the Works room-count literals. These changes are committed. `dist/` is
+the unused project icon registration, a DOM-only UIManager subscription, the
+Input class's redundant singleton guard/import side effect, and the Works
+room-count literals. These changes are committed. `dist/` is
 restored after build verification and remains tracked pending deploy-contract
 evidence.
 
-**Verified locally:** Vue type-check, ESLint, all 73 unit tests, production
-build/budgets, Chromium showreel/fullscreen interactions, direct SPA route
-metadata, DOM-only navigation, and renderer-failure continuation. Firefox
+**Verified locally:** Vue type-check, ESLint, all 74 unit tests, production
+build/budgets, and the full production Chromium suite (17 passed, 3 opt-in
+renderer scenarios skipped). That includes repeated lazy-stage mount/release,
+route metadata, DOM-only navigation and icons, renderer-failure continuation,
+showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
 production route, hash, and fallback suites passed in the prior matrix run.
 These browser runs use software rendering. They do not prove physical-GPU
 WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
