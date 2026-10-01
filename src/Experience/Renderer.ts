@@ -1,7 +1,6 @@
 // src/Experience/Renderer.ts
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
-import { Sizes } from "./Sizes";
 import { DeviceCapability } from "../core/DeviceCapability";
 import { eventBus } from "../core/EventBus";
 import { PostProcessingManager } from "../core/PostProcessingManager";
@@ -28,6 +27,12 @@ import {
 
 export type RenderSurface = WebGPURenderer;
 
+export interface Viewport {
+  width: number
+  height: number
+  dpr: number
+}
+
 /** WebGPURenderer's device-loss hook is runtime-supported but not declared
  * by the Three type surface used by this project. Keep that narrow extension
  * at the integration boundary instead of weakening the whole renderer. */
@@ -53,7 +58,7 @@ export interface AdoptedRenderer {
 export class Renderer {
   instance!: RenderSurface;
   private capabilities = DeviceCapability.getInstance();
-  private sizes: Sizes;
+  private viewport: Viewport;
 
   // Post-processing manager (section-aware crossfade)
   public postManager = new PostProcessingManager();
@@ -81,8 +86,8 @@ export class Renderer {
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
   private _unsupportedOverlay: HTMLElement | null = null;
 
-  constructor(sizes: Sizes) {
-    this.sizes = sizes;
+  constructor(viewport: Viewport) {
+    this.viewport = viewport;
     if (this.capabilities.mode === "unsupported") {
       if (!this._disposed) this.showUnsupportedMessage();
       throw new Error(
@@ -115,13 +120,9 @@ export class Renderer {
     // Recovery must preserve the final backend selected by SceneHost.
     this._forceWebGL = adopted.mode === "webgl";
     this.capabilities.setFinalRendererMode(adopted.mode);
-    this.instance.setPixelRatio(
-      Math.min(this.sizes.dpr, this.capabilities.maxDpr),
-    );
-    this.instance.setSize(this.sizes.width, this.sizes.height);
-
     // Capability tier and post settings must reflect the backend selected
-    // above, not merely the initial navigator.gpu feature detection.
+    // above, not merely the initial navigator.gpu feature detection. Tres
+    // already applied the live size and DPR before publishing SceneHost.ready.
     this.postManager.refreshQualityTier();
 
     // ── Diagnostic: log final render path + EnvSphere path ──
@@ -311,9 +312,9 @@ export class Renderer {
       this.capabilities.setFinalRendererMode(plan.mode);
 
       this.instance.setPixelRatio(
-        Math.min(this.sizes.dpr, this.capabilities.maxDpr),
+        Math.min(this.viewport.dpr, this.capabilities.maxDpr),
       );
-      this.instance.setSize(this.sizes.width, this.sizes.height);
+      this.instance.setSize(this.viewport.width, this.viewport.height);
       this.postManager.refreshQualityTier();
       this.pipeline = RenderPipeline.create(
         this.instance,
@@ -377,17 +378,6 @@ export class Renderer {
     } else {
       this.instance.render(scene, camera);
     }
-  }
-
-  /** Resize: propagate viewport changes to canvas, renderer, pipeline, and world. */
-  public resize(): void {
-    if (this._recoveryFailed || this._disposed) return;
-    const w = this.sizes.width;
-    const h = this.sizes.height;
-    this.instance.setPixelRatio(
-      Math.min(this.sizes.dpr, this.capabilities.maxDpr),
-    );
-    this.instance.setSize(w, h);
   }
 
   public getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot {

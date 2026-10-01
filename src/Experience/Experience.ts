@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { Sizes } from './Sizes'
+import { watch, type WatchStopHandle } from 'vue'
 import { Camera } from './Camera'
-import { Renderer, type RenderSurface } from './Renderer'
+import { Renderer, type RenderSurface, type Viewport } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -58,12 +58,12 @@ import { devDiagnostic } from '../core/devDiagnostic'
  */
 type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> & {
   renderer: RenderSurface
+  sizes: SceneHostReady['context']['sizes']
   replaceRenderer(renderer: RenderSurface): void
 }
 
 export class Experience {
   scene!: THREE.Scene
-  sizes!: Sizes
   /** Per-frame delta clamp — internal to the loop host. */
   camera!: Camera
   renderer!: Renderer
@@ -124,7 +124,8 @@ export class Experience {
   }
   private currentSectionContext: string | null = null
   private _prevSectionIndex = -1
-  private _onSizesResize: () => void = () => {}
+  private _stopSizeWatch: WatchStopHandle | null = null
+  private readonly viewport: Viewport
   private _onRendererRecovered: (() => void) | null = null
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
@@ -189,17 +190,20 @@ export class Experience {
     host: ExperienceHost,
     private page: () => PageId = () => 'home',
   ) {
-    this.sizes = new Sizes()
+    this.viewport = {
+      width: host.sizes.width.value,
+      height: host.sizes.height.value,
+      dpr: host.sizes.pixelRatio.value,
+    }
     // SceneHost is the single scene + camera owner. Experience adopts those
     // instances for cinematic state and never creates a fallback world.
     this._host = host
     this.scene = host.scene
     this.camera = new Camera(
-      this.sizes,
       host.camera,
       DeviceCapability.getInstance().isMobile,
     )
-    this.renderer = new Renderer(this.sizes)
+    this.renderer = new Renderer(this.viewport)
     // The env owner reads the renderer + glass cube lazily: it is applied
     // after renderer.init() and again after a device-loss recovery.
     this._environment = new SceneEnvironment({
@@ -268,26 +272,30 @@ export class Experience {
     }
     eventBus.on('jlz:webgl-failed', this._onWebGLFailed)
 
-    // Fan one viewport snapshot out to the scene owners.
-    this._onSizesResize = () => {
-      this.resizeSceneOwners()
-      this._raiseRenderDemand('resize')
-    }
-    this.sizes.onResize(this._onSizesResize)
+    // Tres owns viewport observation, renderer sizing/DPR and camera aspect.
+    // Project stages still need the same reactive dimensions for their own
+    // viewport-dependent transforms.
+    this._stopSizeWatch = watch(
+      [host.sizes.width, host.sizes.height, host.sizes.pixelRatio],
+      ([width, height, dpr]) => {
+        this.viewport.width = width
+        this.viewport.height = height
+        this.viewport.dpr = dpr
+        this.resizeSceneOwners()
+        this._raiseRenderDemand('resize')
+      },
+    )
   }
 
   private resizeSceneOwners(): void {
-    // Sizes is the single viewport listener. Fan the already-updated snapshot
-    // out synchronously so the camera, renderer and route owners observe one
-    // coherent frame size.
-    this.camera?.resize()
-    this.renderer?.resize()
-    this.coordinator?.resize(this.sizes.width, this.sizes.height)
+    // Tres already sizes the renderer and updates registered camera aspect.
+    // Fan its same viewport snapshot only to project-owned transforms.
+    this.coordinator?.resize(this.viewport.width, this.viewport.height)
     // Route stages are lazy and may not exist until their route is reached.
-    this._stages.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
+    this._stages.worksPlaneStage?.resize(this.viewport.width, this.viewport.height)
     // Cyprus owns a viewport-dependent map scale and follows orientation and
     // address-bar viewport changes too.
-    this._stages.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
+    this._stages.contactCyprusStage?.resize(this.viewport.width, this.viewport.height)
   }
 
   private lifecycleToken(): number {
@@ -1111,9 +1119,9 @@ export class Experience {
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy
     this.camera.destroy()
-    // Sizes + Input own window listeners — clean them up to avoid leaks
-    // on hot-reload (Vite HMR) and on explicit teardown.
-    this.sizes.destroy()
+    // Release the observer of Tres's viewport refs on HMR and teardown.
+    this._stopSizeWatch?.()
+    this._stopSizeWatch = null
     input.destroy()
     this.sfx.dispose()
     // Release the generated PMREM texture through its owner.

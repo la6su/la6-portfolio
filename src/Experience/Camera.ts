@@ -1,6 +1,5 @@
 // src/Experience/Camera.ts — Cinematic camera: inertia, organic shake, FOV dynamics
 import * as THREE from 'three'
-import { Sizes } from './Sizes'
 import { input } from './Input'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { isLabCameraActive } from '../core/labCameraPolicy'
@@ -67,7 +66,6 @@ export class Camera {
 
   /** @param instance Physical camera declared by the persistent SceneHost. */
   constructor(
-    private readonly sizes: Sizes,
     instance: THREE.PerspectiveCamera,
     isMobile: boolean,
   ) {
@@ -75,20 +73,6 @@ export class Camera {
     this._isMobile = isMobile
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
-
-    this.resize()
-  }
-
-  /**
-   * Apply the current viewport port to the externally-owned camera.
-   * Experience calls this from the single Sizes resize fan-out, so the camera
-   * no longer installs a competing window listener beside Tres's own size
-   * manager.
-   */
-  resize(): void {
-    if (this._disposed) return
-    this.instance.aspect = this.sizes.width / this.sizes.height
-    this.instance.updateProjectionMatrix()
   }
 
   /** Release only wrapper-owned timers and state. */

@@ -62,6 +62,12 @@ preserve custom policy only when code or measurements prove the difference.
   is verified against installed Tres source and browser evidence. Scene-frame
   exceptions stop that loop once and are reported to native console; a later
   invalidation can retry the owner.
+- Delegate viewport observation, renderer DPR/size, and perspective-camera
+  aspect updates to Tres 5.9.2. Its installed source confirms those contracts;
+  `SceneHost.vue` provides a fixed full-viewport canvas parent. Experience
+  watches Tres's size refs only to resize project-specific stage transforms.
+  Device recovery still explicitly sizes the replacement renderer because it
+  is swapped behind Tres's renderer manager.
 - Keep the typed `EventBus` for communication across the classic HTML shell,
   Vue router/views, and independently owned runtime/UI controllers. Do not
   replace it with another abstraction absent a concrete same-owner duplicate.
@@ -171,6 +177,12 @@ its timeout rejects into the existing boot error path instead of falsely
 enabling Enter on a blank canvas. Destroy cancels the wait with an explicit
 abort, and `Experience.init()` aborts when renderer/scene awaits return stale.
 Dedicated tests cover first-frame success, timeout failure, and cancellation.
+Tres's existing reactive size manager and camera registry now own viewport
+observation, renderer sizing/DPR, and camera aspect. The project `Sizes`
+window listener, duplicate camera resize, and ordinary renderer resize writes
+were removed. Experience watches the Tres size refs for only the remaining
+project-owned stage transforms; device recovery applies current dimensions to
+the replacement renderer.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
 the unreferenced `twitter` product icon module was removed. Module-private
 pointer input is one ES-module instance and starts only in `Experience.init()`;
@@ -358,6 +370,12 @@ available and passed all non-opt-in route/lifecycle cases.
 These browser runs use software rendering. They do not prove physical-GPU
 WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
 this host because its browser dependencies are missing.
+After delegating viewport ownership to Tres, the production Chromium suite
+passed (17 passed, 3 opt-in renderer scenarios skipped) and the Firefox
+project passed (16 passed, 4 opt-in renderer scenarios skipped). TypeScript,
+build budgets, and ESLint also passed. WebKit remains blocked by the recorded
+missing host libraries; physical-GPU behavior remains outside this software
+browser evidence.
 
 **Next actions:**
 

@@ -304,6 +304,7 @@ async function boot(): Promise<BootResult> {
         scene: host.scene,
         camera: host.camera,
         renderer: host.renderer,
+        sizes: host.context.sizes,
         canvas: host.canvas,
         mode: host.mode,
         lights: host.lights,
