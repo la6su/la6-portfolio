@@ -16,7 +16,6 @@ export default tseslint.config(
       'projects/**',
       'test-results/**',
       'playwright-report/**',
-      'scripts/**',
       '.claude/**',
       'coverage/**',
       '.tmp-pw/**',
@@ -65,6 +64,18 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.{js,mjs,ts}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        Bun: 'readonly',
+      },
+    },
+    rules: {
       'no-console': 'off',
     },
   },

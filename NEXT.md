@@ -120,6 +120,15 @@ to Vue and preserve focused disposal coverage. Persistent app-shell DOM now has
 Vue owners; keep the remaining imperative DOM limited to cohesive lifecycle
 or browser-library behavior.
 
+**Constructor inventory:** a source-wide search found no imperative
+construction of stable app scene nodes and no runtime `scene.add/remove`.
+Remaining `new THREE.*` matches are materials, custom Lab geometry, or the
+showreel's offscreen `Scene`/`OrthographicCamera`. Cyprus's Vue `<primitive>`
+adopts the loaded glTF hierarchy. The similarly named `scene.add` in
+`WebGPUPostPipeline` is a TSL node operation, not a Three scene mutation.
+These remain algorithm/resource cases; moving them into the template would
+not simplify ownership. Route-cycle resource evidence is still required.
+
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
 leaks, or duplicate construction.
@@ -249,6 +258,9 @@ and glass-cube render paths from their active owner modules.
 The package's unused `type-check` script duplicated the CI-authoritative
 `type-check:vue` entry with plain `tsc`; removed it so the Vue-aware check is
 the single documented type-check command.
+The ESLint ignore list also excluded every production/build script; removed
+that blind spot and configured Node/Bun globals for those files. Lint now
+covers the generators and release checks that run as part of the build.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
