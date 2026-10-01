@@ -201,6 +201,9 @@ production build and remains unstaged.
 (13 passed, 4 skipped); each Playwright run builds production output and checks
 budgets. Both use software rendering here, not physical-GPU WebGPU. WebKit and
 real-device recovery/performance remain open.
+After the final reactive UIKit icon and no-scene visibility adjustments, the
+production navigation-focus and reduced-motion tests passed again in Chromium
+and Firefox (4/4 total), with Vue type-check clean.
 
 **Next action:** continue phase 1's source-to-owner inventory and phase 4's
 remaining imperative overlay audit. Make the next code change only after
