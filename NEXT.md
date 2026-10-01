@@ -326,6 +326,10 @@ evidence. The local quality workflow was inspected and confirmed not to deploy;
 the output consumer remains unknown. After discovering the tracked output was
 stale since the initial commit, the successful production build was retained
 to synchronize release HTML, assets, and headers with source.
+The bootstrap's one-use `createStyleOwner` and `createReadyEventTimer` wrappers
+were removed: their single style node and cancelable readiness timeout now
+have direct module-local owners. This removes test-only exports and keeps the
+same teardown/reschedule behavior without generic wrapper objects.
 
 **Verified locally:** Vue type-check, ESLint, all 80 unit tests, stdlib checks,
 production build/budgets on Vite 8.3.2, and the full production Chromium suite
@@ -339,6 +343,10 @@ scenarios skipped). Build budgets measured 3.03 kB gzip startup, 310.95 kB
 shared Three, and 53.84 kB UIkit.
 After the readiness gate change, the 80-unit suite and same production
 Chromium suite passed again; the build regenerated the tracked release output.
+The bootstrap ownership simplification passes the production TypeScript/build
+and ESLint checks; it retained the current startup, shared Three, and UIkit
+gzip budgets. Browser behavior for this exact simplification has not been
+rerun yet.
 The dedicated Chromium host-teardown test also passes after adding coverage for
 the create-to-mount microtask race: host teardown now waits for a stale stage's
 declared-node release without waiting on unrelated in-flight imports.

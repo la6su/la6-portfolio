@@ -175,32 +175,13 @@ export function updateLoaderProgress(pct: number): void {
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
+let _readyEventTimer: ReturnType<typeof setTimeout> | null = null
 let _bootstrapUnsubs: Array<() => void> = []
-
-export function createStyleOwner(): {
-  set: (css: string) => void
-  clear: () => void
-} {
-  let style: HTMLStyleElement | null = null
-  const clear = (): void => {
-    style?.remove()
-    style = null
-  }
-  return {
-    set: (css) => {
-      clear()
-      style = document.createElement('style')
-      style.textContent = css
-      document.head.appendChild(style)
-    },
-    clear,
-  }
-}
-
-const bootstrapStyleOwner = createStyleOwner()
+let bootstrapStyle: HTMLStyleElement | null = null
 
 function clearBootstrapStyle(): void {
-  bootstrapStyleOwner.clear()
+  bootstrapStyle?.remove()
+  bootstrapStyle = null
 }
 
 function clearHostProbe(): void {
@@ -230,36 +211,20 @@ function clearReadyWatchdog(): void {
   }
 }
 
-/** Own the delayed readiness event so a failed/replaced attempt cannot emit it. */
-export function createReadyEventTimer(onReady: () => void): {
-  schedule: (delayMs: number) => void
-  clear: () => void
-} {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  const clear = (): void => {
-    if (timer !== null) {
-      clearTimeout(timer)
-      timer = null
-    }
-  }
-  return {
-    schedule: (delayMs) => {
-      clear()
-      timer = setTimeout(() => {
-        timer = null
-        onReady()
-      }, delayMs)
-    },
-    clear,
+function clearReadyEventTimer(): void {
+  if (_readyEventTimer !== null) {
+    clearTimeout(_readyEventTimer)
+    _readyEventTimer = null
   }
 }
 
-const readyEventTimer = createReadyEventTimer(() => {
-  eventBus.emit('jlz:webgl-ready')
-})
-
-function clearReadyEventTimer(): void {
-  readyEventTimer.clear()
+/** Delay readiness for the curtain intro; cancel on bootstrap failure. */
+function scheduleReadyEvent(delayMs: number): void {
+  clearReadyEventTimer()
+  _readyEventTimer = setTimeout(() => {
+    _readyEventTimer = null
+    eventBus.emit('jlz:webgl-ready')
+  }, delayMs)
 }
 
 function transitionBootstrap(next: BootstrapState): boolean {
@@ -389,7 +354,7 @@ async function boot(): Promise<BootResult> {
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
     transitionBootstrap('ready')
-    readyEventTimer.schedule(prefersReducedMotion() ? 0 : readyAt)
+    scheduleReadyEvent(prefersReducedMotion() ? 0 : readyAt)
     return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
@@ -420,7 +385,10 @@ async function startAppOnce(): Promise<void> {
   // HMR injection.
   const cssModule = await import('./assets/main.less?inline')
   // Manually inject the CSS into the document
-  bootstrapStyleOwner.set((cssModule as unknown as { default: string }).default || '')
+  clearBootstrapStyle()
+  bootstrapStyle = document.createElement('style')
+  bootstrapStyle.textContent = (cssModule as unknown as { default: string }).default || ''
+  document.head.appendChild(bootstrapStyle)
   // Register console-themed SVG icons — replaces UIKit's default icon set
   // (76KB) with our custom pixel/console-style icons. No uikit-icons import.
   // UIKit's icon component is built into the core; we just register our SVGs.
