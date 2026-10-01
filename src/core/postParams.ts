@@ -3,9 +3,8 @@
 // Every post layer shares these ten runtime values: PostProcessingManager
 // crossfades them per section, RenderPipeline diffs them against its snapshot,
 // WebGPUPostPipeline writes them into the TSL uniform nodes. Declaring the
-// shape once (instead of four hand-maintained copies) makes adding a channel
-// a one-file change, and both RenderPipeline handoffs (snapshot update and
-// the PERF-11 TSL uniform handoff) go through copyPostParams.
+// shape once makes adding a channel a one-file change. RenderPipeline keeps a
+// stable snapshot for change detection and hands it directly to the TSL owner.
 
 /** Shadow/highlight tint multipliers (RGB, 1 = neutral). */
 type PostGradeTuple = [number, number, number]

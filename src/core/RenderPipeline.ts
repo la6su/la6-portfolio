@@ -29,22 +29,6 @@ export class RenderPipeline {
   private _webgpuPostFailed = false
   private _webgpuParamsDirty = true
 
-  // PERF-11: the WebGPU params object + tuple arrays are mutated in place each
-  // frame (updateParams copies into the TSL uniform nodes) — no per-frame
-  // allocation.
-  private _webgpuParamsCache: PostParams = {
-    bloom: 0,
-    bloomRadius: 0,
-    bloomThreshold: 0,
-    vignette: 0,
-    grain: 0,
-    chromatic: 0,
-    refract: 0,
-    border: 0,
-    gradeShadows: [1, 1, 1],
-    gradeHighlights: [1, 1, 1],
-  }
-
   private constructor() {
     this._params = {
       bloom: 0.4,
@@ -123,10 +107,9 @@ export class RenderPipeline {
           const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
           if (sceneChanged) this._webgpuParamsDirty = true
           if (this._webgpuParamsDirty) {
-            // PERF-11: mutate the cached params object only on dirty handoff;
-            // settled WebGPU frames need neither scalar nor tuple writes.
-            copyPostParams(this._webgpuParamsCache, this._params)
-            this._webgpuPipeline.updateParams(this._webgpuParamsCache)
+            // `_params` is already the stable change-detection snapshot;
+            // WebGPUPostPipeline copies its channels directly into uniforms.
+            this._webgpuPipeline.updateParams(this._params)
             this._webgpuParamsDirty = false
           }
           // Disable renderer tone mapping during TSL pipeline render — the TSL
