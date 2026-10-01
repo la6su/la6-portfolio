@@ -29,6 +29,7 @@ export function useSceneStages(isAlive: () => boolean, getWorksRoot: () => Group
       mountStage: async (stage) => {
         if (!isAlive()) return
         const root = await getWorksRoot()
+        if (!isAlive()) return
         stage.mount(root)
         await worksStageSlot.mount(stage)
       },

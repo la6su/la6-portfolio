@@ -47,6 +47,29 @@ describe('scene stage ports', () => {
     expect(slots.declarativeContactHalo.value).toBe(stage)
   })
 
+  it('does not attach Works to a root that resolves after host teardown', async () => {
+    let alive = true
+    let resolveRoot!: (root: Group) => void
+    const root = new Promise<Group>((resolve) => {
+      resolveRoot = resolve
+    })
+    const slots = useSceneStages(() => alive, () => root)
+    let mounted = false
+    const stage = {
+      mount: () => {
+        mounted = true
+      },
+    } as unknown as WorksPlaneStage
+
+    const mounting = slots.stages.works.mountStage(stage)
+    alive = false
+    resolveRoot(new Group())
+    await mounting
+
+    expect(mounted).toBe(false)
+    expect(slots.declarativeWorksStage.value).toBeNull()
+  })
+
   it('clears every declarative route slot during persistent host teardown', () => {
     const slots = useSceneStages(() => false, () => new Group())
     const marker = {} as never

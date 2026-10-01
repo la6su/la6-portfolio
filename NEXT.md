@@ -175,7 +175,7 @@ next refactor slices:
 | Runtime composition | `Experience.ts` is ~55 KB and creates renderer-side policy, scene composition, UI, route stages, readiness, diagnostics, recovery integration, and the render-demand loop. `SceneCoordinator`, `SceneTransformPass`, `ExperienceUI`, and `StageRegistry` still form an orchestration graph; removed its one-use `SceneFramePass` forwarding class. | Trace every public method and context field. Collapse pass-through classes and one-use bags into the owning composition module. Retain a boundary only for a distinct algorithm/resource lifecycle or a separately testable contract. Prefer product-level slices over generic manager/registry/pass infrastructure. |
 | Renderer ownership | `SceneHost.vue` owns the Tres canvas/context and initial renderer init; `Experience/Renderer.ts` adopts it but also owns backend recovery, a second pipeline wrapper, capability policy and unsupported UI; `core/unifiedRenderer.ts` owns construction/init/disposal primitives. This spans three files and two async lifecycle owners. Removed four `DeviceCapability` fields mirroring mode/tier/mobile-derived decisions and the unused canvas field from renderer adoption. Initial init and device-loss recovery remain split across two async lifecycle owners. Renderer replacement now passes its already-selected backend mode to SceneHost instead of re-inspecting it. The active recovery abort-controller now owns recovery-in-progress state; its duplicate boolean is removed. | Produce a state/ownership diagram for initial creation, fallback, recovery and teardown. Continue tracing which owner must touch the Tres context and which renderer policy can move to the creation boundary. Remove recovery branches only with browser-matrix evidence; keep WebGL2 fallback as explicit product behavior. |
 | Post effects | `Renderer.ts` → `PostProcessingManager` → `RenderPipeline` → `WebGPUPostPipeline` splits policy, crossfade, renderer routing, TSL graph construction and resource accounting. WebGLBackend skips the graph. Removed `_webgpuParamsCache`, which duplicated the pipeline's existing parameter snapshot before a synchronous TSL uniform write. Reused `copyPostParams()` for both display snap paths, removing repeated field assignments and tuple-array allocation. Centralized exact and epsilon comparisons in `postParamsMatch()`, keeping one field list for both pipeline change detection and crossfade settling. | Trace each public method and parameter for actual cross-boundary need. Continue looking for repeated policy/state across manager, renderer and TSL owner. Keep the TSL graph isolated from WebGL compatibility only where the backend needs distinct behavior; verify color parity on hardware. |
-| Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (336 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (271 lines). Vue owns a second set of shallow refs in `useSceneStages.ts`/`stageSlot.ts` so `<primitive>` mounts/unmounts before controller disposal. This may be justified by async imports, `nextTick`, and teardown ordering, but the two ownership layers and per-stage contract repetition need a caller map. | Trace each ensure/dispose route path, every async boundary and what becomes invalid on unmount. Remove unused slot APIs or duplicated stage state; preserve only race cases required by observed call sites. Compare Vue async components/props and Tres lifecycle behavior before replacing custom lazy ownership. |
+| Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (336 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (271 lines). Vue's `shallowRef` slots drive `<primitive>` mount/unmount, with `nextTick` before GPU controller disposal. The two owners cover distinct async boundaries; `LazyStage` guards import/init/route races, Vue slots own scene-tree timing. Found and fixed a Works race where the host could dispose while its root was awaited: recheck host liveness after `getWorksRoot()` before adopting it. Added delayed-root regression coverage. | Continue mapping per-stage variation to determine whether route contracts can be shortened without losing cleanup order. Retain async stale guards and Vue flush ordering where their call paths need them; compare Vue async component behavior only at the wrapper-load boundary. |
 | Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` and `core/types.ts` define adjacent contracts; route, sitemap and blog metadata have separate derived registries. Removed unused project camera coordinates and `slug` from the shared Project contract. Case media now keeps presentation metadata only and reads its image URL from the owning project's `detailTextureUrl`, eliminating four duplicated paths. Removed an unused related-cases computed list. | Decide whether project/card/case records should share one authored record only where fields really overlap. Preserve separate case prose and sitemap/blog sources with distinct meaning. Add closed-set checks only at real content boundaries. |
 | Performance and DX | `SceneHost.vue` and `Experience.ts` are large mixed-responsibility modules. `entry-app.ts` statically imports reveal and shell utilities before the app graph is lazy. Scene feature ownership is declarative in many places but controller adoption and disposal conventions vary by owner. | Measure startup and route chunk boundaries. Move expensive scene/feature modules behind the route/feature that needs them; standardize a small SFC + controller convention. Remove hand-built utility behavior when Vue/Tres/Three already provides the same contract. |
 
@@ -255,6 +255,13 @@ only case-specific alt/size/caption metadata. Also removed an unused related
 cases computed list. This is a source reduction and data ownership cleanup;
 route behavior remains unchanged.
 
+The route-stage caller audit confirmed the Vue slot refs are the actual input
+to declarative `<primitive>` owners and `nextTick` lets Tres/Vue apply removals
+before controllers release GPU resources. They are not a second scene graph.
+It also exposed a delayed Works-root teardown race; `useSceneStages` now checks
+the host again after awaiting the root and does not call `stage.mount()` on a
+retired tree. A regression case resolves the root only after teardown begins.
+
 Recovery's `_recovering` boolean duplicated the active abort-controller slot:
 it was set beside that controller and cleared in the same `finally`. The active
 controller now gates overlap and frame updates, and teardown aborts it while
@@ -329,12 +336,11 @@ the installed declarations/source and current upstream docs.
 ### Immediate next slice
 
 Continue the broad simplification audit with active code, not just unused
-symbols. Complete a per-stage caller/resource map, then compare the custom
-`LazyStage` and duplicated Vue slot state against Vue async component lifecycle
-and Tres ownership; collapse layers where one framework boundary can own the
-same job without weakening late-load cleanup. In parallel, trace `Experience`,
-renderer recovery, and post-processing call/data flows, deleting pass-through
-policy and repeated state where Tres/Three already provides the behavior.
+symbols. Complete a per-stage caller/resource map and shorten the route-specific
+contracts where their behavior is actually common. In parallel, trace
+`Experience`, renderer recovery, and post-processing call/data flows, deleting
+pass-through policy and repeated state where Tres/Three already provides the
+behavior.
 Prioritize measurable route startup and WebGPU render-path costs. Keep this plan
 updated with findings, removed code, bundle evidence, and unresolved hardware
 acceptance rather than treating passing existing checks as architecture proof.
