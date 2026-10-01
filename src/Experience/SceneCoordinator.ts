@@ -43,10 +43,8 @@ export class SceneCoordinator {
     return this._story.configs.map((config) => config.id)
   }
 
-  /** The stable section groups (empty before the SectionGroups owner is built).
-   *  Public read accessor: Experience's theme handler + low-fps particle
-   *  reduction iterate the groups directly. */
-  public get sceneGroups(): THREE.Group[] {
+  /** Stable section groups used only by the coordinator's route/frame policy. */
+  private get sceneGroups(): THREE.Group[] {
     return this.owners.sectionGroups()?.groups ?? []
   }
 
