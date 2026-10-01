@@ -108,7 +108,7 @@ and served-route behavior separately.
 **Accept when:** frozen install, repository checks, production build/budgets,
 generated-route checks, and the actual deploy contract are reproducible.
 
-### 1. Declarative scene ownership — active
+### 1. Declarative scene ownership — done
 
 **Established:** Tres/Vue declares camera, lights, environment, section roots,
 feature roots and many mesh leaves. Works cards, carousel cards, typography,
@@ -124,10 +124,17 @@ showreel's offscreen `Scene`/`OrthographicCamera`. Cyprus's Vue `<primitive>`
 adopts the loaded glTF hierarchy. The similarly named `scene.add` in
 `WebGPUPostPipeline` is a TSL node operation, not a Three scene mutation.
 These remain algorithm/resource cases; moving them into the template would
-not simplify ownership. Route-cycle resource evidence is still required.
+not simplify ownership.
 
-**Remaining:** prove route-cycle resource plateaus; keep the already reviewed
-constructors in Vue where they form stable hierarchy.
+**Verified route/resource soak:** in local software Chromium, visited `/`,
+`/services`, `/works`, `/works/porsche-911-spider`, `/manifesto`, `/lab`, and
+`/contact` three times through SPA navigation. After the cold pass, per-route
+scene and renderer geometry/material/texture counts matched exactly between
+passes two and three; renderer/document canvas counts stayed 1/2; page errors
+were zero. The later passes include all warmed lazy owners. The focused Works
+and Contact route-cycle production tests also pass. Renderer program count was
+not exposed by this WebGPU wrapper (`null`); this proves stable enumerable
+owner counts on software rendering, not physical-GPU allocation behavior.
 
 **Disposal inventory:** reviewed each current `:dispose="null"` scene owner.
 Each suppresses Tres's recursive disposal because the resource is borrowed,
@@ -136,6 +143,10 @@ separate SFC-owned geometry from stage-owned material; EnvSky borrows the
 pavilion material; CursorTrail releases its placeholder before Tres disposes
 the replacement ribbon geometry. Removing these opt-outs would duplicate or
 break the existing single-owner cleanup, so no source change was warranted.
+
+**Evidence:** the declared scene hierarchy and single-owner disposal paths have
+been audited, and warmed route cycles show a stable resource plateau. This
+phase does not claim hardware-specific GPU evidence; that remains phase 3.
 
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
@@ -330,11 +341,9 @@ this host because its browser dependencies are missing.
    create-to-mount teardown race is fixed and covered; inspect the remaining
    boot/UI lifecycle owners and async stage continuations, changing only a
    demonstrated duplicate or missing cleanup path.
-2. Continue phase 1 with route resource plateau evidence; finish phase 5's
-   source-to-output map for generated CSS, routes, content, and test fixtures.
-   Public runtime assets, TypeScript scripts, and current release output have
-   been inventoried or synchronized. Preserve Three scratch objects and
-   offscreen scenes where their runtime algorithms require them.
+2. Finish phase 5's source-to-output map for generated CSS, routes, content,
+   and test fixtures. Public runtime assets, TypeScript scripts, and current
+   release output have been inventoried or synchronized.
 3. Continue phase 4's EN/RU keyboard, contrast, touch, resize, and renderer
    failure walk; run WebKit in CI or a host with its declared libraries.
 4. Close phase 0 only after identifying the actual deploy consumer and
