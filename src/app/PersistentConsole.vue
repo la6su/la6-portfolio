@@ -8,10 +8,10 @@ import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
 import {
-  noSceneRequested,
   rendererAvailable,
   setRendererAvailable,
 } from '../core/rendererAvailability'
+import { noSceneRequested } from '../core/sceneMode'
 
 const language = ref(getLang())
 const soundMuted = ref(getSoundMuted())

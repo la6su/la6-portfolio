@@ -19,7 +19,7 @@ import { planUnifiedBackend } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { setLabCameraActive } from '../core/labCameraPolicy'
-import { noSceneRequested } from '../core/rendererAvailability'
+import { noSceneRequested } from '../core/sceneMode'
 import {
   createUnifiedWebGPUInstance,
   deferRendererDisposal,

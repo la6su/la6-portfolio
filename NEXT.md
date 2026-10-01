@@ -228,9 +228,11 @@ controllers remain for Three algorithms, browser/media policy, route-guard
 timing, and lifecycle work that the framework does not supply. Recent audits
 removed duplicate renderer-query parsing, a redundant UIkit global assignment,
 the unused project icon registration, a DOM-only UIManager subscription, the
-Input class's redundant singleton guard/import side effect, and the Works
-room-count literals. These changes are committed. `dist/` is
-restored after build verification and remains tracked pending deploy-contract
+Input class's redundant singleton guard/import side effect, the duplicate
+Works pointer wake listener/RAF, and the Works room-count literals. These
+changes are committed. The `?no-scene` flag now has one Vue-free source used by
+bootstrap, SceneHost, and both Vue shell controls. `dist/` is restored after
+build verification and remains tracked pending deploy-contract
 evidence.
 
 **Verified locally:** Vue type-check, ESLint, all 75 unit tests, production

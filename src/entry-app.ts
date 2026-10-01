@@ -1,6 +1,7 @@
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
+import { noSceneRequested } from './core/sceneMode'
 import { contentRoot } from './core/contentRoot'
 import { devDiagnostic } from './core/devDiagnostic'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
@@ -305,7 +306,7 @@ async function boot(): Promise<BootResult> {
 
   // DOM-only mode keeps routes and navigation available without creating a
   // scene renderer or canvas.
-  if (new URLSearchParams(window.location.search).has('no-scene')) {
+  if (noSceneRequested) {
     try {
       transitionBootstrap('renderer-initializing')
       progress(100)

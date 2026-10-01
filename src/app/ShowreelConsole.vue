@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import type { ShowreelState } from "../Experience/World/ShowreelTheater";
 import { eventBus } from "../core/EventBus";
+import { noSceneRequested } from "../core/sceneMode";
 
 const state = ref<ShowreelState>({
   phase: "closed",
@@ -10,7 +11,7 @@ const state = ref<ShowreelState>({
   duration: 0,
 });
 let restoreFocus: HTMLElement | null = null;
-const enabled = !new URLSearchParams(window.location.search).has("no-scene");
+const enabled = !noSceneRequested;
 const announcement = ref("");
 const unsubs: Array<() => void> = [];
 

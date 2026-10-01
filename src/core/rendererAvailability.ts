@@ -1,8 +1,5 @@
 import { readonly, ref } from "vue";
-
-export const noSceneRequested =
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).has("no-scene");
+import { noSceneRequested } from "./sceneMode";
 
 const available = ref(typeof window === "undefined" || !noSceneRequested);
 
