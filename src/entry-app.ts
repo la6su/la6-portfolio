@@ -1,5 +1,5 @@
-import { BlurFade } from './Experience/BlurFade'
-import { NoiseText } from './Experience/NoiseText'
+import { BlurFade } from './UI/BlurFade'
+import { NoiseText } from './UI/NoiseText'
 import { eventBus } from './core/EventBus'
 import { noSceneRequested } from './core/sceneMode'
 import { contentRoot } from './core/contentRoot'
@@ -186,6 +186,8 @@ function resetBootstrapBindings(): void {
   // stay plain (see initSoundToggle).
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
+  BlurFade.disposeAll()
+  NoiseText.disposeAll()
   clearReadyWatchdog()
   clearReadyEventTimer()
   clearBootstrapStyle()
@@ -401,9 +403,11 @@ async function startAppOnce(): Promise<void> {
   // Do NOT make the first animation depend on section-change, page-section-change,
   // IntersectionObserver or a second bootstrap event. Those are for subsequent
   // navigation/scroll transitions.
+  let splashEntered = false
 
   _bootstrapUnsubs.push(
     eventBus.on('jlz:splash-entered', () => {
+      splashEntered = true
       const reveal = () => {
         const root = contentRoot()
 
@@ -463,16 +467,20 @@ async function startAppOnce(): Promise<void> {
   _bootstrapUnsubs.push(
     eventBus.on('jlz:section-change', (payload) => {
       if (!payload?.sectionId) return
+      if (!splashEntered) return
       if (prefersReducedMotion()) return
       const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       if (!section) return
       revealStudioTitle(section)
+      const eyebrow = section.querySelector<HTMLElement>('[data-eyebrow]')
+      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
     }),
   )
 
   // ── Animate titles on page section change (content: data-page-section) ──
   _bootstrapUnsubs.push(
     eventBus.on('jlz:page-section-change', ({ index }) => {
+      if (!splashEntered) return
       if (prefersReducedMotion()) return
       const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
       const el = sections[index]

@@ -7,8 +7,6 @@ import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
 import { input } from './Input'
 import { SfxSystem } from '../core/SfxSystem'
-import { NoiseText } from './NoiseText'
-import { BlurFade } from './BlurFade'
 
 import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
@@ -69,7 +67,6 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private _sectionChangeUnsub: (() => void) | null = null
   private _themeAppliedUnsub: (() => void) | null = null
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
@@ -471,18 +468,6 @@ export class Experience {
     // Input was attached above, so pointer coordinates update before Cursor
     // wakes the shared loop; the Works trail consumes them in that same frame.
     this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
-    // Glitch eyebrow — on section change, animate the active section's
-    // [data-eyebrow] number with NoiseText random-symbol scramble.
-    // Uses data-eyebrow-text attribute as STABLE source (never affected by
-    // animation). Reading textContent is unsafe — it could be mid-noise
-    // from a previous animation, causing permanent glitch residue.
-    this._sectionChangeUnsub = eventBus.on('jlz:section-change', (payload) => {
-      if (!payload?.sectionId) return
-      const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
-      const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
-      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
-    })
-
     // Showreel theater commands — Vue chrome (ShowreelConsole.vue) emits over the
     // typed bus; the controller owns the lazy GPU-side stage and the render swap.
     this._showreel.bind()
@@ -516,10 +501,6 @@ export class Experience {
     // owner and its scene dependencies have been initialized.
     this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
       features.triggerSplashOpener()
-      const activeSection =
-        (contentRoot().querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
-        (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
-      if (activeSection) NoiseText.revealEyebrow(activeSection, 0.8)
     })
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on every section change with
@@ -634,13 +615,8 @@ export class Experience {
     // event fires for the initial section).
     const firstSection = contentRoot().querySelector('[data-section="intro"]')
     firstSection?.classList.add('section-active')
-    // Apply initial section theme (intro = light in auto, dark in inverse)
-    // ContentReveal.applySectionTheme is private — dispatch section-change
-    // so it picks up the initial section. BUT delay NoiseText until splash
-    // is dismissed (jlz:splash-entered) — otherwise eyebrow animates behind
-    // splash overlay and user never sees it.
-    // We emit section-change immediately for ContentReveal (theme + active),
-    // but NoiseText handler checks if splash is still visible.
+    // Apply the initial section theme and active state. DOM text reveals are
+    // owned by entry-app and start only after the splash is dismissed.
     eventBus.emit('jlz:section-change', {
       sectionId: 'intro',
       context: 'Studio — Home',
@@ -887,7 +863,8 @@ export class Experience {
     this._stages.contactCyprusStage?.setCamera(this.camera.instance)
 
     // Dispatch section-change on EVERY section index change (not just context).
-    // This triggers NoiseText title animation for the new section + cube face rotation.
+    // The app shell reveals the matching DOM content; Experience handles the
+    // scene-specific light and cube response to this same section event.
     if (idx !== this._prevSectionIndex) {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
@@ -1043,12 +1020,8 @@ export class Experience {
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()
-    NoiseText.disposeAll()
-    BlurFade.disposeAll()
     this.contentReveal?.destroy()
     this.cursor?.destroy()
-    this._sectionChangeUnsub?.()
-    this._sectionChangeUnsub = null
     this._rendererRecoveredUnsub?.()
     this._rendererRecoveredUnsub = null
     this._themeAppliedUnsub?.()

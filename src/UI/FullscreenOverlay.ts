@@ -11,7 +11,7 @@
 // overlay is image-only by construction.
 
 import UIkit from 'uikit'
-import { BlurFade } from '../Experience/BlurFade'
+import { BlurFade } from './BlurFade'
 import { eventBus } from '../core/EventBus'
 import { prefersReducedMotion } from '../core/motionPolicy'
 

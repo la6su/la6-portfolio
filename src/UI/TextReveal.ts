@@ -1,10 +1,10 @@
-// src/Experience/textReveal.ts — shared skeleton for the DOM text reveals.
+// src/UI/TextReveal.ts — shared skeleton for the DOM text reveals.
 //
 // BlurFade (per-character blur stagger) and NoiseText (typewriter with a
 // noise tail) used to carry two ~70-line copies of the same lifecycle
 // machinery: the RAF + safety-timeout pair, the cleanText read-before-cancel
 // contract (D-3/D-9), the finalize/cancel/hide flows and the enumerable
-// active set Experience tears down on destroy. This base owns that machinery
+// active set the UI bootstrap tears down on reset. This base owns that machinery
 // once; subclasses implement the frame-0 DOM setup, the per-frame render and
 // the final DOM restoration. The per-element instance maps stay per class
 // (different element populations), and each class's disposeAll() filters the

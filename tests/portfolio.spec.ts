@@ -154,6 +154,20 @@ test("direct section hashes activate the matching story slot after runtime readi
   ).toHaveAttribute("aria-current", "step");
 });
 
+test("home text reveal waits for splash dismissal", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const title = page
+    .locator('[data-page-view="home"] .studio-title:not([data-blur-fade="off"])')
+    .first();
+  const enter = page.locator("#jlz-splash-enter");
+
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 });
+  await expect(title).not.toHaveAttribute("data-visible", "true");
+
+  await enter.click();
+  await expect(title).toHaveAttribute("data-visible", "true");
+});
+
 test("DOM-only mode keeps semantic route navigation available without a canvas", async ({
   page,
 }) => {

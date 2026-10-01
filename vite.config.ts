@@ -189,6 +189,15 @@ export default defineConfig(({ mode }) => {
               },
               priority: 10,
             },
+            {
+              // DOM text reveals and their shared easing helper are used by
+              // both the app bootstrap and ExperienceUI. Keep their code in
+              // one small shared chunk instead of duplicating it in Experience.
+              name: 'chunk-dom-reveal',
+              test: /[\\/]src[\\/](?:UI[\\/](?:BlurFade|NoiseText|TextReveal)\.ts|Utils[\\/]easing\.ts)$/,
+              includeDependenciesRecursively: false,
+              priority: 7,
+            },
             // ── App chunks (lower priority). `name(id)` returns the chunk
             //    name based on src path, or null to fall through to
             //    rolldown's automatic chunking. Order matters — most

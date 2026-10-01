@@ -10,7 +10,7 @@
 //    noise captured as cleanText on rapid re-trigger (IntersectionObserver).
 // 4. Safety timeout guarantees finalize() fires even if RAF is throttled.
 //
-// Guarantees 3–4 live in the shared TextReveal base (textReveal.ts); the
+// Guarantees 3–4 live in the shared TextReveal base (TextReveal.ts); the
 // typewriter algorithm lives here.
 //
 // Algorithm (from 64002f9): typewriter with noise tail
@@ -18,7 +18,7 @@
 // - 1-3 random noise chars flicker ahead of the reveal position
 // - At t=1.0: full clean text displayed
 
-import { TextReveal } from './textReveal'
+import { TextReveal } from './TextReveal'
 
 const CHARS = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·∴∵≈≠≤≥±÷×'
 
@@ -35,13 +35,12 @@ export class NoiseText extends TextReveal {
     return inst
   }
 
-  /** Stop every active text animation owned by the current Experience. */
+  /** Stop every active text animation when the app bootstrap is reset. */
   static disposeAll(): void {
     TextReveal.disposeAllWhere((instance) => instance instanceof NoiseText)
   }
 
-  /** Reveal an eyebrow label, collapsing the guard blocks the boot shell and
-   *  Experience repeated per event. The text resolves from
+  /** Reveal an eyebrow label. The text resolves from
    *  `data-eyebrow-text` first (the stable authored source — reading
    *  textContent is unsafe mid-noise) and falls back to the element's text
    *  content. */

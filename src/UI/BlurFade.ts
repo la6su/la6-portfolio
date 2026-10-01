@@ -10,10 +10,10 @@
 // For console-style typewriter (eyebrow numbers), see NoiseText.ts.
 //
 // Lifecycle machinery (RAF + safety timeout, cleanText contract, finalize/
-// cancel/hide, teardown registry) is shared in textReveal.ts; only the
+// cancel/hide, teardown registry) is shared in TextReveal.ts; only the
 // per-character DOM rendering lives here.
 
-import { TextReveal } from './textReveal'
+import { TextReveal } from './TextReveal'
 import { easeOutCubic } from '../Utils/easing'
 
 export class BlurFade extends TextReveal {
@@ -29,13 +29,12 @@ export class BlurFade extends TextReveal {
     return inst
   }
 
-  /** Stop every active blur animation owned by the current Experience. */
+  /** Stop every active blur animation when the app bootstrap is reset. */
   static disposeAll(): void {
     TextReveal.disposeAllWhere((instance) => instance instanceof BlurFade)
   }
 
-  /** Reveal a section title, collapsing the guard blocks the boot shell and
-   *  Experience repeated per event. Honors the `data-blur-fade="off"`
+  /** Reveal a section title. Honors the `data-blur-fade="off"`
    *  opt-out and the empty-text guard. With an explicit `sourceText` the
    *  text becomes the reveal's cleanText (the splash path); without one the
    *  reveal reads the DOM itself, as before. */
