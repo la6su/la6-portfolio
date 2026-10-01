@@ -18,6 +18,7 @@ test("public SPA routes render on direct entry with route metadata", async ({
     ["/lab", "lab"],
     ["/contact", "contact"],
     ["/works/porsche-911-spider", "case-study"],
+    ["/works/pro193", "case-study"],
   ] as const;
 
   for (const [path, view] of routes) {
@@ -34,6 +35,18 @@ test("public SPA routes render on direct entry with route metadata", async ({
       "href",
       new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
     );
+    if (path === "/works/pro193") {
+      const detailPath = "/assets/projects/nocturne-blue/detail.jpg";
+      const image = page.locator(".jlz-case-media img");
+      await expect(image).toHaveAttribute("src", detailPath);
+      await image.scrollIntoViewIfNeeded();
+      await image.evaluate(async (element: HTMLImageElement) => element.decode());
+      expect(
+        await image.evaluate((element: HTMLImageElement) => element.naturalWidth),
+      ).toBe(1344);
+      const response = await page.request.get(detailPath);
+      expect(response.headers()["content-type"]).toContain("image/jpeg");
+    }
   }
 });
 

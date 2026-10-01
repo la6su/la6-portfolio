@@ -123,7 +123,7 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
     ],
     media: [
       {
-        src: '/assets/projects/nocturne-blue/detail.webp',
+        src: '/assets/projects/nocturne-blue/detail.jpg',
         alt: 'Temporary abstract project material for Pro193',
         width: 1600,
         height: 900,

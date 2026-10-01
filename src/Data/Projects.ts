@@ -52,7 +52,7 @@ export const PROJECTS: Project[] = [
     title: 'Pro193',
     description: 'An online store for tall men, centred on fit, clothing and a clear choice.',
     textureUrl: '/assets/projects/nocturne-blue/cover-studio-v2.jpg',
-    detailTextureUrl: '/assets/projects/nocturne-blue/detail.webp',
+    detailTextureUrl: '/assets/projects/nocturne-blue/detail.jpg',
     color: '#3366cc',
     year: '2025',
     category: 'E-commerce',

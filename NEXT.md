@@ -577,8 +577,15 @@ when the scene is disabled or unsupported.
   (−67.7%) at 1920×1080/30 fps. Kept its non-silent audio track as AAC 96 kbps,
   moved MP4 metadata to the front, and confirmed decoded-frame SSIM 0.9919.
   `Showreel` now has a browser assertion for decoded 1920px media and advancing
-  playback. The production build reports 6.65 MB total public media, down from
+  playback. The production build reports 6.52 MB total public media, down from
   17.73 MB; the targeted system-Chromium production test passed.
+- Corrected a JPEG file published with a `.webp` extension by renaming its path
+  to `.jpg`; a direct-route browser assertion verifies `image/jpeg` and a
+  successful 1344px decode. Removed three unreferenced project cover assets
+  after source/content reference searches. `rg` now finds only the one active
+  `cover.webp` consumer used by the builder catalog and showcase. Full
+  production Chromium suite, 73 unit tests, and `check:stdlib` passed after the
+  cleanup; public media now totals 6515.68 kB.
 
 **Work**
 
@@ -609,11 +616,11 @@ unowned persistent GPU resource remains.
 
 - **Active phase**: 0–5. Runtime ownership mapping and the first async release
   race fix are recorded above; no new module boundary was justified by the audit.
-- **Next action**: continue the source audit for duplicated lifecycle owners,
-  unreachable code, and abstractions already provided by Vue/Tres/Three; then
-  continue keyboard routes beyond the menu/modal, orientation/resize and
-  touch-target states. Verify WebKit in CI and scene-failure behavior on capable
-  GPU hardware. Chromium and Firefox projects run locally. A WebKit production smoke was attempted;
+- **Next action**: continue image/texture and font-delivery checks, then audit
+  for duplicated lifecycle owners, unreachable code, and abstractions already
+  provided by Vue/Tres/Three. Continue keyboard routes beyond the menu/modal,
+  orientation/resize and touch-target states. Verify WebKit in CI and
+  scene-failure behavior on capable GPU hardware. Chromium and Firefox projects run locally. A WebKit production smoke was attempted;
   browser launch is blocked by missing system libraries, with CI configured to
   install them. `dist/` remains pending identification of its external deploy
   consumer, so keep its tracked state intact.
@@ -642,7 +649,7 @@ run test:serial` passed after a production build (14 tests, 2 opt-in renderer
   the installed Tres disposer releases boot cursor/burst geometry and material
   exactly once;
   bundle breakdown completed for Three and lab controls. Current build reports
-  6.65 MB total public media, with the optimized 5.27 MB showreel as the largest
+  6.52 MB total public media, with the optimized 5.27 MB showreel as the largest
   asset. Its route and builder-preview consumers are verified above.
 - **Browser/recovery gap**: the opt-in real-renderer WebGL context-recovery
   scenario did not recover under this host's software Chromium/SwiftShader
