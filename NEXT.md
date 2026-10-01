@@ -601,9 +601,10 @@ unowned persistent GPU resource remains.
 - **Active phase**: 0–4; phase 5 queued. Runtime ownership mapping
   and the first async release race fix are recorded above; no new module
   boundary was justified by the audit.
-- **Next action**: extend repeated-shutdown coverage to route-stage requests
-  during pending async creation, then continue the source audit for duplicated
-  lifecycle owners,
+- **Next action**: continue the source audit for duplicated lifecycle owners,
+  unreachable code, and abstractions already provided by Vue/Tres/Three; then
+  continue keyboard routes beyond the menu/modal, orientation/resize and
+  touch-target states. Verify
   unreachable code, and abstractions already provided by Vue/Tres/Three. Then
   continue keyboard routes beyond the menu/modal, orientation/resize and
   touch-target states. Verify
@@ -716,3 +717,11 @@ session-log document should be created.
   candidate replaced during bootstrap, so the assertion targets the final host
   owner and scene resources. `JLZ_CHROMIUM_PATH=/usr/bin/chromium bun run
   test:host-teardown` passed; `bun run lint` and `git diff --check` passed.
+
+- Lazy route-stage race coverage: added a regression test where a stale async
+  creation resolves only after disposal and a replacement stage has initialized.
+  The stale object is released exactly once while the replacement remains in
+  its slot and is configured. The implementation already met this contract;
+  the test now guards it directly. `bun run test:unit` passed (24 files / 73
+  tests), `bun run type-check:vue`, `bun run lint`, and `git diff --check`
+  passed.

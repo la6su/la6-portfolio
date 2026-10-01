@@ -138,4 +138,37 @@ describe('lazy stage teardown', () => {
     expect(contract.attach).not.toHaveBeenCalled()
     expect(contract.configure).not.toHaveBeenCalled()
   })
+
+  it('releases a stale async creation without disturbing a replacement stage', async () => {
+    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const staleCreation = deferred<{ dispose(): void }>()
+    const staleDispose = vi.fn()
+    const replacementDispose = vi.fn()
+    const staleStage = { dispose: staleDispose }
+    const replacement = { dispose: replacementDispose }
+    let creations = 0
+    const configure = vi.fn()
+    const contract = {
+      label: 'replacement during creation',
+      owner: slot.owner,
+      create: () => (creations++ === 0 ? staleCreation.promise : replacement),
+      attach: vi.fn(),
+      configure,
+      release: (stage: { dispose(): void }) => stage.dispose(),
+    }
+
+    const staleInitialization = ensureLazyStage(contract)
+    await disposeLazyStage(contract)
+    const replacementInitialization = ensureLazyStage(contract)
+    await replacementInitialization
+
+    staleCreation.resolve(staleStage)
+    await staleInitialization
+
+    expect(staleDispose).toHaveBeenCalledTimes(1)
+    expect(replacementDispose).not.toHaveBeenCalled()
+    expect(slot.getStage()).toBe(replacement)
+    expect(configure).toHaveBeenCalledTimes(1)
+    expect(configure).toHaveBeenCalledWith(replacement)
+  })
 })
