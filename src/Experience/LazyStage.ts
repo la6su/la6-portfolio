@@ -258,5 +258,10 @@ export function disposeLazyStage<T extends object>(
   if (stage) owner.setStage(null)
   owner.setPromise(null)
   contract.onDispose?.()
-  return Promise.all([release, owner.waitForReleases()]).then(() => undefined)
+  // Let a create() continuation already queued for this turn reach mount().
+  // It may have produced a stage just before disposal but not assigned it to
+  // the owner yet; mount() will see the stale request and register its release.
+  return Promise.resolve().then(() =>
+    Promise.all([release, owner.waitForReleases()]).then(() => undefined),
+  )
 }

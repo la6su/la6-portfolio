@@ -235,21 +235,25 @@ bootstrap, SceneHost, and both Vue shell controls. `dist/` is restored after
 build verification and remains tracked pending deploy-contract
 evidence.
 
-**Verified locally:** Vue type-check, ESLint, all 75 unit tests, production
+**Verified locally:** Vue type-check, ESLint, all 76 unit tests, production
 build/budgets, and the full production Chromium suite (17 passed, 3 opt-in
 renderer scenarios skipped). That includes repeated lazy-stage mount/release,
 route metadata, DOM-only navigation and icons, renderer-failure continuation,
 showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
 production route, hash, and fallback suites passed in the prior matrix run.
+The dedicated Chromium host-teardown test also passes after adding coverage for
+the create-to-mount microtask race: host teardown now waits for a stale stage's
+declared-node release without waiting on unrelated in-flight imports.
 These browser runs use software rendering. They do not prove physical-GPU
 WebGPU, device-loss recovery, or GPU performance. WebKit remains unverified on
 this host because its browser dependencies are missing.
 
 **Next actions:**
 
-1. Complete phase 2's `Experience.ts` ownership and teardown trace. Start with
-   overlapping boot/UI lifecycle owners and async stage continuation; change
-   only a demonstrated duplicate or missing cleanup path.
+1. Continue phase 2's `Experience.ts` ownership and teardown trace. The
+   create-to-mount teardown race is fixed and covered; inspect the remaining
+   boot/UI lifecycle owners and async stage continuations, changing only a
+   demonstrated duplicate or missing cleanup path.
 2. Finish phase 1's constructor/attachment inventory and phase 5's source to
    output map, including generated CSS, public assets, routes, scripts, and
    tests. Preserve Three scratch objects and offscreen scenes where their

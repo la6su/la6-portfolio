@@ -139,6 +139,49 @@ describe('lazy stage teardown', () => {
     expect(contract.configure).not.toHaveBeenCalled()
   })
 
+  it('waits for a late stage mount to detach before teardown completes', async () => {
+    const slot = createLazyStageSlot<{ dispose(): void }>()
+    const imported = deferred<{ dispose(): void }>()
+    const detached = deferred<void>()
+    const dispose = vi.fn()
+    const stage: { dispose(): void } = { dispose }
+    let teardown!: Promise<void>
+    const contract = {
+      label: 'creation before mount',
+      owner: slot.owner,
+      create: () =>
+        imported.promise.then((value) => {
+          queueMicrotask(() => {
+            teardown = disposeLazyStage(contract)
+          })
+          return value
+        }),
+      attach: vi.fn(),
+      configure: vi.fn(),
+      release: async (value: typeof stage) => {
+        await detached.promise
+        value.dispose()
+      },
+    }
+
+    const initialization = ensureLazyStage(contract)
+    imported.resolve(stage)
+    while (!teardown) await Promise.resolve()
+
+    let teardownFinished = false
+    void teardown.then(() => {
+      teardownFinished = true
+    })
+    await Promise.resolve()
+    expect(teardownFinished).toBe(false)
+    expect(dispose).not.toHaveBeenCalled()
+
+    detached.resolve()
+    await Promise.all([initialization, teardown])
+    expect(dispose).toHaveBeenCalledTimes(1)
+    expect(contract.attach).not.toHaveBeenCalled()
+  })
+
   it('releases a stale async creation without disturbing a replacement stage', async () => {
     const slot = createLazyStageSlot<{ dispose(): void }>()
     const staleCreation = deferred<{ dispose(): void }>()
