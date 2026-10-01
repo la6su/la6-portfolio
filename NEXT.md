@@ -109,6 +109,12 @@ preserve custom policy only when code or measurements prove the difference.
   remains because it triggers actual route side effects (content theme,
   navigation rebinding and stage reconciliation); its payload/consumers remain
   in the next event-boundary audit.
+- A forced `bun install --force --frozen-lockfile` removed stale local install
+  state that had changed Vite/Rolldown's module graph (357 modules versus 355
+  in a clean archive despite the same direct package versions). The current
+  install now builds at 354 modules after the route-state removal. Tracked
+  `dist/` has been regenerated from that lockfile install; this was dependency
+  residue and artifact drift, not a source architecture defect.
 - Keep `RenderScheduler`: Tres 5.9.2 on-demand gates renderer calls but retains
   its RAF loop; this project also requires zero idle ticks, settled activity
   windows, and hidden-tab pause/resume. Reconsider only if equivalent behavior
@@ -242,6 +248,11 @@ remain enabled. TypeScript 7.0.2 is released, but the installed
 `typescript-eslint` peer range ends below 6.1.0, so a TypeScript 7 upgrade is
 not currently compatible with the lint matrix.
 
+The stable Vue release remains 3.5.43 (Vue 3.6 is still prerelease); Three r186
+and TresJS docs 5.9.2 match the installed matrix as checked on 2026-10-01.
+Do not perform blanket version bumps: verify Tres/Cientos/Three peer and API
+compatibility together, with the WebGPU/WebGL behavior matrix.
+
 **Remaining:** identify the deploy consumer for tracked `dist/` (84 tracked
 files in the last audit) before changing its tracking policy; prove clean
 checkout install/build and deployed static routing/cache behavior. The only
@@ -250,7 +261,8 @@ checks but has no deployment step. `public/` headers do not establish whether
 Cloudflare Pages, Netlify, or another consumer publishes the output.
 The artifact was tracked from the repository's initial commit and was stale;
 it has now been regenerated from the current source during the brand-asset
-cleanup. Keep tracking it while the host is unknown, and inspect clean-build
+cleanup and again from a forced frozen install after eliminating local install
+residue. Keep tracking it while the host is unknown, and inspect clean-build
 and served-route behavior separately.
 
 **Accept when:** frozen install, repository checks, production build/budgets,
