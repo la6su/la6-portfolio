@@ -129,6 +129,7 @@ test("direct section hashes activate the matching story slot after runtime readi
 
   const enter = page.locator("#jlz-splash-enter");
   await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 });
+  await expect(page.locator("#jlz-splash-status")).toHaveText("READY");
   const targetSection = page.locator('[data-page-section="manifesto-clarity"]');
   await expect(targetSection).toHaveClass(/section-active/);
   await expect(

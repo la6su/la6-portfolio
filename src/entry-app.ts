@@ -83,9 +83,9 @@ export function initSplashToggles(): void {
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
   if (!enterBtn) return
-  // Pin the meta row at 100% / READY, then show Enter. Flip aria-disabled so
+  // Pin the meta row at READY, then show Enter. Flip aria-disabled so
   // AT users (and Playwright actionability) see the button as activatable.
-  updateLoaderProgress(100)
+  updateLoaderStatus('READY')
   enterBtn.classList.add('is-ready')
   enterBtn.setAttribute('aria-disabled', 'false')
 }
@@ -153,24 +153,17 @@ function showLoadError(): void {
 }
 
 // ── Seamless splash loader ──
-// index.html has #jlz-app-loader with the spiral/portal SVG + a percent/status
-// meta row. Three.js loads lazily from this bootstrap — it does not block FCP.
-// We update that row as Experience.init() boots (00% → 100%, INITIALIZING →
-// READY), then the Enter button unlocks when jlz:webgl-ready fires. Config
+// index.html has #jlz-app-loader with the spiral/portal SVG + a status row.
+// Three.js loads lazily from this bootstrap — it does not block FCP. We update
+// the row when boot enters scene preparation and becomes ready. Config
 // buttons (sound + language) are inside the loader — they fade out with the
 // splash. Fade-out is triggered by Enter button click (inline script in
 // index.html), NOT auto.
-const SPLASH_PERCENT_SELECTOR = '[data-jlz-splash="progress"]'
 const SPLASH_STATUS_SELECTOR = '[data-jlz-splash="state"]'
 
-// Exported for the splash meta-row contract test only (exported-for-testing
-// pattern); production callers are the boot flow below.
-export function updateLoaderProgress(pct: number): void {
-  const value = Math.min(100, Math.max(0, Math.round(pct)))
-  const percent = document.querySelector(SPLASH_PERCENT_SELECTOR)
-  if (percent) percent.textContent = `${String(value).padStart(2, '0')}%`
+function updateLoaderStatus(value: string): void {
   const status = document.querySelector(SPLASH_STATUS_SELECTOR)
-  if (status) status.textContent = value >= 100 ? 'READY' : 'INITIALIZING'
+  if (status) status.textContent = value
 }
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
@@ -247,14 +240,12 @@ async function boot(): Promise<BootResult> {
   }
   if (_bootstrapState === 'failed') transitionBootstrap('app-loading')
   else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
-  const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
-
   // DOM-only mode keeps routes and navigation available without creating a
   // scene renderer or canvas.
   if (noSceneRequested) {
     try {
       transitionBootstrap('renderer-initializing')
-      progress(100)
+      updateLoaderStatus('READY')
       transitionBootstrap('scene-prewarming')
       transitionBootstrap('ready')
       eventBus.emit('jlz:webgl-ready')
@@ -278,9 +269,7 @@ async function boot(): Promise<BootResult> {
     // through motionPolicy.prefersReducedMotion().
 
     const bootStart = performance.now()
-    progress(15)
-
-    progress(40)
+    updateLoaderStatus('INITIALIZING')
 
     // SceneHost owns renderer readiness and the first successful scene frame.
     // AppShell mounts SceneHost (startApp above); it owns the one canvas, the
@@ -296,8 +285,8 @@ async function boot(): Promise<BootResult> {
     sceneHostSettled = true
     const host = await sceneHost.ready
     transitionBootstrap('scene-prewarming')
+    updateLoaderStatus('PREPARING SCENE')
     const { Experience } = await import('./Experience/Experience')
-    progress(55)
 
     const runtime = new Experience(
       {
@@ -344,10 +333,7 @@ async function boot(): Promise<BootResult> {
       'info',
       `[entry-app] SceneHost ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
     )
-    progress(95)
-    // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
-    await new Promise((resolve) => setTimeout(resolve, 150))
-    progress(100)
+    updateLoaderStatus('READY')
 
     // ── Fire jlz:webgl-ready → fades out #jlz-app-loader + animates titles ──
     const INTRO_MS = 600
@@ -484,8 +470,9 @@ async function startAppOnce(): Promise<void> {
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
   // (greyed, non-clickable) the entire time — it never activates until 3D
-  // is truly ready. Under CPU/network throttling, init() can take 10-20s;
-  // that's expected and the progress ring keeps the user informed.
+  // is truly ready. Under CPU/network throttling, initialization can take
+  // several seconds; the status row reports its phase without inventing a
+  // completion percentage.
   _readyWatchdog = setTimeout(() => {
     _readyWatchdog = null
     const enterBtn = document.getElementById('jlz-splash-enter')

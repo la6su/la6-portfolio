@@ -670,10 +670,6 @@
         background: var(--yellow);
       }
 
-      .jlz-splash-percent {
-        color: rgba(80, 231, 174, 0.7);
-      }
-
       /* =========================================================
        CORNER LABELS
        ========================================================= */
@@ -1242,9 +1238,15 @@
          ======================================================= -->
 
       <div class="jlz-splash-meta">
-        <span class="jlz-splash-percent" data-jlz-splash="progress"> 00% </span>
-
-        <span id="jlz-splash-status" data-jlz-splash="state"> INITIALIZING </span>
+        <span
+          id="jlz-splash-status"
+          data-jlz-splash="state"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          INITIALIZING
+        </span>
       </div>
 
       <div id="jlz-splash-lead" data-jlz-splash="lead" class="sr-only">
