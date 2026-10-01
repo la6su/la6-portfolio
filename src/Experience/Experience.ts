@@ -137,7 +137,6 @@ export class Experience {
     return this.features?.storyNav ?? null
   }
   private _needsRender = true // start true to render the first frame
-  private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
   // Ambient breathing requests one refresh frame every ~2.5 s while idle.
   // The loop stops when settled, so the per-frame dt
   // accumulator can no longer advance; the breath is a wall-clock timer that
@@ -819,14 +818,11 @@ export class Experience {
     // on a section, no transition, no carousel), the last rendered frame
     // stays on screen and GPU is idle.
     const navActive = this._storyNav?.isActive() ?? false
-    // Compute carousel active state NOW (not from previous frame) — the
-    // carousel may have started morphing this frame via setActive() in the
-    // transform pass's updateTransform(). If we use stale _bakuCarouselActive from
-    // last frame, _needsRender stays false and carousel.update() never
-    // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
+    // Read the current state before the transform pass. On the threshold
+    // crossing frame, active navigation keeps the frame scheduled; later
+    // frames use isAnimating to carry the morph through to its settled state.
     const carousel = this.currentPage() === 'home' ? this.carousel : null
-    this._bakuCarouselActive = carousel?.isAnimating ?? false
-    const carouselActive = this._bakuCarouselActive
+    const carouselActive = carousel?.isAnimating ?? false
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
     const contactHaloActive = this._stages.contactHaloStage?.isAnimating ?? false

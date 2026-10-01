@@ -75,6 +75,11 @@ preserve custom policy only when code or measurements prove the difference.
   Works, and Contact slot literals in the coordinator and both scene passes
   with derived constants; Contact/Services chapter-local indices remain local
   because they are different contracts.
+- In `Experience.update()`, `_bakuCarouselActive` duplicated the live
+  `carousel.isAnimating` value and was immediately read only into a local.
+  Removed the field and its stale-field explanation; current frame gating uses
+  the local snapshot. Navigation keeps the threshold-crossing frame open, and
+  the following frames stay active through the carousel morph.
 - The coordinator's camera setter only forwarded a stable camera object each
   frame. The frame pass now receives the persistent Tres camera at construction;
   the per-frame setter and its forwarding API are removed.
