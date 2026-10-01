@@ -276,22 +276,6 @@ function transitionBootstrap(next: BootstrapState): boolean {
   return true
 }
 
-function disposeBootstrapAttempt(
-  experience: import('./Experience/Experience').Experience | null,
-  ui: import('./UI/UIManager').UIManager | null,
-): void {
-  try {
-    experience?.destroy()
-  } catch (error) {
-    console.error('[entry-app] Experience cleanup failed:', error)
-  }
-  try {
-    ui?.dispose()
-  } catch (error) {
-    console.error('[entry-app] UI cleanup failed:', error)
-  }
-}
-
 interface BootResult {
   retryable: boolean
 }
@@ -324,7 +308,6 @@ async function boot(): Promise<BootResult> {
 
   // A failed initialization may retry only before the one-shot SceneHost has
   // settled. Once it owns a renderer/canvas, a second attempt is unsafe.
-  let ui: import('./UI/UIManager').UIManager | null = null
   let experience: import('./Experience/Experience').Experience | null = null
   let sceneHostSettled = false
   try {
@@ -336,9 +319,6 @@ async function boot(): Promise<BootResult> {
     const bootStart = performance.now()
     progress(15)
 
-    const { UIManager } = await import('./UI/UIManager')
-    ui = new UIManager()
-    ui.init()
     progress(40)
 
     // SceneHost owns renderer readiness and the first successful scene frame.
@@ -359,7 +339,6 @@ async function boot(): Promise<BootResult> {
     progress(55)
 
     const runtime = new Experience(
-      ui,
       {
         scene: host.scene,
         camera: host.camera,
@@ -418,7 +397,11 @@ async function boot(): Promise<BootResult> {
     return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
-    disposeBootstrapAttempt(experience, ui)
+    try {
+      experience?.destroy()
+    } catch (error) {
+      console.error('[entry-app] Experience cleanup failed:', error)
+    }
     clearHostProbe()
     clearReadyWatchdog()
     clearReadyEventTimer()

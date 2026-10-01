@@ -7,8 +7,7 @@
 // so the root teardown returns every owned resource to baseline.
 
 import { CinematicNav } from '../UI/CinematicNav'
-import type { FullscreenOverlay } from '../UI/FullscreenOverlay'
-import type { UIManager } from '../UI/UIManager'
+import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { SceneCoordinator } from './SceneCoordinator'
 import type { StageRegistry } from './StageRegistry'
 import type { PageId } from '../core/routeManifest'
@@ -30,7 +29,6 @@ export interface ExperienceUIHost {
   page: () => PageId
   coordinator: () => SceneCoordinator
   camera: () => Camera
-  ui: () => UIManager
   sfx: () => SfxSystem
   /** Raise render demand + wake the single loop driver (typed reason). */
   raise: (reason?: FrameReason) => void
@@ -46,7 +44,7 @@ export class ExperienceUI {
   storyNav: CinematicNav | null = null
   /** True after the static project data and overlay are ready to use. */
   private projectUiReady = false
-  /** The fullscreen overlay behavior controller, owned by UIManager. */
+  /** Behavior controller for the Vue-owned fullscreen overlay. */
   overlay: FullscreenOverlay | null = null
   private activeProjectIndex = 0
   private _projectControlsPromise: Promise<void> | null = null
@@ -55,6 +53,7 @@ export class ExperienceUI {
   private _unwireCarousel: (() => void) | null = null
 
   private readonly _unsubs: Array<() => void> = []
+  private _overlayHostUnsub: (() => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _routeGeneration = 0
 
@@ -74,6 +73,14 @@ export class ExperienceUI {
 
   /** Create + wire the UI features. Called from Experience.init(). */
   init(): void {
+    this._overlayHostUnsub = eventBus.on('jlz:fullscreen-overlay-unmounted', () => {
+      this.overlay?.dispose()
+      this.overlay = null
+      this._unwireCarousel?.()
+      this._unwireCarousel = null
+      this.projectUiReady = false
+    })
+
     // CinematicNav — vertical native story track plus top/bottom sheets.
     // The section count is the worldSlots contract (single source of the
     // six-slot model), not a literal.
@@ -345,12 +352,12 @@ export class ExperienceUI {
     // here cannot create a separate chunk.
     if (this._destroyed || generation !== this._routeGeneration || this.projectUiReady) return
 
-    // UIManager adopts the Vue-owned overlay markup after AppShell mounts.
-    // Project navigation uses one controller for arrows and keyboard input.
-    this.overlay = this.host.ui().overlay
-    if (!this.overlay) {
+    // Project navigation uses one controller for Vue-owned overlay markup.
+    const element = document.getElementById('jlz-fs-overlay')
+    if (!(element instanceof HTMLDivElement) || !element.isConnected) {
       throw new Error('Fullscreen overlay was not mounted by AppShell.')
     }
+    this.overlay = new FullscreenOverlay(element)
 
     // The home carousel exists even on a content deep link. Wire it once
     // regardless of the active route, and release the callback with this UI
@@ -438,6 +445,9 @@ export class ExperienceUI {
     this.projectUiReady = false
     this._unwireCarousel?.()
     this._unwireCarousel = null
+    this._overlayHostUnsub?.()
+    this._overlayHostUnsub = null
+    this.overlay?.dispose()
     this.overlay = null
     this.storyNav?.dispose()
     this.storyNav = null

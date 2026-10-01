@@ -5,7 +5,6 @@ import { Renderer, type RenderSurface } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
-import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { SfxSystem } from '../core/SfxSystem'
 import type { PageId } from '../core/routeManifest'
@@ -187,7 +186,6 @@ export class Experience {
   // the low-FPS condition.
   private _particleReductionApplied = false
   constructor(
-    private _ui: UIManager,
     host: ExperienceHost,
     private page: () => PageId = () => 'home',
   ) {
@@ -237,7 +235,6 @@ export class Experience {
       page: () => this.currentPage(),
       coordinator: () => this.coordinator,
       camera: () => this.camera,
-      ui: () => this._ui,
       sfx: () => this.sfx,
       raise: (reason) => this._raiseRenderDemand(reason),
       reducedMotion: () => this._reducedMotion,

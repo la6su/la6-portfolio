@@ -119,6 +119,8 @@ camera updates. `Experience.destroy()` and async lazy-stage release have
 focused tests. The unused global error tracker is removed. Route-specific
 stage contracts remain separate from the generic stale-request lifecycle.
 The fullscreen behavior controller is released when its Vue host unmounts.
+`ExperienceUI` now owns that controller lifecycle directly; the forwarding
+`UIManager` and its bootstrap setup/cleanup are removed.
 The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
 the unreferenced `twitter` product icon module was removed. Module-private
 pointer input is one ES-module instance and starts only in `Experience.init()`;
@@ -129,7 +131,7 @@ scheduler frame.
 
 **Next audit:** trace `Experience.ts` end to end and test every remaining
 boundary before simplifying: `ExperienceUI`, `StageRegistry`/`LazyStage`,
-`UIManager`, readiness, renderer replacement, and teardown. Collapse only
+readiness, renderer replacement, and teardown. Collapse only
 forwarding state or duplicate owners. Confirm listeners, timers, observer,
 RAF, media, controls, pending imports, and renderer candidates reach terminal
 cleanup on route leave, boot failure, recovery, and Vue unmount.
@@ -227,13 +229,12 @@ The application shell and stable scene hierarchy are Vue/Tres-owned. Behavior
 controllers remain for Three algorithms, browser/media policy, route-guard
 timing, and lifecycle work that the framework does not supply. Recent audits
 removed duplicate renderer-query parsing, a redundant UIkit global assignment,
-the unused project icon registration, a DOM-only UIManager subscription, the
-Input class's redundant singleton guard/import side effect, the duplicate
+the unused project icon registration, the standalone overlay adapter,
+the Input class's redundant singleton guard/import side effect, the duplicate
 Works pointer wake listener/RAF, and the Works room-count literals. These
 changes are committed. The `?no-scene` flag now has one Vue-free source used by
 bootstrap, SceneHost, and both Vue shell controls. `dist/` is restored after
-build verification and remains tracked pending deploy-contract
-evidence.
+build verification and remains tracked pending deploy-contract evidence.
 
 **Verified locally:** Vue type-check, ESLint, all 76 unit tests, production
 build/budgets, and the full production Chromium suite (17 passed, 3 opt-in
