@@ -70,8 +70,7 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private _sectionChangeHandler:
-    ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
+  private _sectionChangeUnsub: (() => void) | null = null
   private _themeAppliedUnsub: (() => void) | null = null
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
@@ -130,7 +129,7 @@ export class Experience {
   private _prevSectionIndex = -1
   private _stopSizeWatch: WatchStopHandle | null = null
   private readonly viewport: Viewport
-  private _onRendererRecovered: (() => void) | null = null
+  private _rendererRecoveredUnsub: (() => void) | null = null
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
   private get _storyNav() {
@@ -153,7 +152,7 @@ export class Experience {
   /** Converts Tres/Cientos invalidate calls into scheduler demand. */
   private _unsubExternalInvalidate: (() => void) | null = null
   /** Terminal render-failure gate (device-loss budget exhausted). */
-  private _onWebGLFailed: (() => void) | null = null
+  private _webglFailedUnsub: (() => void) | null = null
   private _renderDisabled = false
   /** Reused per-frame activity snapshot; predicates consume it synchronously.
    *  The settle decision reads it after the frame, so a same-frame raise
@@ -270,11 +269,10 @@ export class Experience {
       this._raiseRenderDemand('external'),
     )
     // A terminal device-loss failure stops the loop through the event bus.
-    this._onWebGLFailed = () => {
+    this._webglFailedUnsub = eventBus.on('jlz:webgl-failed', () => {
       this._renderDisabled = true
       this._scheduler.settleNow()
-    }
-    eventBus.on('jlz:webgl-failed', this._onWebGLFailed)
+    })
 
     // Tres owns viewport observation, renderer sizing/DPR and camera aspect.
     // Project stages still need the same reactive dimensions for their own
@@ -311,14 +309,13 @@ export class Experience {
   }
 
   private installRendererRecovery(): void {
-    if (this._onRendererRecovered) return
-    this._onRendererRecovered = () => {
+    if (this._rendererRecoveredUnsub) return
+    this._rendererRecoveredUnsub = eventBus.on('jlz:renderer-recovered', () => {
       if (this._destroyed) return
       this._environment.apply()
       if (this._destroyed) return
       this._raiseRenderDemand('recovery')
-    }
-    eventBus.on('jlz:renderer-recovered', this._onRendererRecovered)
+    })
   }
 
   private _handleReducedMotionChange(reduced: boolean): void {
@@ -495,13 +492,12 @@ export class Experience {
     // Uses data-eyebrow-text attribute as STABLE source (never affected by
     // animation). Reading textContent is unsafe — it could be mid-noise
     // from a previous animation, causing permanent glitch residue.
-    this._sectionChangeHandler = (payload) => {
+    this._sectionChangeUnsub = eventBus.on('jlz:section-change', (payload) => {
       if (!payload?.sectionId) return
       const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
       if (eyebrow) NoiseText.revealEyebrow(eyebrow)
-    }
-    eventBus.on('jlz:section-change', this._sectionChangeHandler)
+    })
 
     // Showreel theater commands — Vue chrome (ShowreelConsole.vue) emits over the
     // typed bus; the controller owns the lazy GPU-side stage and the render swap.
@@ -1070,10 +1066,8 @@ export class Experience {
     this._scheduler.destroy()
     this._unsubExternalInvalidate?.()
     this._unsubExternalInvalidate = null
-    if (this._onWebGLFailed) {
-      eventBus.off('jlz:webgl-failed', this._onWebGLFailed)
-      this._onWebGLFailed = null
-    }
+    this._webglFailedUnsub?.()
+    this._webglFailedUnsub = null
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()
@@ -1081,14 +1075,10 @@ export class Experience {
     BlurFade.disposeAll()
     this.contentReveal?.destroy()
     this.cursor?.destroy()
-    if (this._sectionChangeHandler) {
-      eventBus.off('jlz:section-change', this._sectionChangeHandler)
-      this._sectionChangeHandler = null
-    }
-    if (this._onRendererRecovered) {
-      eventBus.off('jlz:renderer-recovered', this._onRendererRecovered)
-      this._onRendererRecovered = null
-    }
+    this._sectionChangeUnsub?.()
+    this._sectionChangeUnsub = null
+    this._rendererRecoveredUnsub?.()
+    this._rendererRecoveredUnsub = null
     this._themeAppliedUnsub?.()
     this._themeAppliedUnsub = null
     this._splashEnteredUnsub?.()

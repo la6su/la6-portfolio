@@ -86,16 +86,19 @@ class EventBus {
   // type variance prevents a directly-typed { [K]: Set<Handler<K>> } storage.)
   private listeners = new Map<keyof AppEvents, Set<(payload: unknown) => void>>()
 
-  /** Subscribe to an event. Returns an unsubscribe function. */
+  /** Subscribe to an event. Returns an idempotent disposer for this listener. */
   on<K extends keyof AppEvents>(event: K, cb: Handler<K>): () => void {
     if (!this.listeners.has(event)) this.listeners.set(event, new Set())
-    this.listeners.get(event)!.add(cb as (payload: unknown) => void)
-    return () => this.off(event, cb)
-  }
-
-  /** Unsubscribe from an event. */
-  off<K extends keyof AppEvents>(event: K, cb: Handler<K>): void {
-    this.listeners.get(event)?.delete(cb as (payload: unknown) => void)
+    const listeners = this.listeners.get(event)!
+    const handler = cb as (payload: unknown) => void
+    listeners.add(handler)
+    let active = true
+    return () => {
+      if (!active) return
+      active = false
+      listeners.delete(handler)
+      if (listeners.size === 0) this.listeners.delete(event)
+    }
   }
 
   /** Emit a typed event to all subscribers. */
@@ -110,11 +113,6 @@ class EventBus {
       // not silently skip siblings already subscribed to this dispatch.
       for (const cb of [...set]) cb(args[0])
     }
-  }
-
-  /** Remove all listeners (for HMR / teardown). */
-  clear(): void {
-    this.listeners.clear()
   }
 }
 

@@ -140,8 +140,14 @@ preserve custom policy only when code or measurements prove the difference.
   Device recovery still explicitly sizes the replacement renderer because it
   is swapped behind Tres's renderer manager.
 - Keep the typed `EventBus` for communication across the classic HTML shell,
-  Vue router/views, and independently owned runtime/UI controllers. Do not
-  replace it with another abstraction absent a concrete same-owner duplicate.
+  Vue router/views, and independently owned runtime/UI controllers. Its
+  subscription disposer is now the only removal API: replaced the remaining
+  callback-plus-`off()` pairs in Experience and ContentReveal, removed unused
+  `off()`/`clear()` methods, and delete event keys after their final listener
+  leaves. Type check, lint, and production build pass (352 modules;
+  `chunk-experience` 120.54 kB / 34.17 kB gzip). Do not replace the bus absent
+  a concrete same-owner duplicate; continue auditing event boundaries by
+  whether they bridge actual ownership domains.
 - `ErrorTracker` was removed: it duplicated native console reporting and
   suppressed unhandled rejection visibility. Boot failures remain explicitly
   caught and shown by the app shell.

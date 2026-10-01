@@ -9,7 +9,7 @@
 //   The effective decision + the jlz:theme-applied detail shape are the
 //   typed sectionTheme contract; EnvSphere syncs via that event.
 
-import { eventBus, type AppEvents } from '../core/EventBus'
+import { eventBus } from '../core/EventBus'
 import type { PageId } from '../core/routeManifest'
 import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
@@ -19,7 +19,7 @@ import UIkit from 'uikit'
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
   public isLight = false
-  private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
+  private sectionUnsub: (() => void) | null = null
   private pageSectionUnsub: (() => void) | null = null
   private themeChangeUnsub: (() => void) | null = null
   private routeChangeUnsub: (() => void) | null = null
@@ -73,7 +73,7 @@ export class ContentReveal {
 
   private setupSectionSync() {
     // Home: jlz:section-change (data-section)
-    this.sectionHandler = (payload) => {
+    this.sectionUnsub = eventBus.on('jlz:section-change', (payload) => {
       if (!payload?.sectionId) return
       const matching = this.contentRoot().querySelector<HTMLElement>(
         `[data-section="${payload.sectionId}"]`,
@@ -88,8 +88,7 @@ export class ContentReveal {
       )
       this.currentSectionIndex = idx >= 0 ? idx : -1
       this.activateSection(`[data-section="${payload.sectionId}"]`)
-    }
-    eventBus.on('jlz:section-change', this.sectionHandler)
+    })
 
     // Content pages: jlz:page-section-change (data-page-section)
     this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
@@ -219,7 +218,8 @@ export class ContentReveal {
       cancelAnimationFrame(this._uiKitUpdateFrame)
       this._uiKitUpdateFrame = null
     }
-    if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
+    this.sectionUnsub?.()
+    this.sectionUnsub = null
     this.pageSectionUnsub?.()
     this.themeChangeUnsub?.()
     this.routeChangeUnsub?.()
