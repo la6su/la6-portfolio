@@ -9,6 +9,7 @@ import { getLang } from '../../core/i18n'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
@@ -179,7 +180,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
                     {{ study.media[0].caption ?? 'Project material / review state' }}
                   </figcaption>
                 </figure>
-                <button type="button" class="uk-button uk-button-text jlz-works-enter" @click="open">
+                <button v-if="rendererAvailable" type="button" class="uk-button uk-button-text jlz-works-enter" @click="open">
                   {{ labels.view }} ⤢
                 </button>
               </template>
@@ -201,6 +202,7 @@ watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
               </template>
             </div>
             <button
+              v-if="rendererAvailable"
               type="button"
               class="jlz-works-aperture"
               @click="open"

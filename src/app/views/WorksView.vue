@@ -8,6 +8,7 @@ import { eventBus } from '../../core/EventBus'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const releaseCaseIntent = setWorksCaseProject(null)
@@ -57,6 +58,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
                 <span aria-hidden="true">↗</span>
               </RouterLink>
               <button
+                v-if="rendererAvailable"
                 type="button"
                 class="uk-button uk-button-text"
                 @click="open(room.projectIndex)"
@@ -67,6 +69,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
             </div>
           </div>
           <button
+            v-if="rendererAvailable"
             type="button"
             class="jlz-works-aperture"
             @click="open(room.projectIndex)"
@@ -86,6 +89,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
           <nav v-if="index === 3" class="jlz-works-archive" aria-label="Project archive">
             <span class="jlz-works-discipline" data-i18n="works.archive">The archive</span>
             <button
+              v-if="rendererAvailable"
               v-for="(project, projectIndex) in PROJECTS"
               :key="project.id"
               type="button"

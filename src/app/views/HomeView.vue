@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 useJlzPage('home', () => rootEl.value)
@@ -62,6 +63,7 @@ useJlzPage('home', () => rootEl.value)
               </div>
               <div class="uk-margin-top">
                 <button
+                  v-if="rendererAvailable"
                   type="button"
                   class="jlz-showreel-btn"
                   id="jlz-showreel-trigger"

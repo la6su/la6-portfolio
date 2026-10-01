@@ -158,6 +158,7 @@ test("DOM-only mode keeps semantic route navigation available without a canvas",
 }) => {
   await page.goto("/?no-scene", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".jlz-route-fallback")).toBeVisible();
+  await expect(page.locator("#jlz-showreel-trigger")).toHaveCount(0);
   await expect(page.locator(".jlz-scene-host")).toHaveCount(0);
   await expect(page.locator(".jlz-route-fallback__nav a")).toHaveCount(7);
 
@@ -174,6 +175,14 @@ test("DOM-only mode keeps semantic route navigation available without a canvas",
   await expect(page).toHaveURL(/\/services$/);
   await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
   await expect(page.locator("#app canvas")).toHaveCount(0);
+  await page.goto("/works?no-scene", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="works"]')).toHaveCount(1);
+  await expect(page.locator(".jlz-works-actions button")).toHaveCount(0);
+  await expect(page.locator(".jlz-works-aperture")).toHaveCount(0);
+  await page.goto("/works/pro193?no-scene", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-page-view="case-study"]')).toHaveCount(1);
+  await expect(page.locator(".jlz-works-aperture")).toHaveCount(0);
+  await expect(page.locator(".jlz-case-copy button")).toHaveCount(0);
 });
 
 test("standalone blog and builder routes publish valid static documents", async ({
@@ -691,6 +700,7 @@ test("Renderer initialization failure reaches the accessible boot error state", 
   });
   await expect(page.locator('[data-page-view="home"]')).toHaveCount(1);
   await expect(page.locator('[data-page-view="home"]')).toBeFocused();
+  await expect(page.locator("#jlz-showreel-trigger")).toHaveCount(0);
   await expect(page.locator(".jlz-route-fallback")).toBeVisible();
   await expect(page.locator(".jlz-route-fallback__nav a")).toHaveCount(7);
   await page
@@ -699,6 +709,13 @@ test("Renderer initialization failure reaches the accessible boot error state", 
     .click();
   await expect(page).toHaveURL(/\/services$/);
   await expect(page.locator('[data-page-view="services"]')).toHaveCount(1);
+  await page
+    .getByRole("navigation", { name: "Portfolio routes" })
+    .getByRole("link", { name: /03 Works/ })
+    .click();
+  await expect(page).toHaveURL(/\/works$/);
+  await expect(page.locator(".jlz-works-actions button")).toHaveCount(0);
+  await expect(page.locator(".jlz-works-aperture")).toHaveCount(0);
   // Three attempts its WebGL fallback in this fixture with both backends
   // disabled. The app catches the renderer failure and keeps route navigation
   // available.

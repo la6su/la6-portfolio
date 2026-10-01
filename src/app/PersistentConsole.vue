@@ -7,6 +7,7 @@ import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
+import { rendererAvailable, setRendererAvailable } from '../core/rendererAvailability'
 
 const language = ref(getLang())
 const soundMuted = ref(getSoundMuted())
@@ -16,8 +17,6 @@ const themeIsInverse = ref(themeManager.isInverse)
 const soundIcon = ref<HTMLElement | null>(null)
 const menuLabel = computed(() => t(fullscreenOpen.value ? 'common.close' : 'menu.navigate'))
 const nav = ref<HTMLElement | null>(null)
-const noSceneRequested = new URLSearchParams(window.location.search).has('no-scene')
-const sceneAvailable = ref(!noSceneRequested)
 const firstStorySection = worldSlotIndex('intro')!
 const lastStorySection = worldSlotIndex('contact')!
 const storylineSections = Array.from(
@@ -56,10 +55,10 @@ onMounted(() => {
       activeIndex.value = index
     }),
     eventBus.on('jlz:webgl-ready', () => {
-      sceneAvailable.value = !noSceneRequested
+      setRendererAvailable(!new URLSearchParams(window.location.search).has('no-scene'))
     }),
     eventBus.on('jlz:webgl-failed', () => {
-      sceneAvailable.value = false
+      setRendererAvailable(false)
     }),
   )
 })
@@ -83,7 +82,7 @@ function toggleSound(): void {
 
 <template>
   <div
-    v-if="sceneAvailable"
+    v-if="rendererAvailable"
     ref="nav"
     class="jlz-cinematic-shell uk-position-relative"
     :class="{

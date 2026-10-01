@@ -281,6 +281,17 @@ runtime markup construction or add wrapper-only SFCs. `RouteTransitionView.vue`
 declares the remaining overlay structure while its controller coordinates
 Vue Router guard timing. Focus host teardown coverage on all AppShell roots.
 
+The route fallback audit also found scene-only actions still rendered on the
+semantic routes: project apertures/material buttons and the home showreel
+trigger had no owner after renderer failure. `core/rendererAvailability.ts`
+holds the single reactive availability value; `PersistentConsole` updates it
+from existing renderer events, and route components omit those scene-only
+controls when unavailable. Existing case-study/router links stay usable. A
+DOM-only production-browser check confirms controls are absent on home, works,
+and case-study routes. The opt-in both-backends-disabled Chromium check also
+confirms the fallback after the real boot failure and route navigation. Vue
+type-check, lint, production build/budgets, and all 73 unit tests pass.
+
 ## Follow-on goal policy
 
 Only after this plan's full release acceptance is evidenced, perform a fresh
