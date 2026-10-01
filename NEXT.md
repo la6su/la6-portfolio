@@ -117,14 +117,6 @@ Controllers adopt Vue nodes; resource disposal has explicit owners. Section
 groups no longer synthesize fallback roots; Works metadata no longer uses a
 WeakMap attachment bag.
 
-**Next audit:** inventory every remaining `new THREE.*`, `scene.add/remove`,
-`primitive`, `:dispose="null"`, and manual child insertion under
-`src/Experience` and `src/app/scene`. For each, record whether it creates
-stable hierarchy or a runtime algorithm/resource. Move only stable hierarchy
-to Vue and preserve focused disposal coverage. Persistent app-shell DOM now has
-Vue owners; keep the remaining imperative DOM limited to cohesive lifecycle
-or browser-library behavior.
-
 **Constructor inventory:** a source-wide search found no imperative
 construction of stable app scene nodes and no runtime `scene.add/remove`.
 Remaining `new THREE.*` matches are materials, custom Lab geometry, or the
@@ -133,6 +125,10 @@ adopts the loaded glTF hierarchy. The similarly named `scene.add` in
 `WebGPUPostPipeline` is a TSL node operation, not a Three scene mutation.
 These remain algorithm/resource cases; moving them into the template would
 not simplify ownership. Route-cycle resource evidence is still required.
+
+**Remaining:** prove route-cycle resource plateaus and finish auditing the
+remaining `:dispose="null"`/manual insertion sites for single ownership; keep
+the already reviewed constructors in Vue where they form stable hierarchy.
 
 **Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
 resource-disposal owner, and route mount/release cycles show no detached nodes,
@@ -248,9 +244,10 @@ they no longer describe current ownership or APIs. Current source slices
 passed Chromium and Firefox production suites, Vue type-check, lint, and 77
 unit tests.
 
-**Next audit:** finish source-to-output inventory for assets, routes, scripts,
-CSS, content generators, tests and package scripts. Remove each proven dead or
-duplicate path in a focused commit. Inspect route chunk sizes, texture/font
+**Next audit:** finish source-to-output inventory for generated CSS, routes,
+content generators, tests and package scripts (public runtime assets and
+TypeScript scripts are now source-referenced and checked). Remove proven dead
+or duplicate paths in focused commits. Inspect route chunk sizes, texture/font
 cost, CPU frame work, GPU allocations, and build budgets; use measured results
 and retain deploy-required artifacts. Then perform a fresh full source review
 against this plan and record the release audit evidence.
@@ -276,9 +273,10 @@ and `git diff --check` pass with the expanded coverage.
 **Asset audit:** every public runtime media/font/Prism asset is referenced by
 the app, blog, or builder output. `favicon.svg` and `logo.svg` were identical;
 all generated and authored pages now use `logo.svg`, and the duplicate source
-asset/cache rule was removed. A successful production build regenerated the
-tracked release output; no static HTML/manifest/header file refers to the
-removed URL.
+asset/cache rule was removed. The manifest keeps one `any` icon entry because
+the mark has no maskable safe-zone padding. A successful production build
+regenerated the tracked release output; no static HTML/manifest/header file
+refers to the removed URL.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
@@ -308,6 +306,10 @@ renderer scenarios skipped). That includes repeated lazy-stage mount/release,
 route metadata, DOM-only navigation and icons, renderer-failure continuation,
 showreel/fullscreen behavior, reduced motion, and host teardown. Firefox
 production route, hash, and fallback suites passed in the prior matrix run.
+The refreshed tracked release output, including the deduplicated brand asset,
+also passed the production Chromium suite (17 passed, 3 opt-in renderer
+scenarios skipped). Build budgets measured 3.03 kB gzip startup, 310.95 kB
+shared Three, and 53.84 kB UIkit.
 The dedicated Chromium host-teardown test also passes after adding coverage for
 the create-to-mount microtask race: host teardown now waits for a stale stage's
 declared-node release without waiting on unrelated in-flight imports.
@@ -321,10 +323,11 @@ this host because its browser dependencies are missing.
    create-to-mount teardown race is fixed and covered; inspect the remaining
    boot/UI lifecycle owners and async stage continuations, changing only a
    demonstrated duplicate or missing cleanup path.
-2. Finish phase 1's constructor/attachment inventory and phase 5's source to
-   output map, including generated CSS, public assets, routes, scripts, and
-   tests. Preserve Three scratch objects and offscreen scenes where their
-   runtime algorithms require them.
+2. Continue phase 1 with route resource plateau evidence; finish phase 5's
+   source-to-output map for generated CSS, routes, content, and test fixtures.
+   Public runtime assets, TypeScript scripts, and current release output have
+   been inventoried or synchronized. Preserve Three scratch objects and
+   offscreen scenes where their runtime algorithms require them.
 3. Continue phase 4's EN/RU keyboard, contrast, touch, resize, and renderer
    failure walk; run WebKit in CI or a host with its declared libraries.
 4. Close phase 0 only after identifying the actual deploy consumer and
