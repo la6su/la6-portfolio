@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
 import type { PostParams } from './postParams'
-import { copyPostParams, NEUTRAL_GRADE } from './postParams'
+import { copyPostParams, NEUTRAL_GRADE, postParamsMatch } from './postParams'
 
 /**
  * The section-authored subset of the canonical PostParams: the four intensity
@@ -206,34 +206,11 @@ export class PostProcessingManager {
   }
 
   private displayMatchesCurrent(epsilon = 0): boolean {
-    return (
-      Math.abs(this.display.bloom - this.current.bloom) <= epsilon &&
-      Math.abs(this.display.vignette - this.current.vignette) <= epsilon &&
-      Math.abs(this.display.grain - this.current.grain) <= epsilon &&
-      Math.abs(this.display.chromatic - this.current.chromatic) <= epsilon &&
-      Math.abs(this.display.bloomRadius - this.current.bloomRadius) <= epsilon &&
-      Math.abs(this.display.bloomThreshold - this.current.bloomThreshold) <= epsilon &&
-      Math.abs(this.display.refract - this.current.refract) <= epsilon &&
-      Math.abs(this.display.border - this.current.border) <= epsilon &&
-      tupleMatches(this.display.gradeShadows, this.current.gradeShadows, epsilon) &&
-      tupleMatches(this.display.gradeHighlights, this.current.gradeHighlights, epsilon)
-    )
+    return postParamsMatch(this.display, this.current, epsilon)
   }
 
   /** Get display values for shader uniforms without exposing mutable ownership. */
   get postParams(): Readonly<PostParams> {
     return this.display
   }
-}
-
-function tupleMatches(
-  a: [number, number, number],
-  b: [number, number, number],
-  epsilon: number,
-): boolean {
-  return (
-    Math.abs(a[0] - b[0]) <= epsilon &&
-    Math.abs(a[1] - b[1]) <= epsilon &&
-    Math.abs(a[2] - b[2]) <= epsilon
-  )
 }

@@ -5,11 +5,7 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from './WebGPUPostPipeline'
 import { withNoToneMapping } from './toneMappingGuard'
-import { copyPostParams, type PostParams } from './postParams'
-
-function tupleIs(a: [number, number, number], b: [number, number, number]): boolean {
-  return Object.is(a[0], b[0]) && Object.is(a[1], b[1]) && Object.is(a[2], b[2])
-}
+import { copyPostParams, postParamsMatch, type PostParams } from './postParams'
 
 // ─── RenderPipeline Class ──────────────────────────────────────
 
@@ -66,20 +62,7 @@ export class RenderPipeline {
    *  The grade channels ride the same crossfade as the intensity channels, so
    *  section transitions no longer snap refraction, border and color tints. */
   public updateParams(params: Readonly<PostParams>): void {
-    if (
-      Object.is(this._params.bloom, params.bloom) &&
-      Object.is(this._params.vignette, params.vignette) &&
-      Object.is(this._params.grain, params.grain) &&
-      Object.is(this._params.chromatic, params.chromatic) &&
-      Object.is(this._params.bloomRadius, params.bloomRadius) &&
-      Object.is(this._params.bloomThreshold, params.bloomThreshold) &&
-      Object.is(this._params.refract, params.refract) &&
-      Object.is(this._params.border, params.border) &&
-      tupleIs(this._params.gradeShadows, params.gradeShadows) &&
-      tupleIs(this._params.gradeHighlights, params.gradeHighlights)
-    ) {
-      return
-    }
+    if (postParamsMatch(this._params, params)) return
     // Copy through the canonical in-place helper — the diff above decides
     // WHEN; this decides HOW (element-wise, allocation-free, tuple references
     // preserved for any holder of the snapshot).

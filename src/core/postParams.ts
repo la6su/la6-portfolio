@@ -56,3 +56,31 @@ export function copyPostParams(target: PostParams, from: Readonly<PostParams>): 
   target.gradeHighlights[1] = from.gradeHighlights[1]
   target.gradeHighlights[2] = from.gradeHighlights[2]
 }
+
+/** Compare every channel exactly, or within a fade-completion tolerance. */
+function channelMatches(left: number, right: number, epsilon?: number): boolean {
+  return epsilon === undefined ? Object.is(left, right) : Math.abs(left - right) <= epsilon
+}
+
+export function postParamsMatch(
+  a: Readonly<PostParams>,
+  b: Readonly<PostParams>,
+  epsilon?: number,
+): boolean {
+  return (
+    channelMatches(a.bloom, b.bloom, epsilon) &&
+    channelMatches(a.vignette, b.vignette, epsilon) &&
+    channelMatches(a.grain, b.grain, epsilon) &&
+    channelMatches(a.chromatic, b.chromatic, epsilon) &&
+    channelMatches(a.bloomRadius, b.bloomRadius, epsilon) &&
+    channelMatches(a.bloomThreshold, b.bloomThreshold, epsilon) &&
+    channelMatches(a.refract, b.refract, epsilon) &&
+    channelMatches(a.border, b.border, epsilon) &&
+    channelMatches(a.gradeShadows[0], b.gradeShadows[0], epsilon) &&
+    channelMatches(a.gradeShadows[1], b.gradeShadows[1], epsilon) &&
+    channelMatches(a.gradeShadows[2], b.gradeShadows[2], epsilon) &&
+    channelMatches(a.gradeHighlights[0], b.gradeHighlights[0], epsilon) &&
+    channelMatches(a.gradeHighlights[1], b.gradeHighlights[1], epsilon) &&
+    channelMatches(a.gradeHighlights[2], b.gradeHighlights[2], epsilon)
+  )
+}
