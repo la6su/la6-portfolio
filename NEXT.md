@@ -193,6 +193,20 @@ classic HTML shell, Vue router/views, and independently owned runtime/UI
 controllers. Continue looking for pairs that share the same owner before
 changing it; event count or file size alone is not duplication.
 
+**Completed persistent-console slice:** moved the always-mounted top bar and
+contact launcher from `UIMenu`'s runtime `innerHTML`/manual append into
+`app/PersistentConsole.vue`, rendered by `AppShell`. Vue now owns its markup,
+active section and preference/fullscreen UI state, with lifecycle-bound typed
+event subscriptions. The story-position algorithm stays in `CinematicNav`;
+the console communicates with it through two typed semantic events. Removed
+the now-redundant `UIMenu` class; `FullscreenOverlay` and `ShowreelConsole`
+remain separate owners for modal/media behavior and are outside this slice.
+The production build and budgets passed with Chromium (14 passed, 3 opt-in
+renderer scenarios skipped) and Firefox (13 passed, 4 skipped); Vue type-check,
+ESLint, and all 73 unit tests passed. The route suite exercised persistent
+navigation, translation, keyboard focus, fullscreen interaction, responsive
+layout, and boot failure/recovery behavior.
+
 **Completed explicit Works ownership slice:** replaced the `WeakMap<Group,
 ...>` metadata bag in `sceneOwners.ts` with a `SectionGroups.works` owner result.
 The only writer was the Works factory and the only data lived on the Works

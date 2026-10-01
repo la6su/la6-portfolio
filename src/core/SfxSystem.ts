@@ -144,7 +144,7 @@ const SOUND_STORAGE_KEY = 'jlz:sound'
 
 /** Read the sound preference from localStorage.
  *  Returns true (muted) when the key is absent, 'off', or any non-'on' value.
- *  This matches UIMenu's original readSoundMuted() default. */
+ *  This matches the persistent console's default. */
 export function getSoundMuted(): boolean {
   try {
     return localStorage.getItem(SOUND_STORAGE_KEY) !== 'on'

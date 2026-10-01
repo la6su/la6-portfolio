@@ -17,7 +17,7 @@ export interface AppEvents {
     configId?: string
     index: number
   }
-  /** Fired by useJlzPage on page navigation — triggers UIMenu page active + slider labels. */
+  /** Fired by useJlzPage on page navigation — reconciles route-owned runtime features. */
   'jlz:route-change': { page?: string }
   /**
    * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
@@ -37,13 +37,17 @@ export interface AppEvents {
   'jlz:open-project': { idx: number }
   /** Fired by CinematicNav when a non-home page's active section changes. */
   'jlz:page-section-change': { index: number; count: number }
+  /** Persistent Vue shell requests a story-track section. */
+  'jlz:story-navigate': { index: number }
+  /** CinematicNav updates the persistent shell's active section state. */
+  'jlz:story-index-change': { index: number }
   /** Fired by FullscreenOverlay on prev/next project navigation. */
   'jlz:project-navigate': { direction: -1 | 1 }
   /** Fullscreen media becomes the active interaction layer. */
   'jlz:fullscreen-change': { open: boolean }
   /** Requests that the active fullscreen media owner closes itself. */
   'jlz:close-media-layer': void
-  /** Fired by the UIMenu sound button. */
+  /** Fired by a persistent sound control. */
   'jlz:sound-toggle': { muted: boolean }
   /** Fired by the index.html splash Enter control. */
   'jlz:splash-entered': void

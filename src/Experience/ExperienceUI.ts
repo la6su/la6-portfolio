@@ -7,7 +7,6 @@
 // so the root teardown returns every owned resource to baseline.
 
 import { CinematicNav } from '../UI/CinematicNav'
-import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
@@ -45,8 +44,6 @@ export interface ExperienceUIHost {
 export class ExperienceUI {
   /** Vertical native story track plus top/bottom sheets. */
   storyNav: CinematicNav | null = null
-  /** The compact console menu. */
-  uiMenu: UIMenu | null = null
   /** True after the static project data and overlay are ready to use. */
   private projectUiReady = false
   /** The fullscreen overlay (UIManager may own one; adopt or create). */
@@ -87,7 +84,7 @@ export class ExperienceUI {
       this.host.raise('nav')
     }
     this.storyNav.onSectionChange((idx) => {
-      this.uiMenu?.setActive(idx)
+      eventBus.emit('jlz:story-index-change', { index: idx })
       // Initial hashes are replayed only after the ready splash event. Keep
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
@@ -105,11 +102,11 @@ export class ExperienceUI {
       if (active) this.host.raise('nav')
     })
 
-    // UIMenu
-    this.uiMenu = new UIMenu()
-    this.uiMenu.onNavigate((idx) => {
-      this.storyNav?.goToSection(idx)
-    })
+    this._unsubs.push(
+      eventBus.on('jlz:story-navigate', ({ index }) => {
+        this.storyNav?.goToSection(index)
+      }),
+    )
 
     // The compact storyline lives inside the console bar (bottom strip).
     // If the console bar exists, append there; otherwise fall back to body.
@@ -121,11 +118,11 @@ export class ExperienceUI {
     }
 
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
-    // D-7 fix: default to MUTED (matches UIMenu's readSoundMuted default:
+    // D-7 fix: default to MUTED (matches the console's getSoundMuted default:
     // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
     this.host.sfx().setMuted(getSoundMuted())
 
-    // Runtime sound toggle (from UIMenu or other in-app controls)
+    // Runtime sound toggle from the persistent console or other in-app controls.
     this._unsubs.push(
       eventBus.on('jlz:sound-toggle', ({ muted }) => {
         this.host.sfx().setMuted(muted)
@@ -458,8 +455,6 @@ export class ExperienceUI {
     if (this.ownsOverlay) this.overlay?.dispose()
     this.overlay = null
     this.ownsOverlay = false
-    this.uiMenu?.dispose()
-    this.uiMenu = null
     this.storyNav?.dispose()
     this.storyNav = null
   }
