@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#050507" />
     <meta name="color-scheme" content="dark light" />
     <meta name="author" content="JUSTLOVEJAZZ" />
@@ -15,26 +18,40 @@
       content="on-demand rendering, GPU performance, Three.js, WebGPU, process note"
     />
 
-    <title>On-Demand Rendering — Zero Idle Draw Calls | JUSTLOVEJAZZ Blog</title>
+    <title>
+      On-Demand Rendering — Zero Idle Draw Calls | JUSTLOVEJAZZ Blog
+    </title>
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/logo.svg" />
     <link rel="mask-icon" href="/logo.svg" color="#232534" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="canonical" href="https://justlovejazz.dev/blog/on-demand-rendering" />
+    <link
+      rel="canonical"
+      href="https://justlovejazz.dev/blog/on-demand-rendering"
+    />
 
     <!-- Open Graph -->
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:title" content="On-Demand Rendering — Zero Idle Draw Calls" />
+    <meta
+      property="og:title"
+      content="On-Demand Rendering — Zero Idle Draw Calls"
+    />
     <meta
       property="og:description"
       content="How we cut idle GPU draw calls to zero by gating renderer.update() behind a _needsRender flag."
     />
-    <meta property="og:url" content="https://justlovejazz.dev/blog/on-demand-rendering" />
+    <meta
+      property="og:url"
+      content="https://justlovejazz.dev/blog/on-demand-rendering"
+    />
     <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
-    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta
+      property="og:image:secure_url"
+      content="https://justlovejazz.dev/preview.jpg"
+    />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -50,7 +67,10 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
-    <meta name="twitter:title" content="On-Demand Rendering — Zero Idle Draw Calls" />
+    <meta
+      name="twitter:title"
+      content="On-Demand Rendering — Zero Idle Draw Calls"
+    />
     <meta
       name="twitter:description"
       content="How we cut idle GPU draw calls to zero by gating renderer.update()."
@@ -60,9 +80,9 @@
 
     <link
       rel="preload"
-      href="/fonts/commissioner-variable.ttf"
+      href="/fonts/commissioner-variable.woff2"
       as="font"
-      type="font/ttf"
+      type="font/woff2"
       crossorigin
     />
     <link rel="stylesheet" href="/fonts/commissioner.css" />
@@ -87,7 +107,7 @@
           "name": "JUSTLOVEJAZZ",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://justlovejazz.dev/favicon.svg"
+            "url": "https://justlovejazz.dev/logo.svg"
           }
         },
         "mainEntityOfPage": {
@@ -98,7 +118,7 @@
         "articleSection": "Process Notes"
       }
     </script>
-    <link rel="stylesheet" crossorigin href="/assets/blog-Dlo-EbyO.css">
+    <link rel="stylesheet" crossorigin href="/assets/blog-BPi-VJhT.css">
   </head>
   <body>
     <div class="jlz-reading-progress" aria-hidden="true">
@@ -129,30 +149,32 @@
           On-Demand Rendering — Zero Idle Draw Calls
         </h1>
         <p class="uk-text-lead uk-margin-medium-top">
-          The 3D portfolio looks alive, but when you're not interacting, the GPU sleeps. Here's the
-          architecture that makes it possible — and the one exception that keeps the scene from
-          feeling dead.
+          The 3D portfolio looks alive, but when you're not interacting, the GPU
+          sleeps. Here's the architecture that makes it possible — and the one
+          exception that keeps the scene from feeling dead.
         </p>
 
         <hr class="uk-margin-large" />
 
         <h2>The problem with rAF</h2>
         <p>
-          The default Three.js pattern is <code>requestAnimationFrame(loop)</code> — render every
-          frame, 60 times a second, forever. For a 3D portfolio where the user spends 80% of their
-          time reading text, this means 4,800 draw calls per minute of idle. On a laptop, the fan
-          spins up. On mobile, the battery drains.
+          The default Three.js pattern is
+          <code>requestAnimationFrame(loop)</code> — render every frame, 60
+          times a second, forever. For a 3D portfolio where the user spends 80%
+          of their time reading text, this means 4,800 draw calls per minute of
+          idle. On a laptop, the fan spins up. On mobile, the battery drains.
         </p>
         <p>
-          We wanted the opposite: <strong>zero draw calls when idle</strong>. The scene should
-          render only when something changes — a section transition, a carousel spin, a cursor
-          movement that affects the 3D layer.
+          We wanted the opposite: <strong>zero draw calls when idle</strong>.
+          The scene should render only when something changes — a section
+          transition, a carousel spin, a cursor movement that affects the 3D
+          layer.
         </p>
 
         <h2>The _needsRender flag</h2>
         <p>
-          The core idea is a single boolean: <code>_needsRender</code>. The render loop checks it
-          each frame:
+          The core idea is a single boolean: <code>_needsRender</code>. The
+          render loop checks it each frame:
         </p>
         <pre
           class="uk-pre uk-margin-medium"
@@ -163,13 +185,21 @@
   }
 })</code></pre>
         <p>
-          When the flag is false, <code>renderer.update()</code> is never called. The GPU sleeps.
-          The animation loop still runs (cheap — just a boolean check), but no render work happens.
+          When the flag is false, <code>renderer.update()</code> is never
+          called. The GPU sleeps. The animation loop still runs (cheap — just a
+          boolean check), but no render work happens.
         </p>
-        <p>The flag is set to <code>true</code> by events that change the scene:</p>
+        <p>
+          The flag is set to <code>true</code> by events that change the scene:
+        </p>
         <ul>
-          <li><strong>JoystickNav section change</strong> — cube rotates to new face</li>
-          <li><strong>BakuCarousel morph/scroll</strong> — carousel ring animates</li>
+          <li>
+            <strong>JoystickNav section change</strong> — cube rotates to new
+            face
+          </li>
+          <li>
+            <strong>BakuCarousel morph/scroll</strong> — carousel ring animates
+          </li>
           <li><strong>Splash/intro animation</strong> — opening sequence</li>
           <li><strong>Camera shake</strong> — burst effects</li>
           <li><strong>ParticleBurst</strong> — active bursts</li>
@@ -177,20 +207,24 @@
 
         <h2>Ambient breathing — the one exception</h2>
         <p>
-          A fully frozen scene feels dead. We added a single exception: every 2.5 seconds, one
-          render frame fires to advance the <code>worldDNA</code> time uniform. This gives a subtle
-          "breathing" — particles drift, the background gradient shifts, the glass cube's
+          A fully frozen scene feels dead. We added a single exception: every
+          2.5 seconds, one render frame fires to advance the
+          <code>worldDNA</code> time uniform. This gives a subtle "breathing" —
+          particles drift, the background gradient shifts, the glass cube's
           iridescence animates. Then the GPU sleeps again.
         </p>
         <p>
-          The breathing respects <code>prefers-reduced-motion</code> — if the user has requested
-          reduced motion, the scene is truly frozen between interactions.
+          The breathing respects <code>prefers-reduced-motion</code> — if the
+          user has requested reduced motion, the scene is truly frozen between
+          interactions.
         </p>
 
         <blockquote class="uk-blockquote uk-margin-medium">
           <p class="uk-margin-remove">
-            "On-demand rendering: don't set <code>_needsRender=true</code> permanently. Event-driven
-            only. Ambient breathing (1-frame refresh every ~2.5s in idle) is the ONLY exception."
+            "On-demand rendering: don't set
+            <code>_needsRender=true</code> permanently. Event-driven only.
+            Ambient breathing (1-frame refresh every ~2.5s in idle) is the ONLY
+            exception."
           </p>
           <footer>— JUSTLOVEJAZZ engineering principle</footer>
         </blockquote>
@@ -228,29 +262,39 @@
           </tbody>
         </table>
         <p>
-          Over a 60-second idle period: 24 breathing frames × 3ms = 72ms total GPU time. Compare to
-          rAF: 3600 frames × 5ms = 18,000ms. That's a 250× reduction.
+          Over a 60-second idle period: 24 breathing frames × 3ms = 72ms total
+          GPU time. Compare to rAF: 3600 frames × 5ms = 18,000ms. That's a 250×
+          reduction.
         </p>
 
         <h2>The catch</h2>
         <p>
-          On-demand rendering makes the codebase harder to reason about. Every animation must
-          explicitly set <code>_needsRender = true</code> — forget it, and the animation plays in
-          your head but not on screen. We added a lint rule and a DevPanel toggle to force-render
-          during debugging.
+          On-demand rendering makes the codebase harder to reason about. Every
+          animation must explicitly set <code>_needsRender = true</code> —
+          forget it, and the animation plays in your head but not on screen. We
+          added a lint rule and a DevPanel toggle to force-render during
+          debugging.
         </p>
         <p>
-          The CubeCamera reflection (for the glass cube) also needs the flag — if the cube is
-          visible but
-          <code>_needsRender</code> is false, the reflection is stale. We accept this: the
-          reflection updates on the next interaction, which is usually within a second.
+          The CubeCamera reflection (for the glass cube) also needs the flag —
+          if the cube is visible but
+          <code>_needsRender</code> is false, the reflection is stale. We accept
+          this: the reflection updates on the next interaction, which is usually
+          within a second.
         </p>
 
         <hr class="uk-margin-large" />
 
-        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
-          <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
-          <a href="/blog/tsl-changes-everything" class="uk-button uk-button-default uk-button-small"
+        <nav
+          class="uk-flex uk-flex-between uk-margin-large"
+          aria-label="Article navigation"
+        >
+          <a href="/blog" class="uk-button uk-button-default uk-button-small"
+            >← All posts</a
+          >
+          <a
+            href="/blog/tsl-changes-everything"
+            class="uk-button uk-button-default uk-button-small"
             >Next: Why TSL changes everything →</a
           >
         </nav>
@@ -262,8 +306,17 @@
            uk-icon (a UIkit JS component) never renders there. -->
         <ul class="jlz-blog-social" aria-label="Social links">
           <li>
-            <a href="https://github.com/la6su" rel="noopener" aria-label="GitHub"
-              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+            <a
+              href="https://github.com/la6su"
+              rel="noopener"
+              aria-label="GitHub"
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
                 <path
                   fill="currentColor"
                   d="M10,1 C5.03,1 1,5.03 1,10 C1,13.98 3.58,17.35 7.16,18.54 C7.61,18.62 7.77,18.34 7.77,18.11 C7.77,17.9 7.76,17.33 7.76,16.58 C5.26,17.12 4.73,15.37 4.73,15.37 C4.32,14.33 3.73,14.05 3.73,14.05 C2.91,13.5 3.79,13.5 3.79,13.5 C4.69,13.56 5.17,14.43 5.17,14.43 C5.97,15.8 7.28,15.41 7.79,15.18 C7.87,14.6 8.1,14.2 8.36,13.98 C6.36,13.75 4.26,12.98 4.26,9.53 C4.26,8.55 4.61,7.74 5.19,7.11 C5.1,6.88 4.79,5.97 5.28,4.73 C5.28,4.73 6.04,4.49 7.75,5.65 C8.47,5.45 9.24,5.35 10,5.35 C10.76,5.35 11.53,5.45 12.25,5.65 C13.97,4.48 14.72,4.73 14.72,4.73 C15.21,5.97 14.9,6.88 14.81,7.11 C15.39,7.74 15.73,8.54 15.73,9.53 C15.73,12.99 13.63,13.75 11.62,13.97 C11.94,14.25 12.23,14.8 12.23,15.64 C12.23,16.84 12.22,17.81 12.22,18.11 C12.22,18.35 12.38,18.63 12.84,18.54 C16.42,17.35 19,13.98 19,10 C19,5.03 14.97,1 10,1 L10,1 Z"
@@ -271,8 +324,17 @@
             ></a>
           </li>
           <li>
-            <a href="https://x.com/justlovejazz" rel="noopener" aria-label="Twitter"
-              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+            <a
+              href="https://x.com/justlovejazz"
+              rel="noopener"
+              aria-label="Twitter"
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
                 <path
                   fill="currentColor"
                   d="M19,4.74 C18.339,5.029 17.626,5.229 16.881,5.32 C17.644,4.86 18.227,4.139 18.503,3.28 C17.79,3.7 17.001,4.009 16.159,4.17 C15.485,3.45 14.526,3 13.464,3 C11.423,3 9.771,4.66 9.771,6.7 C9.771,6.99 9.804,7.269 9.868,7.539 C6.795,7.38 4.076,5.919 2.254,3.679 C1.936,4.219 1.754,4.86 1.754,5.539 C1.754,6.82 2.405,7.95 3.397,8.61 C2.79,8.589 2.22,8.429 1.723,8.149 L1.723,8.189 C1.723,9.978 2.997,11.478 4.686,11.82 C4.376,11.899 4.049,11.939 3.713,11.939 C3.475,11.939 3.245,11.919 3.018,11.88 C3.49,13.349 4.852,14.419 6.469,14.449 C5.205,15.429 3.612,16.019 1.882,16.019 C1.583,16.019 1.29,16.009 1,15.969 C2.635,17.019 4.576,17.629 6.662,17.629 C13.454,17.629 17.17,12 17.17,7.129 C17.17,6.969 17.166,6.809 17.157,6.649 C17.879,6.129 18.504,5.478 19,4.74"
@@ -281,7 +343,13 @@
           </li>
           <li>
             <a href="mailto:hello@justlovejazz.com" aria-label="Email"
-              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
                 <polyline
                   fill="none"
                   stroke="currentColor"
@@ -301,7 +369,9 @@
       </div>
     </footer>
     <script>
-      document.getElementById('year').textContent = String(new Date().getFullYear())
+      document.getElementById("year").textContent = String(
+        new Date().getFullYear(),
+      );
     </script>
     <script defer src="/vendor/prism/prism-core.min.js"></script>
     <script defer src="/vendor/prism/prism-clike.min.js"></script>

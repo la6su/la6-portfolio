@@ -35,8 +35,9 @@ preserve custom policy only when code or measurements prove the difference.
    Do not merge or split modules based on line count alone.
 4. Do not claim browser, GPU, WebGPU, recovery, accessibility, or performance
    evidence beyond what was actually exercised. Record real remaining gaps.
-5. Keep generated `dist/` state intact until its external deployment consumer
-   is identified; do not stage unrelated build output with source commits.
+5. Tracked `dist/` is the repository's current release artifact: regenerate it
+   with the sources for release-facing changes, but do not change its tracking
+   policy until the external deployment consumer is identified.
 
 ## Current audit decisions
 
@@ -99,6 +100,10 @@ checkout install/build and deployed static routing/cache behavior. The only
 local GitHub workflow, `.github/workflows/quality.yml`, runs checks and browser
 tests but has no deployment step. `public/` headers do not establish whether
 Cloudflare Pages, Netlify, or another consumer publishes the output.
+The artifact was tracked from the repository's initial commit and was stale;
+it has now been regenerated from the current source during the brand-asset
+cleanup. Keep tracking it while the host is unknown, and inspect clean-build
+and served-route behavior separately.
 
 **Accept when:** frozen install, repository checks, production build/budgets,
 generated-route checks, and the actual deploy contract are reproducible.
@@ -268,6 +273,12 @@ runtime dependency and keeps Bun as the package/script runner. The expanded
 check found and fixed an unchecked source-map array access in
 `bundle-breakdown.ts`. Vue type-check, lint, all 77 unit tests, stdlib checks,
 and `git diff --check` pass with the expanded coverage.
+**Asset audit:** every public runtime media/font/Prism asset is referenced by
+the app, blog, or builder output. `favicon.svg` and `logo.svg` were identical;
+all generated and authored pages now use `logo.svg`, and the duplicate source
+asset/cache rule was removed. A successful production build regenerated the
+tracked release output; no static HTML/manifest/header file refers to the
+removed URL.
 
 **Accept when:** clean install/build, all deterministic checks, Chromium/
 Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
@@ -285,10 +296,11 @@ project-controls readiness RAF/promise state, the Input class's redundant
 singleton guard/import side effect, the duplicate Works pointer wake
 listener/RAF, and the Works room-count literals. These changes are committed.
 The `?no-scene` flag now has one Vue-free source used by bootstrap, SceneHost,
-and both Vue shell controls. `dist/` is restored after build verification and
-remains tracked pending deploy-contract evidence. The local quality workflow
-was inspected and confirmed not to deploy; the output consumer remains
-unknown, so tracked output stays unchanged.
+and both Vue shell controls. `dist/` remains tracked pending deploy-contract
+evidence. The local quality workflow was inspected and confirmed not to deploy;
+the output consumer remains unknown. After discovering the tracked output was
+stale since the initial commit, the successful production build was retained
+to synchronize release HTML, assets, and headers with source.
 
 **Verified locally:** Vue type-check, ESLint, all 77 unit tests, production
 build/budgets on Vite 8.3.2, and the full production Chromium suite (17 passed, 3 opt-in

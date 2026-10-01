@@ -72,7 +72,7 @@ export function renderBuilderPageDocument(
     '',
     `    <title>${title} | JUSTLOVEJAZZ</title>`,
     '',
-    '    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
+    '    <link rel="icon" type="image/svg+xml" href="/logo.svg" />',
     '    <link rel="apple-touch-icon" href="/logo.svg" />',
     '    <link rel="mask-icon" href="/logo.svg" color="#232534" />',
     '    <link rel="manifest" href="/site.webmanifest" />',

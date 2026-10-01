@@ -188,7 +188,7 @@ function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string,
       publisher: {
         '@type': 'Organization',
         name: SITE_NAME,
-        logo: { '@type': 'ImageObject', url: `${origin}/favicon.svg` },
+        logo: { '@type': 'ImageObject', url: `${origin}/logo.svg` },
       },
       mainEntityOfPage: { '@type': 'WebPage', '@id': url },
       keywords: meta.keywords,
@@ -204,7 +204,7 @@ function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string,
     publisher: {
       '@type': 'Organization',
       name: SITE_NAME,
-      logo: { '@type': 'ImageObject', url: `${origin}/favicon.svg` },
+      logo: { '@type': 'ImageObject', url: `${origin}/logo.svg` },
     },
     blogPost: BLOG_ARTICLES.map((article) => {
       const articleMeta = BLOG_PAGE_META[article.slug]!
@@ -250,7 +250,7 @@ export function renderBlogDocument(
     '',
     `    <title>${esc(meta.title)}</title>`,
     '',
-    '    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
+    '    <link rel="icon" type="image/svg+xml" href="/logo.svg" />',
     '    <link rel="apple-touch-icon" href="/logo.svg" />',
     '    <link rel="mask-icon" href="/logo.svg" color="#232534" />',
     '    <link rel="manifest" href="/site.webmanifest" />',
