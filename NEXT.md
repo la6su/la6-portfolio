@@ -158,7 +158,10 @@ no abandoned async task can reattach resources.
 software/fallback policy and accessible no-GPU continuation exist. Demand
 rendering coalesces invalidations and pauses on hidden tabs. Renderer recovery
 is bounded and tested at policy/DOM boundaries; a device snapshot avoids
-per-frame capability detection.
+per-frame capability detection. The Contact production test verifies that
+Cyprus downloads only the selected Draco wrapper/WASM pair; Three's loader
+module also emits its default standalone decoder assets, but that GLTF route
+does not request them.
 
 **Remaining:** exercise actual WebGPU and forced WebGL renderer recovery on
 physical GPU hardware. Local Chromium/Firefox production suites currently use

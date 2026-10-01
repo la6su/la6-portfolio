@@ -321,6 +321,7 @@ test("Contact scene survives repeated route mount and release cycles", async ({
   page,
 }) => {
   const errors: string[] = [];
+  const dracoAssets = new Set<string>();
   let cyprusAssetStatus: number | undefined;
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -330,6 +331,10 @@ test("Contact scene survives repeated route mount and release cycles", async ({
     if (new URL(response.url()).pathname === "/assets/gltf/cyprus_3d.glb") {
       cyprusAssetStatus = response.status();
     }
+  });
+  page.on("requestfinished", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/assets/draco_")) dracoAssets.add(path);
   });
 
   await page.goto("/contact", { waitUntil: "domcontentloaded" });
@@ -351,6 +356,15 @@ test("Contact scene survives repeated route mount and release cycles", async ({
   );
 
   expect(cyprusAssetStatus).toBe(200);
+  await page.waitForFunction(() => {
+    const resources = performance.getEntriesByType("resource");
+    return resources.filter((resource) =>
+      new URL(resource.name).pathname.startsWith("/assets/draco_"),
+    ).length >= 2;
+  });
+  expect(dracoAssets.size).toBe(2);
+  expect([...dracoAssets].filter((path) => path.endsWith(".wasm"))).toHaveLength(1);
+  expect([...dracoAssets].filter((path) => path.endsWith(".js"))).toHaveLength(1);
 
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await page
