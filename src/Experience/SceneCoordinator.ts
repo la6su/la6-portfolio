@@ -65,7 +65,7 @@ export class SceneCoordinator {
     })
   }
 
-  public async init(): Promise<void> {
+  public init(): void {
     const pageKey = this.page()
     const configs = this._story.beginRoute(pageKey)
     // Route re-entry can reuse the coordinator instance. Invalidate derived
@@ -100,8 +100,8 @@ export class SceneCoordinator {
   }
 
   /** Rebuild the page-specific section/config contract after SPA navigation. */
-  public refreshRouteConfig(): Promise<void> {
-    return this.init()
+  public refreshRouteConfig(): void {
+    this.init()
   }
 
   /**

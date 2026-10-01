@@ -162,11 +162,10 @@ export class ExperienceUI {
         const continuationIsCurrent = () =>
           this._routeContinuationIsCurrent(routeGeneration, newPage)
         const coordinator = this.host.coordinator
-        void (async () => {
+        try {
           // Rebuild page-specific fog/post/section ranges before route owners
           // reconcile visibility; otherwise SPA navigation keeps boot config.
-          await coordinator.refreshRouteConfig()
-          if (!continuationIsCurrent()) return
+          coordinator.refreshRouteConfig()
           coordinator.syncRouteVisuals()
           const stages = this.host.stages
           if (newPage === 'home') {
@@ -212,13 +211,13 @@ export class ExperienceUI {
           // between routes; the coordinator hides it while off-route.
           if (newPage === 'lab') void stages.ensureLabGamepad()
           this.host.raise('nav')
-        })().catch((error: unknown) => {
-          // Route work is fire-and-forget by design, but it still needs a
-          // terminal rejection boundary. Ignore failures from retired routes;
-          // report only errors that belong to the live route continuation.
+        } catch (error: unknown) {
+          // Ignore synchronous failures from routes superseded during a
+          // re-entrant event callback; lazy stage promises contain their own
+          // construction and teardown failures.
           if (!continuationIsCurrent()) return
           console.error('[ExperienceUI] route reconciliation failed:', error)
-        })
+        }
       }),
     )
 

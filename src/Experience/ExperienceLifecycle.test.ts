@@ -70,6 +70,7 @@ function createExperienceHarness(page = 'home'): {
       _destroyed: false,
       _lifecycleGeneration: 0,
       _host: {
+        page: () => page,
         sectionRoots: [],
         servicesStage: {},
         envSphere: {},
@@ -83,7 +84,6 @@ function createExperienceHarness(page = 'home'): {
           particles: { mount: lifecycle.mountParticles },
         },
       },
-      page: () => page,
       scene: {},
       _stages: {
         dispose: vi.fn(async () => undefined),
@@ -161,29 +161,6 @@ describe('Experience scene construction cancellation', () => {
     await expect(build).resolves.toBeUndefined()
     await teardown
     expect(lifecycle.createdOwners).toEqual([])
-  })
-
-  it('does not prewarm route stages after a pending coordinator init is retired', async () => {
-    let finishInit!: () => void
-    lifecycle.coordinatorInit.mockImplementationOnce(
-      () => new Promise<void>((resolve) => (finishInit = resolve)),
-    )
-    const experience = createExperienceHarness('contact')
-
-    const build = experience.buildScene(0)
-    await vi.waitFor(() =>
-      expect(lifecycle.coordinatorInit).toHaveBeenCalledOnce(),
-    )
-
-    const teardown = experience.destroy()
-    finishInit()
-
-    await expect(build).resolves.toBeUndefined()
-    await teardown
-    expect(lifecycle.ensureContactTypography).not.toHaveBeenCalled()
-    expect(lifecycle.ensureContactHalo).not.toHaveBeenCalled()
-    expect(lifecycle.ensureContactCyprus).not.toHaveBeenCalled()
-    expect(lifecycle.prewarmHomeMedia).not.toHaveBeenCalled()
   })
 
   it('does not prewarm home media after a pending carousel initialization is retired', async () => {

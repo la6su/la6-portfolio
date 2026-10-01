@@ -385,8 +385,7 @@ export class Experience {
       },
       this._host.page,
     )
-    await this.coordinator.init()
-    if (!this.isLifecycleCurrent(token)) return
+    this.coordinator.init()
     // The home carousel finishes texture
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup
