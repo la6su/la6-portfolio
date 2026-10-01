@@ -41,7 +41,11 @@ preserve custom policy only when code or measurements prove the difference.
 
 ## Current audit decisions
 
-- Admin and Builder were removed as unnecessary product scope. There is no editor, document schema/storage, compile/save API, `/admin` UI, `/p` publishing pipeline, or generated builder content. Portfolio copy and project data remain source-controlled in the app/content files; publishing is a normal repository build. Do not recreate these systems unless the product goal changes.
+- Admin and Builder were removed in commit `07cc2a2`: no editor, document
+  schema/storage, compile/save API, `/admin` UI, `/p` publishing pipeline, or
+  generated builder content remains. Portfolio copy and project data stay
+  source-controlled in app/content files; publishing is a normal repository
+  build. Do not recreate these systems unless the product goal changes.
 
 - The source tree is already mostly declarative for the scene: `SceneHost.vue`
   and owner SFCs declare stable roots and leaves; controllers adopt those nodes
@@ -134,13 +138,12 @@ plugin wiring, package scripts, and current module ownership. Items marked
 
 ### Audit execution order
 
-1. Close the dev API exposure question and protect its write boundary.
-2. Finish runtime ownership/teardown map (`Experience`, renderer recovery,
+1. Finish runtime ownership/teardown map (`Experience`, renderer recovery,
    stage registry, route/hash and app unmount); simplify proven duplicate state.
-3. Complete generated content, blog, CSS selector and media audits.
-4. Confirm dependency/build compatibility from clean install and actual release
+2. Complete generated content, blog, CSS selector and media audits.
+3. Confirm dependency/build compatibility from clean install and actual release
    host behavior; remove only proven dead paths.
-5. Run browser, accessibility, resource, performance and physical GPU evidence;
+4. Run browser, accessibility, resource, performance and physical GPU evidence;
    update acceptance rows with commands and results.
 
 ## Phases
