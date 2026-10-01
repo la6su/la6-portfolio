@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// src/app/views/ServicesView.vue — Phase 5: /services route SFC. 1:1 port
-// of the former string page: four story beats; the console window is
-// reserved for the opening proposition and the final action, not repeated
-// as page furniture.
+// Services route: four story beats, with the console window reserved for the
+// opening proposition and final action rather than repeated page furniture.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

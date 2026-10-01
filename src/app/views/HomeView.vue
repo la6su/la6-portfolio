@@ -1,10 +1,6 @@
 <script setup lang="ts">
-// src/app/views/HomeView.vue — Phase 5: home route SFC (the 3D cube
-// experience face. The four main sections form the native horizontal story
-// track; sections 0/5 enter as Contact/Menu sheets. The
-// section order matches the displayed cube orientation (see
-// src/core/routeManifest.ts). The scene sync reads `data-section`
-// on these nodes — the attributes are the 3D contract.
+// Home route: its section order matches the cube orientation in
+// `routeManifest.ts`; `data-section` attributes synchronize the 3D scene.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

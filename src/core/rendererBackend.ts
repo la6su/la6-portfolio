@@ -1,16 +1,6 @@
-// src/core/rendererBackend.ts — Phase 6 unified-renderer decisions.
-//
-// Production constructs ONE renderer class (`WebGPURenderer` from
-// `three/webgpu`). What actually renders differs per device: real
-// `WebGPUBackend`, Three's automatic `WebGLBackend` fallback (renders the
-// scene directly, no TSL post — the Phase 2 accepted contract), or a forced
-// `forceWebGL` re-creation after a software adapter is detected. These pure
-// helpers make the backend-policy decisions explicit and unit-testable;
-// `Renderer.init()` is the only caller that touches the live renderer.
-//
-// The dev-forced `?renderer=webgl` parity QA path was NOT part of this
-// policy: it constructed the classic `WebGLRenderer` directly (the retained
-// forced-WebGLBackend GLSL post owner). It was removed in Phase 10.
+// Backend policy for the single `WebGPURenderer` class. The active backend may
+// be WebGPU or Three's WebGL fallback; these pure helpers keep device policy
+// explicit and unit-testable.
 
 export type FinalMode = 'webgpu' | 'webgl'
 

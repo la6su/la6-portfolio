@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// src/app/views/ManifestoView.vue — Phase 5: /manifesto route SFC. 1:1
-// port of the former string page
-// four principles + the two shared
-// overlays (section 0 contact finale, section 5 menu).
+// Manifesto route with four principles and the shared Contact and Menu
+// overlays.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

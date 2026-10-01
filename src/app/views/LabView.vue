@@ -1,7 +1,5 @@
 <script setup lang="ts">
-// src/app/views/LabView.vue — Phase 5: /lab route SFC. 1:1 port of the
-// former string page: four R&D
-// experiments + the two shared overlays.
+// Lab route with four R&D experiments and the shared Contact and Menu overlays.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

@@ -1,18 +1,7 @@
-// src/app/index.ts — Phase 5: the Vue Router mount and navigation owner.
-//
-// `src/entry-app.ts` mounts this app via a dynamic import (the only edge
-// into the Vue graph), so the router + route SFCs stay in a separate lazy
-// `app` chunk. The legacy DOM router and the string page/section templates
-// were removed in the Phase 5 cleanup commit.
-//
-// The navigation surface is a 1:1 port of the legacy router's contracts:
-// strict in-app navigation (unknown link = no-op), lenient direct entry
-// (unknown path → home, URL untouched), the `jlz:navigate` event, the
-// anchor click capture handler (including bare hashes), the `jlz:lang-change`
-// re-apply, the section-hash dispatch after
-// the 3D navigation owner is ready, and the route announcer (owned by
-// `useJlzPage`). `popstate` is handled by `createWebHistory` itself; the
-// native `Experience` is never touched by navigation.
+// Owns Vue Router mounting, browser navigation events, and route transitions.
+// `entry-app.ts` loads this graph dynamically so page components remain lazy.
+// Route navigation updates the semantic page and typed scene ports while the
+// persistent Experience and SceneHost remain mounted.
 
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'

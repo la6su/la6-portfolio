@@ -1,21 +1,13 @@
-// src/app/useJlzPage.ts — Phase 5: per-page lifecycle owner for route SFCs.
+// Owns the DOM lifecycle shared by the semantic route components:
 //
-// Every semantic route SFC calls this composable once with its static
-// `PageId`. It owns the render contract the legacy `renderView` implemented
-// imperatively, now split across router + i18n/meta providers:
+// - activate the home intro section;
+// - apply translations and page metadata;
+// - announce route changes;
+// - bind menu behavior to the mounted page;
+// - initialize UIkit within the page root.
 //
-// - home intro activation (the template does not ship `section-active`);
-// - i18n + per-route meta on every render (the router-owned providers);
-// - the route announcer on page change;
-// - the menu lifecycle binding on freshly rendered DOM;
-// - UIkit hydration scoped to the page root (`update(el)`, never a
-//   document-wide update), with the idle-callback re-pass.
-//
-// The scene runtime is never touched: navigation re-renders the DOM only and
-// keeps the 3D world in sync through `jlz:route-change`. This file is the
-// permanent per-page lifecycle owner (the legacy `renderView` side effects
-// live here); the string-template adapter (`PageView.vue`) and the legacy
-// router were removed in the Phase 5 cleanup.
+// Navigation updates semantic DOM and signals the persistent 3D runtime via
+// `jlz:route-change`; it does not recreate the scene.
 
 import { onBeforeUnmount, onMounted } from 'vue'
 import UIkit from 'uikit'
@@ -32,9 +24,7 @@ function uiKitUpdate(el: Element): void {
   ;(UIkit as unknown as { update(el: Element): void }).update(el)
 }
 
-// The legacy `renderView` announces only on a page change, never on the
-// initial render. A component remount is a page change (Vue Router keeps the
-// record alive for a same-path re-push, so this never fires for those).
+  // Announce only subsequent page mounts, not the initial route render.
 let mountedOnce = false
 
 export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
@@ -57,7 +47,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     }
   })
 
-  // The legacy `renderView` post-render sequence, verbatim.
+  // Apply page-level behavior after the route DOM is mounted.
   function postRender(): void {
     const el = rootEl()
     if (!el) return

@@ -1,8 +1,6 @@
 <script setup lang="ts">
-// src/app/views/ContactView.vue — Phase 5: /contact route SFC. 1:1 port of
-// the former string page:
-// a route-specific transmission board. The DOM typography names the current
-// frame and holds one useful action at a time.
+// Contact route: a transmission board whose DOM typography names the current
+// frame and presents one useful action at a time.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

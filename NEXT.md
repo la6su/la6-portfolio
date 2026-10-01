@@ -602,9 +602,10 @@ unowned persistent GPU resource remains.
   and the first async release race fix are recorded above; no new module
   boundary was justified by the audit.
 - **Next action**: complete repeat-shutdown coverage across Experience, route
-  stages, and host; audit and remove stale phase/ADR archaeology from active
-  source while retaining behavior constraints; then continue keyboard routes
-  beyond the menu/modal, orientation/resize and touch-target states. Verify
+  stages, and host; continue the source audit for duplicated lifecycle owners,
+  unreachable code, and abstractions already provided by Vue/Tres/Three. Then
+  continue keyboard routes beyond the menu/modal, orientation/resize and
+  touch-target states. Verify
   WebKit in CI and scene-failure behavior on capable GPU hardware. Chromium and Playwright
   Firefox projects now run locally. A WebKit production smoke was attempted;
   browser launch is blocked by missing system libraries, with CI configured to
@@ -699,3 +700,10 @@ remaining list, but retain concise completed milestones as architectural
 history. If a requirement changes, amend the objective/phase and record the
 reason here. `AGENTS.md` points to this file; no second plan, roadmap, or
 session-log document should be created.
+
+- Source comment hygiene: removed migration chronology from the app shell,
+  routes, page lifecycle, renderer backend, post pipeline, event bus, and frame
+  scheduler. Kept current runtime contracts and constraints beside their
+  owners. `bun run type-check:vue`, `bun run lint`, and `git diff --check`
+  passed. This is documentation-only cleanup; the broader ownership audit
+  remains open.

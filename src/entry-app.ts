@@ -312,13 +312,8 @@ async function boot(): Promise<BootResult> {
   else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
   const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
 
-  // ?no-scene=1 — Phase 5 prerender contract: boot the route shell and the
-  // semantic route content WITHOUT the scene runtime (the Three/Experience
-  // dynamic imports below never run, no canvas is created). The loader ring
-  // completes and `jlz:webgl-ready` fires synchronously so the Enter flow
-  // and every scene-ready consumer proceed on a DOM-only world. This is the
-  // evidence path for the Phase 5 candidate gate: routes + navigation work
-  // with zero renderer, and a route can never (re)create one.
+  // DOM-only mode keeps routes and navigation available without creating a
+  // scene renderer or canvas.
   if (new URLSearchParams(window.location.search).has('no-scene')) {
     try {
       transitionBootstrap('renderer-initializing')
@@ -364,7 +359,7 @@ async function boot(): Promise<BootResult> {
     ui.init()
     progress(40)
 
-    // ── Phase 7: the persistent SceneHost (Vue) is the readiness handshake ──
+    // SceneHost owns renderer readiness and the first successful scene frame.
     // AppShell mounts SceneHost (startApp above); it owns the one canvas, the
     // custom renderer factory and the camera. `sceneHost.ready` settles only
     // AFTER renderer init + actual-backend inspection + the software-adapter
@@ -420,12 +415,8 @@ async function boot(): Promise<BootResult> {
     if (import.meta.env.DEV) {
       ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
     }
-    // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
-    // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
-    // post runs only on `WebGPUBackend` (`WebGPUPostPipeline`). No
-    // TSL-post-on-WebGLBackend claim is made. (The dev-forced classic
-    // `?renderer=webgl` parity QA owner that compared the two paths was
-    // removed in Phase 10; the automatic software-adapter fallback remains.)
+    // TSL post-processing is enabled only on WebGPUBackend; Three's WebGL
+    // fallback renders the scene directly.
     devDiagnostic(
       'info',
       `[entry-app] SceneHost ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
@@ -486,11 +477,8 @@ async function startAppOnce(): Promise<void> {
       /* icons are enhancement, not critical */
     })
 
-  // Phase 5 (cleanup): Vue Router (src/app) owns navigation. The dynamic
-  // import below is the only edge into the Vue graph, so the router + route
-  // SFCs stay in a separate lazy `app` chunk and the initial entry bundle
-  // remains lean. The scene runtime boots exactly once regardless of the
-  // route.
+  // Keep the router and route components in a lazy app chunk. The shared
+  // scene runtime is booted once, regardless of the current route.
   void import('./app')
     .then((m) => m.mountVueApp())
     .catch((error) => {

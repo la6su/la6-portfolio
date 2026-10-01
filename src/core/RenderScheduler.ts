@@ -1,28 +1,15 @@
-// src/core/RenderScheduler.ts — Phase 7 single renderer-loop driver.
-//
-// ADR 0004 (2026-08-16): the scheduler is the single frame-policy owner —
-// it installs the frame callback for bounded activity windows and clears it
-// when settled. (Its "single setAnimationLoop caller" wording is
-// superseded by ADR 0005 below.)
+// Demand-driven frame scheduler. It installs a callback for bounded activity
+// windows and clears it when the scene settles.
 //
 // Contract:
-// - start on dirty work (an `invalidate` with a typed reason) or on resume;
-// - keep the loop while the host reports unsettled (typed scene activity);
-// - stop after the settled frame (zero settled draws);
-// - hidden tabs pause advancement; resume causes exactly one invalidation;
-// - reduced motion settles synchronously (`settleNow`).
+// - start on dirty work or resume;
+// - keep the loop while the host reports unsettled;
+// - stop after the settled frame;
+// - pause hidden tabs and invalidate once on resume;
+// - reduced motion settles synchronously.
 //
-// Framework-neutral by design: the `LoopDriver` port is the only edge to a
-// loop host, so the policy is unit-tested without a renderer, a canvas or
-// rAF.
-//
-// ADR 0005 (2026-09-25, Tres-native demand loop): the `LoopDriver` edge now
-// installs the frame callback into the persistent Tres loop (through the
-// SceneHost `SceneLoopPort`) instead of the renderer's `setAnimationLoop`,
-// so `useLoop` subscribers (Cientos components included) share the RAF. The
-// policy below is unchanged — the Tres loop pauses when settled, resumes on
-// invalidation, and ecosystem `invalidate()` calls arrive typed as
-// 'external' through the port's wake path.
+// SceneHost connects the framework-neutral LoopDriver to Tres's persistent
+// loop so Tres and Cientos subscribers share one RAF.
 
 export type FrameReason =
   | 'first-frame'
@@ -139,7 +126,7 @@ export class RenderScheduler {
 
   /**
    * Pause advancement (hidden tab) or resume it. Resuming always causes
-   * exactly one invalidation, per ADR 0004.
+   * exactly one invalidation, per the scheduler contract.
    */
   setHidden(hidden: boolean): void {
     if (this._destroyed || hidden === this._hidden) return

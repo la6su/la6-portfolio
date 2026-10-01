@@ -1,12 +1,7 @@
 <script setup lang="ts">
-// src/app/views/NavMenu.vue — Phase 5: navigation sheet SFC (canonical
-// section 5, the menu face). 1:1 port of the former string page
-// The menu is intentionally flat: each item is a direct route destination;
-// `mode` switches
-// the section attribute namespace: 'home' = data-section (3D cube-face
-// sync), 'content' = data-page-section. The root `id`/`data-cinematic-menu`
-// stay constant; the page class is added only on content pages so the
-// standard hiding rule applies there (legacy comment, kept).
+// Shared navigation sheet. `mode` selects the section attribute namespace:
+// home uses `data-section` for cube synchronization; content pages use
+// `data-page-section` for route navigation.
 defineProps<{ mode: 'home' | 'content' }>()
 
 import { NAV_ITEMS } from '../navItems'

@@ -1,11 +1,6 @@
 // Typed event bus — replaces untyped window.dispatchEvent(CustomEvent) calls.
 // Compile-time safety on event payloads; no DOM dependency; `on()` returns
 // an unsubscribe function for cleaner lifecycle management.
-//
-// Phase 10: every `jlz:*` consumer is on this bus. The former window
-// dispatchEvent bridge in emit() is removed — `AppEvents` is the single
-// port surface (the splash in index.html and the e2e dev seam are the only
-// non-module dispatch sites, both through this bus).
 
 import type { ThemeAppliedPort } from './sectionTheme'
 import type { ThemeMode } from './ThemeManager'

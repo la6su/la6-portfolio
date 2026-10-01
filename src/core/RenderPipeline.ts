@@ -1,21 +1,5 @@
-// src/core/RenderPipeline.ts — Post-processing pipeline (WebGPURenderer only)
-//
-// Phase 10 (2026-08-22): the classic `WebGLRenderer` path — the bounded GLSL
-// `ShaderMaterial` post chain retained in Phase 6 as the dev-forced
-// `?renderer=webgl` QA post owner — has completed its job and is removed.
-// `WebGPURenderer` is the only renderer class the app constructs (Phase 6
-// production default), so this owner has exactly two live paths:
-//
-//   WebGPUBackend:  TSL RenderPipeline + PassNode + BloomNode + vignette/grain
-//                   Fn nodes (delegated to WebGPUPostPipeline — no
-//                   ShaderMaterial);
-//   WebGLBackend:   WebGPURenderer on the WebGL backend cannot compile
-//                   ShaderMaterial (THREE.NodeBuilder incompatibility) AND
-//                   NodeMaterials crash with refreshFogUniforms if scene.fog
-//                   is set — direct render only.
-//
-// Proper memory disposal; explicit capability gating; zero `any` in the
-// resource path.
+// Post-processing for the unified WebGPURenderer. TSL effects are available
+// on WebGPU; Three's WebGL fallback renders the scene directly.
 
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
