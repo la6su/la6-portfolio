@@ -10,6 +10,7 @@ import type { WebGPURenderer } from "three/webgpu";
 import {
   deferRendererDisposal,
   disposeUnifiedRendererNow,
+  inspectUnifiedBackend,
   initUnifiedWebGPUInstance,
   makeRendererDisposeIdempotent,
 } from "./unifiedRenderer";
@@ -22,6 +23,33 @@ function rendererDouble(init: () => Promise<unknown>) {
 }
 
 describe("unified renderer initialization ownership", () => {
+  it("classifies the initialized backend by Three's explicit markers", () => {
+    expect(
+      inspectUnifiedBackend({
+        isWebGPURenderer: true,
+        backend: {
+          isWebGPUBackend: true,
+          device: { adapterInfo: { isFallbackAdapter: false } },
+        },
+      }),
+    ).toEqual({ backendName: "WebGPUBackend", isFallbackAdapter: false });
+    expect(
+      inspectUnifiedBackend({
+        isWebGPURenderer: true,
+        backend: { isWebGLBackend: true },
+      }),
+    ).toEqual({ backendName: "WebGLBackend", isFallbackAdapter: null });
+  });
+
+  it("leaves an unmarked backend unknown instead of guessing by class name", () => {
+    expect(
+      inspectUnifiedBackend({
+        isWebGPURenderer: true,
+        backend: { constructor: { name: "WebGPUBackend" } },
+      }),
+    ).toEqual({ backendName: null, isFallbackAdapter: null });
+  });
+
   it("makes Tres and the application share one idempotent dispose boundary", () => {
     const dispose = vi.fn();
     const renderer = makeRendererDisposeIdempotent({ dispose });
