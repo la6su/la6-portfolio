@@ -51,9 +51,7 @@ export function createSingleFrameOwner(): {
   cancel: () => void
 } {
   let frame: number | null = null
-  let generation = 0
   const cancel = (): void => {
-    generation += 1
     if (frame !== null) {
       cancelAnimationFrame(frame)
       frame = null
@@ -62,10 +60,8 @@ export function createSingleFrameOwner(): {
   return {
     schedule: (callback) => {
       cancel()
-      const token = generation
       frame = requestAnimationFrame(() => {
         frame = null
-        if (token !== generation) return
         callback()
       })
     },

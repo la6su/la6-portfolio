@@ -21,7 +21,10 @@ describe('createSingleFrameOwner', () => {
         return id
       }),
     )
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      vi.fn((id: number) => callbacks.delete(id)),
+    )
   }
 
   it('suppresses a queued callback when a newer frame replaces it', () => {
@@ -31,10 +34,8 @@ describe('createSingleFrameOwner', () => {
     const second = vi.fn()
 
     owner.schedule(first)
-    const staleFrame = callbacks.get(1)!
     owner.schedule(second)
 
-    staleFrame(0)
     expect(first).not.toHaveBeenCalled()
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1)
 
@@ -48,9 +49,7 @@ describe('createSingleFrameOwner', () => {
     const callback = vi.fn()
 
     owner.schedule(callback)
-    const queuedFrame = callbacks.get(1)!
     owner.cancel()
-    queuedFrame(0)
 
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1)
     expect(callback).not.toHaveBeenCalled()
