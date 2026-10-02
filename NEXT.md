@@ -407,6 +407,10 @@ The renderer-failure boot gate was created after the initial document
 translation pass and kept English copy in saved-RU sessions. It now carries
 normal i18n markers and applies the active locale immediately after insertion;
 the splash status uses the same translated signal-loss label.
+The separate terminal renderer-recovery notice had no matching stylesheet,
+so its appended message could fall outside the fixed-height viewport. It is now
+a localized live alert pinned above the safe-area inset; its nonblocking layout
+keeps the renderer-free route navigation usable.
 The persistent full-screen project dialog also had hard-coded English labels
 for its dialog name and close/previous/next controls. Those labels now have EN
 and RU entries. The shared translator applies marked `aria-label` attributes

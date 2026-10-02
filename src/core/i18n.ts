@@ -41,6 +41,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.sceneErrorCode': 'ERR:SCENE — INITIALIZATION FAILED',
     'splash.continueWithout3d': 'Continue without 3D',
     'splash.retry': 'Retry',
+    'renderer.failureTitle': '3D rendering unavailable',
+    'renderer.failureDescription': 'The graphics device could not be restored. Reload the page to try again.',
 
     // Navigation
     'nav.studio': 'Studio',
@@ -247,6 +249,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.sceneErrorCode': 'ОШИБКА: СЦЕНА — НЕ УДАЛОСЬ ЗАПУСТИТЬ',
     'splash.continueWithout3d': 'Продолжить без 3D',
     'splash.retry': 'Повторить',
+    'renderer.failureTitle': '3D-графика недоступна',
+    'renderer.failureDescription': 'Не удалось восстановить графическое устройство. Перезагрузите страницу и попробуйте снова.',
 
     // Navigation
     'nav.studio': 'Студия',

@@ -18,6 +18,7 @@ import {
 } from "../core/rendererBackend";
 import { waitForWebGLContextRestore } from "../core/webglContextRestore";
 import { devDiagnostic } from "../core/devDiagnostic";
+import { applyTranslations } from "../core/i18n";
 import {
   createUnifiedWebGPUInstance,
   disposeUnifiedRendererNow,
@@ -92,12 +93,14 @@ export class Renderer {
   private showRendererFailure(): void {
     if (this._disposed || this._unsupportedOverlay) return;
     const overlay = document.createElement("div");
-    overlay.className = "renderer-unsupported";
+    overlay.className = "jlz-renderer-failure";
+    overlay.setAttribute("role", "alert");
     overlay.innerHTML = `
-      <h1>3D Rendering Unavailable</h1>
-      <p>The graphics device could not be restored. Reload the page to try again.</p>
+      <h1 data-i18n="renderer.failureTitle">3D rendering unavailable</h1>
+      <p data-i18n="renderer.failureDescription">The graphics device could not be restored. Reload the page to try again.</p>
     `;
     document.body.appendChild(overlay);
+    applyTranslations();
     this._unsupportedOverlay = overlay;
   }
 

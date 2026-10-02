@@ -81,6 +81,40 @@
   left: 0.85rem;
 }
 
+.jlz-renderer-failure {
+  position: fixed;
+  z-index: 30030;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  width: auto;
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg-elevated);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 28%);
+  pointer-events: none;
+}
+
+.jlz-renderer-failure h1,
+.jlz-renderer-failure p {
+  margin: 0;
+}
+
+.jlz-renderer-failure h1 {
+  font: 600 0.75rem/1.4 var(--jlz-font-mono);
+  text-transform: uppercase;
+}
+
+.jlz-renderer-failure p {
+  margin-top: 0.35rem;
+  color: var(--jlz-color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 // Terminal selection: phosphor field, ink text.
 ::selection {
   background: var(--jlz-color-signal-phosphor);
