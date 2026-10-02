@@ -22,6 +22,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
   >
     <article class="jlz-page jlz-services-page" data-page-view="services">
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
+      <h1 class="uk-hidden-visually" data-i18n="nav.services">Services</h1>
 
       <!-- 01 · Creative Direction (start, active) -->
       <section

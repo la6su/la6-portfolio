@@ -82,6 +82,7 @@ const PRINCIPLES: readonly Principle[] = [
     <article class="jlz-page" data-page-view="manifesto">
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
+      <h1 class="uk-hidden-visually" data-i18n="nav.manifesto">Manifesto</h1>
 
       <!-- 1-4: Purpose / Clarity / Emotion / Simplicity (1 = start, active) -->
       <section

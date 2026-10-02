@@ -304,9 +304,10 @@ locale changes. Unknown paths render the home fallback and use the home
 canonical. These are source-level findings; direct URL and crawler behavior
 still require deployment/browser verification.
 
-Accessibility source review found `/contact` had no level-one heading; it now
-has a visually hidden localized H1 while the authored visible sections remain
-unchanged. Continue checking focus and landmark behavior in a browser.
+Accessibility source review found `/contact`, `/services`, `/manifesto`, and
+`/lab` had no level-one heading; they now have visually hidden localized H1s
+while the authored visible sections remain unchanged. Continue checking focus
+and landmark behavior in a browser.
 
 Latest production build and lint both pass. Bundle gates report Three at
 310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the

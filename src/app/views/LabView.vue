@@ -88,6 +88,7 @@ const EXPERIMENTS: readonly Experiment[] = [
     <article class="jlz-page" data-page-view="lab">
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
+      <h1 class="uk-hidden-visually" data-i18n="nav.lab">Lab</h1>
 
       <!-- 1-4: experiments (1 = start, active) -->
       <section
