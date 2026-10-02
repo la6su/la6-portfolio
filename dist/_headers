@@ -1,8 +1,8 @@
 # public/_headers — Cache-Control rules (Netlify / Cloudflare Pages format)
 #
 # Deploy target: justlovejazz.dev (configure your host to serve these rules).
-# Netlify & Cloudflare Pages read _headers automatically. For Caddy/nginx,
-# translate to Cache-Control response headers.
+# Netlify & Cloudflare Pages read _headers automatically. For Caddy, nginx, or
+# HAProxy, translate to response headers in the serving/reverse-proxy layer.
 #
 # Strategy:
 #   - Fingerprinted root JS/CSS/WASM (vite emits [name]-[hash].ext) → immutable, 1 year.
@@ -11,9 +11,51 @@
 #     → always revalidate; these publicDir paths do not include content hashes.
 #   - /vendor/prism/* + /js/blog.js → 1 year immutable (version-pinned in repo).
 #   - logo.svg, site.webmanifest, robots.txt, sitemap.xml → revalidate.
-#   - HTML (index.html, blog.html, blog/*) → no-cache (always fresh, OG tags matter).
+#   - All EN/RU HTML routes → revalidate (OG tags, metadata, and content).
 
 # ── HTML entry points — always revalidate (OG tags, meta, content) ──
+# Match the public extensionless URLs. Hosts apply `_headers` patterns to the
+# request path; matching only the emitted `.html` file misses these routes.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/services
+  Cache-Control: public, max-age=0, must-revalidate
+/works
+  Cache-Control: public, max-age=0, must-revalidate
+/works/*
+  Cache-Control: public, max-age=0, must-revalidate
+/manifesto
+  Cache-Control: public, max-age=0, must-revalidate
+/lab
+  Cache-Control: public, max-age=0, must-revalidate
+/contact
+  Cache-Control: public, max-age=0, must-revalidate
+/blog
+  Cache-Control: public, max-age=0, must-revalidate
+/blog/*
+  Cache-Control: public, max-age=0, must-revalidate
+/ru
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/services
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/works
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/works/*
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/manifesto
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/lab
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/contact
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/blog
+  Cache-Control: public, max-age=0, must-revalidate
+/ru/blog/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Also cover the emitted filenames for hosts which allow direct `.html` paths.
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 /services.html

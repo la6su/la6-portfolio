@@ -698,6 +698,18 @@ three explicit directories, so these patterns do not overlap for this build.
 The rebuilt `dist/_headers` matches its source. This configuration still needs
 deployment-server verification; Caddy/HAProxy do not consume `_headers`
 automatically.
+The route-cache review found the HTML rules matched emitted `.html` filenames,
+while the public URLs in the sitemap are extensionless. Cloudflare Pages serves
+matching HTML files at extensionless paths and applies `_headers` rules against
+URL patterns ([routing](https://developers.cloudflare.com/pages/configuration/serving-pages/),
+[headers](https://developers.cloudflare.com/pages/configuration/headers/));
+Netlify likewise defines rules by request URL path ([headers](https://docs.netlify.com/manage/routing/headers/)).
+Added extensionless EN and RU route patterns, including blog and case-study
+paths, while retaining `.html` coverage for hosts that permit those URLs. A
+local pattern audit matched all 30 sitemap URLs; the production build copied
+the rules into `dist/_headers`. This validates artifact coverage, not the
+active HAProxy/static-server response headers, which still need ingress
+verification.
 
 Execution order:
 
