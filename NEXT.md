@@ -788,8 +788,12 @@ Execution order:
    the scroll owner and lets its grid keep intrinsic height. Chromium verified
    the final Contact link is reachable after scrolling at 320×640 and 640×360
    with 200% root font size, with no horizontal overflow or page errors. Lint
-   and the production build pass. Other mobile-menu keyboard and touch cases
-   remain open.
+   and the production build pass. Chromium keyboard interaction on both sizes
+   focused the close control on open, moved Tab into navigation, returned
+   Shift+Tab to close, and restored focus to the launcher on Escape; the menu
+   reports expanded state and the hidden story sections become inert. Touch
+   emulation scrolled the menu container at 320×640 and 640×360. Other route
+   transitions and the full pointer-device matrix remain open.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
