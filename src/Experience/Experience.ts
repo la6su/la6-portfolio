@@ -482,17 +482,11 @@ export class Experience {
           this.envSphere.changeSection(sectionIdx, detail.isLight)
         }
       }
-      if (this.coordinator) {
-        // The live stages' theme fan-out is the coordinator's syncTypographyTheme —
-        // one owner per change (was: a second Experience fan-out that
-        // re-applied the same theme to typography + halo twice per event).
-        // Theme-only syncs — skip when just the section moved (same polarity).
-        if (detail.themeChanged !== false) {
-          this._syncPolaritySurfaces(detail.isLight)
-          this.sectionGroups?.works.particles.setBlending(!detail.isLight)
-        }
-        this._raiseRenderDemand('dirty')
+      // Theme-only syncs — skip when just the section moved (same polarity).
+      if (detail.themeChanged !== false) {
+        this.coordinator.syncTheme(detail.isLight)
       }
+      this._raiseRenderDemand('dirty')
     })
 
     // ContentReveal can resolve the initial polarity before Experience has
@@ -501,7 +495,7 @@ export class Experience {
     // behind the semantic interface.
     const initialIsLight = this.contentReveal.isLight
     this.envSphere.snapToSection(this.coordinator.currentSectionIndex, initialIsLight)
-    this._syncPolaritySurfaces(initialIsLight)
+    this.coordinator.syncTheme(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // Generated once at init, costs ZERO per frame. The PMREM also benefits
@@ -591,19 +585,6 @@ export class Experience {
     this._scheduler.invalidate('first-frame')
     await this._readinessGate.promise
     this._readinessGate = null
-  }
-
-  /**
-   * Shared polarity surfaces for the theme fan-out: ambient ground, baku and
-   * the coordinator's typography sync. The event handler adds the per-group
-   * particles blending pass; the init replay adds the envSphere section snap —
-   * those stay at their call sites. Optional chaining is deliberate: the init
-   * replay can run before the lazy route stages exist.
-   */
-  private _syncPolaritySurfaces(isLight: boolean): void {
-    this.ground?.syncTheme(isLight)
-    this.baku?.setTheme(isLight)
-    this.coordinator?.syncTypographyTheme(isLight)
   }
 
   /**

@@ -105,6 +105,16 @@ preserve custom policy only when code or measurements prove the difference.
   device recovery. Removed that duplicate state: project transforms receive
   width/height directly from the size watcher, and recovery reads a current
   snapshot from Tres's canonical refs when needed.
+- Theme polarity was fanned out from `Experience` to GroundPlane, SplashCube,
+  route typography/ink stages and Works particles, while SceneCoordinator
+  already owned all those scene references. Moved this scene-only fan-out to
+  `SceneCoordinator.syncTheme()` and removed the Experience helper; the
+  section-indexed EnvSphere snap/transition remains at the theme-event boundary.
+- Theme polarity was fanned out from `Experience` to GroundPlane, SplashCube,
+  route typography/ink stages and Works particles, while SceneCoordinator
+  already owned all those scene references. Moved this scene-only fan-out to
+  `SceneCoordinator.syncTheme()` and removed the Experience helper; the
+  section-indexed EnvSphere snap/transition remains at the theme-event boundary.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an
@@ -752,7 +762,8 @@ identified.
 **Latest verified:** 102 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
-310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
+310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.89 kB / 32.77 kB
+gzip Experience chunk. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined
 Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were

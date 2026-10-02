@@ -190,11 +190,14 @@ export class SceneCoordinator {
     return false
   }
 
-  /** Match the opaque 3D words and the ink halo to the effective contrast. */
-  public syncTypographyTheme(isLight: boolean): void {
+  /** Apply the resolved content polarity to all scene-owned surfaces. */
+  public syncTheme(isLight: boolean): void {
+    this.owners.ground.syncTheme(isLight)
+    this.owners.baku.setTheme(isLight)
     this.owners.stages.contactTypographyStage?.setTheme(isLight)
     this.owners.stages.contactHaloStage?.setTheme(isLight)
     this.owners.stages.manifestoInkStage?.setTheme(isLight)
+    this.owners.sectionGroups.works.particles.setBlending(!isLight)
   }
 
   /** The demand-gated owner frame fan-out. On an idle frame it keeps
