@@ -751,6 +751,18 @@ existing unit/browser suites. The quality workflow rebuilds and diff-checks
 tracked generated outputs, then runs unit/lint; its browser job runs the
 cross-engine matrix and host-teardown scenario. These configured suites were
 not run locally because the repository contract requires an explicit request.
+Production-preview direct navigation returned 200 for all 15 generated public
+URLs: six main pages, four case studies, the blog index, and four articles.
+Each rendered a semantic `<main>`, expected English title, and path-specific
+canonical URL; no page errors appeared. With `jlz:lang=RU` already in browser
+storage, Services and a case study loaded in Russian and updated `<html lang>`
+and title. Blog documents are static English pages and remain English. The
+current language switch is storage-backed rather than URL-addressable; its
+initial RU prerender/SEO behavior and whether Blog needs Russian content remain
+product decisions pending clarification. Local Vite preview sometimes exposes
+its local origin in runtime canonical tags, while initial static metadata uses
+the configured production origin; deployed-origin canonical behavior still
+needs validation through the actual ingress.
 Manual production Chromium with SwiftShader produced Three's
 `WebGPU is not available, running under WebGL2 backend` fallback warning, then
 created a WebGL2 context on `.jlz-scene-canvas`. Across Home → Works →
