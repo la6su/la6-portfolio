@@ -792,8 +792,11 @@ Execution order:
    focused the close control on open, moved Tab into navigation, returned
    Shift+Tab to close, and restored focus to the launcher on Escape; the menu
    reports expanded state and the hidden story sections become inert. Touch
-   emulation scrolled the menu container at 320×640 and 640×360. Other route
-   transitions and the full pointer-device matrix remain open.
+   emulation scrolled the menu container at 320×640 and 640×360. After exiting
+   the no-scene splash, native wheel input scrolled through a 2,253 px Services
+   section overflow, advanced the story track, and began scrolling the next
+   section without page errors. Other route transitions and the full
+   pointer-device matrix remain open.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
