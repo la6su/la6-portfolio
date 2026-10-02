@@ -103,10 +103,6 @@ export class Experience {
   /** Active GPU prewarm; teardown keeps its renderer and scene alive until it settles. */
   private _scenePrewarmPromise: Promise<void> | null = null
 
-  /** Development-only project navigation delegates to the UI owner. */
-  public navigateProject(direction: -1 | 1): void {
-    this.features?.navigateProject(direction)
-  }
   private currentSectionContext: string | null = null
   private _prevSectionIndex = -1
   private _stopSizeWatch: WatchStopHandle | null = null
@@ -579,7 +575,18 @@ export class Experience {
         if (!this.isLifecycleCurrent(token)) {
           throw new DOMException('Experience initialization was cancelled.', 'AbortError')
         }
-        this.devPanel = new DevPanelCtor(this)
+        this.devPanel = new DevPanelCtor({
+          scene: this.scene,
+          renderer: this.renderer,
+          ground: this.ground,
+          carousel: () => (this._host.page() === 'home' ? this.carousel : null),
+          sectionIndex: () => this._storyNav?.getSectionIndex() ?? 0,
+          worldSectionIndex: () => this.coordinator.currentSectionIndex,
+          navigateProject: (direction) => this.features?.navigateProject(direction),
+          needsRender: () => this.needsRender,
+          lowFps: () => this.lowFps,
+          setDebugContinuousRendering: (enabled) => this.setDebugContinuousRendering(enabled),
+        })
         // Dev-only probe exposes resource and loop diagnostics.
         ;(
           window as unknown as {

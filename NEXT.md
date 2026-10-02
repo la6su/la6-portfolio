@@ -262,6 +262,12 @@ preserve custom policy only when code or measurements prove the difference.
   asynchronous scene startup was in flight. Experience is now the sole value
   owner; SceneCoordinator and SceneTransformPass read its live callback while
   SceneCoordinator still forwards preference changes to the scene owners.
+- `DevPanel` imported the `Experience` type and read its private story/ground
+  state through unchecked casts; the carousel morph button called a nonexistent
+  `Experience.getCarousel()` and never worked. Replaced the class dependency
+  with a narrow debug host contract, pass the live carousel and actions at the
+  dev-only construction site, and removed the one-line project-navigation
+  forwarder from Experience.
 - Lab camera control ownership was mirrored from SceneHost's computed
   `labCameraActive` into a module-level boolean for `Camera`. Removed that
   singleton; `SceneHostReady` now passes the live read-only policy to the
@@ -1091,6 +1097,15 @@ test proving activity policy updates immediately from the canonical owner.
 Vue type-check, ESLint, 106/106 unit tests, compatibility checks,
 production build/budgets and the Firefox production reduced-motion route walk
 pass (1/1).
+
+**DevPanel ownership boundary:** Removed DevPanel's `Experience` type import
+and unsafe private-field casts. Experience now supplies only the debug values
+and actions the panel consumes; the morph control receives the real home
+carousel, fixing its previously inert button. Removed the one-line public
+navigation forwarder. Vue type-check and ESLint pass; all 106 unit tests pass.
+Production build and bundle budgets pass (351 modules; splash 2.85 kB gzip,
+Three chunk 310.95 kB gzip). Physical WebGPU compilation remains an open
+release acceptance item.
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

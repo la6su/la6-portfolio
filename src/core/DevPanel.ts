@@ -11,11 +11,48 @@
 // Production: never constructed (Experience.init guards on import.meta.env.DEV).
 
 import { Pane } from 'tweakpane'
-import type { Experience } from '../Experience/Experience'
+import type * as THREE from 'three'
+import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 import { getLang } from './i18n'
 import { FrameGapStats } from './FrameGapStats'
 import { inspectUnifiedBackend } from './unifiedRenderer'
-import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
+
+interface CarouselDebugControls {
+  isActive: boolean
+  setActive(active: boolean): void
+}
+
+interface GroundDebugControls {
+  object: { visible: boolean } | null
+}
+
+interface DevPanelHost {
+  scene: THREE.Scene
+  renderer: {
+    instance: {
+      backend?: unknown
+      info?: {
+        render?: {
+          drawCalls?: number
+          frameCalls?: number
+          calls?: number
+          triangles?: number
+        }
+        memory?: { geometries?: number; textures?: number }
+      }
+      toneMappingExposure: number
+    }
+    getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot
+  }
+  ground: GroundDebugControls
+  carousel(): CarouselDebugControls | null
+  sectionIndex(): number
+  worldSectionIndex(): number
+  navigateProject(direction: -1 | 1): void
+  needsRender(): boolean
+  lowFps(): boolean
+  setDebugContinuousRendering(enabled: boolean): void
+}
 
 const STORAGE_KEY = 'jlz:devpanel'
 
@@ -59,7 +96,7 @@ interface PaneLike {
 export class DevPanel {
   private pane: PaneLike
   private state: DevPanelState
-  private readonly exp: Experience
+  private readonly host: DevPanelHost
   private refreshInterval: ReturnType<typeof setInterval> | null = null
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
@@ -91,8 +128,8 @@ export class DevPanel {
     groundVisible: true,
   }
 
-  constructor(exp: Experience) {
-    this.exp = exp
+  constructor(host: DevPanelHost) {
+    this.host = host
     this.state = loadState()
 
     this.pane = new Pane({
@@ -152,17 +189,13 @@ export class DevPanel {
   private buildCarouselFolder(): void {
     const f = this.pane.addFolder({ title: 'BakuCarousel', expanded: false })
     f.addButton({ title: '← Prev card' }).on('click', () => {
-      this.exp.navigateProject(-1)
+      this.host.navigateProject(-1)
     })
     f.addButton({ title: 'Next card →' }).on('click', () => {
-      this.exp.navigateProject(1)
+      this.host.navigateProject(1)
     })
     f.addButton({ title: 'Trigger morph' }).on('click', () => {
-      const carousel = (
-        this.exp as unknown as {
-          getCarousel?: () => { setActive: (a: boolean) => void; isActive: boolean } | null
-        }
-      ).getCarousel?.()
+      const carousel = this.host.carousel()
       carousel?.setActive(!carousel.isActive)
     })
   }
@@ -171,18 +204,14 @@ export class DevPanel {
   private buildSceneFolder(): void {
     const f = this.pane.addFolder({ title: 'Scene', expanded: false })
     f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' }).on('change', (ev) => {
-      // The ground is an Experience-owned scene resource.
-      const exp = this.exp as unknown as { ground?: { object?: { visible: boolean } } }
-      if (exp.ground?.object) exp.ground.object.visible = ev.value as boolean
+      if (this.host.ground.object) this.host.ground.object.visible = ev.value as boolean
     })
     f.addButton({ title: 'Reset ground (section 4 only)' }).on('click', () => {
       // Restore the contact-only ground visibility invariant.
-      const exp = this.exp as unknown as {
-        ground?: { object?: { visible: boolean } }
-        coordinator?: { currentSectionIndex?: number }
+      if (this.host.ground.object) {
+        this.host.ground.object.visible = this.host.worldSectionIndex() === 4
       }
-      if (exp.ground?.object) exp.ground.object.visible = exp.coordinator?.currentSectionIndex === 4
-      this.controls.groundVisible = exp.ground?.object?.visible ?? false
+      this.controls.groundVisible = this.host.ground.object?.visible ?? false
       this.pane.refresh()
     })
   }
@@ -193,13 +222,12 @@ export class DevPanel {
     f.addBinding(this.controls, 'exposure', { label: 'exposure', min: 0, max: 3, step: 0.05 }).on(
       'change',
       (ev) => {
-        const r = this.exp.renderer.instance as unknown as { toneMappingExposure: number }
-        r.toneMappingExposure = ev.value as number
+        this.host.renderer.instance.toneMappingExposure = ev.value as number
       },
     )
     f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on(
       'change',
-      (ev) => this.exp.setDebugContinuousRendering(Boolean(ev.value)),
+      (ev) => this.host.setDebugContinuousRendering(Boolean(ev.value)),
     )
     f.addButton({ title: 'Reload page' }).on('click', () => location.reload())
   }
@@ -209,12 +237,7 @@ export class DevPanel {
     if (this.refreshInterval) clearInterval(this.refreshInterval)
     this.refreshInterval = setInterval(() => {
       // Update stats from renderer info
-      const r = this.exp.renderer.instance as unknown as {
-        info?: {
-          render?: { drawCalls?: number; frameCalls?: number; calls?: number; triangles?: number }
-          memory?: { geometries?: number; textures?: number }
-        }
-      }
+      const r = this.host.renderer.instance
       const backend = inspectUnifiedBackend(r)
       this.stats.backend =
         backend.backendName === 'WebGPUBackend'
@@ -231,14 +254,9 @@ export class DevPanel {
       this.stats.heap = perf.memory ? Math.round(perf.memory.usedJSHeapSize / 1048576) : 0
 
       // Section + rendering state
-      const nav = (
-        this.exp as unknown as {
-          _storyNav?: { getSectionIndex: () => number; isActive: () => boolean }
-        }
-      )._storyNav
-      this.stats.section = nav?.getSectionIndex() ?? 0
-      this.stats.rendering = this.exp.needsRender
-      this.stats.lowFps = this.exp.lowFps
+      this.stats.section = this.host.sectionIndex()
+      this.stats.rendering = this.host.needsRender()
+      this.stats.lowFps = this.host.lowFps()
       this.stats.lang = getLang()
       const resources = this.getResourceSnapshot()
       this.stats.rendererCanvasCount = resources.rendererCanvasCount
@@ -299,13 +317,12 @@ export class DevPanel {
 
   /** Development-only stable inventory for DevTools and soak automation. */
   public getResourceSnapshot(): RuntimeResourceSnapshot {
-    return this.exp.renderer.getResourceSnapshot(this.exp.scene)
+    return this.host.renderer.getResourceSnapshot(this.host.scene)
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────
   private syncControls(): void {
-    const r = this.exp.renderer.instance as unknown as { toneMappingExposure: number }
-    this.controls.exposure = r?.toneMappingExposure ?? 1.0
+    this.controls.exposure = this.host.renderer.instance.toneMappingExposure ?? 1.0
   }
 
   private applyVisibility(): void {
