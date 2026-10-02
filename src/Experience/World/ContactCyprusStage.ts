@@ -1,6 +1,7 @@
 // ContactCyprusStage — camera-local 3D location marker for Contact / Agros.
 
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import {
   DRACOLoader,
   DRACO_GLTF_CONFIG,
@@ -45,6 +46,7 @@ export class ContactCyprusStage {
   private _prewarmFramePending = false
   private _active = false
   private _disposed = false
+  private readonly _visible = shallowRef(false)
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
   private _lastCameraPosition = new THREE.Vector3(
@@ -59,12 +61,16 @@ export class ContactCyprusStage {
     Number.NaN,
   )
 
+  get visible(): boolean {
+    return this._visible.value
+  }
+
   bindRoot(root: THREE.Group, publishModel: ContactCyprusModelPublisher): void {
     if (this._disposed) return
     this._root = root
     this._publishModel = publishModel
     root.name = 'contact-cyprus-stage'
-    root.visible = false
+    this._visible.value = false
     if (this._model) void publishModel(this._model)
   }
 
@@ -201,7 +207,7 @@ export class ContactCyprusStage {
     this._fadeElapsed = 0
     if (active) this._prewarmFramePending = false
     this.setPresentation(this._fadeFrom, this._scaleFrom)
-    if (active && this._model && this._root) this._root.visible = true
+    if (active && this._model && this._root) this._visible.value = true
     if (this._reducedMotion) {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
@@ -216,8 +222,7 @@ export class ContactCyprusStage {
     this._fadeElapsed = FADE_DURATION_SECONDS
     this._prewarmFramePending = false
     this.setPresentation(this._targetOpacity, this._targetScale)
-    if (this._root)
-      this._root.visible = this._targetOpacity > 0 && this._model !== null
+    this._visible.value = this._targetOpacity > 0 && this._model !== null
   }
 
   /** True while the map is fading between Contact frames. */
@@ -242,7 +247,7 @@ export class ContactCyprusStage {
     if (this._disposed) return
     if (!this._model || this._targetOpacity > 0) return
     this._prewarmFramePending = true
-    if (this._root) this._root.visible = true
+    this._visible.value = true
   }
 
   resize(width: number, height: number): void {
@@ -271,7 +276,7 @@ export class ContactCyprusStage {
     }
 
     const root = this._root
-    if (!root?.visible || !this._camera) {
+    if (!root || !this._visible.value || !this._camera) {
       // Hidden: the pending prewarm frame can never render, so it is
       // unreachable — clear the flag. Without this, `isAnimating()` stays
       // true forever after a lazy init that lands on a non-Agros section
@@ -296,7 +301,7 @@ export class ContactCyprusStage {
 
     if (this._prewarmFramePending) {
       this._prewarmFramePending = false
-      if (this._root) this._root.visible = false
+      this._visible.value = false
     }
   }
 
@@ -314,19 +319,18 @@ export class ContactCyprusStage {
       this._model?.scale.setScalar(this._modelBaseScale * this._scale)
       this._appliedScale = this._scale
     }
-    if (this._root)
-      this._root.visible = this._opacity > 0.001 || this._targetOpacity > 0.001
+    this._visible.value = this._opacity > 0.001 || this._targetOpacity > 0.001
   }
 
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
     this._active = false
+    this._visible.value = false
     this._prewarmFramePending = false
     this._camera = null
     this._publishModel?.(null)
     this._publishModel = null
-    if (this._root) this._root.visible = false
     this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
     this._lastCameraQuaternion.set(
       Number.NaN,

@@ -193,6 +193,11 @@ preserve custom policy only when code or measurements prove the difference.
   reactive visibility value and the SFC binds it to Tres's `visible` prop.
   The controller still owns glyph behavior/resources, while Vue owns the
   hierarchy and route visibility.
+- Contact Cyprus also split visibility between direct `_root.visible` writes
+  and a static Vue prop. Moved its prewarm/fade visibility state to a shallow
+  reactive value bound to the SFC prop; retained the root reference only for
+  its camera-local transforms. Controller tests cover visibility transitions
+  and reduced-motion snap.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -972,6 +977,12 @@ with a controller-owned reactive value bound through the SFC prop; removed the
 unneeded root reference handoff. Vue type-check, ESLint, 105/105 unit tests,
 production build/budgets and Firefox production Contact mount/release cycles
 pass (1/1).
+
+**Contact Cyprus scene ownership:** Fade, prewarm, and reduced-motion state
+now drives the Tres `visible` prop through one shallow reactive value; the
+controller still owns camera-local transform updates. Vue type-check, ESLint,
+105/105 unit tests, production build/budgets and Firefox repeated Contact
+route cycles pass (1/1).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

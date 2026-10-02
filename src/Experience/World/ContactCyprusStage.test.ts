@@ -103,13 +103,19 @@ describe('ContactCyprusStage scene ownership', () => {
       published.push(model)
     })
     expect(root.name).toBe('contact-cyprus-stage')
-    expect(root.visible).toBe(false)
+    expect(stage.visible).toBe(false)
+
+    stage.setActive(true)
+    expect(stage.visible).toBe(true)
+    stage.setReducedMotion(true)
+    stage.setActive(false)
+    expect(stage.visible).toBe(false)
 
     stage.resize(1600, 900)
     expect(root.scale.x).toBeCloseTo(1600 / 900 / 1.78)
 
     stage.dispose()
-    expect(root.visible).toBe(false)
+    expect(stage.visible).toBe(false)
     expect(root.parent).toBe(scene)
     expect(published).toEqual([null])
   })

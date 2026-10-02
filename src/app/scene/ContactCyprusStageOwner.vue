@@ -21,7 +21,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <TresGroup ref="root" name="contact-cyprus-stage" :visible="false">
+  <TresGroup ref="root" name="contact-cyprus-stage" :visible="stage.visible">
     <!-- The GLTF scene is dynamic content; the stage controller explicitly
          owns and disposes its geometry/materials. -->
     <primitive v-if="model" :object="model" :dispose="null" />
