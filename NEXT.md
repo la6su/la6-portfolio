@@ -199,8 +199,9 @@ Current known facts:
   backdrop, while Tab was forced back to Close. It now provides a localized
   Play/Pause button with pressed state and cycles keyboard focus between both
   controls. Lint and the full production build pass, and tracked `dist` output
-  was regenerated. Keyboard/screen-reader interaction still needs browser
-  verification.
+  was regenerated. A follow-up narrow-viewport geometry review increased the
+  separation between the two top controls to prevent their minimum-size boxes
+  from overlapping; visual confirmation still needs browser verification.
 
 - Deployment inventory found no Caddy, HAProxy, Nginx, container, hosting, or
   publish configuration in this repository. `package.json` provides Vite
