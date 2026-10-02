@@ -38,8 +38,8 @@ export interface AppEvents {
   'jlz:navigate': { path: string }
   /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }
-  /** Fired by CinematicNav when a non-home page's active section changes. */
-  'jlz:page-section-change': { index: number; sectionId: string }
+  /** Fired by CinematicNav when a non-home page's active canonical world slot changes. */
+  'jlz:page-section-change': { worldIndex: number; sectionId: string }
   /** Persistent Vue shell requests a story-track section. */
   'jlz:story-navigate': { index: number }
   /** CinematicNav updates the persistent shell's active section state. */

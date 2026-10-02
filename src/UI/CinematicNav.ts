@@ -249,7 +249,7 @@ export class CinematicNav {
         ?.dataset.pageSection
       if (sectionId) {
         eventBus.emit('jlz:page-section-change', {
-          index,
+          worldIndex: index,
           sectionId,
         })
       }

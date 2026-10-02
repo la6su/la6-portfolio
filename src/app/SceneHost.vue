@@ -106,6 +106,7 @@ let ownedRenderer: UnifiedRenderSurface | null = null
 let ownedRendererDisposal: (() => Promise<void>) | null = null
 let rendererDisposal: Promise<void> | null = null
 let stopTresLoop: (() => void) | null = null
+let tresFrameSubscription: { off: () => void } | null = null
 
 // Tres loop bridge state.
 // Late-bound to the live Tres renderer manager in `onReady`; every port call
@@ -270,7 +271,8 @@ async function onReady(context: TresContext): Promise<void> {
   // The scheduler's frame callback runs inside Tres's before-render hooks,
   // so `useLoop` subscribers (Cientos components included) share this RAF.
   // Pass Tres's elapsed frame delta through; Experience clamps it in ms.
-  manager.loop.onBeforeLoop(({ delta }) => frameCallback?.(delta * 1000))
+  tresFrameSubscription?.off()
+  tresFrameSubscription = manager.loop.onBeforeLoop(({ delta }) => frameCallback?.(delta * 1000))
   // Ecosystem wake path: Cientos components invalidate the manager on their
   // change events; the wrap translates each call into a typed scheduler
   // demand so external activity opens a render window.
@@ -377,6 +379,8 @@ onBeforeUnmount(() => {
   lifecycleGeneration += 1
   stopTresLoop?.()
   stopTresLoop = null
+  tresFrameSubscription?.off()
+  tresFrameSubscription = null
   liveManager = null
   frameCallback = null
   externalInvalidateHandler = null

@@ -14,6 +14,9 @@ import { contentRoot } from '../core/contentRoot'
 import type { PageId } from '../core/routeManifest'
 import { themeManager } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
+import { worldSlotIndex } from '../core/worldSlots'
+
+const FIRST_CONTENT_SLOT = worldSlotIndex('intro')!
 
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
@@ -66,6 +69,22 @@ export class ContentReveal {
     )
   }
 
+  /**
+   * Content-page world configs use the shared six-slot order, while their
+   * semantic sections have route-specific IDs. Resolve the active DOM
+   * section back to its content index; slot 0 belongs to the Contact footer.
+   */
+  private activeContentSectionIndex(): number {
+    const root = contentRoot()
+    const mainSections = [...root.querySelectorAll<HTMLElement>(
+      '.jlz-page > section[data-page-section]',
+    )].filter((section) => {
+      const id = section.dataset.pageSection
+      return id !== 'page-lab' && id !== 'page-menu'
+    })
+    return mainSections.findIndex((section) => section.classList.contains('section-active'))
+  }
+
   private setupSectionSync() {
     // Home: jlz:section-change (data-section)
     this.sectionUnsub = eventBus.on('jlz:section-change', (payload) => {
@@ -74,14 +93,23 @@ export class ContentReveal {
     })
 
     // Content pages: jlz:page-section-change (data-page-section)
-    this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index, sectionId }) => {
-      this.applyTheme(sectionId, false, index)
+    this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ worldIndex, sectionId }) => {
+      this.applyTheme(sectionId, false, worldIndex)
     })
   }
 
   private applyTheme(sectionId: string, snap = false, sectionIndexHint = -1): void {
     const configs = this.getConfigs()
-    const cfg = configs.find((c) => c.domSection === sectionId || c.id === sectionId)
+    // CinematicNav reports canonical world slots (1–4); its index already
+    // matches the config array. Initial DOM lookup is local and needs offset.
+    let contentConfigIndex = sectionIndexHint
+    if (contentConfigIndex < 0 && this.page() !== 'home') {
+      const localIndex = this.activeContentSectionIndex()
+      if (localIndex >= 0) contentConfigIndex = localIndex + FIRST_CONTENT_SLOT
+    }
+    const contentConfig = contentConfigIndex >= 0 ? configs[contentConfigIndex] : undefined
+    const cfg =
+      configs.find((c) => c.domSection === sectionId || c.id === sectionId) ?? contentConfig
     // Config identity is canonical when present. Keep the nav index only for
     // a semantic fallback section without a world-config entry.
     const sectionIndex = cfg ? configs.indexOf(cfg) : sectionIndexHint

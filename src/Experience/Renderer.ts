@@ -75,6 +75,10 @@ export class Renderer {
   // selection is left to Three; a recovered WebGL context is explicitly kept
   // on WebGL, and the dev-only forced-WebGL path stays forced for its smoke.
   private _forceWebGL = false;
+  // Tres's size manager closes over its initial renderer instance. After
+  // device recovery replaces that instance, this owner must mirror later
+  // viewport/DPR changes to the replacement.
+  private _ownsViewportAfterRecovery = false;
   // The persistent SceneHost canvas is Vue-owned DOM. The replacement hook
   // keeps the Tres context in sync after device-loss recovery re-creates the
   // renderer on that same canvas.
@@ -103,6 +107,7 @@ export class Renderer {
     this._recoveryPromise = null;
     this._recoveryFailed = false;
     this._lifecycleGeneration += 1;
+    this._ownsViewportAfterRecovery = false;
     // SceneHost owns construction, async initialization and actual backend
     // inspection. This wrapper adopts the one live renderer for capability,
     // sizing, post-processing and device-loss recovery.
@@ -198,6 +203,24 @@ export class Renderer {
     }
   }
 
+  /** Keep a recovered renderer aligned with Tres's live viewport refs. */
+  public syncRecoveredViewport(): void {
+    if (
+      !this._ownsViewportAfterRecovery ||
+      this._disposed ||
+      this._recoveryAbortController !== null
+    ) {
+      return;
+    }
+    this.applyViewportToInstance();
+  }
+
+  private applyViewportToInstance(): void {
+    const viewport = this.viewport();
+    this.instance.setPixelRatio(Math.min(viewport.dpr, this.capabilities.maxDpr));
+    this.instance.setSize(viewport.width, viewport.height);
+  }
+
   /**
    * Re-create the renderer on the same canvas after a device loss and rebuild
    * the post pipeline. Bounded by MAX_DEVICE_LOST_RECOVERIES (see
@@ -289,10 +312,8 @@ export class Renderer {
       }
       this.instance = replacement;
       this.capabilities.setFinalRendererMode(mode, backend.isFallbackAdapter);
-
-      const viewport = this.viewport()
-      this.instance.setPixelRatio(Math.min(viewport.dpr, this.capabilities.maxDpr))
-      this.instance.setSize(viewport.width, viewport.height)
+      this._ownsViewportAfterRecovery = true;
+      this.applyViewportToInstance();
       this.postManager.refreshPreset();
       this.pipeline = new RenderPipeline(this.instance, this.capabilities.postProcessing);
       this.attachDeviceLossRecovery(this.instance);

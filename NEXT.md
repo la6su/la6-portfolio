@@ -22,6 +22,61 @@ and behavior with no declarative library equivalent. Do not split files solely
 to reduce line counts, preserve abstractions for tests, or optimize without
 measured evidence.
 
+The product is an EN/RU portfolio for distinctive business solutions through
+data-informed creative direction, automation, speed, performance, and style.
+The 3D layer supports the work and content; it must not block semantic access,
+route navigation, or the no-scene continuation path. The intended deployment
+uses the existing static output and reverse-proxy setup; preserve its public
+routes and generated release inputs unless source evidence proves a change is
+needed.
+
+## Autonomous execution contract
+
+- Treat this file as the only work queue. Continue the active phase after each
+  coherent slice; do not wait for a new prompt between phases.
+- Make reversible source, config, documentation, and generated-output changes
+  directly when callers and product intent establish the right behavior.
+- Ask only when product behavior cannot be inferred, an external account or
+  physical machine must be operated, or a destructive/irreversible action is
+  required. Keep independent audit work moving while such a question is open.
+- Preserve pre-existing user changes. Before every slice, inspect `git status`
+  and diff; after it, inspect the complete resulting diff, including tracked
+  build artifacts.
+- Keep evidence proportional and factual. Do not add or run test suites unless
+  explicitly requested. Use lint, type-check, static inspection, and the
+  production build release gate; use browser/hardware checks only where those
+  environments are available. Never claim a check that did not run.
+- Before closing any phase, record decisions, removed seams, evidence, and
+  remaining engine/hardware limits here. Commit coherent verified slices using
+  a message that describes the simplification, as required by repository
+  instructions.
+
+## Production acceptance criteria
+
+1. A direct load of every public route works in EN and RU, including case-study
+   and blog routes; canonical metadata and generated sitemap agree with routes.
+2. Keyboard, screen-reader, reduced-motion, responsive, and no-scene behavior
+   remain usable without WebGPU or a working 3D renderer.
+3. Tres owns one persistent canvas, Three owns one unified WebGPU renderer with
+   automatic WebGL2 backend selection, and there is one RAF host and one
+   demand scheduler. Startup, device loss, route changes, HMR and teardown have
+   explicit owners and bounded failure paths.
+4. Every scene node, listener, timer, observer, media element, texture,
+   material, geometry, render target, and GPU owner has a deterministic release
+   path. Repeated route/host lifetimes return owned resources to baseline.
+5. Vue/Tres owns stable declared hierarchy and transforms; imperative code is
+   limited to generated assets, animation, GPU algorithms, and browser policy
+   with no equivalent library feature. No helper or compatibility seam lacks
+   a current consumer and documented reason.
+6. `bun run build` passes, including type-check, stdlib shim verification,
+   prerender, sitemap generation, and bundle/media budgets; tracked release
+   artifacts match sources. Lint passes. Tests are run only on explicit user
+   request.
+7. WebGPU/TSL, WebGL2 backend selection, visual parity, context/device recovery,
+   idle rendering, reduced motion, and lifecycle behavior have evidence in
+   available engines/hardware. Anything unavailable is listed as an open gate,
+   not represented as proven.
+
 ## Current architecture and evidence
 
 The app has a persistent Vue shell and Tres canvas. Route views own semantic
@@ -33,6 +88,47 @@ pipeline, and demand scheduling; `SceneCoordinator` and
 tests are under `tests/unit`; browser specs remain under `tests`.
 
 Current known facts:
+
+- Deep audit found a shared inverse-theme defect on content routes, including
+  Works and Manifesto: `ContentReveal` matched the route DOM section ID against
+  `WorldConfig.domSection`, but content configs use `content-0..5` while the
+  pages publish names such as `works-01` and `manifesto-purpose`. The fallback
+  treated every unmatched section as light, so inverse mode had the wrong
+  baseline polarity and wrong world-slot index. It now maps content section
+  indices onto shared world slots (slot 0 remains the Contact footer). Initial
+  route state is resolved from the active DOM section. Later navigation
+  already reports canonical world slots, so its payload now names that value
+  `worldIndex`; route stages convert it to their local index with
+  `INTRO_SLOT_INDEX`. Lint and Vue/TS type-check pass after the fix; browser
+  verification is still outstanding.
+- Baseline audit checks on 2026-10-02: `bun run lint` and
+  `bun run type-check:vue` both pass. No test suite was run.
+- After the route-theme fix, `bun run build` passed end to end: Vue type check,
+  Cientos/Three compatibility-shim liveness, all prerender steps, sitemap
+  generation, Vite production output, and configured gzip/media budgets.
+  Tracked hashed `dist` assets were regenerated with the source change. The
+  largest public asset remains `coming-soon.mp4` at about 5.3 MB; it fits the
+  current media budget. Physical browser confirmation of Works/Manifesto theme
+  parity is still required before closing the defect. A local dev server could
+  not be started in this sandbox (`listen EPERM` on 127.0.0.1:5173), so this
+  turn has no browser reproduction evidence.
+- Phase 1 trace found two worthwhile seam fixes. The page-section event used a
+  vague `index` name for the canonical world slot, while Experience separately
+  subtracted a literal `1` for route-stage indices; the payload is now
+  `worldIndex` and conversion uses `INTRO_SLOT_INDEX`. Tres 5.9.2's
+  `loop.onBeforeLoop()` returns `{ off }`; SceneHost now owns and releases that
+  subscription on reconfiguration and unmount. A first type-check caught the
+  actual object return shape (not a callback); the corrected full production
+  build passes. The ownership map and remaining boundary review are below.
+- Inspection of Tres 5.9.2's installed `useRendererManager` found that its
+  size and pixel-ratio effects close over the renderer constructed at setup.
+  Updating `renderer.instance` after device recovery does not retarget those
+  effects. `Experience` now observes Tres width, height, and pixel ratio;
+  `Renderer` mirrors changes only after a recovery replacement, leaving Tres
+  as the sole size writer for the normal renderer. The first recovery writes
+  the current viewport immediately. `bun run build`, `bun run lint`, and
+  `git diff --check` pass after this fix. Device-loss/resize runtime evidence
+  remains an open hardware check.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -178,6 +274,46 @@ Exit when each retained boundary has one owner, callers are explicit, and
 startup/failure/route-change/teardown paths preserve behavior without duplicate
 route or renderer authority.
 
+Current trace: `Experience` owns top-level lifecycle, frame demand/activity,
+and wiring between route events and the scene. `SceneCoordinator` owns section
+configuration, route visibility, scene-owner frame fan-out and reduced-motion
+fan-out. `SceneTransformPass` owns scroll-to-world interpolation and its
+reusable result. `StageRegistry` owns route stage contracts; `LazyStage` owns
+their shared async cancellation/release mechanics; `useSceneStages` owns the
+Vue-declared mount points. `ExperienceUI` owns navigation and project-overlay
+behavior. The reduced-motion fan-out is split by domain and currently has no
+mirrored value; keep it until a specific duplicate owner is demonstrated.
+Next inspect `SceneHost` readiness/renderer bridge and the split route policy
+between `Experience`, `SceneCoordinator`, and `StageRegistry` before moving
+state.
+
+Execution order:
+
+1. Finish a renderer lifecycle trace from factory construction through async
+   `init`, Tres ready, SceneHost node readiness, Experience first draw, device
+   recovery, and Vue/Tres teardown. Record which signal proves each state.
+2. Compare every `SceneHost` size/DPR write with Tres 5.9.2's installed code;
+   retain Tres as size owner and remove only app writes that do not express a
+   distinct stage transform or backend-specific policy.
+3. Check every loop hook, invalidate wrapper, route callback, and recovery
+   subscription for a stored unsubscribe and an owner with matching lifetime.
+   Preserve one RAF and the TSL pipeline's render ownership.
+4. Trace route IDs, local chapter indices, and canonical world-slot indices
+   across `CinematicNav`, `EventBus`, `ContentReveal`, `Experience`, and stage
+   owners. Keep those domains explicit in names/types and remove literal
+   conversions where the world-slot manifest has the fact.
+5. For each `StageRegistry` contract, note creation, attach, optional load,
+   visibility/configuration, detach, resource release, and late-result cleanup.
+   Keep a generic helper only where at least two distinct contracts use its
+   async guarantee.
+6. Review startup cancellation, no-scene mode, route exit, renderer loss,
+   init error, host unmount, and concurrent teardown against actual callers.
+   Fix a state duplication only when the replacement preserves those paths.
+7. Recheck the dev optimizer and lazy Cientos/Three chunks after renderer-boundary
+   edits. A Vite optimizer restart is not evidence of duplicate runtimes; count
+   evaluated Three core URLs and inspect the actual backend when browser access
+   is available.
+
 ### 2. Make scene composition declarative where it helps — active
 
 Inventory scene owners as stable declared nodes, loaded assets, generated
@@ -201,6 +337,25 @@ duplicates a library feature, and continuous frames are requested only by
 visible motion or user activity. Record performance claims only with actual
 measurements.
 
+Execution order:
+
+1. Inventory every `src/app/scene/*.vue` owner as stable declaration, generated
+   geometry/material, loaded asset, animated behavior, or route-lazy boundary.
+   Check its Three object crossing into Vue state uses shallow/raw storage.
+2. Compare SFCs against their controller classes. Move only fixed transforms,
+   hierarchy, visibility defaults, and other static facts into Tres props;
+   retain dynamic layout and per-frame algorithms in their existing owner.
+3. Compare app controls/loaders/disposal/easing/capability code with the
+   installed Tres/Cientos/Three APIs. Remove redundant helpers or dependencies
+   only after checking direct and transitive consumers plus build aliases.
+4. For each node and GPU resource, trace creator → attachment → live mutator →
+   detach → disposal. Preserve Vue/Tres detach-before-dispose and shared asset
+   reference counts. Record route-specific exceptions rather than imposing a
+   generic lifetime.
+5. Verify every continuous activity flag corresponds to visible motion or a
+   deliberate user interaction. Do not claim FPS, memory, startup, or bundle
+   improvement without a reproducible measurement or the configured budgets.
+
 ### 3. Production and whole-tree audit — pending
 
 Review direct route entry, accessibility, reduced motion, locale switching,
@@ -220,6 +375,29 @@ Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
 selection where WebGPU is unavailable, and no unexplained compatibility seam.
 State any engine or hardware coverage that could not be verified.
+
+Execution order:
+
+1. Walk `ROUTE_MANIFEST` plus case-study/blog entries for direct URL load,
+   refresh, fallback behavior, canonical URL, localized title/description,
+   translations, and sitemap/prerender parity.
+2. Review semantic landmarks, heading order, names/pressed states, keyboard
+   access, focus movement, decorative canvas hiding, modal/splash failure
+   states, reduced motion, and renderer-free continuation. Inspect both
+   static prerender and client shell where they differ.
+3. Review narrow/short viewports, touch/pointer policy, scroll capture,
+   overflow locks, theme sync, and route transitions. Resolve layout or
+   behavior defects found in the source; use browser inspection if the runtime
+   is reachable.
+4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
+   Caddy/reverse-proxy development accommodations, scripts, package pins,
+   unused dependencies, generated outputs, and workflow duplication.
+5. Establish a formatting contract: authored-file scope and generated-file
+   ignores must be explicit before changing formatting. Remove obsolete styles,
+   code, docs, and config only after checking exact imports/callers.
+6. Run lint and the full production build after coherent changes. Do not run
+   unit or browser test suites without the user's explicit request; report the
+   unverified runtime cases as open acceptance gates.
 
 ## Working rules
 

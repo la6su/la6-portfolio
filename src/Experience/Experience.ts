@@ -16,7 +16,7 @@ import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
 import { ShowreelController } from './ShowreelController'
-import { WORKS_SLOT_INDEX } from '../core/worldSlots'
+import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
@@ -237,15 +237,21 @@ export class Experience {
     // Tres owns viewport observation, renderer sizing/DPR and camera aspect.
     // Project stages still need the same reactive dimensions for their own
     // viewport-dependent transforms.
-    this._stopSizeWatch = watch([host.sizes.width, host.sizes.height], ([width, height]) => {
-      this.resizeSceneOwners(width, height)
-      this._raiseRenderDemand('resize')
-    })
+    this._stopSizeWatch = watch(
+      [host.sizes.width, host.sizes.height, host.sizes.pixelRatio],
+      ([width, height]) => {
+        this.resizeSceneOwners(width, height)
+        this._raiseRenderDemand('resize')
+      },
+    )
   }
 
   private resizeSceneOwners(width: number, height: number): void {
     // Tres already sizes the renderer and updates registered camera aspect.
-    // Fan its current dimensions only to project-owned transforms.
+    // Only a recovered replacement needs explicit writes: Tres's internal
+    // size manager closes over the initial renderer instance.
+    this.renderer?.syncRecoveredViewport()
+    // Fan current dimensions to project-owned transforms.
     this.coordinator?.resize(width, height)
     // Route stages are lazy and may not exist until their route is reached.
     this._stages.worksPlaneStage?.resize(width, height)
@@ -315,8 +321,8 @@ export class Experience {
         console.error('[Experience] route reconciliation failed:', error)
       }
     })
-    this._pageSectionChangeUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
-      const stageIndex = Math.max(0, index - 1)
+    this._pageSectionChangeUnsub = eventBus.on('jlz:page-section-change', ({ worldIndex }) => {
+      const stageIndex = worldIndex - INTRO_SLOT_INDEX
       const page = this._host.page()
       if (page === 'works') {
         this.coordinator.setWorksPlaneStageSection(stageIndex)
