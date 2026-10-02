@@ -32,9 +32,14 @@ or preserve a wrapper solely because a test currently encodes it.
 ## Audited state (2026-10-02)
 
 - Working tree was clean at audit start; current HEAD: `f1de5ee`.
-- `src/` has 190 TS/Vue/Less source files. 35 Vitest files (`*.test.ts`,
-  2,377 lines total) are colocated throughout `src`; Playwright has two specs
-  under root `tests/`. Vitest explicitly includes `src/**/*.test.ts`.
+- Audit baseline: `src/` had 190 TS/Vue/Less files, including 35 Vitest files
+  (`*.test.ts`, 2,377 lines total); Playwright had two specs under root
+  `tests/`. Vitest included `src/**/*.test.ts`.
+- The 35 unit files now live in `tests/unit/`, grouped by their former source
+  area. Vitest and TypeScript include that test tree; relative imports were
+  statically checked and all resolve. No test execution is claimed for this
+  move. Playwright specs stay in root `tests/` because its config already uses
+  that directory and a move is not needed to separate runtime source.
 - The source has broad folders (`app`, `Experience`, `core`, `UI`, `Data`,
   `Utils`) but no consistent boundary between app/runtime policy and scene
   behavior. `Experience.ts` is 1,085 lines; `SceneHost.vue` 494;
@@ -128,12 +133,10 @@ no-scene and fallback modes.
    exports/imports/config/comments and obsolete test scaffolding that exists
    only for removed abstractions. Do not preserve code just to keep a test
    green.
-3. Move unit tests out of `src/` to a predictable `tests/unit/` tree while
-   preserving feature grouping. Update Vitest include/aliases and lint/TS
-   inclusion deliberately. Keep browser specs in `tests/e2e/` (or current
-   root `tests/` if moving adds churn); choose one convention and document it.
-   Tests remain close by naming/grouping, not interleaved with production
-   modules.
+3. **Done:** moved unit tests to `tests/unit/`, preserving feature grouping;
+   updated Vitest discovery and TypeScript inclusion. E2E specs remain in root
+   `tests/`, the configured Playwright directory. Tests remain grouped by
+   feature, not interleaved with production modules.
 4. Reassess `core` and `Experience` as names: move only modules whose domain
    becomes clear after ownership decisions. Avoid a broad rename-only commit.
 
@@ -203,7 +206,8 @@ are explicit.
 
 ## Current status
 
-Phase 1 is active. Startup cancellation now has a guard; add a focused
-regression case, then trace runtime ownership and remove duplicated
-policy/wrappers. Phases 2–4 are pending audit evidence; no production-ready
-claim is made. Keep this status current after each completed slice.
+Phase 1 is active. Startup cancellation now has a guard; its focused
+regression case and runtime ownership trace remain. Phase 2 is active: unit
+tests have been relocated; next remove verified duplicate policy/wrappers.
+Phases 3–4 are pending audit evidence; no production-ready claim is made.
+Keep this status current after each completed slice.
