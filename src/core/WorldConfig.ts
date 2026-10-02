@@ -1,6 +1,7 @@
 // src/core/WorldConfig.ts — 6 sections (0=Contact finale slot, 1-4=story, 5=Menu)
 
 import * as THREE from 'three'
+import type { PageId } from './routeManifest'
 import { BakuRole } from './types'
 import type { PostParams } from './postParams'
 import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
@@ -340,7 +341,9 @@ type ContentPalette = {
 // palette so a route reads as one authored atmosphere, not a random preset.
 // Strengths stay below home's peak (0.4) — content pages carry meaning in
 // their DOM first; the scene is a backing grade.
-const PALETTES: Record<string, ContentPalette> = {
+type ContentPageId = Exclude<PageId, 'home'>
+
+const PALETTES: Record<ContentPageId, ContentPalette> = {
   services: {
     bakuColor: 0xc0b0a0,
     bakuEmissive: 0x8a7a5a,
@@ -388,9 +391,8 @@ const PALETTES: Record<string, ContentPalette> = {
   },
 }
 
-function makeContentScenes(pageId: string): PhaseConfig[] {
+function makeContentScenes(pageId: ContentPageId): PhaseConfig[] {
   const p = PALETTES[pageId]
-  if (!p) return RAW.map(toPhaseConfig)
   // The world stays dark; inverse is an explicit user preference.
   // Content pages mirror the six-face track geometry: the frame count and
   // story ranges come from the canonical slot tuple; only the DOM anchor
@@ -419,11 +421,6 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
   )
 }
 
-const CONTENT_PAGES = new Set(['services', 'works', 'manifesto', 'lab', 'contact'])
-
-export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
-  if (CONTENT_PAGES.has(pageKey)) {
-    return makeContentScenes(pageKey)
-  }
-  return RAW.map(toPhaseConfig) // home — full scenes
+export function getWorldConfigForPage(page: PageId): readonly PhaseConfig[] {
+  return page === 'home' ? RAW.map(toPhaseConfig) : makeContentScenes(page)
 }

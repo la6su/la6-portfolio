@@ -106,6 +106,12 @@ or preserve a wrapper solely because a test currently encodes it.
   cloned camera/material/fog/post data already owned by `WorldConfig`; an
   empty section list now reports a broken lifecycle invariant. `bun run build`
   passed after removal; unit tests were not run.
+- `WorldConfig` now derives its content-page key union from `PageId` in
+  `routeManifest` instead of maintaining a second `CONTENT_PAGES` set and
+  accepting arbitrary strings that silently fell back to home scenes. Home
+  is the explicit `PageId === 'home'` branch; all other valid route ids must
+  have a palette. Vue type-check, prerendering, production build, and bundle
+  budgets passed; this also keeps route additions compiler-visible.
 - TSL effects are bespoke product visuals; keep them where they express
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
