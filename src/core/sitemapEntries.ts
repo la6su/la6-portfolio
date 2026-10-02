@@ -56,7 +56,7 @@ function buildBlogSitemapSections(): SitemapSection[] {
       comment: 'Blog articles',
       entries: BLOG_ARTICLES.map((article): SitemapEntry => ({
         path: blogArticlePath(article.slug),
-        lastmod: article.lastmod,
+        lastmod: article.publishedTime.slice(0, 10),
         changefreq: 'monthly',
         priority: article.priority,
       })),

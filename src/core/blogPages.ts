@@ -13,8 +13,8 @@
 interface BlogArticle {
   /** URL slug (lowercase letters, digits, single hyphens). */
   slug: string
-  /** `<lastmod>` content date (YYYY-MM-DD). */
-  lastmod: string
+  /** Publication date used by the sitemap and article metadata (ISO 8601). */
+  publishedTime: string
   /** Sitemap <priority>. */
   priority: number
 }
@@ -31,10 +31,10 @@ export const BLOG_INDEX = {
 
 /** The published articles, newest first. */
 export const BLOG_ARTICLES: readonly BlogArticle[] = [
-  { slug: 'undercurrent-webgpu-fluid', lastmod: '2026-07-15', priority: 0.7 },
-  { slug: 'glassmorphism-webgpu', lastmod: '2026-06-20', priority: 0.7 },
-  { slug: 'on-demand-rendering', lastmod: '2026-05-10', priority: 0.7 },
-  { slug: 'tsl-changes-everything', lastmod: '2026-04-05', priority: 0.7 },
+  { slug: 'undercurrent-webgpu-fluid', publishedTime: '2026-07-15T10:00:00Z', priority: 0.7 },
+  { slug: 'glassmorphism-webgpu', publishedTime: '2026-06-20T10:00:00Z', priority: 0.7 },
+  { slug: 'on-demand-rendering', publishedTime: '2026-05-10T10:00:00Z', priority: 0.7 },
+  { slug: 'tsl-changes-everything', publishedTime: '2026-04-05T10:00:00Z', priority: 0.7 },
 ] as const
 
 /** The static path of an article. */

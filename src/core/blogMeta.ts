@@ -44,8 +44,6 @@ interface BlogPageMeta {
   keywords?: string
   /** Articles only: the Open Graph / JSON-LD article fields. */
   article?: {
-    /** article:published_time / JSON-LD datePublished (ISO 8601). */
-    publishedTime: string
     /** article:section / JSON-LD articleSection. */
     section: string
     /** article:tag values. */
@@ -82,7 +80,6 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
     imageAlt: 'Undercurrent — WebGPU fluid simulation preview',
     keywords: 'WebGPU, TSL, fluid simulation, Three.js, case study, shader art',
     article: {
-      publishedTime: '2026-07-15T10:00:00Z',
       section: 'Case Studies',
       tags: ['WebGPU', 'TSL', 'Fluid Simulation'],
     },
@@ -100,7 +97,6 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
     imageAlt: 'Glassmorphism on WebGPU preview',
     keywords: 'glassmorphism, WebGPU, MeshPhysicalMaterial, Three.js, iridescence, case study',
     article: {
-      publishedTime: '2026-06-20T10:00:00Z',
       section: 'Case Studies',
       tags: ['Glassmorphism', 'WebGPU', 'Three.js'],
     },
@@ -117,7 +113,6 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
     imageAlt: 'On-demand rendering preview',
     keywords: 'on-demand rendering, GPU performance, Three.js, WebGPU, process note',
     article: {
-      publishedTime: '2026-05-10T10:00:00Z',
       section: 'Process Notes',
       tags: ['Performance', 'WebGPU', 'Three.js'],
     },
@@ -134,7 +129,6 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
     imageAlt: 'TSL preview',
     keywords: 'TSL, Three.js, WebGPU, shaders, TypeScript, process note',
     article: {
-      publishedTime: '2026-04-05T10:00:00Z',
       section: 'Process Notes',
       tags: ['TSL', 'WebGPU', 'Shaders'],
     },
@@ -177,14 +171,15 @@ const propertyTag = (property: string, content: string): string =>
 function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string, unknown> {
   const url = `${origin}${blogMetaPath(key)}`
   if (meta.ogType === 'article' && meta.article) {
+    const publishedTime = BLOG_ARTICLES.find((article) => article.slug === key)!.publishedTime
     return {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: meta.ogTitle,
       description: meta.ogDescription,
       image: OG_IMAGE,
-      datePublished: meta.article.publishedTime,
-      dateModified: meta.article.publishedTime,
+      datePublished: publishedTime,
+      dateModified: publishedTime,
       author: { '@type': 'Organization', name: SITE_NAME, url: `${origin}/` },
       publisher: {
         '@type': 'Organization',
@@ -213,7 +208,7 @@ function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string,
         '@type': 'BlogPosting',
         headline: articleMeta.ogTitle,
         url: `${origin}${blogArticlePath(article.slug)}`,
-        datePublished: articleMeta.article?.publishedTime ?? article.lastmod,
+        datePublished: article.publishedTime,
         articleSection: articleMeta.article?.section ?? 'Case Studies',
       }
     }),
@@ -273,7 +268,10 @@ export function renderBlogDocument(
   )
   if (meta.article) {
     head.push(
-      propertyTag('article:published_time', meta.article.publishedTime),
+      propertyTag(
+        'article:published_time',
+        BLOG_ARTICLES.find((article) => article.slug === key)!.publishedTime,
+      ),
       propertyTag('article:author', SITE_NAME),
       propertyTag('article:section', meta.article.section),
       ...meta.article.tags.map((tag) => propertyTag('article:tag', tag)),
@@ -344,14 +342,14 @@ export function assertBlogMetaClosedSet(): string[] {
   for (const key of Object.keys(BLOG_PAGE_META)) {
     if (!expected.has(key)) errors.push(`BLOG_PAGE_META has an unknown page key "${key}"`)
   }
-  for (const slug of BLOG_ARTICLES) {
-    const meta = BLOG_PAGE_META[slug.slug]
+  for (const article of BLOG_ARTICLES) {
+    const meta = BLOG_PAGE_META[article.slug]
     if (!meta) {
-      errors.push(`BLOG_PAGE_META is missing the article "${slug.slug}"`)
+      errors.push(`BLOG_PAGE_META is missing the article "${article.slug}"`)
       continue
     }
     if (meta.ogType !== 'article' || !meta.article)
-      errors.push(`article "${slug.slug}" must have ogType "article" and article fields`)
+      errors.push(`article "${article.slug}" must have ogType "article" and article fields`)
   }
   const indexMeta = BLOG_PAGE_META.index
   if (!indexMeta || indexMeta.ogType !== 'website')

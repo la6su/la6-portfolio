@@ -84,6 +84,8 @@ Current known facts:
   `themeChanged` flag that was always `true`; consumers synchronize directly.
 - Removed the one-use theme rule wrapper. Also fixed the missing-config case:
   it now uses the documented light base polarity before applying inverse mode.
+- Blog publication time now has one source in the article index; sitemap
+  `lastmod`, Open Graph, and JSON-LD derive from it.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
