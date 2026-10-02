@@ -403,6 +403,11 @@ view's localized label, a media kind discriminator whose only renderer is an
 image, and a proof source string with no presentation or processing consumer.
 These unused fields were removed from the records and type; new content fields
 will be added with their actual view or data use.
+Contact's apparent form step is currently a mailto CTA, not an HTML form: it
+opens a project-brief draft in the visitor's mail client, and the site neither
+sends nor stores messages. README now documents that behavior; connecting a
+server-side endpoint remains a product/service decision, not a hidden failure
+in the current link.
 
 The production prerenderer renders several fresh SSR apps through one Vite SSR
 module graph. `useJlzPage` previously subscribed to the module-singleton

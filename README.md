@@ -22,7 +22,8 @@ direct requests receive route content and metadata before JavaScript starts.
 The web server must resolve the extensionless route URLs to the generated
 `.html` entries and send unknown app paths to `/index.html`. Static blog pages
 are emitted at `/blog` and `/blog/<slug>`. Works media includes labelled
-placeholders; contact form delivery is not connected.
+placeholders. The Contact project CTA opens a `mailto:` draft; the site does
+not send or store messages through a backend.
 
 ## Quality checks
 
