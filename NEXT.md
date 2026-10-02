@@ -455,6 +455,18 @@ software WebGL2 evidence with a settled runtime, not HMR during active prewarm
 or physical-GPU lifecycle evidence. The dedicated host-teardown spec encodes
 additional release-before-backend assertions but remains unrun under the
 repository no-test-suite rule.
+The remaining source teardown review found that one synchronous disposer
+throwing could skip every later release, and that the shared teardown promise
+was published only after readiness cancellation and other callbacks. `destroy()`
+now publishes the promise first, stops each synchronous owner independently,
+then awaits prewarm and all async owner releases before the final texture sweep.
+`ExperienceUI.destroy()` now releases each subscription, listener, overlay and
+navigation owner independently too. Failures are reported after sibling
+cleanup; an unexpected failure in the top-level coordinator still rejects the
+shared promise. `bun run lint` and the full production build pass, and tracked
+prerender/build assets were regenerated. No failure-injection or browser
+teardown run was performed for this source change; that runtime gate remains
+open.
 
 SceneHost bridge audit: `loopPort` is the sole adapter from RenderScheduler to
 Tres's RAF (`onBeforeLoop` supplies delta; start/stop control the Tres loop).

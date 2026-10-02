@@ -959,42 +959,79 @@ export class Experience {
     if (this._destroyed) return Promise.resolve()
     this._destroyed = true
     this._lifecycleGeneration++
-    this._readinessGate?.cancel()
+    const readinessGate = this._readinessGate
     this._readinessGate = null
     const scenePrewarm = this._scenePrewarmPromise
+    const teardownErrors: Array<{ owner: string; error: unknown }> = []
+    const release = <T>(owner: string, action: () => T): T | undefined => {
+      try {
+        return action()
+      } catch (error) {
+        teardownErrors.push({ owner, error })
+        return undefined
+      }
+    }
+    let resolveDestroy!: () => void
+    let rejectDestroy!: (error: unknown) => void
+    this._destroyPromise = new Promise<void>((resolve, reject) => {
+      resolveDestroy = resolve
+      rejectDestroy = reject
+    })
+
     // Stop frames and callbacks immediately. GPU scene and renderer disposal
     // waits for an in-flight compileAsync prewarm below.
-    this._scheduler.destroy()
-    this._unsubExternalInvalidate?.()
+    release('readiness gate', () => readinessGate?.cancel())
+    release('render scheduler', () => this._scheduler.destroy())
+    release('external invalidate subscription', () => this._unsubExternalInvalidate?.())
     this._unsubExternalInvalidate = null
-    this._webglFailedUnsub?.()
+    release('WebGL failure subscription', () => this._webglFailedUnsub?.())
     this._webglFailedUnsub = null
-    this._routeChangeUnsub?.()
+    release('route subscription', () => this._routeChangeUnsub?.())
     this._routeChangeUnsub = null
-    this._pageSectionChangeUnsub?.()
+    release('page section subscription', () => this._pageSectionChangeUnsub?.())
     this._pageSectionChangeUnsub = null
     this._routeGeneration++
-    this._reducedMotionUnsub?.()
+    release('reduced motion subscription', () => this._reducedMotionUnsub?.())
     this._reducedMotionUnsub = null
-    this._cancelBreath()
-    this.contentReveal?.destroy()
-    this.cursor?.destroy()
-    this._rendererRecoveredUnsub?.()
+    release('ambient breath timer', () => this._cancelBreath())
+    release('content reveal', () => this.contentReveal?.destroy())
+    release('cursor', () => this.cursor?.destroy())
+    release('renderer recovery subscription', () => this._rendererRecoveredUnsub?.())
     this._rendererRecoveredUnsub = null
-    this._themeAppliedUnsub?.()
+    release('theme subscription', () => this._themeAppliedUnsub?.())
     this._themeAppliedUnsub = null
-    this._splashEnteredUnsub?.()
+    release('splash subscription', () => this._splashEnteredUnsub?.())
     this._splashEnteredUnsub = null
-    this.features?.destroy()
+    release('experience UI', () => this.features?.destroy())
     this.features = null
 
-    // Publish the completion promise before owner disposal can trigger any
-    // synchronous callbacks that re-enter destroy().
-    this._destroyPromise = Promise.resolve().then(() => this.finishDestroy(scenePrewarm))
+    // The shared promise is already visible before any owner callbacks run, so
+    // re-entrant callers join this teardown instead of observing a false
+    // completed state.
+    void this.finishDestroy(scenePrewarm, release).then(
+      () => {
+        for (const failure of teardownErrors) {
+          console.error(`[Experience] ${failure.owner} teardown failed:`, failure.error)
+        }
+        resolveDestroy()
+      },
+      (error: unknown) => {
+        console.error('[Experience] teardown coordinator failed:', error)
+        for (const failure of teardownErrors) {
+          console.error(`[Experience] ${failure.owner} teardown failed:`, failure.error)
+        }
+        // Keep the public teardown promise failed when the coordinator itself
+        // cannot continue; individual owner failures are isolated separately.
+        rejectDestroy(error)
+      },
+    )
     return this._destroyPromise
   }
 
-  private async finishDestroy(scenePrewarm: Promise<void> | null): Promise<void> {
+  private async finishDestroy(
+    scenePrewarm: Promise<void> | null,
+    release: <T>(owner: string, action: () => T) => T | undefined,
+  ): Promise<void> {
     if (scenePrewarm) {
       try {
         await scenePrewarm
@@ -1008,41 +1045,41 @@ export class Experience {
     // scene-facing owners only after compileAsync no longer traverses them.
     // The showreel controller unsubscribes its commands and disposes the
     // theater with the render owner (video element, texture, quad).
-    const showreelTeardown = this._showreel.dispose()
+    const showreelTeardown = release('showreel', () => this._showreel.dispose())
     // UI event listeners, menu, overlay and story navigation belong to
     // ExperienceUI.
     // Experience owns these controller lifetimes.
-    this.lights?.dispose()
-    this.ground?.dispose()
+    release('cinematic lights', () => this.lights?.dispose())
+    release('ground', () => this.ground?.dispose())
     // Vue owns the ambient pavilion and its borrowed EnvSky material.
     // Declarative boot-static boundary: the baku/intro-frames/trail nodes
     // stay with the Vue host too — the controllers release only their own
     // state + created resources.
-    this.baku?.dispose()
-    this.particleBurst?.dispose()
-    this.drawTrail?.dispose()
+    release('splash cube', () => this.baku?.dispose())
+    release('particle burst', () => this.particleBurst?.dispose())
+    release('cursor trail', () => this.drawTrail?.dispose())
     // The registry invalidates pending route-stage imports before renderer
     // teardown, so late completions cannot attach nodes or retain TSL graphs.
-    const stageTeardown = this._stages.dispose()
+    const stageTeardown = release('route stages', () => this._stages.dispose())
     // Release the render pipeline and abort recovery now. SceneHost's
     // renderer instance is deferred until its declarative Vue owners unmount.
-    const rendererTeardown = this.renderer.dispose()
+    const rendererTeardown = release('renderer', () => this.renderer.dispose())
     // ServicesStageOwner owns terminal disposal when the persistent host unmounts.
     this.servicesStage = null
     // Dispose carousel and particle resources before the adopted roots.
-    this.sectionGroups?.dispose()
-    this.coordinator?.dispose()
-    this.devPanel?.dispose()
+    release('section groups', () => this.sectionGroups?.dispose())
+    release('scene coordinator', () => this.coordinator?.dispose())
+    release('developer panel', () => this.devPanel?.dispose())
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     delete (window as unknown as { __jlzRuntimeDestroy?: () => Promise<void> }).__jlzRuntimeDestroy
-    this.camera.destroy()
+    release('camera', () => this.camera.destroy())
     // Release the observer of Tres's viewport refs on HMR and teardown.
-    this._stopSizeWatch?.()
+    release('viewport watcher', () => this._stopSizeWatch?.())
     this._stopSizeWatch = null
-    input.destroy()
-    this.sfx.dispose()
+    release('input', () => input.destroy())
+    release('sound', () => this.sfx.dispose())
     // Release the generated PMREM texture through its owner.
-    this._environment?.disposeCurrent()
+    release('scene environment', () => this._environment?.disposeCurrent())
 
     // Stage ports wait for Vue/Tres to remove each declared subtree before
     // disposing its adopted GPU resources. Keep the backend alive until that
@@ -1052,13 +1089,19 @@ export class Experience {
       // no owner card yet. In-flight entries self-dispose when they settle.
       disposeAllCaseTextures()
     }
-    const results = await Promise.allSettled([showreelTeardown, stageTeardown, rendererTeardown])
+    const results = await Promise.allSettled([
+      showreelTeardown ?? Promise.resolve(),
+      stageTeardown ?? Promise.resolve(),
+      rendererTeardown ?? Promise.resolve(),
+    ])
     for (const result of results) {
       if (result.status === 'rejected') {
-        console.error('[Experience] scene owner teardown failed:', result.reason)
+        release('asynchronous scene owner', () => {
+          throw result.reason
+        })
       }
     }
-    traceDevLifecycle('experience:async-scene-teardown-complete')
-    finishRendererTeardown()
+    release('lifecycle trace', () => traceDevLifecycle('experience:async-scene-teardown-complete'))
+    release('case texture sweep', finishRendererTeardown)
   }
 }

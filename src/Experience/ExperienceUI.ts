@@ -301,19 +301,38 @@ export class ExperienceUI {
   destroy(): void {
     if (this._destroyed) return
     this._destroyed = true
-    for (const unsub of this._unsubs) unsub()
-    this._unsubs.length = 0
-    if (this._worksPlaneTapHandler) {
-      window.removeEventListener('pointerup', this._worksPlaneTapHandler)
-      this._worksPlaneTapHandler = null
+    const failures: Array<{ owner: string; error: unknown }> = []
+    const release = (owner: string, action: () => void): void => {
+      try {
+        action()
+      } catch (error) {
+        failures.push({ owner, error })
+      }
     }
-    this._unwireCarousel?.()
+    this._unsubs.splice(0).forEach((unsub, index) => {
+      release(`event subscription ${index + 1}`, unsub)
+    })
+    const worksPlaneTapHandler = this._worksPlaneTapHandler
+    this._worksPlaneTapHandler = null
+    if (worksPlaneTapHandler) {
+      release('Works plane pointer listener', () =>
+        window.removeEventListener('pointerup', worksPlaneTapHandler),
+      )
+    }
+    const unwireCarousel = this._unwireCarousel
     this._unwireCarousel = null
-    this._overlayHostUnsub?.()
+    if (unwireCarousel) release('carousel subscription', unwireCarousel)
+    const overlayHostUnsub = this._overlayHostUnsub
     this._overlayHostUnsub = null
-    this.overlay?.dispose()
+    if (overlayHostUnsub) release('overlay host subscription', overlayHostUnsub)
+    const overlay = this.overlay
     this.overlay = null
-    this.storyNav?.dispose()
+    if (overlay) release('fullscreen overlay', () => overlay.dispose())
+    const storyNav = this.storyNav
     this.storyNav = null
+    if (storyNav) release('story navigation', () => storyNav.dispose())
+    for (const failure of failures) {
+      console.error(`[ExperienceUI] ${failure.owner} teardown failed:`, failure.error)
+    }
   }
 }
