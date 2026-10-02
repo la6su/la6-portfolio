@@ -77,6 +77,17 @@ or preserve a wrapper solely because a test currently encodes it.
   declarative `makeDefault` prop, so `CinematicCamera` must promote the camera
   after mount. Keep these narrowly scoped seams unless the library contract
   changes; do not replace them with a broader adapter abstraction.
+- Source audit of the six `StageRegistry` contracts confirms real lifecycle
+  differences: Works waits for card assets and owns a nested installation;
+  Cyprus loads/prewarms its glTF and follows Contact section activation; Lab
+  remains mounted after leaving `/lab`; the other three dispose on route exit.
+  `LazyStage`'s stale-request guard, detach-before-dispose ordering, and
+  deduplicated async release cover those races. Existing focused unit cases
+  document these edges, but they were not run for this audit. Do not collapse
+  the registry into a uniform route switch without preserving those distinct
+  contracts. One remaining question is whether `LazyStageOwner.stage` and the
+  mirrored Vue slot ref can share a single source without coupling the generic
+  async lifecycle to Vue; verify callers before changing either owner.
 - Removed a frame-path config round trip in `Experience.update()`: section
   objects already reference their canonical `PhaseConfig`, so the current and
   next section configs now come directly from one sections/index snapshot.
@@ -211,11 +222,14 @@ The reduction audit must inspect these concrete boundaries:
    duplicated loop/size/lifecycle work when Tres owns the same contract.
    Retain WebGPU adoption/recovery seams only if Tres cannot express the
    required behavior without compromising declarative scene ownership.
-4. Collapse `Experience`, `SceneCoordinator`, `StageRegistry`,
-   `SceneTransformPass`, and `ExperienceUI` only after recording each public
-   method's caller, state owner, and distinct algorithm. Remove pass-through
-   methods/state; keep independent transition math, route-lazy resources, or
-   frame policy only when their callers require them.
+4. **In progress:** stage-contract and lazy-release review is complete at
+   source level. Before collapsing `Experience`, `SceneCoordinator`,
+   `StageRegistry`, `SceneTransformPass`, or `ExperienceUI`, record each
+   public method's caller, state owner, and distinct algorithm. The concrete
+   remaining candidate is the stage identity mirrored into a Vue slot; prove
+   that it can be removed without adding Vue coupling to the runtime lifecycle
+   helper. Keep independent transition math, route-lazy resources, or frame
+   policy only when their callers require them.
 
 **Exit evidence:** one documented ownership diagram; startup cancellation
 regression covered; no duplicate route authority or renderer/loop owner;
