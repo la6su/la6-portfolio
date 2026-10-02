@@ -51,7 +51,6 @@ onMounted(() => {
     }),
     eventBus.on('jlz:sound-toggle', ({ muted }) => {
       soundMuted.value = muted
-      setSoundMutedPreference(muted)
     }),
     eventBus.on('jlz:fullscreen-change', ({ open }) => {
       fullscreenOpen.value = open
@@ -81,7 +80,9 @@ function requestStoryNavigation(index: number): void {
 }
 
 function toggleSound(): void {
-  eventBus.emit('jlz:sound-toggle', { muted: !soundMuted.value })
+  const muted = !soundMuted.value
+  setSoundMutedPreference(muted)
+  eventBus.emit('jlz:sound-toggle', { muted })
 }
 </script>
 

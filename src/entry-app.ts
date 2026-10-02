@@ -25,7 +25,9 @@ function initSoundToggle(): void {
   // listeners added on an already-aborted signal).
   btn.addEventListener('click', () => {
     soundOn = !soundOn
-    setSoundMutedPreference(!soundOn)
+    const muted = !soundOn
+    setSoundMutedPreference(muted)
+    eventBus.emit('jlz:sound-toggle', { muted })
     update()
   })
 }
