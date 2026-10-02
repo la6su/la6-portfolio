@@ -48,7 +48,7 @@
     "vitest": "^4.1.11",
     "vue-tsc": "3.3.11"
   },
-  "description": "EN/RU portfolio built with Vue 3 and TresJS, using Three.js WebGPU/TSL with a WebGL2 fallback.",
+  "description": "EN/RU portfolio built with Vue 3, TresJS, and Three.js WebGPU/TSL with automatic WebGL2 backend selection.",
   "dependencies": {
     "@tresjs/cientos": "5.9.2",
     "@tresjs/core": "5.9.2",

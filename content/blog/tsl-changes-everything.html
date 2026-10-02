@@ -64,17 +64,19 @@ const positionNode = Fn(() => {
     TypeScript compiler catches type mismatches before you run the code.
   </p>
 
-  <h2>Cross-backend compilation</h2>
-  <p>The same TSL graph compiles to:</p>
+  <h2>One graph, different backends</h2>
+  <p>
+    Three.js compiles a TSL graph for the renderer backend it initialized:
+  </p>
   <ul>
-    <li><strong>WGSL</strong> for WebGPU (native, fast)</li>
-    <li><strong>GLSL ES 3.0</strong> for WebGL2 (fallback, widely supported)</li>
+    <li><strong>WGSL</strong> for the WebGPU backend</li>
+    <li><strong>GLSL ES 3.0</strong> for Three.js's WebGL2 backend</li>
   </ul>
   <p>
-    We maintain a <strong>parity guarantee</strong>: the visual output is bit-identical across both
-    backends. This required portable primitives — an integer hash that produces the same bits in
-    GLSL and WGSL (we couldn't use <code>sin()</code> — precision differs), an exact sRGB transfer
-    function, and an ACES tonemap with an epsilon to prevent NaN on black pixels.
+    This project uses Three.js's <code>WebGPURenderer</code>, which selects a supported backend
+    during initialization. The app keeps one TSL graph instead of maintaining separate WebGPU and
+    WebGL shader implementations. Shader precision and backend support can differ, so visual output
+    still needs to be checked on each backend.
   </p>
 
   <blockquote class="uk-blockquote uk-margin-medium">
@@ -98,8 +100,8 @@ const positionNode = Fn(() => {
     rarely need to — the node graph is the source of truth.
   </p>
   <p>
-    <strong>Fallback for free</strong>: write once, run on WebGPU or WebGL2. No separate shader
-    codebases to maintain.
+    <strong>One shader graph</strong>: write the effect in TSL and let Three.js compile it for the
+    selected backend. There is no app-authored parallel GLSL path.
   </p>
 
   <h2>The catch</h2>
@@ -115,10 +117,8 @@ const positionNode = Fn(() => {
 
   <h2>The verdict</h2>
   <p>
-    TSL is the future of shader programming on the web. The type safety alone is worth the migration
-    — but the cross-backend compilation is the killer feature. We can target WebGPU today without
-    abandoning WebGL2 users. When WebGPU adoption crosses 80%, we drop the fallback with zero code
-    changes.
+    TSL gives this project one composable shader graph for its supported Three.js backends. That
+    keeps visual effects in one place while Three.js handles backend selection and compilation.
   </p>
 
   <hr class="uk-margin-large" />

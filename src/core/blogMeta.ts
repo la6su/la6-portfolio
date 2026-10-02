@@ -90,7 +90,7 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
   'glassmorphism-webgpu': {
     title: 'Glassmorphism on WebGPU | JUSTLOVEJAZZ Blog',
     description:
-      'Case study: Glassmorphism on WebGPU — building a real glass material with transmission, clearcoat, and iridescence that works across WebGPU and WebGL2 fallback.',
+      'Case study: Glassmorphism on WebGPU — building a real glass material with transmission, clearcoat, and iridescence across Three.js WebGPU and WebGL2 backends.',
     ogType: 'article',
     ogTitle: 'Glassmorphism on WebGPU',
     ogDescription:
