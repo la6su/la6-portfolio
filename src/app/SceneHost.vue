@@ -311,6 +311,14 @@ async function onReady(context: TresContext): Promise<void> {
   const renderer = context.renderer.instance as UnifiedRenderSurface
   const backend = inspectUnifiedBackend(renderer)
   const mode = modeForBackend(backend.backendName)
+  if (!mode) {
+    onError(
+      new Error(
+        `Three initialized an unknown renderer backend: ${backend.backendName ?? 'unknown'}`,
+      ),
+    )
+    return
+  }
   if (!isCurrent()) {
     await disposeHostRenderer(renderer)
     return

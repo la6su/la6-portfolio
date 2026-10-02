@@ -68,6 +68,12 @@ Current known facts:
   unused `count` field was removed from the page-section event, and
   ExperienceUI derives project-control readiness from its live overlay instead
   of mirroring it in a boolean.
+- `DeviceCapability` no longer creates a temporary WebGL2 context to predict
+  Three's renderer result; Three initializes WebGPU or its WebGL2 backend, then
+  the app records that actual backend. Unknown markers remain unknown and fail
+  visibly instead of being classified as WebGL. After this change, headless
+  Firefox initialized `WebGLBackend` on `/lab`, loaded one Three core, and only
+  logged Three's expected automatic WebGL2 selection warning.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

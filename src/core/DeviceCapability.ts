@@ -1,4 +1,4 @@
-type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
+type RendererMode = 'webgpu' | 'webgl'
 export type QualityTier = 'high' | 'medium' | 'low'
 
 /**
@@ -11,13 +11,7 @@ export type QualityTier = 'high' | 'medium' | 'low'
  * writers must agree or the stale one wins after a resize.
  */
 export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
-  if (mode === 'webgpu') {
-    return 1.5
-  }
-  if (mode === 'webgl') {
-    return isMobile ? 1 : 1.5
-  }
-  return 1
+  return mode === 'webgl' && isMobile ? 1 : 1.5
 }
 
 /** Keep the full-screen TSL graph off low-tier devices on either backend. */
@@ -74,7 +68,7 @@ export class DeviceCapability {
     this.isMobile = detectMobile()
     this.isTouch = navigator.maxTouchPoints > 0
 
-    this.mode = this.detectRenderMode()
+    this.mode = this.detectInitialRendererMode()
     this.tier = this.detectTier()
   }
 
@@ -90,17 +84,15 @@ export class DeviceCapability {
    * a hint: WebGPURenderer can still fall back to WebGL after async init.
    */
   public setFinalRendererMode(
-    mode: Exclude<RendererMode, 'unsupported'>,
+    mode: RendererMode,
     isFallbackAdapter: boolean | null = null,
   ): void {
     this.mode = mode
     this.tier = isFallbackAdapter === true ? 'low' : this.detectTier()
   }
 
-  // WebGPU API presence is only an initial hint. SceneHost commits the actual
-  // initialized backend after Three completes renderer.init().
-
-  private detectRenderMode(): RendererMode {
+  /** Initial DPR/tier hint; SceneHost records the backend Three initializes. */
+  private detectInitialRendererMode(): RendererMode {
     // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).
     // Accessing via LAN IP (http://192.168.x.x) is NOT secure context —
     // navigator.gpu is undefined even if the browser supports WebGPU.
@@ -121,9 +113,9 @@ export class DeviceCapability {
           'Use http://localhost:5173/ or configure Vite with HTTPS for LAN access.',
       )
     }
-    const canvas = document.createElement('canvas')
-    if (canvas.getContext('webgl2')) return 'webgl'
-    return 'unsupported'
+    // Three's WebGPURenderer owns WebGL2 backend detection and initialization.
+    // Do not probe with a second canvas/context here.
+    return 'webgl'
   }
 
   // ── Tier detection: weigh all signals ──

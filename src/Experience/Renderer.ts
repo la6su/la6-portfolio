@@ -56,7 +56,6 @@ export interface AdoptedRenderer {
 export class Renderer {
   instance!: RenderSurface;
   private capabilities = DeviceCapability.getInstance();
-  private readonly viewport: () => Viewport;
 
   // Post-processing manager (section-aware crossfade)
   public postManager = new PostProcessingManager();
@@ -84,15 +83,7 @@ export class Renderer {
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
   private _unsupportedOverlay: HTMLElement | null = null;
 
-  constructor(viewport: () => Viewport) {
-    this.viewport = viewport;
-    if (this.capabilities.mode === "unsupported") {
-      this.showUnsupportedMessage();
-      throw new Error(
-        "Neither WebGPU nor WebGL2 is supported by this browser.",
-      );
-    }
-  }
+  constructor(private readonly viewport: () => Viewport) {}
 
   private showUnsupportedMessage(): void {
     if (this._disposed || this._unsupportedOverlay) return;
@@ -287,6 +278,11 @@ export class Renderer {
       }
       const backend = inspectUnifiedBackend(replacement);
       const mode = modeForBackend(backend.backendName);
+      if (!mode) {
+        throw new Error(
+          `Recovered Three renderer has an unknown backend: ${backend.backendName ?? 'unknown'}`,
+        );
+      }
       if (this._disposed || generation !== this._lifecycleGeneration) {
         await discardReplacement();
         return;

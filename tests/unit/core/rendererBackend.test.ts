@@ -5,7 +5,7 @@ describe('renderer backend mode', () => {
   it('uses the backend selected by Three without recreating the renderer', () => {
     expect(modeForBackend('WebGPUBackend')).toBe('webgpu')
     expect(modeForBackend('WebGLBackend')).toBe('webgl')
-    expect(modeForBackend(null)).toBe('webgl')
+    expect(modeForBackend(null)).toBeNull()
   })
 
   it('allows only the configured number of device-loss recoveries', () => {

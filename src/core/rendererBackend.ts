@@ -16,8 +16,10 @@ export interface BackendFacts {
 }
 
 /** Map the backend Three actually initialized; don't select or recreate one. */
-export function modeForBackend(backendName: string | null): FinalMode {
-  return backendName === 'WebGPUBackend' ? 'webgpu' : 'webgl'
+export function modeForBackend(backendName: string | null): FinalMode | null {
+  if (backendName === 'WebGPUBackend') return 'webgpu'
+  if (backendName === 'WebGLBackend') return 'webgl'
+  return null
 }
 
 // Bounded device-loss recovery budget. A WebGPU device can be lost
