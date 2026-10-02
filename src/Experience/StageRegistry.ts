@@ -6,8 +6,8 @@
 // this owner directly through the UI host's typed getter.
 //
 // Every stage mounts through the declarative host ports (SceneStagePorts) —
-// no runtime `scene.add`. Contact polarity comes from Experience's theme
-// listener; the Cyprus target state belongs to this route-stage owner.
+// no runtime `scene.add`. Contact polarity is read from ContentReveal; the
+// Cyprus target state belongs to this route-stage owner.
 
 import type { Camera } from 'three'
 import type { PageId } from '../core/routeManifest'
