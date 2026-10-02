@@ -8,7 +8,7 @@ declare global {
   }
 
   interface Window {
-    UIkit: any
+    UIkit: typeof import('../core/uikit').default
     /** Read-only runtime evidence seam; written by the Vue runtime owner. */
     __jlzHost?: JlzHostProbe
     /** Set after the initial route has mounted; removed with the Vue app. */

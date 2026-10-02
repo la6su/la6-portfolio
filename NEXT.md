@@ -500,7 +500,19 @@ graph errors reach the normal failure path instead of silently switching
 render modes. Three's `RenderPipeline.render()` temporarily disables tone
 mapping only after updating its captured output transform, so the narrow
 project guard around graph rendering is still required to keep that transform
-at `NoToneMapping`. Continue the full owner and helper inventory.
+at `NoToneMapping`.
+
+The 21 declared owners under `src/app/scene` have now been inventoried. Stable
+camera/light/ground/sky and assembly transforms are declared in Tres; the
+Cyprus GLTF, route-loaded case planes, and TSL/material algorithms stay with
+their route/controller owners. Scene-object refs use shallow storage, with
+`toRaw` at the controller boundary where a Vue proxy could otherwise cross.
+Resource release follows the distinct owners: Vue releases its Works geometry,
+the Contact stage owns the GLTF subtree, and controllers retain shared
+materials/geometry leases. No safe cross-owner consolidation emerged from this
+pass. The previous `Window.UIkit: any` declaration now uses the existing typed
+`src/core/uikit` export (which includes the project's `update` typing); lint
+and the production build pass.
 
 Exit when every scene node and GPU resource has an explicit owner, no helper
 duplicates a library feature, and continuous frames are requested only by
