@@ -411,6 +411,10 @@ The separate terminal renderer-recovery notice had no matching stylesheet,
 so its appended message could fall outside the fixed-height viewport. It is now
 a localized live alert pinned above the safe-area inset; its nonblocking layout
 keeps the renderer-free route navigation usable.
+The pre-CSS module-load fallback is independent of that app shell. It now uses
+alert-dialog semantics, exposes a labelled description, moves focus to its
+reload action, and keeps Tab within the only available action when the main
+module cannot start.
 The persistent full-screen project dialog also had hard-coded English labels
 for its dialog name and close/previous/next controls. Those labels now have EN
 and RU entries. The shared translator applies marked `aria-label` attributes

@@ -27,6 +27,26 @@ const startApp = () =>
         'font-family:inherit;font-size:0.62rem;font-weight:600;letter-spacing:0.14em;' +
         'text-transform:uppercase;">Reload</button></div>'
       document.body.appendChild(fallback)
+      fallback.setAttribute('role', 'alertdialog')
+      fallback.setAttribute('aria-modal', 'true')
+      const [heading, description] = fallback.querySelectorAll<HTMLElement>('p')
+      if (heading) {
+        heading.id = 'jlz-boot-fallback-title'
+        heading.setAttribute('role', 'heading')
+        heading.setAttribute('aria-level', '1')
+        fallback.setAttribute('aria-labelledby', heading.id)
+      }
+      if (description) {
+        description.id = 'jlz-boot-fallback-description'
+        fallback.setAttribute('aria-describedby', description.id)
+      }
+      const reloadButton = fallback.querySelector<HTMLButtonElement>('button')
+      fallback.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key !== 'Tab') return
+        event.preventDefault()
+        reloadButton?.focus()
+      })
+      reloadButton?.focus({ preventScroll: true })
     })
 
 // Start app: use requestIdleCallback if available (with short timeout),
