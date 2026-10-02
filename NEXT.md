@@ -100,6 +100,8 @@ Current known facts:
   the previous global-list index could target the preceding ContactFooter.
 - Splash sound changes now publish the existing sound event after persisting,
   keeping the mounted Vue control and Experience SFX state synchronized.
+- Startup and device-loss error messages no longer claim a WebGL2 adapter
+  failure or prescribe hardware acceleration for unrelated renderer errors.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

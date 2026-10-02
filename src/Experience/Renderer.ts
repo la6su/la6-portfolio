@@ -85,13 +85,13 @@ export class Renderer {
 
   constructor(private readonly viewport: () => Viewport) {}
 
-  private showUnsupportedMessage(): void {
+  private showRendererFailure(): void {
     if (this._disposed || this._unsupportedOverlay) return;
     const overlay = document.createElement("div");
     overlay.className = "renderer-unsupported";
     overlay.innerHTML = `
-      <h1>Hardware Acceleration Required</h1>
-      <p>This experience requires WebGL2. WebGPU is optional. Please use a current browser with hardware acceleration enabled.</p>
+      <h1>3D Rendering Unavailable</h1>
+      <p>The graphics device could not be restored. Reload the page to try again.</p>
     `;
     document.body.appendChild(overlay);
     this._unsupportedOverlay = overlay;
@@ -170,7 +170,7 @@ export class Renderer {
           "[Renderer] device-loss recovery budget exhausted — surfacing failure state",
         );
         eventBus.emit("jlz:webgl-failed");
-        this.showUnsupportedMessage();
+        this.showRendererFailure();
         orig(info);
         return;
       }
@@ -317,7 +317,7 @@ export class Renderer {
       if (this._disposed || generation !== this._lifecycleGeneration) return;
       this._recoveryFailed = true;
       eventBus.emit("jlz:webgl-failed");
-      this.showUnsupportedMessage();
+      this.showRendererFailure();
       console.error("[Renderer] device-loss recovery failed:", failure);
     } finally {
       if (this._recoveryAbortController === abortController) {

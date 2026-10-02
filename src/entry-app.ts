@@ -107,10 +107,10 @@ function showLoadError(): void {
         <div class="jlz-boot-gate" role="alert">
           <p class="jlz-boot-gate__head">Signal lost</p>
           <p class="jlz-boot-gate__text">
-            The 3D experience couldn't load. Continue to the portfolio without
-            the interactive scene, or retry after enabling hardware acceleration.
+            The interactive scene could not start. Continue to the portfolio without 3D,
+            or reload the page to try again.
           </p>
-          <span class="jlz-boot-gate__code">ERR:GPU — WEBGL2 ADAPTER NOT REACHABLE</span>
+          <span class="jlz-boot-gate__code">ERR:SCENE — INITIALIZATION FAILED</span>
           <button class="jlz-boot-gate__action" type="button" data-jlz-continue-without-scene>
             Continue without 3D
           </button>
