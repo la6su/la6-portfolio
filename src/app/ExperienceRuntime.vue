@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import type { SceneHostReady } from '../Experience/SceneHostContract'
 import SceneHost from './SceneHost.vue'
 import { eventBus } from '../core/EventBus'
@@ -10,6 +10,7 @@ let startup: Promise<void> | null = null
 let teardown: Promise<void> | null = null
 let disposed = false
 let unobserveRecovery: (() => void) | null = null
+const sceneHostMounted = ref(true)
 
 async function startRuntime(host: SceneHostReady): Promise<void> {
   if (startup || disposed) return
@@ -49,6 +50,7 @@ async function startRuntime(host: SceneHostReady): Promise<void> {
       if (!disposed) {
         console.error('[ExperienceRuntime] startup failed:', error)
         if (window.__jlzHost === hostProbe) delete window.__jlzHost
+        sceneHostMounted.value = false
         eventBus.emit('jlz:webgl-failed')
       }
     }
@@ -59,6 +61,7 @@ async function startRuntime(host: SceneHostReady): Promise<void> {
 function reportHostError(error: Error): void {
   if (disposed) return
   console.error('[ExperienceRuntime] SceneHost failed:', error)
+  sceneHostMounted.value = false
   eventBus.emit('jlz:webgl-failed')
 }
 
@@ -85,5 +88,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <SceneHost @ready="startRuntime" @error="reportHostError" />
+  <SceneHost v-if="sceneHostMounted" @ready="startRuntime" @error="reportHostError" />
 </template>

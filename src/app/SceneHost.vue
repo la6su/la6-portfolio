@@ -383,9 +383,9 @@ function onError(error: Error): void {
   if (settled || disposed) return
   settled = true
   cancelReadiness()
-  void disposeHostRenderer(ownedRenderer).catch((disposeError: unknown) => {
-    console.error('[SceneHost] renderer cleanup failed after initialization error:', disposeError)
-  })
+  // ExperienceRuntime unmounts this owner on startup failure. Let Vue remove
+  // the Tres subtree and its declared GPU resources before onUnmounted flushes
+  // the renderer's deferred disposal.
   emit('error', error)
 }
 

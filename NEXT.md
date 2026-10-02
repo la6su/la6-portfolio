@@ -131,6 +131,21 @@ Current known facts:
   the current viewport immediately. `bun run build`, `bun run lint`, and
   `git diff --check` pass after this fix. Device-loss/resize runtime evidence
   remains an open hardware check.
+- Lifecycle trace against installed Tres 5.9.2 source confirms one primary
+  renderer `init()` before Tres sizes it and publishes `ready`; SceneHost then
+  binds and stops Tres's loop, awaits static node slots, inspects the explicit
+  backend marker, and only then hands the host to Experience. Experience builds
+  the scene and environment, raises one scheduler invalidation, and its
+  successful `RenderPipeline` draw resolves the 20-second readiness gate.
+  `ExperienceRuntime` publishes `experience-ready`; the shell delays
+  `webgl-ready` for the splash intro. Normal teardown stops the scheduler,
+  releases route and Vue-declared owners, then SceneHost flushes deferred
+  renderer disposal after Tres subtree unmount. This trace found an init-error
+  ordering defect: `SceneHost.onError` disposed the renderer while its declared
+  owners remained mounted, and Experience startup failure left the host mounted
+  after tearing down its controllers. Startup failure now unmounts SceneHost,
+  so Vue/Tres owners release before deferred renderer disposal. Lint/build
+  validation is pending; failure-order runtime evidence remains unavailable.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -356,9 +371,9 @@ and network verification. The active glTF decoder path is already route-lazy.
 
 Execution order:
 
-1. Finish a renderer lifecycle trace from factory construction through async
-   `init`, Tres ready, SceneHost node readiness, Experience first draw, device
-   recovery, and Vue/Tres teardown. Record which signal proves each state.
+1. Source lifecycle trace is recorded above. Still verify first-frame and
+   teardown ordering in browser, and trace device-recovery replacement and
+   abort behavior on WebGPU/WebGL2 hardware.
 2. Compare every `SceneHost` size/DPR write with Tres 5.9.2's installed code;
    retain Tres as size owner and remove only app writes that do not express a
    distinct stage transform or backend-specific policy.
