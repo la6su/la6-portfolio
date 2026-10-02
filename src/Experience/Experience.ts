@@ -508,33 +508,18 @@ export class Experience {
     this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
       features.triggerSplashOpener()
     })
-    // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
-    // ContentReveal dispatches jlz:theme-applied on every section change with
-    // the resolved sectionIndex + isLight. Each section has its own dark/light
-    // tone pair, so EnvSphere always shows the active section's colour.
-    // Theme toggle (snap=true) → instant snap. Section change (snap=false) → lerp.
-    // Theme-specific syncs (ground, baku, particles) only run when the polarity
-    // actually changed, not on every same-polarity scroll step.
+    // Sync the scene and cursor with the effective section theme. Theme toggles
+    // snap; section changes transition to that section's tone.
     this._themeAppliedUnsub = eventBus.on('jlz:theme-applied', (detail) => {
-      // The cursor is a DOM/canvas owner outside the scene graph. Its cached
-      // palette follows the same typed theme-only boundary and requests one
-      // redraw even when its motion state is already settled.
-      if (detail.themeChanged !== false) this.cursor.refreshThemeCache()
-      // The scene input port: the typed ThemeAppliedPort detail that
-      // ContentReveal dispatches on every section change / theme toggle.
-      const sectionIdx = detail.sectionIndex
-      // Keep the ambient environment aligned with the active section theme.
+      this.cursor.refreshThemeCache()
       if (this.envSphere) {
         if (detail.snap) {
-          this.envSphere.snapToSection(sectionIdx, detail.isLight)
+          this.envSphere.snapToSection(detail.sectionIndex, detail.isLight)
         } else {
-          this.envSphere.changeSection(sectionIdx, detail.isLight)
+          this.envSphere.changeSection(detail.sectionIndex, detail.isLight)
         }
       }
-      // Theme-only syncs — skip when just the section moved (same polarity).
-      if (detail.themeChanged !== false) {
-        this.coordinator.syncTheme(detail.isLight)
-      }
+      this.coordinator.syncTheme(detail.isLight)
       this._raiseRenderDemand('dirty')
     })
 

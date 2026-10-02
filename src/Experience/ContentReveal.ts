@@ -6,14 +6,13 @@
 //   On section change, toggle uk-light on <html> + <body>:
 //     auto:    light → uk-light, dark → no uk-light
 //     inverse: FLIPPED — light → no uk-light, dark → uk-light
-//   The effective decision + the jlz:theme-applied detail shape are the
-//   typed sectionTheme contract; EnvSphere syncs via that event.
+//   The effective polarity follows the section preset and user's theme mode;
+//   the event synchronizes that result with the scene.
 
 import { eventBus } from '../core/EventBus'
 import type { PageId } from '../core/routeManifest'
-import { themeManager, type ThemeMode } from '../core/ThemeManager'
+import { themeManager } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
-import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'
 
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
@@ -91,31 +90,19 @@ export class ContentReveal {
     // Config identity is canonical when present. Keep the nav index only for
     // a semantic fallback section without a world-config entry.
     const sectionIndex = cfg ? configs.indexOf(cfg) : sectionIndexHint
-    const sectionIsLight = cfg?.theme === 'light'
+    const sectionIsLight = cfg ? cfg.theme === 'light' : true
     const isInverse = themeManager.isInverse
-    // Effective-theme port: the auto/inverse decision is the pure
-    // sectionTheme contract (single source of the rule), and the event
-    // detail below is built as the typed ThemeAppliedPort the scene reads.
-    const mode: ThemeMode = isInverse ? 'inverse' : 'auto'
-    const shouldUseLight = resolveEffectiveTheme(sectionIsLight, mode)
+    const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
     this.isLight = shouldUseLight
 
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
 
-    // Always dispatch so EnvSphere can show the active section's own tone —
-    // each section has a distinct colour, so even same-polarity scroll steps
-    // must update the background. `themeChanged` lets consumers skip
-    // theme-only work (ground, particles) when just the section moved.
-    // We always send themeChanged=true so the 3D layer (ground, baku,
-    // particles) re-syncs on every applyTheme call — the cost is negligible
-    // and it prevents desync on route-change where currentIsLight matches.
-    const detail: ThemeAppliedPort = {
+    // Each section can have a distinct scene tone even when polarity matches,
+    // so synchronize the scene on every section or theme change.
+    const detail = {
       isLight: shouldUseLight,
       sectionIndex,
-      sectionId,
-      themeChanged: true,
-      mode,
       snap,
     }
     eventBus.emit('jlz:theme-applied', detail)

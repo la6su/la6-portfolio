@@ -80,6 +80,10 @@ Current known facts:
 - Declarative node readiness now awaits each slot's Promise directly; the
   sync-or-Promise `readyNode()` helper added no fast path inside `Promise.all`
   and has been removed.
+- The theme event no longer carries unread `mode`/`sectionId` fields or a
+  `themeChanged` flag that was always `true`; consumers synchronize directly.
+- Removed the one-use theme rule wrapper. Also fixed the missing-config case:
+  it now uses the documented light base polarity before applying inverse mode.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

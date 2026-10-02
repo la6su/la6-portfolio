@@ -1,21 +1,4 @@
-// src/core/ThemeManager.ts — Theme manager with 2 modes (auto/inverse)
-//
-// PER-SECTION inverse approach:
-//   - 'auto'    (default) — sections use their preset theme from WorldConfig
-//   - 'inverse' — INVERTS each section's theme (light↔dark)
-//
-// ContentReveal.ts applies uk-light/uk-dark per-section on section change:
-//   auto:    sectionTheme='light' → uk-light (light bg, dark text)
-//            sectionTheme='dark'  → no uk-light (dark bg, light text)
-//   inverse: sectionTheme='light' → no uk-light (dark bg, light text)
-//            sectionTheme='dark'  → uk-light (light bg, dark text)
-//
-// This means inverse flips the ENTIRE palette — light sections become dark
-// and dark sections become light. Simple, logical, per-section.
-//
-// Persists to localStorage('jlz:theme').
-// 3D sync: ContentReveal dispatches 'jlz:theme-applied' with {isLight} so
-// Experience.ts can sync EnvSphere background per-section.
+// Persists the auto/inverse theme mode and notifies the app when it changes.
 
 import { eventBus } from './EventBus'
 

@@ -2,7 +2,6 @@
 // Compile-time safety on event payloads; no DOM dependency; `on()` returns
 // an unsubscribe function for cleaner lifecycle management.
 
-import type { ThemeAppliedPort } from './sectionTheme'
 import type { ThemeMode } from './ThemeManager'
 
 export interface AppEvents {
@@ -58,7 +57,7 @@ export interface AppEvents {
   /** Fired by the index.html splash Enter control. */
   'jlz:splash-entered': void
   /** Fired by ContentReveal after the per-section theme has been applied. */
-  'jlz:theme-applied': ThemeAppliedPort
+  'jlz:theme-applied': { isLight: boolean; sectionIndex: number; snap: boolean }
   /** Fired by core/ThemeManager when the theme mode changes. */
   'jlz:theme-change': { mode: ThemeMode }
   /** Fired by BakuCarousel on a card wobble tap. */
