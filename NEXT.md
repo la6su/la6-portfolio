@@ -189,7 +189,9 @@ Current known facts:
   `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
   outrun AppShell's `splash-entered` listener. Renderer startup remains
   asynchronous and reports its own mount failures through `webgl-failed`.
-  Build/lint validation is pending; no-scene browser interaction remains an
+  `bun run lint` and the full `bun run build` pass, including prerender,
+  generated sitemap/robots, and configured bundle/media budgets. The rebuild
+  produced no tracked output changes. No-scene browser interaction remains an
   open check.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
