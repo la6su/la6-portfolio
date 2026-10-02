@@ -202,6 +202,13 @@ Current known facts:
   was regenerated. Keyboard/screen-reader interaction still needs browser
   verification.
 
+- Deployment inventory found no Caddy, HAProxy, Nginx, container, hosting, or
+  publish configuration in this repository. `package.json` provides Vite
+  build and local preview commands, and CI has only the quality workflow. The
+  checked-in `_headers` files therefore remain hosting-platform inputs; route
+  rewrites, MIME types, cache policy translation, and production artifact
+  delivery still need verification against the actual ingress configuration.
+
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
   animations require it. Keep this seam until render ownership moves back to
