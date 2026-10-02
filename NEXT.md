@@ -748,6 +748,17 @@ mapping only after updating its captured output transform, so the narrow
 project guard around graph rendering is still required to keep that transform
 at `NoToneMapping`.
 
+Manual Chromium on the dev WebGL2-backend path exposed an idle-loop regression:
+after all scene activity settled, the scheduler remained active at about 6
+frames per second. Tres call-stack inspection traced repeat invalidations to
+Vue patching `ground.rotation` and Services ring `scale` with newly allocated
+but value-identical arrays on each canvas update. Those transforms now reuse
+stable arrays. After the splash and scene settle, Chromium reports
+`loopActive=false`, `needsRender=false`, and `cursorSettled=true`; frame count
+stayed fixed for one second, then advanced by a single ambient-breath frame and
+stopped again. The page had no errors. This confirms idle demand behavior on
+the software WebGL2 backend; physical GPU/browser coverage remains open.
+
 The 21 declared owners under `src/app/scene` have now been inventoried. Stable
 camera/light/ground/sky and assembly transforms are declared in Tres; the
 Cyprus GLTF, route-loaded case planes, and TSL/material algorithms stay with

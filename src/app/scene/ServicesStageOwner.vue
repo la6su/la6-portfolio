@@ -9,9 +9,9 @@ const root = shallowRef<Group | null>(null)
 const parts = shallowRef<Mesh[]>([])
 const rings = shallowRef<Mesh[]>([])
 const ringConfigs = [
-  { radius: 1.5, rotation: [0.3, 0, 0] },
-  { radius: 2.2, rotation: [-0.5, 0, 0.4] },
-  { radius: 2.8, rotation: [0.8, 0, -0.3] },
+  { radius: 1.5, scale: [1.5, 1.5, 1.5], rotation: [0.3, 0, 0] },
+  { radius: 2.2, scale: [2.2, 2.2, 2.2], rotation: [-0.5, 0, 0.4] },
+  { radius: 2.8, scale: [2.8, 2.8, 2.8], rotation: [0.8, 0, -0.3] },
 ] as const
 
 onMounted(() => {
@@ -48,7 +48,7 @@ onBeforeUnmount(() => {
       ref="rings"
       :name="`services-orbit-${index}`"
       :material="stage.orbitMaterials[index]"
-      :scale="[ring.radius, ring.radius, ring.radius]"
+      :scale="ring.scale"
       :rotation="ring.rotation"
       :position="[0, 0, -1]"
     >

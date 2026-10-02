@@ -5,6 +5,7 @@ import type { GroundPlaneNode } from '../../Experience/Scene/GroundPlane'
 
 const emit = defineEmits<{ ready: [node: GroundPlaneNode] }>()
 const ground = shallowRef<Mesh<PlaneGeometry, MeshStandardMaterial> | null>(null)
+const GROUND_ROTATION: [number, number, number] = [-Math.PI / 2, 0, 0]
 
 onMounted(() => {
   if (!ground.value) throw new Error('Declarative ground plane did not mount.')
@@ -17,7 +18,7 @@ onMounted(() => {
     ref="ground"
     name="ground"
     :position="[0, -1, 0]"
-    :rotation="[-Math.PI / 2, 0, 0]"
+    :rotation="GROUND_ROTATION"
   >
     <TresPlaneGeometry :args="[200, 200]" />
     <TresMeshStandardMaterial
