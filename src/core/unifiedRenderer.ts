@@ -89,9 +89,9 @@ function applySharedSettings(renderer: {
 
 /**
  * Create + async-init the unified `WebGPURenderer` on an existing canvas.
- * The caller (Tres in production, `Renderer` on the rollback path) awaits
- * `initUnifiedWebGPUInstance` exactly once — construction stays synchronous
- * because the custom renderer factory must return the instance immediately.
+ * Tres constructs the initial renderer synchronously; the recovery owner
+ * awaits `initUnifiedWebGPUInstance` for replacements. Construction stays
+ * synchronous because the custom renderer factory must return immediately.
  */
 export function createUnifiedWebGPUInstance(
   canvas: HTMLCanvasElement,

@@ -15,8 +15,8 @@ metaphor, not a music theme.
   and only work queue. Keep its status and checkpoint current as work completes;
   do not create session logs or parallel plans. The plan is grounded in the
   current source tree and the user's selected TresJS reference, not removed docs.
-- Prefer the smallest complete solution. Remove obsolete paths; avoid speculative 
-- abstractions and compatibility layers.
+- Prefer the smallest complete solution. Remove obsolete paths; avoid
+  speculative abstractions and compatibility layers.
 - Read docs by task, not as a startup bundle. Use deterministic checks and
   concise results; report which checks ran. Delegate only when requested;
   isolate concurrent writes.

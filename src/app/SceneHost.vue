@@ -71,7 +71,7 @@ const forceWebGLBackendForTest =
 // renderer readiness AND on every internal sizes change (debounced after the
 // Renderer owner's own resize write). The cap therefore must be LIVE: the
 // boot-time hint (pre-init mode detection) differs from the final cap on the
-// mobile WebGL-fallback path (1 vs 1.5), and a static prop would let Tres
+// mobile WebGL2 backend path (1 vs 1.5), and a static prop would let Tres
 // re-apply the stale cap over the finalized one on every resize/zoom.
 const dprCap = ref(DeviceCapability.getInstance().maxDpr)
 
@@ -281,9 +281,9 @@ async function onReady(context: TresContext): Promise<void> {
     externalInvalidateHandler?.()
   }
   // Tres auto-starts its loop when ready. The RenderScheduler owns
-  // start/stop: pause the loop until Experience's first
-  // invalidation opens the first window, and keep the cleanup handle for an
-  // unmount during the async backend-fallback window below.
+  // start/stop: pause the loop until Experience's first invalidation opens
+  // the first window, and keep the cleanup handle for an unmount during
+  // asynchronous scene-owner readiness below.
   stopTresLoop = () => manager.loop.stop()
   stopTresLoop()
   const generation = ++lifecycleGeneration
@@ -309,7 +309,6 @@ async function onReady(context: TresContext): Promise<void> {
   // available to assistive technology.
   canvas.setAttribute('aria-hidden', 'true')
   const renderer = context.renderer.instance as UnifiedRenderSurface
-  ownedRenderer = renderer
   const backend = inspectUnifiedBackend(renderer)
   const mode = modeForBackend(backend.backendName)
   if (!isCurrent()) {
@@ -319,7 +318,6 @@ async function onReady(context: TresContext): Promise<void> {
   // Publish the selected backend's DPR cap so Tres and the renderer agree.
   // writers (Tres's size manager and the Renderer owner) agree from now on.
   dprCap.value = maxDprForMode(mode, DeviceCapability.getInstance().isMobile)
-  ownedRenderer = renderer
   ownedRendererDisposal ??= deferRendererDisposal(renderer)
   const replaceRenderer = (replacement: UnifiedRenderSurface, mode: FinalMode): void => {
     context.renderer.instance = replacement

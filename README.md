@@ -3,9 +3,9 @@
 EN/RU portfolio of technology and design solutions for business, combining
 creative direction, automation, performance and distinctive visual craft.
 Vue 3 and TresJS 5 own the app and declarative scene graph; Three.js 0.186.1
-provides WebGPU/TSL rendering with a WebGL 2 fallback. The project also uses
-Vue Router, Cientos, UIkit/Less, Vite and Bun. The scene architecture follows
-the focused Vue/Tres patterns in
+provides a shared TSL render path on its WebGPU or WebGL 2 backend. The project
+also uses Vue Router, Cientos, UIkit/Less, Vite and Bun. The scene architecture
+follows the focused Vue/Tres patterns in
 [three-vue-tres](https://github.com/hawk86104/three-vue-tres).
 
 ```bash
