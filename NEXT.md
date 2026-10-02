@@ -459,6 +459,11 @@ On 2026-10-02, the cached headless Firefox process launched but returned
 `NS_ERROR_OUT_OF_MEMORY` while navigating to the production preview, so the
 current no-scene/manual interaction check could not run. The loopback preview
 was stopped; no browser behavior is inferred from that failed attempt.
+Another manual attempt on 2026-10-02 used the approved loopback production
+preview, but Chromium exited before navigation (`crashpad setsockopt:
+Operation not permitted`) and system Firefox exited with code 139 before
+writing a screenshot. The preview was stopped; this adds no visual/runtime
+evidence.
 The cached Playwright WebKit binary also cannot launch on this host because
 `libicu74`, `libxml2`, and `libflite1` are missing. The preview was stopped;
 system browser dependencies were not installed.
