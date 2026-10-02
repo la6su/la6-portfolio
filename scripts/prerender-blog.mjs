@@ -89,10 +89,21 @@ try {
   // The generated documents are committed build output (the Vite build
   // inputs), so run them through the repo formatter to keep the tree
   // format-clean without a manual pass.
-  execFileSync('bunx', ['prettier', '--write', 'blog.html', 'blog'], {
-    cwd: root,
-    stdio: 'inherit',
-  })
+  execFileSync(
+    'bunx',
+    [
+      'prettier',
+      '--ignore-path',
+      'scripts/.prettier-blog-allowlist',
+      '--write',
+      'blog.html',
+      'blog',
+    ],
+    {
+      cwd: root,
+      stdio: 'inherit',
+    },
+  )
 } finally {
   await server.close()
 }

@@ -1,0 +1,3 @@
+# Intentionally empty: the prerender script invokes Prettier on an explicit,
+# generated blog document allowlist, while `.prettierignore` protects these
+# files from broad project-wide format commands.

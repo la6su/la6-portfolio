@@ -5,19 +5,19 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>JUSTLOVEJAZZ — Digital Experience</title>
+    <title>JUSTLOVEJAZZ — Design, Technology &amp; Automation</title>
 
     <meta
       name="description"
-      content="JUSTLOVEJAZZ — interactive digital experiences, WebGPU, Three.js and creative systems."
+      content="Distinctive digital solutions for business. Creative direction, design and development shaped by your goals, data and performance needs."
     />
 
     <link rel="canonical" href="https://justlovejazz.dev/" />
 
-    <meta property="og:title" content="JUSTLOVEJAZZ — Digital Experience" />
+    <meta property="og:title" content="JUSTLOVEJAZZ — Design, Technology &amp; Automation" />
     <meta
       property="og:description"
-      content="Interactive digital experiences, WebGPU, Three.js and creative systems."
+      content="Distinctive digital solutions for business. Creative direction, design and development shaped by your goals, data and performance needs."
     />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
@@ -32,10 +32,10 @@
     <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="JUSTLOVEJAZZ — Digital Experience" />
+    <meta name="twitter:title" content="JUSTLOVEJAZZ — Design, Technology &amp; Automation" />
     <meta
       name="twitter:description"
-      content="Interactive digital experiences, WebGPU, Three.js and creative systems."
+      content="Distinctive digital solutions for business. Creative direction, design and development shaped by your goals, data and performance needs."
     />
     <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
 
@@ -96,7 +96,7 @@
         height: 100%;
         margin: 0;
         overflow: hidden;
-        background: var(--bg);
+        background: var(--jlz-color-bg, var(--bg));
       }
 
       body {
@@ -1271,7 +1271,7 @@
     <!-- Neutral mount node: the landmark <main id="spa-content"> is owned by
          the route SFCs (and the prerender), keeping a single main landmark.
          vite `prerender-index` injects the home shell into this exact div. -->
-    <div id="app"></div>
+    <div id="app"><!--jlz-app-content-start--><!--jlz-app-content-end--></div>
 
     <div id="jlz-route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 

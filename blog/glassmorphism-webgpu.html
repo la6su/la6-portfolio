@@ -2,12 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#050507" />
     <meta name="color-scheme" content="dark light" />
     <meta name="author" content="JUSTLOVEJAZZ" />
-    <meta name="description" content="Case study: Glassmorphism on WebGPU — building a real glass material with transmission, clearcoat, and iridescence across Three.js WebGPU and WebGL2 backends." />
-    <meta name="keywords" content="glassmorphism, WebGPU, MeshPhysicalMaterial, Three.js, iridescence, case study" />
+    <meta
+      name="description"
+      content="Case study: Glassmorphism on WebGPU — building a real glass material with transmission, clearcoat, and iridescence across Three.js WebGPU and WebGL2 backends."
+    />
+    <meta
+      name="keywords"
+      content="glassmorphism, WebGPU, MeshPhysicalMaterial, Three.js, iridescence, case study"
+    />
 
     <title>Glassmorphism on WebGPU | JUSTLOVEJAZZ Blog</title>
 
@@ -15,17 +24,29 @@
     <link rel="apple-touch-icon" href="/logo.svg" />
     <link rel="mask-icon" href="/logo.svg" color="#232534" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="canonical" href="https://justlovejazz.dev/blog/glassmorphism-webgpu" />
+    <link
+      rel="canonical"
+      href="https://justlovejazz.dev/blog/glassmorphism-webgpu"
+    />
 
     <!-- Open Graph -->
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Glassmorphism on WebGPU" />
-    <meta property="og:description" content="Building a real glass material with transmission, clearcoat, and iridescence across WebGPU and WebGL2." />
-    <meta property="og:url" content="https://justlovejazz.dev/blog/glassmorphism-webgpu" />
+    <meta
+      property="og:description"
+      content="Building a real glass material with transmission, clearcoat, and iridescence across WebGPU and WebGL2."
+    />
+    <meta
+      property="og:url"
+      content="https://justlovejazz.dev/blog/glassmorphism-webgpu"
+    />
     <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
-    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
+    <meta
+      property="og:image:secure_url"
+      content="https://justlovejazz.dev/preview.jpg"
+    />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -42,11 +63,20 @@
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
     <meta name="twitter:title" content="Glassmorphism on WebGPU" />
-    <meta name="twitter:description" content="Building a real glass material with transmission, clearcoat, and iridescence." />
+    <meta
+      name="twitter:description"
+      content="Building a real glass material with transmission, clearcoat, and iridescence."
+    />
     <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
     <meta name="twitter:image:alt" content="Glassmorphism on WebGPU preview" />
 
-    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="/fonts/commissioner.css" />
     <link rel="stylesheet" href="/src/assets/blog.less" />
     <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />
@@ -83,99 +113,213 @@
     </script>
   </head>
   <body>
-<div class="jlz-reading-progress" aria-hidden="true"><div class="jlz-reading-progress__bar"></div></div><a href="#main" class="skip-link">Skip to main content</a><header class="jlz-blog-header" role="banner"><nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation"><div class="uk-navbar-left"><a href="/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a></div><div class="uk-navbar-right"><ul class="uk-navbar-nav"><li><a href="/blog">Blog</a></li><li><a href="/">Enter 3D →</a></li></ul></div></nav></header><main id="main" class="uk-section uk-section-large" role="main"><article class="uk-container uk-container-small">
-  <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 20 JUN 2026</p>
-  <h1 class="uk-heading-large uk-margin-remove-top">Glassmorphism on WebGPU</h1>
-  <p class="uk-text-lead uk-margin-medium-top">
-    Real glass — not the CSS backdrop-filter approximation. Transmission, clearcoat, iridescence,
-    and a CubeCamera reflection that updates per frame. Here's how we made it work across WebGPU and
-    WebGL2 with bit-identical output.
-  </p>
+    <div class="jlz-reading-progress" aria-hidden="true">
+      <div class="jlz-reading-progress__bar"></div>
+    </div>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header class="jlz-blog-header" role="banner">
+      <nav
+        class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
+        uk-navbar
+        aria-label="Main navigation"
+      >
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/">Enter 3D →</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <article class="uk-container uk-container-small">
+        <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 20 JUN 2026</p>
+        <h1 class="uk-heading-large uk-margin-remove-top">
+          Glassmorphism on WebGPU
+        </h1>
+        <p class="uk-text-lead uk-margin-medium-top">
+          Real glass — not the CSS backdrop-filter approximation. Transmission,
+          clearcoat, iridescence, and a CubeCamera reflection that updates per
+          frame. Here's how we made it work across WebGPU and WebGL2 with
+          bit-identical output.
+        </p>
 
-  <hr class="uk-margin-large" />
+        <hr class="uk-margin-large" />
 
-  <h2>The material</h2>
-  <p>We used a single <code>MeshPhysicalMaterial</code> with these properties:</p>
-  <pre
-    class="uk-pre uk-margin-medium"
-  ><code class="language-typescript">transmission: 0      // solid glass, not see-through
+        <h2>The material</h2>
+        <p>
+          We used a single <code>MeshPhysicalMaterial</code> with these
+          properties:
+        </p>
+        <pre
+          class="uk-pre uk-margin-medium"
+        ><code class="language-typescript">transmission: 0      // solid glass, not see-through
 iridescence: 1.0      // thin-film interference (soap bubble)
 clearcoat: 1.0        // glossy top layer
 roughness: 0.05       // polished
 metalness: 0.0        // dielectric
 envMapIntensity: 2.0  // boost reflections</code></pre>
-  <p>
-    The <code>transmission: 0</code> is deliberate — we wanted reflections and iridescence, not
-    refraction. A <code>CubeCamera</code> renders the content scene into a 256×256 cubemap every
-    frame, used as <code>material.envMap</code>.
-  </p>
+        <p>
+          The <code>transmission: 0</code> is deliberate — we wanted reflections
+          and iridescence, not refraction. A <code>CubeCamera</code> renders the
+          content scene into a 256×256 cubemap every frame, used as
+          <code>material.envMap</code>.
+        </p>
 
-  <h2>The cube camera problem</h2>
-  <p>
-    A CubeCamera renders 6 views (one per face). At 256×256, that's 6 draw calls per frame just for
-    reflections. On mid-range hardware, this was 4ms — a quarter of our frame budget.
-  </p>
-  <p>
-    The fix: render the CubeCamera <strong>only when the glass object is visible</strong>. Our
-    on-demand rendering pipeline already gated <code>renderer.update()</code> behind a
-    <code>_needsRender</code> flag. We added a check: if the glass mesh is not in the camera
-    frustum, skip the CubeCamera update entirely. Idle frames drop to 0 draw calls.
-  </p>
+        <h2>The cube camera problem</h2>
+        <p>
+          A CubeCamera renders 6 views (one per face). At 256×256, that's 6 draw
+          calls per frame just for reflections. On mid-range hardware, this was
+          4ms — a quarter of our frame budget.
+        </p>
+        <p>
+          The fix: render the CubeCamera
+          <strong>only when the glass object is visible</strong>. Our on-demand
+          rendering pipeline already gated <code>renderer.update()</code> behind
+          a <code>_needsRender</code> flag. We added a check: if the glass mesh
+          is not in the camera frustum, skip the CubeCamera update entirely.
+          Idle frames drop to 0 draw calls.
+        </p>
 
-  <blockquote class="uk-blockquote uk-margin-medium">
-    <p class="uk-margin-remove">
-      "The cube hidden during CubeCamera render to avoid self-reflection" — this comment in the
-      codebase is the single most important detail. Without it, you get a black cube reflecting
-      itself into infinity.
-    </p>
-  </blockquote>
+        <blockquote class="uk-blockquote uk-margin-medium">
+          <p class="uk-margin-remove">
+            "The cube hidden during CubeCamera render to avoid self-reflection"
+            — this comment in the codebase is the single most important detail.
+            Without it, you get a black cube reflecting itself into infinity.
+          </p>
+        </blockquote>
 
-  <h2>Iridescence parity</h2>
-  <p>
-    The thin-film interference approximation in <code>MeshPhysicalMaterial</code> uses a different
-    code path on WebGPU (TSL) vs WebGL2 (GLSL). The visual difference is sub-perceptual, but we
-    wanted bit-identical output for our parity guarantee.
-  </p>
-  <p>
-    The solution: a portable integer hash for the iridescence noise, identical in both shaders. We
-    could not use <code>sin()</code>-based hashing — precision differs between GLSL and WGSL. The
-    integer hash <code>fract((p3.x+p3.y)*p3.z)</code> with
-    <code>p3 = fract(vec3(p.xyx)*0.1031)</code> is bit-identical across both.
-  </p>
+        <h2>Iridescence parity</h2>
+        <p>
+          The thin-film interference approximation in
+          <code>MeshPhysicalMaterial</code> uses a different code path on WebGPU
+          (TSL) vs WebGL2 (GLSL). The visual difference is sub-perceptual, but
+          we wanted bit-identical output for our parity guarantee.
+        </p>
+        <p>
+          The solution: a portable integer hash for the iridescence noise,
+          identical in both shaders. We could not use <code>sin()</code>-based
+          hashing — precision differs between GLSL and WGSL. The integer hash
+          <code>fract((p3.x+p3.y)*p3.z)</code> with
+          <code>p3 = fract(vec3(p.xyx)*0.1031)</code> is bit-identical across
+          both.
+        </p>
 
-  <h2>Edges with rainbow vertex colors</h2>
-  <p>
-    The glass cube has <code>EdgesGeometry</code> — 12 edges (not 24 from separate planes). Each
-    vertex gets an animated rainbow HSL color. This is the detail that makes the cube feel alive —
-    the edges shimmer independently of the glass body.
-  </p>
-  <p>
-    Vertex colors are set directly on the geometry's <code>color</code> attribute, updated each
-    frame. No uniform overhead, no draw call increase. The edges render in the same pass as the
-    glass body.
-  </p>
+        <h2>Edges with rainbow vertex colors</h2>
+        <p>
+          The glass cube has <code>EdgesGeometry</code> — 12 edges (not 24 from
+          separate planes). Each vertex gets an animated rainbow HSL color. This
+          is the detail that makes the cube feel alive — the edges shimmer
+          independently of the glass body.
+        </p>
+        <p>
+          Vertex colors are set directly on the geometry's
+          <code>color</code> attribute, updated each frame. No uniform overhead,
+          no draw call increase. The edges render in the same pass as the glass
+          body.
+        </p>
 
-  <h2>Result</h2>
-  <p>
-    A glass cube that reflects its surroundings, shimmers with iridescence, and has rainbow edges.
-    It runs at 60fps on WebGPU, 60fps on WebGL2 (same material, different backend), and 0fps when
-    idle (on-demand rendering). The visual identity is the centerpiece of the portfolio — every
-    visitor sees it within 2 seconds of entering.
-  </p>
+        <h2>Result</h2>
+        <p>
+          A glass cube that reflects its surroundings, shimmers with
+          iridescence, and has rainbow edges. It runs at 60fps on WebGPU, 60fps
+          on WebGL2 (same material, different backend), and 0fps when idle
+          (on-demand rendering). The visual identity is the centerpiece of the
+          portfolio — every visitor sees it within 2 seconds of entering.
+        </p>
 
-  <hr class="uk-margin-large" />
+        <hr class="uk-margin-large" />
 
-  <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
-    <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
-    <a href="/blog/on-demand-rendering" class="uk-button uk-button-default uk-button-small"
-      >Next: On-demand rendering →</a
-    >
-  </nav>
-</article>
-</main><footer class="jlz-blog-footer" role="contentinfo"><div class="uk-container uk-container-expand uk-text-center"><!-- Inline SVGs: the prerendered documents carry no JavaScript, so
-           uk-icon (a UIkit JS component) never renders there. --><ul class="jlz-blog-social" aria-label="Social links"><li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10,1 C5.03,1 1,5.03 1,10 C1,13.98 3.58,17.35 7.16,18.54 C7.61,18.62 7.77,18.34 7.77,18.11 C7.77,17.9 7.76,17.33 7.76,16.58 C5.26,17.12 4.73,15.37 4.73,15.37 C4.32,14.33 3.73,14.05 3.73,14.05 C2.91,13.5 3.79,13.5 3.79,13.5 C4.69,13.56 5.17,14.43 5.17,14.43 C5.97,15.8 7.28,15.41 7.79,15.18 C7.87,14.6 8.1,14.2 8.36,13.98 C6.36,13.75 4.26,12.98 4.26,9.53 C4.26,8.55 4.61,7.74 5.19,7.11 C5.1,6.88 4.79,5.97 5.28,4.73 C5.28,4.73 6.04,4.49 7.75,5.65 C8.47,5.45 9.24,5.35 10,5.35 C10.76,5.35 11.53,5.45 12.25,5.65 C13.97,4.48 14.72,4.73 14.72,4.73 C15.21,5.97 14.9,6.88 14.81,7.11 C15.39,7.74 15.73,8.54 15.73,9.53 C15.73,12.99 13.63,13.75 11.62,13.97 C11.94,14.25 12.23,14.8 12.23,15.64 C12.23,16.84 12.22,17.81 12.22,18.11 C12.22,18.35 12.38,18.63 12.84,18.54 C16.42,17.35 19,13.98 19,10 C19,5.03 14.97,1 10,1 L10,1 Z"></path></svg></a></li><li><a href="https://x.com/justlovejazz" rel="noopener" aria-label="Twitter"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19,4.74 C18.339,5.029 17.626,5.229 16.881,5.32 C17.644,4.86 18.227,4.139 18.503,3.28 C17.79,3.7 17.001,4.009 16.159,4.17 C15.485,3.45 14.526,3 13.464,3 C11.423,3 9.771,4.66 9.771,6.7 C9.771,6.99 9.804,7.269 9.868,7.539 C6.795,7.38 4.076,5.919 2.254,3.679 C1.936,4.219 1.754,4.86 1.754,5.539 C1.754,6.82 2.405,7.95 3.397,8.61 C2.79,8.589 2.22,8.429 1.723,8.149 L1.723,8.189 C1.723,9.978 2.997,11.478 4.686,11.82 C4.376,11.899 4.049,11.939 3.713,11.939 C3.475,11.939 3.245,11.919 3.018,11.88 C3.49,13.349 4.852,14.419 6.469,14.449 C5.205,15.429 3.612,16.019 1.882,16.019 C1.583,16.019 1.29,16.009 1,15.969 C2.635,17.019 4.576,17.629 6.662,17.629 C13.454,17.629 17.17,12 17.17,7.129 C17.17,6.969 17.166,6.809 17.157,6.649 C17.879,6.129 18.504,5.478 19,4.74"></path></svg></a></li><li><a href="mailto:hello@justlovejazz.com" aria-label="Email"><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><polyline fill="none" stroke="currentColor" points="1.4,6.5 10,11 18.6,6.5"></polyline><path fill="none" stroke="currentColor" d="M 1,4 1,16 19,16 19,4 1,4 Z M 18,15 2,15 2,5 18,5 18,15 Z"></path></svg></a></li></ul><p class="uk-text-meta uk-margin-small-top"> © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio </p></div></footer>
+        <nav
+          class="uk-flex uk-flex-between uk-margin-large"
+          aria-label="Article navigation"
+        >
+          <a href="/blog" class="uk-button uk-button-default uk-button-small"
+            >← All posts</a
+          >
+          <a
+            href="/blog/on-demand-rendering"
+            class="uk-button uk-button-default uk-button-small"
+            >Next: On-demand rendering →</a
+          >
+        </nav>
+      </article>
+    </main>
+    <footer class="jlz-blog-footer" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <!-- Inline SVGs: the prerendered documents carry no JavaScript, so
+           uk-icon (a UIkit JS component) never renders there. -->
+        <ul class="jlz-blog-social" aria-label="Social links">
+          <li>
+            <a
+              href="https://github.com/la6su"
+              rel="noopener"
+              aria-label="GitHub"
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="currentColor"
+                  d="M10,1 C5.03,1 1,5.03 1,10 C1,13.98 3.58,17.35 7.16,18.54 C7.61,18.62 7.77,18.34 7.77,18.11 C7.77,17.9 7.76,17.33 7.76,16.58 C5.26,17.12 4.73,15.37 4.73,15.37 C4.32,14.33 3.73,14.05 3.73,14.05 C2.91,13.5 3.79,13.5 3.79,13.5 C4.69,13.56 5.17,14.43 5.17,14.43 C5.97,15.8 7.28,15.41 7.79,15.18 C7.87,14.6 8.1,14.2 8.36,13.98 C6.36,13.75 4.26,12.98 4.26,9.53 C4.26,8.55 4.61,7.74 5.19,7.11 C5.1,6.88 4.79,5.97 5.28,4.73 C5.28,4.73 6.04,4.49 7.75,5.65 C8.47,5.45 9.24,5.35 10,5.35 C10.76,5.35 11.53,5.45 12.25,5.65 C13.97,4.48 14.72,4.73 14.72,4.73 C15.21,5.97 14.9,6.88 14.81,7.11 C15.39,7.74 15.73,8.54 15.73,9.53 C15.73,12.99 13.63,13.75 11.62,13.97 C11.94,14.25 12.23,14.8 12.23,15.64 C12.23,16.84 12.22,17.81 12.22,18.11 C12.22,18.35 12.38,18.63 12.84,18.54 C16.42,17.35 19,13.98 19,10 C19,5.03 14.97,1 10,1 L10,1 Z"
+                ></path></svg
+            ></a>
+          </li>
+          <li>
+            <a
+              href="https://x.com/justlovejazz"
+              rel="noopener"
+              aria-label="Twitter"
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="currentColor"
+                  d="M19,4.74 C18.339,5.029 17.626,5.229 16.881,5.32 C17.644,4.86 18.227,4.139 18.503,3.28 C17.79,3.7 17.001,4.009 16.159,4.17 C15.485,3.45 14.526,3 13.464,3 C11.423,3 9.771,4.66 9.771,6.7 C9.771,6.99 9.804,7.269 9.868,7.539 C6.795,7.38 4.076,5.919 2.254,3.679 C1.936,4.219 1.754,4.86 1.754,5.539 C1.754,6.82 2.405,7.95 3.397,8.61 C2.79,8.589 2.22,8.429 1.723,8.149 L1.723,8.189 C1.723,9.978 2.997,11.478 4.686,11.82 C4.376,11.899 4.049,11.939 3.713,11.939 C3.475,11.939 3.245,11.919 3.018,11.88 C3.49,13.349 4.852,14.419 6.469,14.449 C5.205,15.429 3.612,16.019 1.882,16.019 C1.583,16.019 1.29,16.009 1,15.969 C2.635,17.019 4.576,17.629 6.662,17.629 C13.454,17.629 17.17,12 17.17,7.129 C17.17,6.969 17.166,6.809 17.157,6.649 C17.879,6.129 18.504,5.478 19,4.74"
+                ></path></svg
+            ></a>
+          </li>
+          <li>
+            <a href="mailto:hello@justlovejazz.com" aria-label="Email"
+              ><svg
+                viewBox="0 0 20 20"
+                width="20"
+                height="20"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <polyline
+                  fill="none"
+                  stroke="currentColor"
+                  points="1.4,6.5 10,11 18.6,6.5"
+                ></polyline>
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  d="M 1,4 1,16 19,16 19,4 1,4 Z M 18,15 2,15 2,5 18,5 18,15 Z"
+                ></path></svg
+            ></a>
+          </li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">
+          © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio
+        </p>
+      </div>
+    </footer>
     <script>
-      document.getElementById('year').textContent = String(new Date().getFullYear())
+      document.getElementById("year").textContent = String(
+        new Date().getFullYear(),
+      );
     </script>
     <script defer src="/vendor/prism/prism-core.min.js"></script>
     <script defer src="/vendor/prism/prism-clike.min.js"></script>

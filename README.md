@@ -17,8 +17,12 @@ bun run dev
 local/LAN development with Vite's built-in hot updates, use `bun run dev:hmr`.
 
 SPA: `/`, `/services`, `/works`, `/works/:projectId`, `/manifesto`, `/lab`,
-`/contact`. Static HTML: `/blog` and `/blog/<slug>`. Works media includes
-labelled placeholders; contact form delivery is not connected.
+`/contact`. The build emits static HTML entries for every listed route so
+direct requests receive route content and metadata before JavaScript starts.
+The web server must resolve the extensionless route URLs to the generated
+`.html` entries and send unknown app paths to `/index.html`. Static blog pages
+are emitted at `/blog` and `/blog/<slug>`. Works media includes labelled
+placeholders; contact form delivery is not connected.
 
 ## Quality checks
 
@@ -34,8 +38,8 @@ bunx playwright install --with-deps chromium firefox webkit
 bun run test:matrix
 ```
 
-`build` generates blog routes and tracked `dist/` release output, then
-checks bundle budgets. `test:serial` runs the production Chromium suite.
+`build` generates static route and blog documents plus tracked `dist/` release
+output, then checks bundle budgets. `test:serial` runs the production Chromium suite.
 `test:host-teardown` uses a development server to unmount the real Vue app and
 verify scene-owner disposal precedes renderer disposal. `test:matrix` runs
 production browser checks in Chromium, Firefox and WebKit; CI installs all

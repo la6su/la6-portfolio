@@ -99,8 +99,12 @@ Current known facts:
   route state is resolved from the active DOM section. Later navigation
   already reports canonical world slots, so its payload now names that value
   `worldIndex`; route stages convert it to their local index with
-  `INTRO_SLOT_INDEX`. Lint and Vue/TS type-check pass after the fix; browser
-  verification is still outstanding.
+  `INTRO_SLOT_INDEX`. A manual headless Chromium interaction confirmed the
+  toggle state on both routes. Works now has a light shell background with
+  dark heading text when inverse is active. Manifesto's shell tokens compute
+  correctly too, but its screenshot is inconclusive because the headless
+  WebGPU device fails while creating a buffer; physical-GPU parity remains
+  open.
 - Baseline audit checks on 2026-10-02: `bun run lint` and
   `bun run type-check:vue` both pass. No test suite was run.
 - After the route-theme fix, `bun run build` passed end to end: Vue type check,
@@ -108,10 +112,8 @@ Current known facts:
   generation, Vite production output, and configured gzip/media budgets.
   Tracked hashed `dist` assets were regenerated with the source change. The
   largest public asset remains `coming-soon.mp4` at about 5.3 MB; it fits the
-  current media budget. Physical browser confirmation of Works/Manifesto theme
-  parity is still required before closing the defect. A local dev server could
-  not be started in this sandbox (`listen EPERM` on 127.0.0.1:5173), so this
-  turn has no browser reproduction evidence.
+  current media budget. Manual browser evidence and its GPU limitation are
+  recorded below.
 - Phase 1 trace found two worthwhile seam fixes. The page-section event used a
   vague `index` name for the canonical world slot, while Experience separately
   subtracted a literal `1` for route-stage indices; the payload is now
@@ -301,18 +303,44 @@ Route SEO source trace: canonical manifest entries, per-page metadata, blog
 entries, sitemap, and prerender inputs share their data sources. Case-study
 metadata carries its own canonical detail path and is reapplied on project and
 locale changes. Unknown paths render the home fallback and use the home
-canonical. These are source-level findings; direct URL and crawler behavior
-still require deployment/browser verification.
+canonical. Direct-route behavior was confirmed against Vite production preview;
+production-host resolution and crawler delivery remain deployment gates.
+
+The build now prerenders every known SPA page and published case study into
+its own static HTML entry using the route manifest, page metadata/i18n tables,
+and case-study records. Each generated entry is checked for its expected route
+marker, exactly one H1, canonical and Open Graph URL. Root metadata now matches
+the home metadata table; route HTML cache rules cover every generated page.
+The nine generated route documents pass artifact inspection. Vite production
+preview also returned HTTP 200 for `/`, each SPA route, one case study, blog
+index/article and an unknown path; returned title/canonical values matched
+their route (unknown path used home metadata). This verifies the local Vite
+static resolver, not the production host, which still must map extensionless
+routes to the emitted `.html` files.
 
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s
 while the authored visible sections remain unchanged. Continue checking focus
 and landmark behavior in a browser.
 
-Production `vite preview` could not bind `127.0.0.1:4173` in this execution
-environment (`listen EPERM`), matching the earlier dev-server bind restriction.
-Therefore direct-route, inverse-theme, keyboard, WebGPU, and WebGL2 runtime
-acceptance remain unverified here; source/build success does not close them.
+Chromium visual QA reproduced the inverse-theme contrast issue on `/works` and
+`/manifesto`: polarity classes and foreground tokens changed, but the HTML
+shell kept its hard-coded dark background. The shell now uses the shared theme
+background token with a startup fallback. Manual Chromium after rebuild
+confirmed `/works` paints light (`rgb(233, 238, 245)`) with dark heading text
+when inverse is active. On `/manifesto`, the toggle and computed shell colors
+also changed as expected, but the screenshot remained dark while the console
+reported `createBuffer` failure and repeated WebGPU `popErrorScope` errors.
+This environment has no usable NVIDIA driver/GPU device, so Manifesto visual
+parity and the WebGPU render path remain unverified on supported hardware.
+
+The default sandbox cannot bind `127.0.0.1:4173`; an approved loopback-only
+preview session enabled the HTTP checks above and was stopped afterward. The
+CUA browser kernel could not start (`bwrap` bad descriptor for `.aws`); manual
+Chromium was used for inverse-theme interaction instead. Keyboard/focus,
+reduced-motion, client takeover, and route transitions still need focused
+browser review. WebGPU/TSL and WebGL2 backend/recovery need a supported browser
+and GPU runtime; source/build success does not close those gates.
 
 Latest production build and lint both pass. Bundle gates report Three at
 310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
@@ -401,12 +429,13 @@ tree for parallel old/new implementations, dead code, stale claims, and
 unnecessary abstractions. Update this plan from findings and stop when each
 remaining complexity has a concrete product or platform reason.
 
-The existing Prettier scripts have no repository config or generated-file
-ignore list. `.prettierignore` now protects build output, generated prerenders,
-generated blog route documents, and the generated sitemap from write commands.
-A source-only baseline check still flags 169 authored files under Prettier's
-default style; a blanket rewrite would obscure the ongoing architecture diff,
-so agreeing and applying a source style remains open.
+The existing Prettier scripts have no repository config. `.prettierignore`
+protects build output, generated prerenders, generated blog route documents,
+and the generated sitemap from broad write commands. The blog prerender step
+uses its explicit output list and an empty allowlist file to retain its
+formatting pass. A source-only baseline check still flags 169 authored files
+under Prettier's default style; a blanket rewrite would obscure the ongoing
+architecture diff, so agreeing and applying a source style remains open.
 
 Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend

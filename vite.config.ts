@@ -294,7 +294,10 @@ export default defineConfig(({ mode }) => {
         // replaces the shell content on mount either way.
         const prerenderPath = resolve(root, 'prerender', 'home.html')
         const prerender = existsSync(prerenderPath) ? readFileSync(prerenderPath, 'utf8') : ''
-        return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
+        return html.replace(
+          '<!--jlz-app-content-start--><!--jlz-app-content-end-->',
+          `<!--jlz-app-content-start-->${prerender}<!--jlz-app-content-end-->`,
+        )
       },
     },
   ],

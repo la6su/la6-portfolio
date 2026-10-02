@@ -15,6 +15,18 @@
 # ── HTML entry points — always revalidate (OG tags, meta, content) ──
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
+/services.html
+  Cache-Control: public, max-age=0, must-revalidate
+/works.html
+  Cache-Control: public, max-age=0, must-revalidate
+/works/*
+  Cache-Control: public, max-age=0, must-revalidate
+/manifesto.html
+  Cache-Control: public, max-age=0, must-revalidate
+/lab.html
+  Cache-Control: public, max-age=0, must-revalidate
+/contact.html
+  Cache-Control: public, max-age=0, must-revalidate
 /blog.html
   Cache-Control: public, max-age=0, must-revalidate
 /blog/*
