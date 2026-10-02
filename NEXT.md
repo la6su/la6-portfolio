@@ -61,6 +61,21 @@ or preserve a wrapper solely because a test currently encodes it.
   conditional technical debt: identify its reproducible consumer and current
   necessity before retaining it. Do not remove deployment workarounds without
   checking the actual hosting/proxy contract.
+- Renderer-loop comparison against the installed `@tresjs/core` 5.9.2 shows
+  why `Experience` still needs a project scheduler: Tres on-demand mode counts
+  invalidated render frames and gates its own render callback, while this app
+  advances a custom WebGPU/post pipeline from `onBeforeLoop` and runs
+  animations across multiple RAF ticks. `SceneHost`'s notify-only render
+  callback keeps Tres's frame counter in sync. Do not remove this scheduler
+  just because the canvas also says `render-mode="on-demand"`; reassess only
+  if rendering is returned to Tres's normal render callback.
+- Removed a frame-path config round trip in `Experience.update()`: section
+  objects already reference their canonical `PhaseConfig`, so the current and
+  next section configs now come directly from one sections/index snapshot.
+  The active transform-phase config is also looked up once per frame and
+  shared by section arrival and context-change handling. Phase lookup still
+  uses `getConfig()` because its key is a transform result, not a section
+  array index.
 - TSL effects are bespoke product visuals; keep them where they express
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
@@ -208,6 +223,7 @@ are explicit.
 
 Phase 1 is active. Startup cancellation now has a guard; its focused
 regression case and runtime ownership trace remain. Phase 2 is active: unit
-tests have been relocated; next remove verified duplicate policy/wrappers.
+tests have been relocated and redundant per-frame config lookups removed; next
+continue the ownership audit before selecting a broader collapse.
 Phases 3–4 are pending audit evidence; no production-ready claim is made.
 Keep this status current after each completed slice.

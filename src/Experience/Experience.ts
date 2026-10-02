@@ -422,9 +422,7 @@ export class Experience {
     if (!this.isLifecycleCurrent(token)) return
     // Apply the initial section's light and ground state before the first
     // rendered frame.
-    const firstCfg = this.coordinator.getConfig(
-      this.coordinator.sections[1]?.phaseConfig?.id ?? 'sec_intro',
-    )
+    const firstCfg = this.coordinator.sections[1]?.phaseConfig
     if (firstCfg) {
       this.lights.changeSection(firstCfg)
       this.ground.applyInitialConfig(firstCfg.ground)
@@ -817,16 +815,13 @@ export class Experience {
     const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
     // Drive the baku material blend — from→to slot colors + phaseProgress
     // (scroll t) through SplashCube.updateWorldBlend.
+    const sections = this.coordinator.sections
+    const idx = this.coordinator.currentSectionIndex
     if (this.baku) {
-      const fromCfg = this.coordinator.getConfig(
-        this.coordinator.sections[this.coordinator.currentSectionIndex]?.phaseConfig?.id ??
-          'sec_intro',
-      )
+      const fromCfg = sections[idx]?.phaseConfig
       // Blend toward the next slot (clamped to the last of the six).
-      const toIdx = Math.min(this.coordinator.currentSectionIndex + 1, WORLD_SLOT_COUNT - 1)
-      const toCfg = this.coordinator.getConfig(
-        this.coordinator.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro',
-      )
+      const toIdx = Math.min(idx + 1, WORLD_SLOT_COUNT - 1)
+      const toCfg = sections[toIdx]?.phaseConfig
       if (fromCfg && toCfg) {
         this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
@@ -840,20 +835,19 @@ export class Experience {
 
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
-    const idx = this.coordinator.currentSectionIndex
+    const cfg = this.coordinator.getConfig(worldState.currentPhase)
     // Dispatch section-change on EVERY section index change (not just context).
     // The app shell reveals the matching DOM content; Experience handles the
     // scene-specific light and cube response to this same section event.
     if (idx !== this._prevSectionIndex) {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
-      const cfgForSection = this.coordinator.getConfig(worldState.currentPhase)
       // The initial sync is excluded because buildScene already applied the
       // intro light target before the first frame.
-      if (!isInitialSectionSync && cfgForSection) {
-        this.lights.changeSection(cfgForSection)
+      if (!isInitialSectionSync && cfg) {
+        this.lights.changeSection(cfg)
       }
-      const sectionId = cfgForSection?.domSection ?? `section-${idx}`
+      const sectionId = cfg?.domSection ?? `section-${idx}`
       // On content pages the sectionId is 'content-N' — it doesn't correspond
       // to any [data-section] DOM element. ContentReveal's sectionHandler
       // guards against this, but we also skip the dispatch here to avoid
@@ -863,8 +857,8 @@ export class Experience {
       if (isHomePage && !isInitialSectionSync) {
         eventBus.emit('jlz:section-change', {
           sectionId,
-          context: cfgForSection?.context,
-          configId: cfgForSection?.id,
+          context: cfg?.context,
+          configId: cfg?.id,
           index: idx,
         })
       }
@@ -888,7 +882,6 @@ export class Experience {
     }
 
     // Context switch (post-processing preset)
-    const cfg = this.coordinator.getConfig(worldState.currentPhase)
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is re-targeted by the transform pass on section arrival —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
