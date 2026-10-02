@@ -742,6 +742,22 @@ All four article URLs now load the JavaScript, TypeScript, C, GLSL, and CSS
 grammars without page errors or failed requests; code blocks contain
 highlighted tokens. A GLSL shader snippet also produces Prism tokens. The blog
 index intentionally does not load Prism.
+The current authored URL inventory scanned 189 source/content/public files and
+found 30 fixed root-path references under assets, fonts, vendor, and brand
+files; every referenced file exists in both `public/` and `dist/`. Direct
+dependency review found a current consumer for each package: source/runtime,
+prerender/build tooling, type resolution, lint/format configuration, or the
+existing unit/browser suites. The quality workflow rebuilds and diff-checks
+tracked generated outputs, then runs unit/lint; its browser job runs the
+cross-engine matrix and host-teardown scenario. These configured suites were
+not run locally because the repository contract requires an explicit request.
+Manual production Chromium with SwiftShader produced Three's
+`WebGPU is not available, running under WebGL2 backend` fallback warning, then
+created a WebGL2 context on `.jlz-scene-canvas`. Across Home → Works →
+Manifesto → Contact SPA navigation it kept exactly one scene canvas; the scene
+canvas and host stayed `aria-hidden`, with no page errors or failed requests.
+This confirms software WebGL2 fallback and persistent canvas ownership; it
+does not establish behavior or visual parity on physical GPU hardware.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals
