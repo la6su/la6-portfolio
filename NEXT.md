@@ -198,6 +198,11 @@ preserve custom policy only when code or measurements prove the difference.
   reactive value bound to the SFC prop; retained the root reference only for
   its camera-local transforms. Controller tests cover visibility transitions
   and reduced-motion snap.
+- `PointerInkStage` repeated its Tres-declared group visibility/name and mesh
+  name, position, frustum, render order and initial scale during node binding.
+  Removed the root bind/reference and repeated static writes; the controller
+  now binds only the mesh whose scale it animates, exposes reactive visibility
+  to the shared SFC, and Tres remains the static prop owner.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -983,6 +988,13 @@ now drives the Tres `visible` prop through one shallow reactive value; the
 controller still owns camera-local transform updates. Vue type-check, ESLint,
 105/105 unit tests, production build/budgets and Firefox repeated Contact
 route cycles pass (1/1).
+
+**Shared PointerInk scene ownership:** Contact halo and Manifesto wash share
+one declarative Vue owner. Removed its redundant static Object3D assignments
+and root lifecycle handoff; the behavior controller keeps only the animated
+mesh binding and reactive visibility state. Vue type-check, ESLint, 105/105
+unit tests, production build/budgets and Firefox repeated Contact route cycles
+pass (1/1).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

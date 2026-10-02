@@ -12,6 +12,7 @@
 // shared plane geometry refcounted across concurrent stage instances.
 
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import { MeshBasicNodeMaterial, type Node, type UniformNode } from 'three/webgpu'
 import { Fn, float, uniform } from 'three/tsl'
 import { input } from '../Input'
@@ -77,7 +78,7 @@ export class PointerInkStage {
   private active = false
   private disposed = false
   private reducedMotion = prefersReducedMotion()
-  private root: THREE.Group | null = null
+  private readonly _visible = shallowRef(false)
   private inkMesh: THREE.Mesh | null = null
 
   // Reveal damp (0 hidden → 1 shown) — exponential, no timeline to rewind.
@@ -153,25 +154,16 @@ export class PointerInkStage {
   }
 
   get visible(): boolean {
-    return this.root?.visible ?? false
+    return this._visible.value
   }
 
-  bindNodes(root: THREE.Group, inkMesh: THREE.Mesh): void {
+  bindMesh(inkMesh: THREE.Mesh): void {
     if (this.disposed) return
-    this.root = root
     this.inkMesh = inkMesh
-    root.name = this.config.stageName
-    root.visible = this.active
-    inkMesh.name = this.config.meshName
-    inkMesh.frustumCulled = false
-    inkMesh.renderOrder = 1
-    inkMesh.position.set(...this.config.meshPosition)
-    inkMesh.scale.setScalar(0.001)
   }
 
-  unbindNodes(root: THREE.Group): void {
-    if (this.root !== root) return
-    this.root = null
+  unbindMesh(inkMesh: THREE.Mesh): void {
+    if (this.inkMesh !== inkMesh) return
     this.inkMesh = null
   }
 
@@ -185,7 +177,7 @@ export class PointerInkStage {
   setActive(active: boolean): void {
     if (this.disposed) return
     this.active = active
-    if (this.root) this.root.visible = active
+    this._visible.value = active
     if (this.reducedMotion) {
       this.settleReducedMotion()
       return
@@ -262,10 +254,9 @@ export class PointerInkStage {
     if (this.disposed) return
     this.disposed = true
     this.active = false
-    if (this.root) this.root.visible = false
+    this._visible.value = false
     this.material.dispose()
     releaseGeometry(this.config.planeSize[0], this.config.planeSize[1])
-    this.root = null
     this.inkMesh = null
   }
 }
