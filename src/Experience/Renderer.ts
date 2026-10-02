@@ -61,7 +61,7 @@ export class Renderer {
   // Post-processing manager (section-aware crossfade)
   public postManager = new PostProcessingManager();
 
-  // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
+  // Shared Three TSL graph, skipped only by the low-tier quality policy.
   pipeline: RenderPipeline | null = null;
 
   // Device-loss recovery is bounded by the backend policy.

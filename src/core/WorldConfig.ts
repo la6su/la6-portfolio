@@ -325,10 +325,9 @@ type ContentPalette = {
   bakuEmissive: number
   fogColor: number
   groundColor: number
-  /** Authored restrained bloom for the page family (WebGPU post graph only;
-   * WebGLBackend direct-renders without post, so values must read as polish,
-   * never as the primary content carrier). Bounded by home's authored range
-   * (sec_contact 0.2 … sec_about 0.4). */
+  /** Restrained bloom for the page family, applied by the shared TSL graph
+   * on either backend. Bounded by home's authored range (sec_contact 0.2 …
+   * sec_about 0.4); low-tier devices skip the full-screen graph. */
   postBloom: number
   /** Ink-tinted grade channels — the page's voice in the shared crossfaded
    * post graph. Shadows tint dark areas, highlights tint bright areas

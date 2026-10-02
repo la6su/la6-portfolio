@@ -129,9 +129,10 @@ or preserve a wrapper solely because a test currently encodes it.
   about `WebGLRenderer`/`ShaderMaterial`. Post now uses one TSL graph on either
   backend. Backend selection is Three's automatic WebGPU-to-WebGL2 behavior;
   the app does not need a second TSL/GLSL implementation. Low-tier devices
-  still skip the full-screen graph as a quality policy. A separate graph
-  construction error currently logs once and draws the scene directly; audit
-  whether that visual degradation policy is needed. Forced-WebGL Chromium
+  still skip the full-screen graph as a quality policy. A graph construction
+  or render error now releases any partial graph resources and propagates
+  through the normal frame error path instead of silently changing render
+  modes. Forced-WebGL Chromium
   smoke confirmed the graph allocated and rendered without console errors.
   Firefox smoke reached `/lab` with the WebGL2 backend, one scene canvas, one
   active section, and no app errors. The user has since confirmed physical
@@ -213,6 +214,11 @@ or preserve a wrapper solely because a test currently encodes it.
   now receives the current scene/camera references on each render, preserving
   one compiled graph. Firefox smoke confirmed home → playing Showreel video →
   Escape back to home, with a 1920px video frame and no browser errors.
+- Removed `RenderPipeline`'s silent TSL-error path that disabled post and
+  direct-rendered forever. `TSLPostPipeline` still releases partially built
+  graph resources, then the existing frame error path records the failure and
+  stops the demand loop. Direct rendering remains only the explicit low-tier
+  quality policy. Type-check and production bundle budgets pass.
 
 ## Architecture direction
 
@@ -410,8 +416,8 @@ unit tests have been relocated, redundant per-frame config lookups removed,
 and Vite's late Three dependency optimization fixed to avoid loading multiple
 Three cores during dev startup; continue the ownership audit before selecting
 a broader collapse. Phase 3 is active: the TSL post graph is shared across
-backends, Showreel scene switching uses the shared graph correctly, and static
-transforms are declarative in reviewed scene owners; the rest of the scene
-ownership and allocation audit remains. Phase 4 is pending. No production-ready
-claim is made.
+backends, graph errors no longer silently change render modes, Showreel scene
+switching uses the shared graph correctly, and static transforms are
+declarative in reviewed scene owners; the rest of the scene ownership and
+allocation audit remains. Phase 4 is pending. No production-ready claim is made.
 Keep this status current after each completed slice.

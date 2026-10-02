@@ -21,8 +21,6 @@ export class RenderPipeline {
   private readonly _renderer: WebGPURenderer
   private _postPipeline: TSLPostPipeline | null = null
   private readonly _postProcessingEnabled: boolean
-  /** Avoid rebuilding a graph that failed on this renderer/backend. */
-  private _postProcessingFailed = false
   private _paramsDirty = true
 
   constructor(renderer: WebGPURenderer, postProcessingEnabled = true) {
@@ -53,45 +51,33 @@ export class RenderPipeline {
     this._paramsDirty = true
   }
 
-  /** Render: scene → post passes → screen */
+  /** Render through the shared TSL graph, unless the selected tier skips it. */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (this._postProcessingEnabled && !this._postProcessingFailed) {
-      try {
-        let pipeline = this._postPipeline
-        if (!pipeline) {
-          pipeline = new TSLPostPipeline(this._renderer)
-          this._postPipeline = pipeline
-          this._paramsDirty = true
-        }
-        if (this._paramsDirty) {
-          pipeline.updateParams(this._params)
-          this._paramsDirty = false
-        }
-        // The graph handles output conversion; disable renderer tone mapping
-        // for this draw and restore the renderer setting afterward.
-        withNoToneMapping(this._renderer, () => pipeline.render(scene, camera))
-        return
-      } catch (error) {
-        this._disablePostProcessing(error)
+    if (this._postProcessingEnabled) {
+      let pipeline = this._postPipeline
+      if (!pipeline) {
+        pipeline = new TSLPostPipeline(this._renderer)
+        this._postPipeline = pipeline
+        this._paramsDirty = true
       }
+      if (this._paramsDirty) {
+        pipeline.updateParams(this._params)
+        this._paramsDirty = false
+      }
+      // The graph handles output conversion; disable renderer tone mapping
+      // for this draw and restore the renderer setting afterward.
+      withNoToneMapping(this._renderer, () => pipeline.render(scene, camera))
+      return
     }
 
-    // Low-tier policy or a TSL graph unsupported by the selected backend.
+    // Low-tier quality policy: skip the full-screen graph to save GPU work.
     this._renderer.render(scene, camera)
-  }
-
-  private _disablePostProcessing(error: unknown): void {
-    this._postProcessingFailed = true
-    console.error('[RenderPipeline] TSL post graph failed; rendering the scene directly.', error)
-    this._postPipeline?.dispose()
-    this._postPipeline = null
   }
 
   /** Destroy all GPU resources. Call once during teardown. */
   public dispose(): void {
     this._postPipeline?.dispose()
     this._postPipeline = null
-    this._postProcessingFailed = true
 
     // Drop this renderer's native post-pipeline and uniform node references.
     // Three r186's RenderPipeline.dispose() releases its fullscreen material;
