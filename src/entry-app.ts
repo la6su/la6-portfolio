@@ -243,12 +243,7 @@ async function startAppOnce(): Promise<void> {
 
   // Keep the router and route components in a lazy app chunk. The shared
   // scene runtime is booted once, regardless of the current route.
-  void import('./app')
-    .then((m) => m.mountVueApp())
-    .catch((error) => {
-      console.error('[entry-app] Vue mount failed:', error)
-      eventBus.emit('jlz:webgl-failed')
-    })
+  const appMount = import('./app').then((m) => m.mountVueApp())
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Vue shell text reveals are delayed until jlz:splash-entered
@@ -296,14 +291,20 @@ async function startAppOnce(): Promise<void> {
   // SceneHost has selected and published its renderer.
   if (noSceneRequested) {
     try {
+      // Do not enable Enter until the route owner and its splash listener are
+      // mounted; otherwise an immediate click can emit splash-entered first.
+      await appMount
       updateLoaderStatus('READY')
       eventBus.emit('jlz:webgl-ready')
     } catch (error) {
       console.error('[entry-app] no-scene bootstrap failed:', error)
-      eventBus.emit('jlz:webgl-failed')
       throw new Error('DOM-only application bootstrap failed', { cause: error })
     }
   } else {
+    void appMount.catch((error) => {
+      console.error('[entry-app] Vue mount failed:', error)
+      eventBus.emit('jlz:webgl-failed')
+    })
     bootStartedAt = performance.now()
     updateLoaderStatus('INITIALIZING')
   }

@@ -179,6 +179,13 @@ Current known facts:
   browser lacks `AbortSignal.any()`, the loaded/failed late result still follows
   the disposed-stage cleanup path. Stage order is source-reviewed; route-churn
   runtime evidence remains open.
+- DOM-only startup no longer enables splash Enter while the Vue route owner is
+  still loading. `entry-app` now awaits `mountVueApp()` before publishing
+  `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
+  outrun AppShell's `splash-entered` listener. Renderer startup remains
+  asynchronous and reports its own mount failures through `webgl-failed`.
+  Build/lint validation is pending; no-scene browser interaction remains an
+  open check.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -422,9 +429,9 @@ Execution order:
    GLTF network requests now abort on stage release where the platform supports
    Three's LoadingManager contract. Verify repeated route churn and resource
    plateau in browser before closing the stage lifecycle gate.
-6. Review startup cancellation, no-scene mode, route exit, renderer loss,
-   init error, host unmount, and concurrent teardown against actual callers.
-   Fix a state duplication only when the replacement preserves those paths.
+6. Source review/fix now covers startup cancellation, scene-init failure
+   unmount order, and the DOM-only Enter/mount race. Continue with route exit,
+   renderer loss, and concurrent teardown, then verify these paths in browser.
 7. Recheck the dev optimizer and lazy Cientos/Three chunks after renderer-boundary
    edits. A Vite optimizer restart is not evidence of duplicate runtimes; count
    evaluated Three core URLs and inspect the actual backend when browser access
