@@ -131,6 +131,11 @@ preserve custom policy only when code or measurements prove the difference.
   pose back over all three values, making the Experience writes ineffective.
   Removed the dead imperative camera initialization; the Camera controller
   remains the single pose owner around the Tres-declared node.
+- A live switch to reduced motion snapped scene owners, then called
+  `RenderScheduler.settleNow()` before a frame could display the snapped state.
+  Changed this to request one `motion-preference` draw; the normal settled
+  predicate closes the loop after it. Updated the scheduler contract and added
+  regression coverage for snap-then-draw behavior.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an
@@ -775,10 +780,10 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Latest verified:** 104 unit tests, Vue type-check, ESLint, production build and
+**Latest verified:** 105 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
-310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.77 kB / 32.70 kB
+310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.74 kB / 32.70 kB
 gzip Experience chunk. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined

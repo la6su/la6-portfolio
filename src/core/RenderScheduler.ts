@@ -6,7 +6,7 @@
 // - keep the loop while the host reports unsettled;
 // - stop after the settled frame;
 // - pause hidden tabs and invalidate once on resume;
-// - reduced motion settles synchronously.
+// - reduced-motion owners snap, then settle after one draw.
 //
 // SceneHost connects the framework-neutral LoopDriver to Tres's persistent
 // loop so Tres and Cientos subscribers share one RAF.
@@ -141,8 +141,7 @@ export class RenderScheduler {
   }
 
   /**
-   * Settle synchronously (reduced motion): stop the loop now. The current
-   * frame, if any, completes; no further frames run.
+   * Stop the loop synchronously. The current frame, if any, completes.
    */
   settleNow(): void {
     if (this._loopActive) this._stop()

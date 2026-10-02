@@ -284,10 +284,10 @@ export class Experience {
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()
-      this._scheduler.settleNow()
-    } else {
-      this._raiseRenderDemand('motion-preference')
     }
+    // Owners snap synchronously on reduce, but the new state still needs one
+    // draw before the demand scheduler can settle the loop.
+    this._raiseRenderDemand('motion-preference')
   }
 
   private async buildScene(token: number): Promise<void> {

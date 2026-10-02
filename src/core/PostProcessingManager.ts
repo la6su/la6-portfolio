@@ -139,7 +139,7 @@ export class PostProcessingManager {
     this._crossfadeActive = !this.displayMatchesCurrent()
   }
 
-  /** Settle a live post crossfade before reduced-motion stops the scheduler. */
+  /** Snap a live post crossfade before the final reduced-motion draw. */
   setReducedMotion(reduced: boolean): void {
     if (!reduced) return
     copyPostParams(this.display, this.current)
