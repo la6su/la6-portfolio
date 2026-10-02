@@ -107,6 +107,10 @@ let ownedRendererDisposal: (() => Promise<void>) | null = null
 let rendererDisposal: Promise<void> | null = null
 let stopTresLoop: (() => void) | null = null
 let tresFrameSubscription: { off: () => void } | null = null
+let cancelReadiness!: () => void
+const readinessCancelled = new Promise<void>((resolve) => {
+  cancelReadiness = resolve
+})
 
 // Tres loop bridge state.
 // Late-bound to the live Tres renderer manager in `onReady`; every port call
@@ -289,8 +293,8 @@ async function onReady(context: TresContext): Promise<void> {
   stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
-  const [camera, lights, ground, sectionRoots, servicesStage, envSphere, baku, introFrames, cursorTrail] =
-    await Promise.all([
+  const readyNodes = await Promise.race([
+    Promise.all([
       cameraSlot.promise,
       lightsSlot.promise,
       groundSlot.promise,
@@ -300,8 +304,19 @@ async function onReady(context: TresContext): Promise<void> {
       bakuSlot.promise,
       introFramesSlot.promise,
       cursorTrailSlot.promise,
+    ]),
+    readinessCancelled.then(() => null),
+  ])
+  if (!readyNodes || !isCurrent()) return
+  const [camera, lights, ground, sectionRoots, servicesStage, envSphere, baku, introFrames, cursorTrail] =
+    readyNodes
+  if (!envSkySlot.value.value) {
+    const envSkyReady = await Promise.race([
+      envSkySlot.promise,
+      readinessCancelled.then(() => null),
     ])
-  if (!envSkySlot.value.value) await envSkySlot.promise
+    if (!envSkyReady || !isCurrent()) return
+  }
   if (!isCurrent()) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
@@ -367,6 +382,7 @@ async function onReady(context: TresContext): Promise<void> {
 function onError(error: Error): void {
   if (settled || disposed) return
   settled = true
+  cancelReadiness()
   void disposeHostRenderer(ownedRenderer).catch((disposeError: unknown) => {
     console.error('[SceneHost] renderer cleanup failed after initialization error:', disposeError)
   })
@@ -376,6 +392,7 @@ function onError(error: Error): void {
 onBeforeUnmount(() => {
   settled = true
   disposed = true
+  cancelReadiness()
   lifecycleGeneration += 1
   stopTresLoop?.()
   stopTresLoop = null

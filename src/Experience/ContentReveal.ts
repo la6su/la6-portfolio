@@ -98,11 +98,11 @@ export class ContentReveal {
     })
   }
 
-  private applyTheme(sectionId: string, snap = false, sectionIndexHint = -1): void {
+  private applyTheme(sectionId: string, snap = false, worldIndexHint = -1): void {
     const configs = this.getConfigs()
     // CinematicNav reports canonical world slots (1–4); its index already
     // matches the config array. Initial DOM lookup is local and needs offset.
-    let contentConfigIndex = sectionIndexHint
+    let contentConfigIndex = worldIndexHint
     if (contentConfigIndex < 0 && this.page() !== 'home') {
       const localIndex = this.activeContentSectionIndex()
       if (localIndex >= 0) contentConfigIndex = localIndex + FIRST_CONTENT_SLOT
@@ -112,7 +112,7 @@ export class ContentReveal {
       configs.find((c) => c.domSection === sectionId || c.id === sectionId) ?? contentConfig
     // Config identity is canonical when present. Keep the nav index only for
     // a semantic fallback section without a world-config entry.
-    const sectionIndex = cfg ? configs.indexOf(cfg) : sectionIndexHint
+    const sectionIndex = cfg ? configs.indexOf(cfg) : worldIndexHint
     const sectionIsLight = cfg ? cfg.theme === 'light' : true
     const isInverse = themeManager.isInverse
     const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight

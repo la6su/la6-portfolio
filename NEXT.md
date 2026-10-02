@@ -287,6 +287,23 @@ Next inspect `SceneHost` readiness/renderer bridge and the split route policy
 between `Experience`, `SceneCoordinator`, and `StageRegistry` before moving
 state.
 
+Readiness trace update: the renderer is constructed synchronously by the
+`TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
+host publishes only after its declared Vue/Tres nodes report ready; Experience
+then adopts those nodes and starts its own init pipeline. On host teardown,
+stage slots clear before Tres children unmount and the renderer disposal is
+flushed afterward. A host unmount or renderer error during the readiness wait
+previously left `onReady` suspended on unresolved slots; the wait now races a
+host-owned cancellation signal, with a lifecycle generation check before
+publishing. No browser evidence was available for exercising that race.
+
+Route SEO source trace: canonical manifest entries, per-page metadata, blog
+entries, sitemap, and prerender inputs share their data sources. Case-study
+metadata carries its own canonical detail path and is reapplied on project and
+locale changes. Unknown paths render the home fallback and use the home
+canonical. These are source-level findings; direct URL and crawler behavior
+still require deployment/browser verification.
+
 Execution order:
 
 1. Finish a renderer lifecycle trace from factory construction through async
