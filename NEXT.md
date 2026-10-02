@@ -205,7 +205,12 @@ Current known facts:
   controls. Lint and the full production build pass, and tracked `dist` output
   was regenerated. A follow-up narrow-viewport geometry review increased the
   separation between the two top controls to prevent their minimum-size boxes
-  from overlapping; visual confirmation still needs browser verification.
+  from overlapping. Headless Chromium at 320×640 confirmed the mounted dialog
+  updates its accessible name from EN to RU on the language event, exposes the
+  pressed state, cycles Tab Close → Playback → Close, and keeps a 15.6 px gap
+  between controls with no page errors. The open state was supplied through the
+  existing event bridge for this UI check; actual video/GPU playback and
+  screen-reader behavior remain open.
 
 - Deployment inventory found no Caddy, HAProxy, Nginx, container, hosting, or
   publish configuration in this repository. `package.json` provides Vite

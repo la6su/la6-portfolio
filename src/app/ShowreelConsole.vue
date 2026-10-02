@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
-import { t } from "../core/i18n";
+import { getLang, t, TRANSLATIONS } from "../core/i18n";
 import type { ShowreelState } from "../Experience/World/ShowreelTheater";
 import { eventBus } from "../core/EventBus";
 import { noSceneRequested } from "../core/sceneMode";
@@ -11,6 +11,7 @@ const state = ref<ShowreelState>({
   time: 0,
   duration: 0,
 });
+const language = ref(getLang());
 const closeButton = ref<HTMLButtonElement | null>(null);
 const playbackButton = ref<HTMLButtonElement | null>(null);
 let restoreFocus: HTMLElement | null = null;
@@ -29,9 +30,13 @@ const phaseLabel = computed(() => {
   return state.value.phase === "exit" ? "CLOSING" : "ACQUIRING";
 });
 const playLabel = computed(() => (state.value.playing ? "PLAY" : "PAUSE"));
-const playbackButtonLabel = computed(() => t("showreel.togglePlayback"));
+const playbackButtonLabel = computed(
+  () => TRANSLATIONS[language.value]["showreel.togglePlayback"],
+);
 const playbackButtonText = computed(() =>
-  state.value.playing ? t("showreel.pauseShort") : t("showreel.playShort"),
+  state.value.playing
+    ? TRANSLATIONS[language.value]["showreel.pauseShort"]
+    : TRANSLATIONS[language.value]["showreel.playShort"],
 );
 const progress = computed(() => {
   const { time, duration } = state.value;
@@ -158,6 +163,9 @@ function announce(message: string): void {
 onMounted(() => {
   if (!enabled) return;
   unsubs.push(
+    eventBus.on("jlz:lang-change", () => {
+      language.value = getLang();
+    }),
     eventBus.on("jlz:showreel-state", onState),
     eventBus.on("jlz:close-media-layer", onCloseMediaLayer),
   );
