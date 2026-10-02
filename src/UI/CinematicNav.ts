@@ -193,12 +193,15 @@ export class CinematicNav {
 
     const wasSide = this._side
     this._side = 'center'
-    if (wasSide !== this._side) this._applySideState()
     this._mainSection = nextMain
+    if (wasSide !== this._side) {
+      this._applySideState()
+    }
     this._updateStoryState(position)
     this._notifySection(nextMain)
     this._setInteracting(true)
     this._queueInactive()
+    if (wasSide !== this._side) this._restorePreviousFocus()
   }
 
   private _updateStoryState(position: number): void {
@@ -282,8 +285,13 @@ export class CinematicNav {
     this._notifySection(this._mainSection)
     this._setInteracting(true)
     this._queueInactive(650)
-    this._restoreFocus?.focus({ preventScroll: true })
+    this._restorePreviousFocus()
+  }
+
+  private _restorePreviousFocus(): void {
+    const target = this._restoreFocus
     this._restoreFocus = null
+    if (target?.isConnected) target.focus({ preventScroll: true })
   }
 
   private _scrollToMain(index: number): void {
@@ -359,6 +367,7 @@ export class CinematicNav {
       return
     }
 
+    const wasSide = this._side
     this._side = 'center'
     this._applySideState()
     this._mainSection = target
@@ -367,6 +376,7 @@ export class CinematicNav {
     this._updateStoryState(target - FIRST_MAIN)
     this._setInteracting(true)
     this._queueInactive(700)
+    if (wasSide !== 'center') this._restorePreviousFocus()
   }
 
   goToDirection(direction: 1 | -1): void {

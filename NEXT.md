@@ -431,6 +431,11 @@ content available behind the modal. It now has a labelled modal dialog, a
 localized close button, a one-control focus trap, inert/hidden background
 content with prior-state restoration, and focus return. Lint and the production
 build pass; browser keyboard/screen-reader verification remains open.
+`CinematicNav` also closed sheets through native scroll synchronization or a
+programmatic story target without returning focus; the focused close button
+could then remain inside an `aria-hidden` sheet. Those exit paths now share the
+saved-focus restoration used by Escape and the sheet close button. Lint and the
+production build pass; browser focus verification remains open.
 The renderer-failure boot gate was created after the initial document
 translation pass and kept English copy in saved-RU sessions. It now carries
 normal i18n markers and applies the active locale immediately after insertion;
