@@ -41,6 +41,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.sceneErrorCode': 'ERR:SCENE — INITIALIZATION FAILED',
     'splash.continueWithout3d': 'Continue without 3D',
     'splash.retry': 'Retry',
+    'splash.soundOnTooltip': 'Sound: On (click to mute)',
+    'splash.soundOffTooltip': 'Sound: Off (click to enable)',
     'renderer.failureTitle': '3D rendering unavailable',
     'renderer.failureDescription': 'The graphics device could not be restored. Reload the page to try again.',
 
@@ -250,6 +252,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.sceneErrorCode': 'ОШИБКА: СЦЕНА — НЕ УДАЛОСЬ ЗАПУСТИТЬ',
     'splash.continueWithout3d': 'Продолжить без 3D',
     'splash.retry': 'Повторить',
+    'splash.soundOnTooltip': 'Звук включён (нажмите, чтобы выключить)',
+    'splash.soundOffTooltip': 'Звук выключен (нажмите, чтобы включить)',
     'renderer.failureTitle': '3D-графика недоступна',
     'renderer.failureDescription': 'Не удалось восстановить графическое устройство. Перезагрузите страницу и попробуйте снова.',
 
@@ -508,5 +512,9 @@ export function applyTranslations(): void {
   document.querySelectorAll<HTMLElement>('[data-i18n-aria-label]').forEach((el) => {
     const key = el.getAttribute('data-i18n-aria-label')
     if (key) el.setAttribute('aria-label', t(key))
+  })
+  document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title')
+    if (key) el.title = t(key)
   })
 }

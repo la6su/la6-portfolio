@@ -13,9 +13,11 @@ function initSoundToggle(): void {
   btn.dataset.jlzToggleBound = 'sound'
   let soundOn = !getSoundMuted()
   const update = () => {
+    const titleKey = soundOn ? 'splash.soundOnTooltip' : 'splash.soundOffTooltip'
     btn.setAttribute('aria-pressed', String(soundOn))
     btn.classList.toggle('is-off', !soundOn)
-    btn.title = soundOn ? 'Sound: On (click to mute)' : 'Sound: Off (click to enable)'
+    btn.setAttribute('data-i18n-title', titleKey)
+    btn.title = t(titleKey)
   }
   update()
   // Plain listeners: the bootstrap runs exactly once per page (the only retry
@@ -57,7 +59,8 @@ function initLangToggle(): void {
     const lang = getLang()
     value.textContent = lang
     btn.setAttribute('aria-pressed', String(lang === 'RU'))
-    btn.title = `Language: ${lang} (click to switch)`
+    btn.setAttribute('data-i18n-title', 'common.switchLanguage')
+    btn.title = t('common.switchLanguage')
   }
   update()
   btn.addEventListener('click', () => {
