@@ -70,8 +70,16 @@ function applyMetadata(document, metadata) {
   html = setMeta(html, "property", "og:description", metadata.description);
   html = setMeta(html, "property", "og:url", origin + metadata.path);
   html = setMeta(html, "property", "og:type", metadata.type ?? "website");
+  html = setMeta(html, "property", "og:image", origin + "/preview.jpg");
+  html = setMeta(
+    html,
+    "property",
+    "og:image:secure_url",
+    origin + "/preview.jpg",
+  );
   html = setMeta(html, "name", "twitter:title", metadata.title);
   html = setMeta(html, "name", "twitter:description", metadata.description);
+  html = setMeta(html, "name", "twitter:image", origin + "/preview.jpg");
   const canonical = html.match(/<link\b(?=[^>]*\brel="canonical")[^>]*>/)?.[0];
   if (!canonical)
     throw new Error("Static route document is missing canonical link");
@@ -118,6 +126,13 @@ try {
       "Built index.html is missing the prerender content markers",
     );
   }
+  const homeMetadata = pageMeta.PAGE_META_DATA.home;
+  const homeDocument = applyMetadata(template, {
+    title: i18n.TRANSLATIONS.EN[homeMetadata.titleKey],
+    description: i18n.TRANSLATIONS.EN[homeMetadata.descKey],
+    path: "/",
+  });
+  writeFileSync(resolve(dist, "index.html"), homeDocument, "utf8");
 
   const views = [
     { page: "services", path: "/services", component: services.default },
