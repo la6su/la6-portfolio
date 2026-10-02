@@ -249,9 +249,6 @@ export class StageRegistry {
         await this._ctx.host.contactCyprus.unmount(stage)
         stage.dispose()
       },
-      onDispose: () => {
-        this._cyprusActive = false
-      },
     }
   }
 
@@ -260,6 +257,7 @@ export class StageRegistry {
   }
 
   public disposeContactCyprusStage(): Promise<void> {
+    this._cyprusActive = false
     return disposeLazyStage(this._contactCyprusStageContract())
   }
 

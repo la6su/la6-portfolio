@@ -13,7 +13,6 @@
 //   configure— route wiring applied once the stale guard passes
 //   attach   — scene insertion
 //   release  — teardown in the exact per-stage order (dispose ↔ detach)
-//   onDispose— extra invalidation (e.g. the Cyprus active flag)
 
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 
@@ -82,8 +81,6 @@ export interface LazyStageContract<T extends object> {
   configure: (stage: T) => void
   /** Release resources in the exact per-stage order (dispose ↔ detach). */
   release: (stage: T) => void | Promise<void>
-  /** Extra invalidation when the owner is disposed. */
-  onDispose?: () => void
 }
 
 /**
@@ -225,7 +222,6 @@ export function disposeLazyStage<T extends object>(
   const release = stage ? releaseLazyStage(contract, stage) : owner.waitForReleases()
   if (stage) owner.stage = null
   owner.promise = null
-  contract.onDispose?.()
   // Let a create() continuation already queued for this turn reach mount().
   // It may have produced a stage just before disposal but not assigned it to
   // the owner yet; mount() will see the stale request and register its release.
