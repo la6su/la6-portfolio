@@ -44,7 +44,10 @@ import { localizedPath } from './core/routeManifest'
 // the Vue router mounts and before the splash Enter button
 // is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
 // and for navigation tests regardless of whether `experience.init()` succeeds.
-;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (event, detail) => {
+;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (
+  event,
+  detail,
+) => {
   ;(eventBus.emit as (name: string, detail?: unknown) => void).call(eventBus, event, detail)
 }
 
@@ -70,7 +73,11 @@ function initLangToggle(): void {
     // entry URL in place so the first router resolution sees the right locale.
     if (!window.__jlzRouterReady) {
       const path = localizedPath(lang, window.location.pathname)
-      window.history.replaceState(window.history.state, '', `${path}${window.location.search}${window.location.hash}`)
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${path}${window.location.search}${window.location.hash}`,
+      )
     }
     update()
   })
@@ -127,32 +134,35 @@ function showLoadError(): void {
         </div>
       `
       applyTranslations()
-      parent.querySelector<HTMLButtonElement>('[data-jlz-continue-without-scene]')?.addEventListener(
-        'click',
-        () => {
-          const loader = document.getElementById('jlz-app-loader')
-          if (!loader) return
-          loader.setAttribute('aria-busy', 'false')
-          loader.classList.add('is-exiting')
-          eventBus.emit('jlz:splash-entered')
-          let fallbackTimer = 0
-          const removeLoader = (event?: AnimationEvent): void => {
-            if (event && (event.target !== loader || event.animationName !== 'loader-exit')) return
-            if (!loader.isConnected) return
-            window.clearTimeout(fallbackTimer)
-            loader.removeEventListener('animationend', removeLoader)
-            loader.remove()
-            const main = document.querySelector<HTMLElement>('#spa-content')
-            if (main) {
-              main.tabIndex = -1
-              main.focus({ preventScroll: true })
+      parent
+        .querySelector<HTMLButtonElement>('[data-jlz-continue-without-scene]')
+        ?.addEventListener(
+          'click',
+          () => {
+            const loader = document.getElementById('jlz-app-loader')
+            if (!loader) return
+            loader.setAttribute('aria-busy', 'false')
+            loader.classList.add('is-exiting')
+            eventBus.emit('jlz:splash-entered')
+            let fallbackTimer = 0
+            const removeLoader = (event?: AnimationEvent): void => {
+              if (event && (event.target !== loader || event.animationName !== 'loader-exit'))
+                return
+              if (!loader.isConnected) return
+              window.clearTimeout(fallbackTimer)
+              loader.removeEventListener('animationend', removeLoader)
+              loader.remove()
+              const main = document.querySelector<HTMLElement>('#spa-content')
+              if (main) {
+                main.tabIndex = -1
+                main.focus({ preventScroll: true })
+              }
             }
-          }
-          loader.addEventListener('animationend', removeLoader)
-          fallbackTimer = window.setTimeout(() => removeLoader(), 1300)
-        },
-        { once: true },
-      )
+            loader.addEventListener('animationend', removeLoader)
+            fallbackTimer = window.setTimeout(() => removeLoader(), 1300)
+          },
+          { once: true },
+        )
     }
   }
 }

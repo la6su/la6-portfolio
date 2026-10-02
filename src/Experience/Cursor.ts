@@ -107,7 +107,7 @@ export class Cursor {
   private stuckY = 0
   // Magnetic targets ease into place through the cursor spring.
   // toward element center with spring-damper (organic wobble, not instant jump)
-    private currentRadius = 28
+  private currentRadius = 28
   private readonly baseRadius = 28
   private readonly targetRadius = 44
   private readonly noiseScale = 150

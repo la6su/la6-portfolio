@@ -103,10 +103,7 @@ export class SceneCoordinator {
    * Compile the home Works and one-shot portal materials while the inline
    * splash still covers the scene. They are exposed only to the compiler.
    */
-  public async prewarmHomeMedia(
-    renderer: WebGPURenderer,
-    camera: THREE.Camera,
-  ): Promise<void> {
+  public async prewarmHomeMedia(renderer: WebGPURenderer, camera: THREE.Camera): Promise<void> {
     if (this.page() !== 'home') return
 
     const group = this.sceneGroups[WORKS_SLOT_INDEX]
@@ -309,7 +306,10 @@ export class SceneCoordinator {
     const isLab = page === 'lab'
     const baku = this.owners.baku
     if (baku)
-      baku.visible = bakuVisibleOnRoute(page, this.owners.stages.contactCyprusStage?.isActive ?? false)
+      baku.visible = bakuVisibleOnRoute(
+        page,
+        this.owners.stages.contactCyprusStage?.isActive ?? false,
+      )
     const labGamepad = this.owners.stages.labGamepad
     if (labGamepad) {
       labGamepad.visible = isLab

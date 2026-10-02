@@ -25,7 +25,9 @@ describe('declarative services stage controller', () => {
     camera.updateMatrixWorld(true)
     stage.updateState(camera, 0, 0.1, true)
 
-    expect(root.position.x).toBeCloseTo(1 + 2 * Math.tan(THREE.MathUtils.degToRad(75 / 2)) * 5 * 1.5 * 0.22)
+    expect(root.position.x).toBeCloseTo(
+      1 + 2 * Math.tan(THREE.MathUtils.degToRad(75 / 2)) * 5 * 1.5 * 0.22,
+    )
     expect(root.position.y).toBeCloseTo(2)
     expect(root.position.z).toBeCloseTo(-2)
     expect(parts[0]?.position.x).toBeCloseTo(-0.24)

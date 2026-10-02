@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import UIkit from "../core/uikit";
-import { eventBus } from "../core/EventBus";
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import UIkit from '../core/uikit'
+import { eventBus } from '../core/EventBus'
 
-const container = ref<HTMLDivElement | null>(null);
+const container = ref<HTMLDivElement | null>(null)
 
 onMounted(() => {
   if (container.value) {
-    UIkit.update(container.value);
+    UIkit.update(container.value)
   }
-});
+})
 
 onBeforeUnmount(() => {
-  eventBus.emit("jlz:fullscreen-overlay-unmounted");
-});
+  eventBus.emit('jlz:fullscreen-overlay-unmounted')
+})
 </script>
 
 <template>
@@ -47,9 +47,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="jlz-fs-meta-end uk-visible@s uk-text-right">
           <div class="jlz-fs-counter uk-text-meta"></div>
-          <div
-            class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top"
-          ></div>
+          <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top"></div>
         </div>
       </header>
       <main class="jlz-fs-media-stage uk-position-relative">

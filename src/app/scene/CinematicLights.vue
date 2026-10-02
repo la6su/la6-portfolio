@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from 'vue'
-import {
-  type DirectionalLight,
-  type Group,
-  type HemisphereLight,
-  type PointLight,
-} from 'three'
+import { type DirectionalLight, type Group, type HemisphereLight, type PointLight } from 'three'
 import { CINEMATIC_INTRO_PRESET, type CinematicLightsNodes } from '../../Experience/World/Lights'
 
 type DeclarativeCinematicLights = CinematicLightsNodes

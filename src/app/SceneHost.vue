@@ -244,7 +244,10 @@ const {
   declarativeCarousel,
   declarativeShowreelTheater,
   clear: clearSceneStages,
-} = useSceneStages(() => !disposed, () => worksRootSlot.promise)
+} = useSceneStages(
+  () => !disposed,
+  () => worksRootSlot.promise,
+)
 
 async function disposeHostRenderer(renderer: UnifiedRenderSurface | null): Promise<void> {
   if (!renderer) return
@@ -321,8 +324,17 @@ async function onReady(context: TresContext): Promise<void> {
     readinessCancelled.then(() => null),
   ])
   if (!readyNodes || !isCurrent()) return
-  const [camera, lights, ground, sectionRoots, servicesStage, envSphere, baku, introFrames, cursorTrail] =
-    readyNodes
+  const [
+    camera,
+    lights,
+    ground,
+    sectionRoots,
+    servicesStage,
+    envSphere,
+    baku,
+    introFrames,
+    cursorTrail,
+  ] = readyNodes
   if (!envSkySlot.value.value) {
     const envSkyReady = await Promise.race([
       envSkySlot.promise,
@@ -448,12 +460,7 @@ onUnmounted(async () => {
 <template>
   <!-- Preserve the browser context menu on the interactive canvas;
        OrbitControls otherwise cancels it. -->
-  <div
-    v-if="!noScene"
-    class="jlz-scene-host"
-    aria-hidden="true"
-    @contextmenu.capture.stop
-  >
+  <div v-if="!noScene" class="jlz-scene-host" aria-hidden="true" @contextmenu.capture.stop>
     <TresCanvas
       ref="tresRef"
       class="canvas jlz-scene-canvas"
@@ -495,10 +502,7 @@ onUnmounted(async () => {
         v-if="declarativeContactTypography"
         :stage="declarativeContactTypography"
       />
-      <ContactCyprusStageOwner
-        v-if="declarativeContactCyprus"
-        :stage="declarativeContactCyprus"
-      />
+      <ContactCyprusStageOwner v-if="declarativeContactCyprus" :stage="declarativeContactCyprus" />
       <LabGamepadOwner v-if="declarativeLabGamepad" :stage="declarativeLabGamepad" />
       <WorksStageOwner
         v-if="hasMountedWorksRoute"

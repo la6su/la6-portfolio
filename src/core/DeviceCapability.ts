@@ -83,10 +83,7 @@ export class DeviceCapability {
    * Commit the renderer that was actually created. WebGPU availability is only
    * a hint: WebGPURenderer can still fall back to WebGL after async init.
    */
-  public setFinalRendererMode(
-    mode: RendererMode,
-    isFallbackAdapter: boolean | null = null,
-  ): void {
+  public setFinalRendererMode(mode: RendererMode, isFallbackAdapter: boolean | null = null): void {
     this.mode = mode
     this.tier = isFallbackAdapter === true ? 'low' : this.detectTier()
   }

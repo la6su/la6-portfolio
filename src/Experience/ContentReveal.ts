@@ -65,9 +65,7 @@ export class ContentReveal {
       '[data-section].section-active, [data-page-section].section-active',
     )
     return (
-      active?.getAttribute('data-section') ??
-      active?.getAttribute('data-page-section') ??
-      'intro'
+      active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
     )
   }
 
@@ -78,9 +76,9 @@ export class ContentReveal {
    */
   private activeContentSectionIndex(): number {
     const root = contentRoot()
-    const mainSections = [...root.querySelectorAll<HTMLElement>(
-      '.jlz-page > section[data-page-section]',
-    )].filter((section) => {
+    const mainSections = [
+      ...root.querySelectorAll<HTMLElement>('.jlz-page > section[data-page-section]'),
+    ].filter((section) => {
       const id = section.dataset.pageSection
       return id !== 'page-lab' && id !== 'page-menu'
     })

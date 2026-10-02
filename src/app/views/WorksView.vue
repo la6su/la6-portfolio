@@ -24,7 +24,13 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" tabindex="-1" data-page-view="content" class="uk-position-relative">
+  <main
+    id="spa-content"
+    ref="rootEl"
+    tabindex="-1"
+    data-page-view="content"
+    class="uk-position-relative"
+  >
     <article class="jlz-page jlz-works-page" data-page-view="works">
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <h1 class="uk-hidden-visually" data-i18n="works.observatory">An observatory of ideas.</h1>

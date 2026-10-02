@@ -68,19 +68,22 @@ export class ShowreelController {
     )
     theater.setReducedMotion(this._ctx.reducedMotion())
     this._theater = theater
-    const opening = this._ctx.mountTheater(theater).then(() => {
-      if (this._ctx.isDestroyed() || this._theater !== theater) {
-        return this._ctx.unmountTheater(theater).then(() => {
-          theater.dispose()
-          return null
-        })
-      }
-      return theater
-    }).catch(() => {
-      if (this._theater === theater) this._theater = null
-      theater.dispose()
-      return null
-    })
+    const opening = this._ctx
+      .mountTheater(theater)
+      .then(() => {
+        if (this._ctx.isDestroyed() || this._theater !== theater) {
+          return this._ctx.unmountTheater(theater).then(() => {
+            theater.dispose()
+            return null
+          })
+        }
+        return theater
+      })
+      .catch(() => {
+        if (this._theater === theater) this._theater = null
+        theater.dispose()
+        return null
+      })
     this._opening = opening
     void opening.then(() => {
       if (this._opening === opening) this._opening = null

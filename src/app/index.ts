@@ -119,11 +119,7 @@ export async function mountVueApp(): Promise<void> {
   })
   router.afterEach((to, from) => {
     const focusGeneration = ++routeFocusGeneration
-    if (
-      !disposed &&
-      appMounted &&
-      unlocalizedPath(to.path) !== unlocalizedPath(from.path)
-    ) {
+    if (!disposed && appMounted && unlocalizedPath(to.path) !== unlocalizedPath(from.path)) {
       // RouterLink focus can be lost when its route view is removed. Move
       // keyboard and screen-reader users to the new semantic page after Vue
       // has committed the RouterView swap. Locale-only changes keep focus on
@@ -224,9 +220,7 @@ export async function mountVueApp(): Promise<void> {
   // Story hashes must reach the 3D navigation owner. Ordinary fragment links
   // use browser scrolling; UIkit controls keep their own click behavior.
   const onClick = (event: MouseEvent): void => {
-    const anchorEl = (event.target as HTMLElement)?.closest(
-      'a[href]',
-    ) as HTMLAnchorElement | null
+    const anchorEl = (event.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
     if (!href?.startsWith('#section-')) return

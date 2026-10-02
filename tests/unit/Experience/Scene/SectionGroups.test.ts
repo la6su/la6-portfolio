@@ -34,7 +34,12 @@ describe('Vue-owned section roots', () => {
       scene.add(root)
       return root
     })
-    const owner = new SectionGroups(scene, () => 'home', () => 'center', roots)
+    const owner = new SectionGroups(
+      scene,
+      () => 'home',
+      () => 'center',
+      roots,
+    )
 
     expect(owner.groups).toEqual(roots)
     expect(worldSlotAt(INTRO_SLOT_INDEX).id).toBe('intro')
@@ -58,9 +63,15 @@ describe('Vue-owned section roots', () => {
     const roots = Array.from({ length: WORLD_SLOT_COUNT - 1 }, () => new THREE.Group())
     roots.forEach((root) => scene.add(root))
 
-    expect(() => new SectionGroups(scene, () => 'home', () => 'center', roots)).toThrow(
-      `Expected ${WORLD_SLOT_COUNT} Vue-owned section roots`,
-    )
+    expect(
+      () =>
+        new SectionGroups(
+          scene,
+          () => 'home',
+          () => 'center',
+          roots,
+        ),
+    ).toThrow(`Expected ${WORLD_SLOT_COUNT} Vue-owned section roots`)
     expect(scene.children).toHaveLength(WORLD_SLOT_COUNT - 1)
     expect(createWorksSection).not.toHaveBeenCalled()
   })
@@ -69,9 +80,15 @@ describe('Vue-owned section roots', () => {
     const scene = new THREE.Scene()
     const roots = Array.from({ length: WORLD_SLOT_COUNT }, () => new THREE.Group())
 
-    expect(() => new SectionGroups(scene, () => 'home', () => 'center', roots)).toThrow(
-      'is not attached to the Tres scene',
-    )
+    expect(
+      () =>
+        new SectionGroups(
+          scene,
+          () => 'home',
+          () => 'center',
+          roots,
+        ),
+    ).toThrow('is not attached to the Tres scene')
     expect(scene.children).toHaveLength(0)
   })
 })

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockTheaters = vi.hoisted(() => [] as Array<{ open: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }>)
+const mockTheaters = vi.hoisted(
+  () => [] as Array<{ open: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }>,
+)
 const disposeOrder = vi.hoisted(() => [] as string[])
 
 vi.mock('./World/ShowreelTheater', () => ({

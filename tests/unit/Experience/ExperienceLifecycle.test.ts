@@ -69,46 +69,43 @@ function createExperienceHarness(page = 'home'): {
   buildScene: (token: number) => Promise<void>
   destroy: () => Promise<void>
 } {
-  const instance = Object.assign(
-    Object.create(Experience.prototype) as object,
-    {
-      _destroyed: false,
-      _reducedMotion: false,
-      _lifecycleGeneration: 0,
-      _host: {
-        page: () => page,
-        sectionRoots: [],
-        servicesStage: {},
-        envSphere: { setReducedMotion: vi.fn() },
-        baku: {},
-        introFrames: {},
-        cursorTrail: {},
-        lights: {},
-        ground: {},
-        stages: {
-          carousel: { mount: lifecycle.mountCarousel },
-          particles: { mount: lifecycle.mountParticles },
-        },
+  const instance = Object.assign(Object.create(Experience.prototype) as object, {
+    _destroyed: false,
+    _reducedMotion: false,
+    _lifecycleGeneration: 0,
+    _host: {
+      page: () => page,
+      sectionRoots: [],
+      servicesStage: {},
+      envSphere: { setReducedMotion: vi.fn() },
+      baku: {},
+      introFrames: {},
+      cursorTrail: {},
+      lights: {},
+      ground: {},
+      stages: {
+        carousel: { mount: lifecycle.mountCarousel },
+        particles: { mount: lifecycle.mountParticles },
       },
-      scene: {},
-      _stages: {
-        dispose: vi.fn(async () => undefined),
-        reconcileRoute: lifecycle.reconcileRoute,
-        setReducedMotion: vi.fn(),
-      },
-      renderer: { instance: {}, dispose: vi.fn() },
-      camera: { instance: {}, destroy: vi.fn() },
-      _scheduler: { destroy: vi.fn() },
-      _showreel: { dispose: vi.fn(async () => undefined) },
-      features: { destroy: vi.fn() },
-      sfx: { dispose: vi.fn() },
-      _environment: { disposeCurrent: vi.fn() },
-      _cancelBreath: vi.fn(),
-      sectionGroups: null,
-      devPanel: null,
-      _stopSizeWatch: null,
     },
-  ) as unknown as {
+    scene: {},
+    _stages: {
+      dispose: vi.fn(async () => undefined),
+      reconcileRoute: lifecycle.reconcileRoute,
+      setReducedMotion: vi.fn(),
+    },
+    renderer: { instance: {}, dispose: vi.fn() },
+    camera: { instance: {}, destroy: vi.fn() },
+    _scheduler: { destroy: vi.fn() },
+    _showreel: { dispose: vi.fn(async () => undefined) },
+    features: { destroy: vi.fn() },
+    sfx: { dispose: vi.fn() },
+    _environment: { disposeCurrent: vi.fn() },
+    _cancelBreath: vi.fn(),
+    sectionGroups: null,
+    devPanel: null,
+    _stopSizeWatch: null,
+  }) as unknown as {
     buildScene: (token: number) => Promise<void>
     destroy: () => Promise<void>
   }
@@ -154,9 +151,7 @@ describe('Experience scene construction cancellation', () => {
     const experience = createExperienceHarness()
 
     const build = experience.buildScene(0)
-    await vi.waitFor(() =>
-      expect(lifecycle.mountParticles).toHaveBeenCalledOnce(),
-    )
+    await vi.waitFor(() => expect(lifecycle.mountParticles).toHaveBeenCalledOnce())
 
     const teardown = experience.destroy()
     finishMount()
@@ -174,9 +169,7 @@ describe('Experience scene construction cancellation', () => {
     const experience = createExperienceHarness()
 
     const build = experience.buildScene(0)
-    await vi.waitFor(() =>
-      expect(lifecycle.carouselInit).toHaveBeenCalledOnce(),
-    )
+    await vi.waitFor(() => expect(lifecycle.carouselInit).toHaveBeenCalledOnce())
 
     const teardown = experience.destroy()
     finishInit()
@@ -200,9 +193,7 @@ describe('Experience scene construction cancellation', () => {
     const stageDispose = vi.spyOn(runtime._stages, 'dispose')
 
     const initialization = experience.buildScene(0)
-    await vi.waitFor(() =>
-      expect(lifecycle.prewarmHomeMedia).toHaveBeenCalledOnce(),
-    )
+    await vi.waitFor(() => expect(lifecycle.prewarmHomeMedia).toHaveBeenCalledOnce())
     expect(lifecycle.coordinatorReducedMotion).toHaveBeenCalledWith(false)
     expect(lifecycle.reconcileRoute).toHaveBeenCalledOnce()
     expect(lifecycle.reconcileRoute).toHaveBeenCalledWith('home')

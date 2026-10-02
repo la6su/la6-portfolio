@@ -376,5 +376,4 @@ export class SceneTransformPass {
   private _applyEasing(t: number, easing: SceneTransitionEasing): number {
     return easing === 'ease-out' ? easeOutCubic(t) : THREE.MathUtils.smoothstep(t, 0, 1)
   }
-
 }

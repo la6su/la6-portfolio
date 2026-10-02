@@ -1,93 +1,91 @@
 // One construction path for WebGPURenderer instances adopted by SceneHost and
 // the renderer recovery owner.
 
-import * as THREE from "three";
-import { WebGPURenderer } from "three/webgpu";
-import { traceDevLifecycle } from "./devLifecycleTrace";
-import { devDiagnostic } from "./devDiagnostic";
+import * as THREE from 'three'
+import { WebGPURenderer } from 'three/webgpu'
+import { traceDevLifecycle } from './devLifecycleTrace'
+import { devDiagnostic } from './devDiagnostic'
 
-const RENDERER_INIT_TIMEOUT_MS = 30_000;
+const RENDERER_INIT_TIMEOUT_MS = 30_000
 
 /** The renderer class constructed and adopted by SceneHost. */
-export type UnifiedRenderSurface = WebGPURenderer;
+export type UnifiedRenderSurface = WebGPURenderer
 
 interface RendererDisposalControl {
-  defer(): () => Promise<void>;
-  disposeNow(): Promise<void>;
+  defer(): () => Promise<void>
+  disposeNow(): Promise<void>
 }
 
-const rendererDisposalControls = new WeakMap<object, RendererDisposalControl>();
+const rendererDisposalControls = new WeakMap<object, RendererDisposalControl>()
 
 /** Make renderer cleanup idempotent and allow SceneHost to defer Tres's
  *  renderer-manager callback until its internal Vue scene tree has unmounted. */
-export function makeRendererDisposeIdempotent<
-  T extends { dispose: () => void | Promise<void> },
->(renderer: T): T {
-  const dispose = renderer.dispose.bind(renderer);
-  let disposal: Promise<void> | null = null;
-  let deferred = false;
+export function makeRendererDisposeIdempotent<T extends { dispose: () => void | Promise<void> }>(
+  renderer: T,
+): T {
+  const dispose = renderer.dispose.bind(renderer)
+  let disposal: Promise<void> | null = null
+  let deferred = false
   const disposeNow = (): Promise<void> => {
-    if (disposal) return disposal;
+    if (disposal) return disposal
     try {
       disposal = Promise.resolve(dispose()).then(() => {
-        if (import.meta.env.DEV) traceDevLifecycle("renderer:backend-disposed");
-      });
+        if (import.meta.env.DEV) traceDevLifecycle('renderer:backend-disposed')
+      })
     } catch (error) {
-      disposal = Promise.reject(error);
+      disposal = Promise.reject(error)
     }
-    return disposal;
-  };
+    return disposal
+  }
   const control: RendererDisposalControl = {
     defer() {
-      deferred = true;
+      deferred = true
       return () => {
-        deferred = false;
-        return disposeNow();
-      };
+        deferred = false
+        return disposeNow()
+      }
     },
     disposeNow,
-  };
-  rendererDisposalControls.set(renderer, control);
+  }
+  rendererDisposalControls.set(renderer, control)
   renderer.dispose = () => {
-    if (deferred) return Promise.resolve();
-    return disposeNow();
-  };
-  return renderer;
+    if (deferred) return Promise.resolve()
+    return disposeNow()
+  }
+  return renderer
 }
 
 /** Delay Tres's renderer-manager dispose call until the owning host releases
  *  the declarative Tres tree, then dispose immediately at the owner boundary. */
 export function deferRendererDisposal(renderer: object): () => Promise<void> {
-  const control = rendererDisposalControls.get(renderer);
+  const control = rendererDisposalControls.get(renderer)
   if (!control)
-    throw new Error(
-      "Renderer disposal must be made idempotent before it can be deferred.",
-    );
-  return control.defer();
+    throw new Error('Renderer disposal must be made idempotent before it can be deferred.')
+  return control.defer()
 }
 
 /** Bypass a pending Tres deferral for explicit recovery and failure cleanup. */
 export function disposeUnifiedRendererNow(renderer: {
-  dispose: () => void | Promise<void>;
+  dispose: () => void | Promise<void>
 }): Promise<void> {
-  const control = rendererDisposalControls.get(renderer);
-  if (control) return control.disposeNow();
+  const control = rendererDisposalControls.get(renderer)
+  if (control) return control.disposeNow()
   try {
-    return Promise.resolve(renderer.dispose());
+    return Promise.resolve(renderer.dispose())
   } catch (error) {
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
 }
 
 /** Shared tone/color settings — identical for every construction path. */
 function applySharedSettings(renderer: {
-  toneMapping?: number;
-  toneMappingExposure?: number;
-  outputColorSpace?: string;
+  toneMapping?: number
+  toneMappingExposure?: number
+  outputColorSpace?: string
 }): void {
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.0
+  renderer.outputColorSpace = THREE.SRGBColorSpace
 }
 
 /**
@@ -105,9 +103,9 @@ export function createUnifiedWebGPUInstance(
     antialias: true,
     alpha: false,
     forceWebGL,
-  });
-  applySharedSettings(renderer);
-  return makeRendererDisposeIdempotent(renderer);
+  })
+  applySharedSettings(renderer)
+  return makeRendererDisposeIdempotent(renderer)
 }
 
 /** The single async init call — awaited exactly once per instance. */
@@ -118,97 +116,91 @@ export async function initUnifiedWebGPUInstance(
   // Ownership transfers only after init succeeds while the caller is still
   // live. A pre-aborted or late-aborted renderer is released here.
   if (signal?.aborted) {
-    await disposeUnifiedRendererNow(renderer);
-    return false;
+    await disposeUnifiedRendererNow(renderer)
+    return false
   }
   const initialization = renderer.init().then(
-    () => ({ kind: "ready" as const }),
-    (error: unknown) => ({ kind: "failed" as const, error }),
-  );
-  let timeout: number | null = null;
-  let onAbort: (() => void) | null = null;
-  const interruption = new Promise<{ kind: "aborted" | "timeout" }>((resolve) => {
-    timeout = window.setTimeout(
-      () => resolve({ kind: "timeout" }),
-      RENDERER_INIT_TIMEOUT_MS,
-    );
+    () => ({ kind: 'ready' as const }),
+    (error: unknown) => ({ kind: 'failed' as const, error }),
+  )
+  let timeout: number | null = null
+  let onAbort: (() => void) | null = null
+  const interruption = new Promise<{ kind: 'aborted' | 'timeout' }>((resolve) => {
+    timeout = window.setTimeout(() => resolve({ kind: 'timeout' }), RENDERER_INIT_TIMEOUT_MS)
     if (signal?.aborted) {
-      resolve({ kind: "aborted" });
+      resolve({ kind: 'aborted' })
     } else if (signal) {
-      onAbort = () => resolve({ kind: "aborted" });
-      signal.addEventListener("abort", onAbort, { once: true });
+      onAbort = () => resolve({ kind: 'aborted' })
+      signal.addEventListener('abort', onAbort, { once: true })
     }
-  });
-  const result = await Promise.race([initialization, interruption]);
-  if (timeout !== null) window.clearTimeout(timeout);
-  if (onAbort) signal?.removeEventListener("abort", onAbort);
+  })
+  const result = await Promise.race([initialization, interruption])
+  if (timeout !== null) window.clearTimeout(timeout)
+  if (onAbort) signal?.removeEventListener('abort', onAbort)
 
-  if (result.kind === "aborted" || result.kind === "timeout") {
+  if (result.kind === 'aborted' || result.kind === 'timeout') {
     // Three awaits non-abortable WebGPU adapter/device requests during init.
     // Do not hold host teardown open; release a late-settling renderer once
     // Three finishes its init path.
     void initialization
       .then(() => disposeUnifiedRendererNow(renderer))
       .catch((error: unknown) => {
-        devDiagnostic("log", "[Renderer] late init cleanup failed:", error);
-      });
-    if (result.kind === "aborted") return false;
-    throw new Error(
-      `WebGPU renderer initialization exceeded ${RENDERER_INIT_TIMEOUT_MS} ms.`,
-    );
+        devDiagnostic('log', '[Renderer] late init cleanup failed:', error)
+      })
+    if (result.kind === 'aborted') return false
+    throw new Error(`WebGPU renderer initialization exceeded ${RENDERER_INIT_TIMEOUT_MS} ms.`)
   }
 
-  if (result.kind === "failed") {
-    const initializationError = result.error;
+  if (result.kind === 'failed') {
+    const initializationError = result.error
     // Recovery creates the renderer inside this async boundary, so the caller
     // cannot own it until this function resolves. Release it here on failure;
     // SceneHost's initial Tres path has a separate created-renderer owner.
     try {
-      await disposeUnifiedRendererNow(renderer);
+      await disposeUnifiedRendererNow(renderer)
     } catch (disposalError) {
       throw new AggregateError(
         [initializationError, disposalError],
-        "WebGPU renderer initialization and cleanup both failed.",
+        'WebGPU renderer initialization and cleanup both failed.',
         { cause: disposalError },
-      );
+      )
     }
-    throw new Error("WebGPU renderer initialization failed.", {
+    throw new Error('WebGPU renderer initialization failed.', {
       cause: initializationError,
-    });
+    })
   }
   if (signal?.aborted) {
-    await disposeUnifiedRendererNow(renderer);
-    return false;
+    await disposeUnifiedRendererNow(renderer)
+    return false
   }
-  return true;
+  return true
 }
 
 /** Inspect the actual backend and optional adapter diagnostics after init. */
 export function inspectUnifiedBackend(renderer: unknown): {
-  backendName: string | null;
-  isFallbackAdapter: boolean | null;
+  backendName: string | null
+  isFallbackAdapter: boolean | null
 } {
   const wg = renderer as {
-    isWebGPURenderer?: boolean;
+    isWebGPURenderer?: boolean
     backend?: {
-      isWebGPUBackend?: boolean;
-      isWebGLBackend?: boolean;
-      device?: { adapterInfo?: { isFallbackAdapter?: boolean } };
-    };
-  } | null;
-  const backend = wg?.backend;
+      isWebGPUBackend?: boolean
+      isWebGLBackend?: boolean
+      device?: { adapterInfo?: { isFallbackAdapter?: boolean } }
+    }
+  } | null
+  const backend = wg?.backend
   // Three's explicit backend markers survive production minification. Unknown
   // implementations stay unknown instead of being inferred from class names.
   const backendName: string | null = wg?.isWebGPURenderer
     ? backend?.isWebGPUBackend === true
-      ? "WebGPUBackend"
+      ? 'WebGPUBackend'
       : backend?.isWebGLBackend === true
-        ? "WebGLBackend"
+        ? 'WebGLBackend'
         : null
-    : null;
+    : null
   return {
     backendName,
-    isFallbackAdapter:
-      wg?.backend?.device?.adapterInfo?.isFallbackAdapter ?? null,
-  };
+    isFallbackAdapter: wg?.backend?.device?.adapterInfo?.isFallbackAdapter ?? null,
+  }
 }

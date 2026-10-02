@@ -155,13 +155,13 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   const attachAndLoad = (stage: T): Promise<T> => {
     owner.stage = stage
     try {
-      const attached = contract.attach(stage, () => request === owner.request && owner.stage === stage)
+      const attached = contract.attach(
+        stage,
+        () => request === owner.request && owner.stage === stage,
+      )
       const loadIfCurrent = (): Promise<unknown> | undefined => {
         if (request === owner.request && owner.stage === stage) {
-          return contract.load?.(
-            stage,
-            () => request === owner.request && owner.stage === stage,
-          )
+          return contract.load?.(stage, () => request === owner.request && owner.stage === stage)
         }
       }
       // A synchronous attach starts its load immediately, as Works did
@@ -213,9 +213,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
  * Dispose the stage, invalidate any in-flight creation and reset the owner
  * state so a later ensure re-creates it from scratch.
  */
-export function disposeLazyStage<T extends object>(
-  contract: LazyStageContract<T>,
-): Promise<void> {
+export function disposeLazyStage<T extends object>(contract: LazyStageContract<T>): Promise<void> {
   const { owner } = contract
   owner.request++
   const stage = owner.stage

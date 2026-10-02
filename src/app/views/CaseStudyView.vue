@@ -118,8 +118,18 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" tabindex="-1" class="uk-position-relative" data-page-view="content">
-    <article class="jlz-page jlz-case-study-page" data-page-view="case-study" :data-case-project="projectId">
+  <main
+    id="spa-content"
+    ref="rootEl"
+    tabindex="-1"
+    class="uk-position-relative"
+    data-page-view="content"
+  >
+    <article
+      class="jlz-page jlz-case-study-page"
+      data-page-view="case-study"
+      :data-case-project="projectId"
+    >
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <template v-if="study && project && localizedStudy">
         <section
@@ -132,7 +142,9 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
         >
           <div class="jlz-works-stage uk-container uk-container-expand">
             <header class="jlz-works-coordinate uk-flex uk-flex-between">
-              <RouterLink class="uk-link-text" :to="localizedPath(language, '/works')">← {{ labels.back }}</RouterLink>
+              <RouterLink class="uk-link-text" :to="localizedPath(language, '/works')"
+                >← {{ labels.back }}</RouterLink
+              >
               <span>0{{ index + 1 }} / {{ chapter }}</span>
             </header>
             <div class="jlz-works-heading">
@@ -196,14 +208,21 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                     {{ localizedStudy.media[0].caption ?? labels.material }}
                   </figcaption>
                 </figure>
-                <button v-if="rendererAvailable" type="button" class="uk-button uk-button-text jlz-works-enter" @click="open">
+                <button
+                  v-if="rendererAvailable"
+                  type="button"
+                  class="uk-button uk-button-text jlz-works-enter"
+                  @click="open"
+                >
                   {{ labels.view }} ⤢
                 </button>
               </template>
               <template v-else>
                 <p class="jlz-works-premise">{{ localizedStudy.result }}</p>
                 <p class="jlz-case-status">{{ labels.status }}</p>
-                <RouterLink :to="localizedPath(language, '/contact')" class="uk-button uk-button-text jlz-works-enter"
+                <RouterLink
+                  :to="localizedPath(language, '/contact')"
+                  class="uk-button uk-button-text jlz-works-enter"
                   >{{ labels.contact }} ↗</RouterLink
                 >
                 <nav class="jlz-case-related" :aria-label="labels.next">

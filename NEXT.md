@@ -847,17 +847,18 @@ tree for parallel old/new implementations, dead code, stale claims, and
 unnecessary abstractions. Update this plan from findings and stop when each
 remaining complexity has a concrete product or platform reason.
 
-The existing Prettier scripts have no repository config. `.prettierignore`
-protects build output, generated prerenders, generated blog route documents,
-and the generated sitemap from broad write commands. The blog prerender step
-uses its explicit output list and an empty allowlist file to retain its
-formatting pass. On 2026-10-02, `bun run format:check` flagged 226 files under
-Prettier defaults. A probe using the prevailing TypeScript style (single
-quotes, no semicolons, 100-column width, trailing commas) reduced that to 81;
-the remaining differences include large Vue/Three files, generated/editorial
-HTML and vendored minified assets. Do not run a whole-tree rewrite until a
-repository style contract and ownership exclusions are agreed; format touched
-files with the existing dominant style meanwhile.
+The initial `.prettierignore` excluded build output, prerenders, one generated
+blog glob, and the sitemap, but did not protect the other generated locale
+pages, editorial HTML, or vendored assets. The ignore list now covers those
+generated/vendor outputs while retaining authored source and tests. Added a
+repository Prettier contract matching the established TypeScript style:
+single quotes, no semicolons, 100-column width, and trailing commas. On
+2026-10-03, Prettier identified 79 authored files to format; they are now
+formatted. `bun run format:check`, `bun run lint`, and the full production build
+pass, including regenerated tracked HTML/assets. No tests were run; test files
+were only formatted. This establishes a deterministic formatting gate without
+rewriting generated/editorial/vendor inputs. The quality workflow now runs
+`format:check` before the build, so CI enforces the same contract.
 
 Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
@@ -1022,9 +1023,9 @@ Execution order:
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
-5. Establish a formatting contract: generated-file ignores now exist; define
-   authored-file style before applying formatting. Remove obsolete styles,
-   code, docs, and config only after checking exact imports/callers.
+5. Formatting contract and generated/editorial/vendor ignores are established
+   and enforced by CI. Continue removing obsolete styles, code, docs, and config
+   only after checking exact imports/callers.
 6. Run lint and the full production build after coherent changes. Do not run
    unit or browser test suites without the user's explicit request; report the
    unverified runtime cases as open acceptance gates.

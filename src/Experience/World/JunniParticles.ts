@@ -247,9 +247,15 @@ export class JunniParticles {
     this._uTime = uTime
   }
 
-  get count(): number { return this._count }
-  get mesh(): THREE.InstancedMesh | null { return this._mesh }
-  get visible(): boolean { return this._visible.value }
+  get count(): number {
+    return this._count
+  }
+  get mesh(): THREE.InstancedMesh | null {
+    return this._mesh
+  }
+  get visible(): boolean {
+    return this._visible.value
+  }
   set visible(value: boolean) {
     this._visible.value = value
   }

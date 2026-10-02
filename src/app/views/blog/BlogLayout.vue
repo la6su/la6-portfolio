@@ -21,7 +21,9 @@ const languageHref = (): string => localizedPath(props.lang === 'RU' ? 'EN' : 'R
   <div class="jlz-reading-progress" aria-hidden="true">
     <div class="jlz-reading-progress__bar"></div>
   </div>
-  <a href="#main" class="skip-link">{{ lang === 'RU' ? 'К основному содержанию' : 'Skip to main content' }}</a>
+  <a href="#main" class="skip-link">{{
+    lang === 'RU' ? 'К основному содержанию' : 'Skip to main content'
+  }}</a>
 
   <header class="jlz-blog-header" role="banner">
     <nav
@@ -30,14 +32,30 @@ const languageHref = (): string => localizedPath(props.lang === 'RU' ? 'EN' : 'R
       aria-label="Main navigation"
     >
       <div class="uk-navbar-left">
-        <a :href="lang === 'RU' ? '/ru/' : '/'" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
+        <a :href="lang === 'RU' ? '/ru/' : '/'" class="uk-navbar-item uk-logo jlz-blog-brand"
+          >l@6</a
+        >
       </div>
       <div class="uk-navbar-right">
         <ul class="uk-navbar-nav">
-          <li><a :href="lang === 'RU' ? '/ru/blog' : '/blog'">{{ lang === 'RU' ? 'Блог' : 'Blog' }}</a></li>
-          <li><a :href="languageHref()">{{ lang === 'RU' ? 'EN' : 'RU' }}</a></li>
-          <li v-if="variant === 'index'"><a :href="lang === 'RU' ? '/ru/' : '/'">{{ lang === 'RU' ? 'В студию ↗' : 'Enter studio ↗' }}</a></li>
-          <li v-else><a :href="lang === 'RU' ? '/ru/' : '/'">{{ lang === 'RU' ? 'В 3D →' : 'Enter 3D →' }}</a></li>
+          <li>
+            <a :href="lang === 'RU' ? '/ru/blog' : '/blog'">{{
+              lang === 'RU' ? 'Блог' : 'Blog'
+            }}</a>
+          </li>
+          <li>
+            <a :href="languageHref()">{{ lang === 'RU' ? 'EN' : 'RU' }}</a>
+          </li>
+          <li v-if="variant === 'index'">
+            <a :href="lang === 'RU' ? '/ru/' : '/'">{{
+              lang === 'RU' ? 'В студию ↗' : 'Enter studio ↗'
+            }}</a>
+          </li>
+          <li v-else>
+            <a :href="lang === 'RU' ? '/ru/' : '/'">{{
+              lang === 'RU' ? 'В 3D →' : 'Enter 3D →'
+            }}</a>
+          </li>
         </ul>
       </div>
     </nav>

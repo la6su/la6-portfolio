@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createLazyStageOwner, disposeLazyStage, ensureLazyStage } from '../../../src/Experience/LazyStage'
+import {
+  createLazyStageOwner,
+  disposeLazyStage,
+  ensureLazyStage,
+} from '../../../src/Experience/LazyStage'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -58,10 +62,7 @@ describe('lazy stage teardown', () => {
     await ensureLazyStage(contract)
     await expect(disposeLazyStage(contract)).resolves.toBeUndefined()
 
-    expect(report).toHaveBeenCalledWith(
-      '[Experience] failed cleanup release failed:',
-      error,
-    )
+    expect(report).toHaveBeenCalledWith('[Experience] failed cleanup release failed:', error)
     report.mockRestore()
   })
 

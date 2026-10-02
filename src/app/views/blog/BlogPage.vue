@@ -19,6 +19,12 @@ defineProps<{
 
 <template>
   <BlogLayout :variant="variant" :lang="lang" :path="path">
-    <main id="main" tabindex="-1" class="uk-section uk-section-large" role="main" v-html="body"></main>
+    <main
+      id="main"
+      tabindex="-1"
+      class="uk-section uk-section-large"
+      role="main"
+      v-html="body"
+    ></main>
   </BlogLayout>
 </template>

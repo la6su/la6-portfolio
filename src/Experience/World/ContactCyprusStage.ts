@@ -2,15 +2,9 @@
 
 import * as THREE from 'three'
 import { shallowRef } from 'vue'
-import {
-  DRACOLoader,
-  DRACO_GLTF_CONFIG,
-} from 'three/addons/loaders/DRACOLoader.js'
+import { DRACOLoader, DRACO_GLTF_CONFIG } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import {
-  disposeMaterialsDeep,
-  disposeObject3DResources,
-} from '../../Utils/dispose'
+import { disposeMaterialsDeep, disposeObject3DResources } from '../../Utils/dispose'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 const FADE_DURATION_SECONDS = 0.52
@@ -22,9 +16,7 @@ const SCALE_OUT_TO = 1.025
  * Keeping it camera-local gives Agros a stable hero composition independent
  * of the shared six-slot world's camera interpolation.
  */
-export type ContactCyprusModelPublisher = (
-  model: THREE.Group | null,
-) => void | Promise<void>
+export type ContactCyprusModelPublisher = (model: THREE.Group | null) => void | Promise<void>
 
 /** Behavior controller for the Vue-declared Contact root and GLTF child. */
 export class ContactCyprusStage {
@@ -50,11 +42,7 @@ export class ContactCyprusStage {
   private readonly _visible = shallowRef(false)
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
-  private _lastCameraPosition = new THREE.Vector3(
-    Number.NaN,
-    Number.NaN,
-    Number.NaN,
-  )
+  private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
   private _lastCameraQuaternion = new THREE.Quaternion(
     Number.NaN,
     Number.NaN,
@@ -126,9 +114,7 @@ export class ContactCyprusStage {
       model.traverse((object) => {
         const mesh = object as THREE.Mesh
         if (!mesh.isMesh) return
-        const meshMaterials = Array.isArray(mesh.material)
-          ? mesh.material
-          : [mesh.material]
+        const meshMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
         meshMaterials.forEach((material) => sourceMaterials.add(material))
       })
       disposeMaterialsDeep(sourceMaterials)
@@ -187,12 +173,7 @@ export class ContactCyprusStage {
     if (this._camera === camera) return
     this._camera = camera
     this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
-    this._lastCameraQuaternion.set(
-      Number.NaN,
-      Number.NaN,
-      Number.NaN,
-      Number.NaN,
-    )
+    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
   }
 
   setActive(active: boolean): void {
@@ -267,10 +248,7 @@ export class ContactCyprusStage {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
     } else if (this.isAnimating) {
-      this._fadeElapsed = Math.min(
-        FADE_DURATION_SECONDS,
-        this._fadeElapsed + dt,
-      )
+      this._fadeElapsed = Math.min(FADE_DURATION_SECONDS, this._fadeElapsed + dt)
       const progress = this._fadeElapsed / FADE_DURATION_SECONDS
       const eased = THREE.MathUtils.smoothstep(progress, 0, 1)
       this.setPresentation(
@@ -338,12 +316,7 @@ export class ContactCyprusStage {
     this._publishModel?.(null)
     this._publishModel = null
     this._lastCameraPosition.set(Number.NaN, Number.NaN, Number.NaN)
-    this._lastCameraQuaternion.set(
-      Number.NaN,
-      Number.NaN,
-      Number.NaN,
-      Number.NaN,
-    )
+    this._lastCameraQuaternion.set(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
     if (this._model) this.disposeModel(this._model)
     this._model = null
     this._materials = []

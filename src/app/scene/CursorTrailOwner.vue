@@ -13,10 +13,7 @@ const ribbon = shallowRef<Mesh | null>(null)
 // controller replaces it with the hand-built ribbon geometry at adoption —
 // long before the mesh is ever visible or rendered.
 const placeholderGeometry = markRaw(new BufferGeometry())
-placeholderGeometry.setAttribute(
-  'position',
-  new BufferAttribute(new Float32Array(0), 3),
-)
+placeholderGeometry.setAttribute('position', new BufferAttribute(new Float32Array(0), 3))
 
 onMounted(() => {
   if (!root.value || !ribbon.value) {
@@ -27,8 +24,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   placeholderGeometry.dispose()
-  if (import.meta.env.DEV)
-    traceDevLifecycle('scene-owner:cursor-placeholder-disposed')
+  if (import.meta.env.DEV) traceDevLifecycle('scene-owner:cursor-placeholder-disposed')
 })
 </script>
 

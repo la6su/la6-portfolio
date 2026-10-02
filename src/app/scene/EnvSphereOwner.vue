@@ -2,22 +2,14 @@
 import { markRaw, onBeforeUnmount, onMounted } from 'vue'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { traceDevLifecycle } from '../../core/devLifecycleTrace'
-import {
-  EnvSphere,
-  PAVILION_ROUNDING,
-  PAVILION_SURFACES,
-} from '../../Experience/World/EnvSphere'
+import { EnvSphere, PAVILION_ROUNDING, PAVILION_SURFACES } from '../../Experience/World/EnvSphere'
 
 const emit = defineEmits<{ ready: [owner: EnvSphere] }>()
 const owner = markRaw(new EnvSphere())
 const surfaces = PAVILION_SURFACES.map((surface) => ({
   ...surface,
   geometry: markRaw(
-    new RoundedBoxGeometry(
-      ...surface.size,
-      PAVILION_ROUNDING.segments,
-      PAVILION_ROUNDING.radius,
-    ),
+    new RoundedBoxGeometry(...surface.size, PAVILION_ROUNDING.segments, PAVILION_ROUNDING.radius),
   ),
 }))
 

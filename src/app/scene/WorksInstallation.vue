@@ -56,11 +56,14 @@ onMounted(() => {
   props.installation.adopt(mounted)
 })
 
-watch(() => props.installation, (owner, previous) => {
-  if (!mountedNodes) return
-  previous.release(mountedNodes)
-  owner.adopt(mountedNodes)
-})
+watch(
+  () => props.installation,
+  (owner, previous) => {
+    if (!mountedNodes) return
+    previous.release(mountedNodes)
+    owner.adopt(mountedNodes)
+  },
+)
 
 onBeforeUnmount(disposeGeometry)
 </script>
@@ -76,11 +79,7 @@ onBeforeUnmount(disposeGeometry)
     >
       <TresTorusGeometry :args="args" />
     </TresMesh>
-    <TresMesh
-      ref="trace"
-      :material="props.installation.signalMaterial"
-      :position="[0, 0, 0.055]"
-    >
+    <TresMesh ref="trace" :material="props.installation.signalMaterial" :position="[0, 0, 0.055]">
       <TresTorusGeometry :args="[1.03, 0.006, 5, 100, Math.PI * 1.45]" />
     </TresMesh>
     <TresInstancedMesh

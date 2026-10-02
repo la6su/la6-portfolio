@@ -1,11 +1,4 @@
-import {
-  BoxGeometry,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  Scene,
-  Texture,
-} from 'three'
+import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Scene, Texture } from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import { ContactCyprusStage } from '../../../../src/Experience/World/ContactCyprusStage'
 

@@ -5,8 +5,12 @@ import type { JunniParticles } from '../../Experience/World/JunniParticles'
 
 const props = defineProps<{ stage: JunniParticles }>()
 const mesh = shallowRef<InstancedMesh | null>(null)
-onMounted(() => { if (mesh.value) props.stage.bindMesh(mesh.value) })
-onBeforeUnmount(() => { if (mesh.value) props.stage.unbindMesh(mesh.value) })
+onMounted(() => {
+  if (mesh.value) props.stage.bindMesh(mesh.value)
+})
+onBeforeUnmount(() => {
+  if (mesh.value) props.stage.unbindMesh(mesh.value)
+})
 </script>
 
 <template>

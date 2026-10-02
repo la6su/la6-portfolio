@@ -81,7 +81,10 @@ export class WireframeTypography {
   }
 
   unbindMeshes(meshes: readonly THREE.Mesh[]): void {
-    if (this.meshes.length !== meshes.length || this.meshes.some((mesh, index) => mesh !== meshes[index])) {
+    if (
+      this.meshes.length !== meshes.length ||
+      this.meshes.some((mesh, index) => mesh !== meshes[index])
+    ) {
       return
     }
     this.meshes = []

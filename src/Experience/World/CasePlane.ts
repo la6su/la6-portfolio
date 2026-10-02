@@ -189,7 +189,8 @@ export class CasePlane {
 
     this._timeUni.value += dt
     this._wobbleTarget *= Math.exp(-dt * CLOTH_PARAMS.wobbleDecay)
-    this._wobbleValue += (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
+    this._wobbleValue +=
+      (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
 
     this._stateUni.value.y = this._wobbleValue
   }

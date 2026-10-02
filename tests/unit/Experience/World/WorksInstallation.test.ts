@@ -8,7 +8,11 @@ describe('declarative Works installation controller', () => {
     const assembly = new THREE.Group()
     const arcs = Array.from({ length: 3 }, () => new THREE.Mesh())
     const trace = new THREE.Mesh()
-    const ticks = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial(), 48)
+    const ticks = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(),
+      new THREE.MeshBasicMaterial(),
+      48,
+    )
     const nodes = { assembly, arcs, trace, ticks }
     const disposeMetal = vi.spyOn(installation.metalMaterial, 'dispose')
     const disposeSignal = vi.spyOn(installation.signalMaterial, 'dispose')

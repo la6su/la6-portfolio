@@ -14,12 +14,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <TresMesh
-    ref="ground"
-    name="ground"
-    :position="[0, -1, 0]"
-    :rotation="GROUND_ROTATION"
-  >
+  <TresMesh ref="ground" name="ground" :position="[0, -1, 0]" :rotation="GROUND_ROTATION">
     <TresPlaneGeometry :args="[200, 200]" />
     <TresMeshStandardMaterial
       :color="0x000000"

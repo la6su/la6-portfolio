@@ -88,7 +88,7 @@ export class Camera {
   /** Lerp camera base state toward target with exponential smoothing */
   updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
     if (this._disposed) return
-  // While the Lab OrbitControls own the pose the authored track is stale:
+    // While the Lab OrbitControls own the pose the authored track is stale:
     // smoothing toward it would fight the user's orbit. update() re-adopts
     // the authored state from the live orbit pose on hand-back.
     if (this.isLabCameraActive()) return
@@ -205,7 +205,7 @@ export class Camera {
   update(deltaT: number) {
     if (this._disposed) return
     // ── Lab exploration yield ──
-  // While the declarative Lab OrbitControls own the camera the cinematic
+    // While the declarative Lab OrbitControls own the camera the cinematic
     // writer yields completely — position, lookAt and fov are the user's.
     if (this.isLabCameraActive()) {
       this._yielded = true

@@ -26,7 +26,8 @@ watch(
     unsubscribeCards?.()
     unsubscribeCards = null
     cards.value = []
-    if (stage) unsubscribeCards = stage.subscribeSceneCards((nextCards) => (cards.value = nextCards))
+    if (stage)
+      unsubscribeCards = stage.subscribeSceneCards((nextCards) => (cards.value = nextCards))
   },
   { immediate: true },
 )

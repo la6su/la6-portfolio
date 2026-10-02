@@ -12,10 +12,11 @@ describe('SceneCoordinator reduced-motion ownership', () => {
       drawTrail: { setReducedMotion: vi.fn() },
     }
     const invalidate = vi.fn()
-    const coordinator = Object.assign(
-      Object.create(SceneCoordinator.prototype) as object,
-      { owners, _transform: { invalidate }, isReducedMotion: () => false },
-    ) as unknown as SceneCoordinator
+    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype) as object, {
+      owners,
+      _transform: { invalidate },
+      isReducedMotion: () => false,
+    }) as unknown as SceneCoordinator
 
     coordinator.setReducedMotion(true)
 
@@ -35,17 +36,14 @@ describe('SceneCoordinator reduced-motion ownership', () => {
       stages: { setReducedMotion: vi.fn() },
       drawTrail: { setReducedMotion: vi.fn() },
     }
-    const coordinator = Object.assign(
-      Object.create(SceneCoordinator.prototype) as object,
-      {
-        owners: {
-          ...owners,
-          carousel: null,
-        },
-        _transform: { invalidate },
-        isReducedMotion: () => false,
+    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype) as object, {
+      owners: {
+        ...owners,
+        carousel: null,
       },
-    ) as unknown as SceneCoordinator
+      _transform: { invalidate },
+      isReducedMotion: () => false,
+    }) as unknown as SceneCoordinator
 
     coordinator.setReducedMotion(false)
 
@@ -57,13 +55,10 @@ describe('SceneCoordinator reduced-motion ownership', () => {
 
   it('reads reduced-motion policy from its owning runtime', () => {
     let reduced = false
-    const coordinator = Object.assign(
-      Object.create(SceneCoordinator.prototype) as object,
-      {
-        isReducedMotion: () => reduced,
-        owners: { envSphere: { isAnimating: true } },
-      },
-    ) as unknown as SceneCoordinator
+    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype) as object, {
+      isReducedMotion: () => reduced,
+      owners: { envSphere: { isAnimating: true } },
+    }) as unknown as SceneCoordinator
 
     expect(coordinator.hasVisibleAmbientMotion()).toBe(true)
     reduced = true

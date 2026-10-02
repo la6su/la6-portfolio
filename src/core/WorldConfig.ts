@@ -45,13 +45,7 @@ interface FogTransform {
  */
 type PostTransform = Pick<
   PostParams,
-  | 'bloom'
-  | 'vignette'
-  | 'grain'
-  | 'chromatic'
-  | 'refract'
-  | 'gradeShadows'
-  | 'gradeHighlights'
+  'bloom' | 'vignette' | 'grain' | 'chromatic' | 'refract' | 'gradeShadows' | 'gradeHighlights'
 >
 
 interface SectionLightDef {

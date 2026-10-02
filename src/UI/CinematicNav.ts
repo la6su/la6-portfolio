@@ -222,7 +222,6 @@ export class CinematicNav {
       section.style.setProperty('--jlz-story-title-opacity', String(1 - distance * 0.7))
       section.style.setProperty('--jlz-story-panel-opacity', String(1 - distance * 0.82))
     })
-
   }
 
   /** Settle decorative story parallax when the live motion policy changes. */
@@ -248,8 +247,9 @@ export class CinematicNav {
     this._onSectionChange?.(index)
 
     if (this._page() !== 'home') {
-      const sectionId = this._track?.querySelectorAll<HTMLElement>('[data-page-section]')[index]
-        ?.dataset.pageSection
+      const sectionId =
+        this._track?.querySelectorAll<HTMLElement>('[data-page-section]')[index]?.dataset
+          .pageSection
       if (sectionId) {
         eventBus.emit('jlz:page-section-change', {
           worldIndex: index,
@@ -326,8 +326,7 @@ export class CinematicNav {
   getOverallProgress(): number {
     if (this._side === 'footer') return 0
     if (this._side === 'menu') return 1
-    if (!this._track)
-      return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, WORLD_SLOT_COUNT)
+    if (!this._track) return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, WORLD_SLOT_COUNT)
     // The main→slot progress rescale is the pure storyState contract.
     const height = this._track.clientHeight || window.innerHeight
     return storyProgressFromScroll(

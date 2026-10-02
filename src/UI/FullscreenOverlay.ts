@@ -20,7 +20,8 @@ const FOCUSABLE_SELECTOR =
 
 function focusableElements(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true',
+    (element) =>
+      element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true',
   )
 }
 
@@ -241,7 +242,8 @@ export class FullscreenOverlay {
     this._applyOptions(opts)
     // Capture before UIkit handles the show event; it may move focus into the
     // modal before this overlay's event callbacks run.
-    this._restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    this._restoreFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
     UIkit.modal(this.container).show()
   }
   /** Preload content into the overlay WITHOUT showing it.

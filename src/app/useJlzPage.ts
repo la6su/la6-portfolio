@@ -113,9 +113,9 @@ export function useJlzPage(
       const sectionKey = pageMode ? 'pageSection' : 'section'
       const selector = pageMode ? ':scope > [data-page-section]' : ':scope > [data-section]'
       const excludedSections = new Set(['lab', 'menu', 'page-lab', 'page-menu'])
-      const mainSections = [...(noSceneScroller?.querySelectorAll<HTMLElement>(selector) ?? [])].filter(
-        (section) => !excludedSections.has(section.dataset[sectionKey] ?? ''),
-      )
+      const mainSections = [
+        ...(noSceneScroller?.querySelectorAll<HTMLElement>(selector) ?? []),
+      ].filter((section) => !excludedSections.has(section.dataset[sectionKey] ?? ''))
       let lastSectionId = ''
       noSceneScrollHandler = () => {
         if (noSceneScrollFrame !== null) return
@@ -123,7 +123,10 @@ export function useJlzPage(
           noSceneScrollFrame = null
           if (!noSceneScroller || mainSections.length === 0) return
           const height = Math.max(1, noSceneScroller.clientHeight || window.innerHeight)
-          const position = clampStoryPosition(noSceneScroller.scrollTop / height, mainSections.length)
+          const position = clampStoryPosition(
+            noSceneScroller.scrollTop / height,
+            mainSections.length,
+          )
           const index = mainSectionFromPosition(position, 0, mainSections.length)
           const section = mainSections[index]
           const sectionId = section?.dataset[sectionKey]

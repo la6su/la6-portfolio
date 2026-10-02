@@ -34,7 +34,12 @@ const server = await createServer({
 })
 
 try {
-  const [{ default: HomeView }, { jlzRouteRecords }, { createSSRApp }, { createMemoryHistory, createRouter }] = await Promise.all([
+  const [
+    { default: HomeView },
+    { jlzRouteRecords },
+    { createSSRApp },
+    { createMemoryHistory, createRouter },
+  ] = await Promise.all([
     server.ssrLoadModule('/src/app/views/HomeView.vue'),
     server.ssrLoadModule('/src/app/routes.ts'),
     import('vue'),

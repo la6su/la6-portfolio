@@ -6,7 +6,12 @@ describe('CameraControls ownership', () => {
   it('yields while the live SceneHost policy says controls own the pose', () => {
     let controlsOwnPose = true
     const instance = new THREE.PerspectiveCamera()
-    const camera = new Camera(instance, true, () => false, () => controlsOwnPose)
+    const camera = new Camera(
+      instance,
+      true,
+      () => false,
+      () => controlsOwnPose,
+    )
     instance.position.set(2, 1, 4)
     const orbitPose = instance.position.clone()
 

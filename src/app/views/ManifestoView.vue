@@ -139,7 +139,9 @@ const PRINCIPLES: readonly Principle[] = [
                   {{ line }}
                 </p>
               </div>
-              <a :href="localizedPath(langFromPath(route.path), p.href)" class="uk-button uk-button-text jlz-manifesto-link"
+              <a
+                :href="localizedPath(langFromPath(route.path), p.href)"
+                class="uk-button uk-button-text jlz-manifesto-link"
                 ><span>{{ p.routeLabel }}</span
                 ><span aria-hidden="true">↗</span></a
               >

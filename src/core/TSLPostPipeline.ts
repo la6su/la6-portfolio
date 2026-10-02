@@ -5,11 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import type { PassNode } from 'three/webgpu'
-import {
-  tslBloom,
-  tslFloat,
-  tslPass,
-} from '../types/tsl-helpers'
+import { tslBloom, tslFloat, tslPass } from '../types/tsl-helpers'
 import type BloomNode from 'three/addons/tsl/display/BloomNode.js'
 import {
   uniform,
@@ -260,5 +256,4 @@ export class TSLPostPipeline {
     this._disposeBloomNode()
     this._disposeScenePass()
   }
-
 }

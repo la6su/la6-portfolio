@@ -2,10 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050507" />
     <meta name="color-scheme" content="dark light" />
     <meta name="author" content="JUSTLOVEJAZZ" />
@@ -18,18 +15,13 @@
       content="WebGPU, TSL, симуляция жидкости, Three.js, кейс, графика реального времени"
     />
 
-    <title>
-      Undercurrent — симуляция жидкости на WebGPU | Блог JUSTLOVEJAZZ
-    </title>
+    <title>Undercurrent — симуляция жидкости на WebGPU | Блог JUSTLOVEJAZZ</title>
 
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/logo.svg" />
     <link rel="mask-icon" href="/logo.svg" color="#232534" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link
-      rel="canonical"
-      href="https://justlovejazz.dev/ru/blog/undercurrent-webgpu-fluid"
-    />
+    <link rel="canonical" href="https://justlovejazz.dev/ru/blog/undercurrent-webgpu-fluid" />
     <link
       rel="alternate"
       hreflang="en"
@@ -50,23 +42,14 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:locale" content="ru_RU" />
-    <meta
-      property="og:title"
-      content="Undercurrent — симуляция жидкости на WebGPU"
-    />
+    <meta property="og:title" content="Undercurrent — симуляция жидкости на WebGPU" />
     <meta
       property="og:description"
       content="Как мы создали симулятор жидкости в реальном времени на TSL-графах."
     />
-    <meta
-      property="og:url"
-      content="https://justlovejazz.dev/ru/blog/undercurrent-webgpu-fluid"
-    />
+    <meta property="og:url" content="https://justlovejazz.dev/ru/blog/undercurrent-webgpu-fluid" />
     <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
-    <meta
-      property="og:image:secure_url"
-      content="https://justlovejazz.dev/preview.jpg"
-    />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -82,10 +65,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
-    <meta
-      name="twitter:title"
-      content="Undercurrent — симуляция жидкости на WebGPU"
-    />
+    <meta name="twitter:title" content="Undercurrent — симуляция жидкости на WebGPU" />
     <meta
       name="twitter:description"
       content="Кейс о симуляции жидкости на WebGPU и бюджете кадра."
@@ -159,79 +139,62 @@
         </div>
       </nav>
     </header>
-    <main
-      id="main"
-      tabindex="-1"
-      class="uk-section uk-section-large"
-      role="main"
-    >
+    <main id="main" tabindex="-1" class="uk-section uk-section-large" role="main">
       <article class="uk-container uk-container-small">
         <p class="jlz-landing-eyebrow">&gt; КЕЙС · 15 ИЮЛ 2026</p>
         <h1 class="uk-heading-large uk-margin-remove-top">
           Undercurrent — симуляция жидкости на WebGPU
         </h1>
         <p class="uk-text-lead uk-margin-medium-top">
-          Симулятор жидкости в реальном времени, построенный на TSL-графах
-          узлов. В этом кейсе разбираем архитектуру, бюджет производительности и
-          компромиссы, которые помогли удержать 60 кадров в секунду на
-          оборудовании среднего уровня.
+          Симулятор жидкости в реальном времени, построенный на TSL-графах узлов. В этом кейсе
+          разбираем архитектуру, бюджет производительности и компромиссы, которые помогли удержать
+          60 кадров в секунду на оборудовании среднего уровня.
         </p>
         <hr class="uk-margin-large" />
         <h2>Задача</h2>
         <p>
-          Клиент хотел, чтобы главный экран портфолио ощущался живым: не видео и
-          не заранее записанная анимация, а сцена, которая реагирует на ввод в
-          реальном времени. При этом она должна была работать на встроенной
-          графике и не опускаться ниже 60 кадров в секунду.
+          Клиент хотел, чтобы главный экран портфолио ощущался живым: не видео и не заранее
+          записанная анимация, а сцена, которая реагирует на ввод в реальном времени. При этом она
+          должна была работать на встроенной графике и не опускаться ниже 60 кадров в секунду.
         </p>
         <p>
-          Мы предложили симуляцию жидкости, вдохновлённую уравнениями Навье —
-          Стокса, целиком на GPU с помощью вычислительных шейдеров WebGPU.
-          Визуальная цель — тёмная глубина, переливы и свет внутри потока,
-          словно чернила в воде.
+          Мы предложили симуляцию жидкости, вдохновлённую уравнениями Навье — Стокса, целиком на GPU
+          с помощью вычислительных шейдеров WebGPU. Визуальная цель — тёмная глубина, переливы и
+          свет внутри потока, словно чернила в воде.
         </p>
         <h2>Архитектура</h2>
         <p>
-          Симуляция использует три чередующихся render target: для скорости,
-          плотности и давления. Каждый кадр проходит пять этапов:
+          Симуляция использует три чередующихся render target: для скорости, плотности и давления.
+          Каждый кадр проходит пять этапов:
         </p>
         <ol>
           <li>
-            <strong>Перенос.</strong> Поле скорости считывает своё предыдущее
-            состояние полулагранжевым методом.
+            <strong>Перенос.</strong> Поле скорости считывает своё предыдущее состояние
+            полулагранжевым методом.
           </li>
+          <li><strong>Силы.</strong> Движение мыши добавляет импульс скорости.</li>
+          <li><strong>Дивергенция.</strong> Рассчитывается расходимость поля скорости.</li>
           <li>
-            <strong>Силы.</strong> Движение мыши добавляет импульс скорости.
+            <strong>Давление.</strong> Двадцать итераций Якоби приближают решение уравнения
+            Пуассона.
           </li>
-          <li>
-            <strong>Дивергенция.</strong> Рассчитывается расходимость поля
-            скорости.
-          </li>
-          <li>
-            <strong>Давление.</strong> Двадцать итераций Якоби приближают
-            решение уравнения Пуассона.
-          </li>
-          <li>
-            <strong>Проекция.</strong> Из скорости вычитается градиент давления.
-          </li>
+          <li><strong>Проекция.</strong> Из скорости вычитается градиент давления.</li>
         </ol>
         <p>
-          Поле плотности переносится потоком, а затем рисуется собственным
-          шейдером иризации. Интерференция тонкой плёнки здесь приближена
-          таблицей соответствия.
+          Поле плотности переносится потоком, а затем рисуется собственным шейдером иризации.
+          Интерференция тонкой плёнки здесь приближена таблицей соответствия.
         </p>
         <blockquote class="uk-blockquote uk-margin-medium">
           <p class="uk-margin-remove">
-            «Главным решением стали TSL-графы вместо строк WGSL: мы пишем шейдер
-            на TypeScript, получаем проверку типов и компилируем тот же граф для
-            WebGPU и резервного WebGL2».
+            «Главным решением стали TSL-графы вместо строк WGSL: мы пишем шейдер на TypeScript,
+            получаем проверку типов и компилируем тот же граф для WebGPU и резервного WebGL2».
           </p>
           <footer>— ведущий инженер</footer>
         </blockquote>
         <h2>Бюджет производительности</h2>
         <p>
-          Цель — 60 кадров в секунду на Intel UHD 620, минимальной
-          поддерживаемой графике. На кадр доступно 16,6 мс.
+          Цель — 60 кадров в секунду на Intel UHD 620, минимальной поддерживаемой графике. На кадр
+          доступно 16,6 мс.
         </p>
         <table class="uk-table uk-table-divider uk-margin-medium">
           <thead>
@@ -281,38 +244,30 @@
         </table>
         <h2>На чём сэкономили</h2>
         <p>
-          Мы уменьшили сетку симуляции с 1024 до 512. Разницу почти не видно:
-          шейдер иризации скрывает более низкое разрешение, а производительность
-          выросла в четыре раза. На мощном оборудовании сетка автоматически
-          увеличивается до 1024 после проверки возможностей.
+          Мы уменьшили сетку симуляции с 1024 до 512. Разницу почти не видно: шейдер иризации
+          скрывает более низкое разрешение, а производительность выросла в четыре раза. На мощном
+          оборудовании сетка автоматически увеличивается до 1024 после проверки возможностей.
         </p>
         <p>
-          Резервный путь WebGL2 использует вычисления на CPU при размере сетки
-          256×256. Он даёт около 30 кадров в секунду вместо 60, но сохраняет
-          визуальную идею. Поэтому даже пользователи Safari до появления WebGPU
-          видят текучую заставку — пусть и менее плавную.
+          Резервный путь WebGL2 использует вычисления на CPU при размере сетки 256×256. Он даёт
+          около 30 кадров в секунду вместо 60, но сохраняет визуальную идею. Поэтому даже
+          пользователи Safari до появления WebGPU видят текучую заставку — пусть и менее плавную.
         </p>
         <h2>Что мы поняли</h2>
         <p>
-          TSL-графы подходят для серьёзной работы. GPU-код на TypeScript с
-          автодополнением и проверкой типов заметно ускорил итерации: вместо
-          двадцати минут разбора логов ошибка шейдера может сразу проявиться в
-          редакторе.
+          TSL-графы подходят для серьёзной работы. GPU-код на TypeScript с автодополнением и
+          проверкой типов заметно ускорил итерации: вместо двадцати минут разбора логов ошибка
+          шейдера может сразу проявиться в редакторе.
         </p>
         <p>
-          Пять этапов сложнее отлаживать, чем один шейдер, зато разделение
-          переноса, давления и финального рендеринга позволяет настраивать
-          каждый независимо. Самым полезным артефактом оказалась таблица
-          бюджета: когда кадр замедлялся, мы сразу знали, какой этап
+          Пять этапов сложнее отлаживать, чем один шейдер, зато разделение переноса, давления и
+          финального рендеринга позволяет настраивать каждый независимо. Самым полезным артефактом
+          оказалась таблица бюджета: когда кадр замедлялся, мы сразу знали, какой этап
           оптимизировать.
         </p>
         <hr class="uk-margin-large" />
-        <nav
-          class="uk-flex uk-flex-between uk-margin-large"
-          aria-label="Навигация по статье"
-        >
-          <a href="/ru/blog" class="uk-button uk-button-default uk-button-small"
-            >← Все заметки</a
+        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Навигация по статье">
+          <a href="/ru/blog" class="uk-button uk-button-default uk-button-small">← Все заметки</a
           ><a
             href="/ru/blog/tsl-changes-everything"
             class="uk-button uk-button-default uk-button-small"
@@ -327,17 +282,8 @@
            uk-icon (a UIkit JS component) never renders there. -->
         <ul class="jlz-blog-social" aria-label="Social links">
           <li>
-            <a
-              href="https://github.com/la6su"
-              rel="noopener"
-              aria-label="GitHub"
-              ><svg
-                viewBox="0 0 20 20"
-                width="20"
-                height="20"
-                aria-hidden="true"
-                focusable="false"
-              >
+            <a href="https://github.com/la6su" rel="noopener" aria-label="GitHub"
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
                 <path
                   fill="currentColor"
                   d="M10,1 C5.03,1 1,5.03 1,10 C1,13.98 3.58,17.35 7.16,18.54 C7.61,18.62 7.77,18.34 7.77,18.11 C7.77,17.9 7.76,17.33 7.76,16.58 C5.26,17.12 4.73,15.37 4.73,15.37 C4.32,14.33 3.73,14.05 3.73,14.05 C2.91,13.5 3.79,13.5 3.79,13.5 C4.69,13.56 5.17,14.43 5.17,14.43 C5.97,15.8 7.28,15.41 7.79,15.18 C7.87,14.6 8.1,14.2 8.36,13.98 C6.36,13.75 4.26,12.98 4.26,9.53 C4.26,8.55 4.61,7.74 5.19,7.11 C5.1,6.88 4.79,5.97 5.28,4.73 C5.28,4.73 6.04,4.49 7.75,5.65 C8.47,5.45 9.24,5.35 10,5.35 C10.76,5.35 11.53,5.45 12.25,5.65 C13.97,4.48 14.72,4.73 14.72,4.73 C15.21,5.97 14.9,6.88 14.81,7.11 C15.39,7.74 15.73,8.54 15.73,9.53 C15.73,12.99 13.63,13.75 11.62,13.97 C11.94,14.25 12.23,14.8 12.23,15.64 C12.23,16.84 12.22,17.81 12.22,18.11 C12.22,18.35 12.38,18.63 12.84,18.54 C16.42,17.35 19,13.98 19,10 C19,5.03 14.97,1 10,1 L10,1 Z"
@@ -345,17 +291,8 @@
             ></a>
           </li>
           <li>
-            <a
-              href="https://x.com/justlovejazz"
-              rel="noopener"
-              aria-label="Twitter"
-              ><svg
-                viewBox="0 0 20 20"
-                width="20"
-                height="20"
-                aria-hidden="true"
-                focusable="false"
-              >
+            <a href="https://x.com/justlovejazz" rel="noopener" aria-label="Twitter"
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
                 <path
                   fill="currentColor"
                   d="M19,4.74 C18.339,5.029 17.626,5.229 16.881,5.32 C17.644,4.86 18.227,4.139 18.503,3.28 C17.79,3.7 17.001,4.009 16.159,4.17 C15.485,3.45 14.526,3 13.464,3 C11.423,3 9.771,4.66 9.771,6.7 C9.771,6.99 9.804,7.269 9.868,7.539 C6.795,7.38 4.076,5.919 2.254,3.679 C1.936,4.219 1.754,4.86 1.754,5.539 C1.754,6.82 2.405,7.95 3.397,8.61 C2.79,8.589 2.22,8.429 1.723,8.149 L1.723,8.189 C1.723,9.978 2.997,11.478 4.686,11.82 C4.376,11.899 4.049,11.939 3.713,11.939 C3.475,11.939 3.245,11.919 3.018,11.88 C3.49,13.349 4.852,14.419 6.469,14.449 C5.205,15.429 3.612,16.019 1.882,16.019 C1.583,16.019 1.29,16.009 1,15.969 C2.635,17.019 4.576,17.629 6.662,17.629 C13.454,17.629 17.17,12 17.17,7.129 C17.17,6.969 17.166,6.809 17.157,6.649 C17.879,6.129 18.504,5.478 19,4.74"
@@ -364,13 +301,7 @@
           </li>
           <li>
             <a href="mailto:hello@justlovejazz.com" aria-label="Email"
-              ><svg
-                viewBox="0 0 20 20"
-                width="20"
-                height="20"
-                aria-hidden="true"
-                focusable="false"
-              >
+              ><svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
                 <polyline
                   fill="none"
                   stroke="currentColor"
@@ -390,9 +321,7 @@
       </div>
     </footer>
     <script>
-      document.getElementById("year").textContent = String(
-        new Date().getFullYear(),
-      );
+      document.getElementById('year').textContent = String(new Date().getFullYear())
     </script>
     <script defer src="/vendor/prism/prism-core.min.js"></script>
     <script defer src="/vendor/prism/prism-clike.min.js"></script>

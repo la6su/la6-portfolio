@@ -8,10 +8,7 @@ import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
-import {
-  rendererAvailable,
-  setRendererAvailable,
-} from '../core/rendererAvailability'
+import { rendererAvailable, setRendererAvailable } from '../core/rendererAvailability'
 import { noSceneRequested } from '../core/sceneMode'
 import { langFromPath, localizedPagePath, localizedPath } from '../core/routeManifest'
 
@@ -110,7 +107,14 @@ function toggleSound(): void {
         :aria-hidden="fullscreenOpen"
         :inert="fullscreenOpen"
       >
-        <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true" />
+        <img
+          class="jlz-brand-mark"
+          src="/logo.svg"
+          width="30"
+          height="30"
+          alt=""
+          aria-hidden="true"
+        />
         <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
         <span class="jlz-topbar__mode" aria-hidden="true">
           WORLD / {{ String(activeIndex + 1).padStart(2, '0') }}
@@ -198,10 +202,19 @@ function toggleSound(): void {
             </svg>
           </span>
           <span data-i18n="story.contact">{{ t('story.contact') }}</span>
-          <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
+          <span
+            class="jlz-contact-launcher__arrow"
+            uk-icon="icon: arrow-up; ratio: 0.8"
+            aria-hidden="true"
+          ></span>
         </button>
       </div>
-      <nav id="cinematic-nav" class="jlz-storyline" :aria-label="t('nav.storyline')" data-sheet="center">
+      <nav
+        id="cinematic-nav"
+        class="jlz-storyline"
+        :aria-label="t('nav.storyline')"
+        data-sheet="center"
+      >
         <div class="jlz-storyline__items uk-flex uk-flex-middle">
           <button
             v-for="index in storylineSections"
@@ -214,11 +227,17 @@ function toggleSound(): void {
             :aria-current="activeIndex === index ? 'step' : undefined"
             @click="requestStoryNavigation(index)"
           >
-            <span class="jlz-storyline__number uk-text-meta uk-text-uppercase">{{ String(index).padStart(2, '0') }}</span>
+            <span class="jlz-storyline__number uk-text-meta uk-text-uppercase">{{
+              String(index).padStart(2, '0')
+            }}</span>
             <span class="jlz-storyline__label uk-hidden" data-story-label>Section {{ index }}</span>
           </button>
         </div>
-        <span class="jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase" data-i18n="story.hint">Scroll · swipe</span>
+        <span
+          class="jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase"
+          data-i18n="story.hint"
+          >Scroll · swipe</span
+        >
       </nav>
     </div>
   </div>
@@ -228,7 +247,14 @@ function toggleSound(): void {
     >
     <header class="jlz-route-fallback__header">
       <RouterLink class="jlz-topbar__brand" :to="pageHref('home')" :aria-label="t('nav.brand')">
-        <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true" />
+        <img
+          class="jlz-brand-mark"
+          src="/logo.svg"
+          width="30"
+          height="30"
+          alt=""
+          aria-hidden="true"
+        />
         <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
       </RouterLink>
       <button

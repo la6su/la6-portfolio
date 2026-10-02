@@ -138,19 +138,25 @@ export const BLOG_PAGE_META: { index: BlogIndexMeta } & Record<BlogArticleSlug, 
 }
 
 /** Russian editorial metadata; paired with separately authored RU article HTML. */
-export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<BlogArticleSlug, BlogArticleMeta> = {
+export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<
+  BlogArticleSlug,
+  BlogArticleMeta
+> = {
   index: {
     title: 'Блог — кейсы и заметки о процессе | JUSTLOVEJAZZ',
-    description: 'Кейсы и инженерные заметки JUSTLOVEJAZZ о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
+    description:
+      'Кейсы и инженерные заметки JUSTLOVEJAZZ о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
     robots: 'index, follow, max-image-preview:large, max-snippet:-1',
     ogType: 'website',
     ogTitle: 'Блог JUSTLOVEJAZZ — кейсы и заметки о процессе',
-    ogDescription: 'Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
+    ogDescription:
+      'Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
     imageAlt: 'Обложка блога JUSTLOVEJAZZ',
   },
   'undercurrent-webgpu-fluid': {
     title: 'Undercurrent — симуляция жидкости на WebGPU | Блог JUSTLOVEJAZZ',
-    description: 'Кейс Undercurrent: как мы создали симулятор жидкости в реальном времени на TSL-графах и уложились в бюджет 60 кадров в секунду.',
+    description:
+      'Кейс Undercurrent: как мы создали симулятор жидкости в реальном времени на TSL-графах и уложились в бюджет 60 кадров в секунду.',
     ogType: 'article',
     ogTitle: 'Undercurrent — симуляция жидкости на WebGPU',
     ogDescription: 'Как мы создали симулятор жидкости в реальном времени на TSL-графах.',
@@ -161,7 +167,8 @@ export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<BlogArticleSlu
   },
   'glassmorphism-webgpu': {
     title: 'Стекло на WebGPU | Блог JUSTLOVEJAZZ',
-    description: 'Кейс о физическом стекле на WebGPU и WebGL2: передача света, clearcoat, иризация и отражения в Three.js.',
+    description:
+      'Кейс о физическом стекле на WebGPU и WebGL2: передача света, clearcoat, иризация и отражения в Three.js.',
     ogType: 'article',
     ogTitle: 'Стекло на WebGPU',
     ogDescription: 'Физический стеклянный материал с отражениями и иризацией для WebGPU и WebGL2.',
@@ -172,7 +179,8 @@ export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<BlogArticleSlu
   },
   'on-demand-rendering': {
     title: 'Рендеринг по запросу — ноль draw calls в простое | Блог JUSTLOVEJAZZ',
-    description: 'Как мы остановили ненужную отрисовку GPU в простое с помощью событийной модели, сохранив отзывчивость интерактивной сцены.',
+    description:
+      'Как мы остановили ненужную отрисовку GPU в простое с помощью событийной модели, сохранив отзывчивость интерактивной сцены.',
     ogType: 'article',
     ogTitle: 'Рендеринг по запросу — ноль draw calls в простое',
     ogDescription: 'Событийная отрисовка снижает нагрузку GPU, когда сцена не меняется.',
@@ -183,7 +191,8 @@ export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<BlogArticleSlu
   },
   'tsl-changes-everything': {
     title: 'Почему TSL меняет всё | Блог JUSTLOVEJAZZ',
-    description: 'Типобезопасные шейдеры на TypeScript, компиляция для WebGPU и WebGL2 и отказ от склейки строк GLSL.',
+    description:
+      'Типобезопасные шейдеры на TypeScript, компиляция для WebGPU и WebGL2 и отказ от склейки строк GLSL.',
     ogType: 'article',
     ogTitle: 'Почему TSL меняет всё',
     ogDescription: 'Шейдеры на TypeScript и единый граф для WebGPU и WebGL2.',
@@ -278,7 +287,7 @@ function jsonLd(
         inLanguage: lang === 'RU' ? 'ru' : 'en',
         url: `${origin}${blogMetaPath(article.slug, lang)}`,
         datePublished: article.publishedTime,
-      articleSection: articleMeta.article.section,
+        articleSection: articleMeta.article.section,
       }
     }),
   }

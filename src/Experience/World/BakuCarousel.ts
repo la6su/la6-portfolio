@@ -106,8 +106,12 @@ export class BakuCarousel {
     private readonly storySide: () => StorySide = () => 'center',
   ) {}
 
-  get visible(): boolean { return this._visible.value }
-  get sceneRoot(): THREE.Group | null { return this._root }
+  get visible(): boolean {
+    return this._visible.value
+  }
+  get sceneRoot(): THREE.Group | null {
+    return this._root
+  }
   set visible(value: boolean) {
     this._visible.value = value
   }
@@ -137,7 +141,11 @@ export class BakuCarousel {
     if (!url || !this.cardAssets.some((asset) => asset.textureUrl === url)) return
     card.setReducedMotion(this._reducedMotion)
     this.cards.push(card)
-    this.cards.sort((a, b) => (carouselCardMetadataOf(a.mesh)?.textureIndex ?? 0) - (carouselCardMetadataOf(b.mesh)?.textureIndex ?? 0))
+    this.cards.sort(
+      (a, b) =>
+        (carouselCardMetadataOf(a.mesh)?.textureIndex ?? 0) -
+        (carouselCardMetadataOf(b.mesh)?.textureIndex ?? 0),
+    )
     this.onActivity?.()
   }
 

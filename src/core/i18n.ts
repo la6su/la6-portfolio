@@ -36,7 +36,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   EN: {
     // Splash
     'splash.signalLost': 'Signal lost',
-    'splash.sceneFailed': 'The interactive scene could not start. Continue to the portfolio without 3D, or reload the page to try again.',
+    'splash.sceneFailed':
+      'The interactive scene could not start. Continue to the portfolio without 3D, or reload the page to try again.',
     'splash.sceneErrorCode': 'ERR:SCENE — INITIALIZATION FAILED',
     'splash.continueWithout3d': 'Continue without 3D',
     'splash.retry': 'Retry',
@@ -46,7 +47,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'showreel.playShort': 'Play',
     'showreel.pauseShort': 'Pause',
     'renderer.failureTitle': '3D rendering unavailable',
-    'renderer.failureDescription': 'The graphics device could not be restored. Reload the page to try again.',
+    'renderer.failureDescription':
+      'The graphics device could not be restored. Reload the page to try again.',
 
     // Navigation
     'nav.studio': 'Studio',
@@ -250,7 +252,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   RU: {
     // Splash
     'splash.signalLost': 'Сигнал потерян',
-    'splash.sceneFailed': 'Интерактивная сцена не запустилась. Продолжите просмотр портфолио без 3D или перезагрузите страницу и попробуйте снова.',
+    'splash.sceneFailed':
+      'Интерактивная сцена не запустилась. Продолжите просмотр портфолио без 3D или перезагрузите страницу и попробуйте снова.',
     'splash.sceneErrorCode': 'ОШИБКА: СЦЕНА — НЕ УДАЛОСЬ ЗАПУСТИТЬ',
     'splash.continueWithout3d': 'Продолжить без 3D',
     'splash.retry': 'Повторить',
@@ -260,7 +263,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'showreel.playShort': 'Пуск',
     'showreel.pauseShort': 'Пауза',
     'renderer.failureTitle': '3D-графика недоступна',
-    'renderer.failureDescription': 'Не удалось восстановить графическое устройство. Перезагрузите страницу и попробуйте снова.',
+    'renderer.failureDescription':
+      'Не удалось восстановить графическое устройство. Перезагрузите страницу и попробуйте снова.',
 
     // Navigation
     'nav.studio': 'Студия',

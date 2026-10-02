@@ -47,7 +47,8 @@ const server = await createServer({
 try {
   const { default: BlogPage } = await server.ssrLoadModule('/src/app/views/blog/BlogPage.vue')
   const { BLOG_CONTENT, BLOG_CONTENT_RU } = await server.ssrLoadModule('/src/core/blogContent.ts')
-  const { BLOG_PAGE_META, BLOG_PAGE_META_RU, renderBlogDocument } = await server.ssrLoadModule('/src/core/blogMeta.ts')
+  const { BLOG_PAGE_META, BLOG_PAGE_META_RU, renderBlogDocument } =
+    await server.ssrLoadModule('/src/core/blogMeta.ts')
   const { BLOG_ARTICLES, blogArticlePath } = await server.ssrLoadModule('/src/core/blogPages.ts')
   const { createSSRApp, h } = await import('vue')
   const { renderToString } = await import('@vue/server-renderer')
@@ -70,18 +71,29 @@ try {
       const meta = metadata[page.key]
       if (!meta) throw new Error(`Blog metadata is missing "${lang}:${page.key}"`)
       const body = content[page.key]
-      if (!body || body.length === 0) throw new Error(`blog content is missing for "${lang}:${page.key}"`)
+      if (!body || body.length === 0)
+        throw new Error(`blog content is missing for "${lang}:${page.key}"`)
 
-      const path = lang === 'RU'
-        ? page.variant === 'index' ? '/ru/blog' : `/ru${blogArticlePath(page.key)}`
-        : page.variant === 'index' ? '/blog' : blogArticlePath(page.key)
+      const path =
+        lang === 'RU'
+          ? page.variant === 'index'
+            ? '/ru/blog'
+            : `/ru${blogArticlePath(page.key)}`
+          : page.variant === 'index'
+            ? '/blog'
+            : blogArticlePath(page.key)
       const bodyHtml = await renderToString(
         createSSRApp(h(BlogPage, { variant: page.variant, body, lang, path })),
       )
       const document = renderBlogDocument(page.key, meta, bodyHtml, undefined, lang)
-      const out = lang === 'RU'
-        ? page.variant === 'index' ? resolve(root, 'ru/blog.html') : resolve(root, `ru/blog/${page.key}.html`)
-        : page.variant === 'index' ? resolve(root, 'blog.html') : resolve(outDir, `${page.key}.html`)
+      const out =
+        lang === 'RU'
+          ? page.variant === 'index'
+            ? resolve(root, 'ru/blog.html')
+            : resolve(root, `ru/blog/${page.key}.html`)
+          : page.variant === 'index'
+            ? resolve(root, 'blog.html')
+            : resolve(outDir, `${page.key}.html`)
       writeFileSync(out, document, 'utf8')
       console.log(`[prerender-blog] wrote ${out} (${document.length} chars) — ${path}`)
     }

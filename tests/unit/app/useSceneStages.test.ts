@@ -9,7 +9,10 @@ import { useSceneStages } from '../../../src/app/useSceneStages'
 describe('scene stage ports', () => {
   it('mounts raw stages and rejects stale parent or child requests', async () => {
     const root = new Group()
-    const slots = useSceneStages(() => true, () => root)
+    const slots = useSceneStages(
+      () => true,
+      () => root,
+    )
     let adoptedRoot: Group | null = null
     const stage = {
       mount: (node: Group) => {
@@ -35,7 +38,10 @@ describe('scene stage ports', () => {
 
   it('does not mount a stage after the persistent host begins teardown', async () => {
     let alive = true
-    const slots = useSceneStages(() => alive, () => new Group())
+    const slots = useSceneStages(
+      () => alive,
+      () => new Group(),
+    )
     const stage = {} as ContactHaloStage
 
     await slots.stages.contactHalo.mount(stage)
@@ -53,7 +59,10 @@ describe('scene stage ports', () => {
     const root = new Promise<Group>((resolve) => {
       resolveRoot = resolve
     })
-    const slots = useSceneStages(() => alive, () => root)
+    const slots = useSceneStages(
+      () => alive,
+      () => root,
+    )
     let mounted = false
     const stage = {
       mount: () => {
@@ -76,7 +85,10 @@ describe('scene stage ports', () => {
     const root = new Promise<Group>((resolve) => {
       resolveRoot = resolve
     })
-    const slots = useSceneStages(() => true, () => root)
+    const slots = useSceneStages(
+      () => true,
+      () => root,
+    )
     const mount = vi.fn()
     const stage = { mount } as unknown as WorksPlaneStage
 
@@ -90,7 +102,10 @@ describe('scene stage ports', () => {
   })
 
   it('clears every declarative route slot during persistent host teardown', () => {
-    const slots = useSceneStages(() => false, () => new Group())
+    const slots = useSceneStages(
+      () => false,
+      () => new Group(),
+    )
     const marker = {} as never
     slots.declarativeWorksStage.value = marker
     slots.declarativeWorksInstallation.value = marker

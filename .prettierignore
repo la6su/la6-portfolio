@@ -1,7 +1,17 @@
-# Build outputs and generated route documents must remain untouched by format.
+# Build output and generated route documents.
 dist/
 node_modules/
 coverage/
 prerender/
+blog.html
 blog/*.html
+ru/blog.html
+ru/blog/*.html
 public/sitemap.xml
+
+# Editorial HTML is hand-authored content; preserve its intentional inline markup.
+content/blog/**/*.html
+
+# Vendored/generated assets are not project-authored source.
+public/vendor/
+public/fonts/jetbrains-mono.css

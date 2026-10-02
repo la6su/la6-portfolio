@@ -35,9 +35,7 @@ onMounted(() => {
         firstRevealFrame = requestAnimationFrame(() => {
           firstRevealFrame = null
           const root = contentRoot()
-          const title = root.querySelector<HTMLElement>(
-            '.studio-title:not([data-blur-fade="off"])',
-          )
+          const title = root.querySelector<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
           if (title) BlurFade.reveal(title, 0.55, title.textContent?.trim() ?? '')
           const eyebrow = root.querySelector<HTMLElement>('[data-eyebrow]')
           if (eyebrow) NoiseText.revealEyebrow(eyebrow)

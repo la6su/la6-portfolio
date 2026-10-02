@@ -19,7 +19,9 @@ export class SectionGroups {
     roots: readonly THREE.Group[],
   ) {
     if (roots.length !== WORLD_SLOT_COUNT) {
-      throw new Error(`Expected ${WORLD_SLOT_COUNT} Vue-owned section roots, received ${roots.length}.`)
+      throw new Error(
+        `Expected ${WORLD_SLOT_COUNT} Vue-owned section roots, received ${roots.length}.`,
+      )
     }
     for (const [index, root] of roots.entries()) {
       if (root.parent !== scene) {

@@ -11,10 +11,13 @@ describe('render demand policy', () => {
     expect(anyActivity(NO_ACTIVITY)).toBe(false)
   })
 
-  it.each(Object.keys(NO_ACTIVITY) as (keyof RenderActivity)[])('keeps rendering while %s is active', (key) => {
-    const activity = { ...NO_ACTIVITY, [key]: true }
-    expect(anyActivity(activity)).toBe(true)
-  })
+  it.each(Object.keys(NO_ACTIVITY) as (keyof RenderActivity)[])(
+    'keeps rendering while %s is active',
+    (key) => {
+      const activity = { ...NO_ACTIVITY, [key]: true }
+      expect(anyActivity(activity)).toBe(true)
+    },
+  )
 
   it('allows ambient breathing only when breath-relevant activity is idle', () => {
     expect(idleForAmbientBreath(NO_ACTIVITY, false)).toBe(true)

@@ -22,7 +22,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <TresGroup v-for="(name, index) in names" :key="name" ref="groups" :name="name" :visible="index === 1">
+  <TresGroup
+    v-for="(name, index) in names"
+    :key="name"
+    ref="groups"
+    :name="name"
+    :visible="index === 1"
+  >
     <BakuCarouselOwner v-if="index === 3 && carousel" :carousel="carousel" />
     <JunniParticlesOwner v-if="index === 3 && particles" :stage="particles" />
   </TresGroup>

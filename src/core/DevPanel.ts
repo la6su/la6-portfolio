@@ -225,9 +225,8 @@ export class DevPanel {
         this.host.renderer.instance.toneMappingExposure = ev.value as number
       },
     )
-    f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on(
-      'change',
-      (ev) => this.host.setDebugContinuousRendering(Boolean(ev.value)),
+    f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on('change', (ev) =>
+      this.host.setDebugContinuousRendering(Boolean(ev.value)),
     )
     f.addButton({ title: 'Reload page' }).on('click', () => location.reload())
   }

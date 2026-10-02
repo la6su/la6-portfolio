@@ -83,11 +83,10 @@ rmSync(tempDir, { recursive: true, force: true })
 mkdirSync(tempDir, { recursive: true })
 
 try {
-  execFileSync(
-    'bun',
-    ['x', 'vite', 'build', '--sourcemap', '--emptyOutDir', '--outDir', tempDir],
-    { cwd: root, stdio: 'inherit' },
-  )
+  execFileSync('bun', ['x', 'vite', 'build', '--sourcemap', '--emptyOutDir', '--outDir', tempDir], {
+    cwd: root,
+    stdio: 'inherit',
+  })
   const assetNames = readdirSync(assetsDir)
   // The shared Three.js chunk is selected by the delivery contract
   // (excludes the Contact addon chunks); the lab-controls chunk is the
