@@ -16,6 +16,8 @@ describe('LabGamepad scene ownership', () => {
     root.add(crank)
 
     stage.bindNodes(root, crank)
+    expect(root.name).toBe('')
+    expect(crank.name).toBe('')
     stage.setReducedMotion(false)
     stage.visible = true
     stage.update(1)
@@ -28,7 +30,8 @@ describe('LabGamepad scene ownership', () => {
 
     stage.dispose()
     stage.dispose()
-    expect(root.visible).toBe(false)
+    expect(stage.visible).toBe(false)
+    expect(root.visible).toBe(true)
     expect(root.parent).toBe(scene)
     expect(geometryDisposed).toHaveBeenCalledTimes(1)
     expect(materialDisposed).toHaveBeenCalledTimes(1)

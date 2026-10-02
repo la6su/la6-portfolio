@@ -18,7 +18,7 @@ describe('declarative services stage controller', () => {
     stage.adopt({ root, parts, rings })
 
     stage.visible = true
-    expect(root.visible).toBe(true)
+    expect(stage.visible).toBe(true)
 
     const camera = new THREE.PerspectiveCamera(75, 1.5)
     camera.position.set(1, 2, 3)

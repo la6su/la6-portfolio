@@ -7,6 +7,7 @@
 // Clicking a case uses a focus → travel handoff before UIkit takes ownership.
 
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 // Ignore interactions that belong to the cinematic app chrome.
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
@@ -60,7 +61,7 @@ export class BakuCarousel {
   private cardAssets: BakuCarouselCardAsset[] = []
   private readonly cardListeners = new Set<(cards: readonly BakuCarouselCardAsset[]) => void>()
   private _root: THREE.Group | null = null
-  private _visible = true
+  private readonly _visible = shallowRef(true)
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
   private _morphTarget = 0
@@ -105,18 +106,15 @@ export class BakuCarousel {
     private readonly storySide: () => StorySide = () => 'center',
   ) {}
 
-  get visible(): boolean { return this._visible }
+  get visible(): boolean { return this._visible.value }
   get sceneRoot(): THREE.Group | null { return this._root }
   set visible(value: boolean) {
-    this._visible = value
-    if (this._root) this._root.visible = value
+    this._visible.value = value
   }
 
   bindRoot(root: THREE.Group): void {
     if (this._root && this._root !== root) throw new Error('BakuCarousel is already mounted.')
     this._root = root
-    root.name = 'baku-carousel'
-    root.visible = this._visible
   }
 
   unbindRoot(root: THREE.Group): void {

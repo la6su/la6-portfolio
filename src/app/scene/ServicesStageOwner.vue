@@ -39,7 +39,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <TresGroup ref="root" name="services-assembly" :visible="false" :dispose="null">
+  <TresGroup ref="root" name="services-assembly" :visible="stage.visible" :dispose="null">
     <TresMesh
       v-for="index in 7"
       :key="`service-part-${index}`"

@@ -207,6 +207,13 @@ preserve custom policy only when code or measurements prove the difference.
   mutated the mesh because its cache was not reactive. Converted that cache to
   a shallow ref and removed duplicate bind-time name/frustum/visibility writes;
   mutable instance count and matrix setup remain controller algorithms.
+- Services, Baku carousel, and Lab gamepad repeated the same visibility split:
+  controllers wrote directly to roots while their Tres owners exposed
+  `:visible`. Made their visibility state shallow-reactive and let Tres props
+  apply it. Removed repeated node-name writes from Baku/Lab bind methods because
+  those names already live in the SFC templates. Their root bindings remain
+  only for transform updates and behavior. Controller tests now assert that
+  visibility state changes without mutating Vue-owned scene nodes.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -1006,6 +1013,13 @@ name/frustum/visibility assignments. Kept instance matrix creation and count
 updates in the behavior owner. Vue type-check, ESLint, 105/105 unit tests,
 production build/budgets, Firefox home reveal and Contact route-cycle checks
 pass (2/2).
+
+**Services, Baku carousel, and Lab gamepad scene ownership:** Removed direct
+root visibility writes where the Tres SFC already binds `:visible`; controller
+state is now shallow-reactive. Removed duplicated static name writes from
+Baku/Lab node binding. Vue type-check, ESLint, 105/105 unit tests, compat guard,
+production build and bundle budgets pass. Firefox production route-cycle
+coverage for these changed stages remains to be run.
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

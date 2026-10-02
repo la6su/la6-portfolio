@@ -1,8 +1,10 @@
 import * as THREE from 'three'
 import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
+import { shallowRef } from 'vue'
 
 /** Animation/material controller for the declarative services scene. */
 export class ServicesStage {
+  private readonly _visible = shallowRef(false)
   private disposed = false
   private root: THREE.Group | null = null
   private readonly metal = new MeshStandardNodeMaterial({
@@ -27,11 +29,11 @@ export class ServicesStage {
   private rings: THREE.Mesh[] = []
 
   get visible(): boolean {
-    return this.root?.visible ?? false
+    return this._visible.value
   }
 
   set visible(value: boolean) {
-    if (this.root) this.root.visible = value
+    this._visible.value = value
   }
 
   get metalMaterial(): MeshStandardNodeMaterial {

@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
@@ -128,7 +129,7 @@ export class LabGamepad {
   readonly resources = createResources()
   private reducedMotion = prefersReducedMotion()
   private disposed = false
-  private _visible = false
+  private readonly _visible = shallowRef(false)
   private _root: THREE.Group | null = null
   private _crankPivot: THREE.Group | null = null
   private _clock = 0
@@ -136,21 +137,17 @@ export class LabGamepad {
   private readonly _pointerSmooth = new THREE.Vector2(0, 0)
 
   get visible(): boolean {
-    return this._root?.visible ?? this._visible
+    return this._visible.value
   }
 
   set visible(value: boolean) {
-    this._visible = value
-    if (this._root) this._root.visible = value
+    this._visible.value = value
   }
 
   bindNodes(root: THREE.Group, crankPivot: THREE.Group): void {
     if (this.disposed) return
     this._root = root
     this._crankPivot = crankPivot
-    root.name = 'lab-gamepad'
-    crankPivot.name = 'gamepad-crank'
-    root.visible = this._visible
   }
 
   unbindNodes(root: THREE.Group): void {
@@ -167,7 +164,7 @@ export class LabGamepad {
   /** Advance authored motion only on rendered frames. */
   update(dt: number): void {
     const root = this._root
-    if (this.disposed || !root?.visible || this.reducedMotion) return
+    if (this.disposed || !root || !this.visible || this.reducedMotion) return
 
     const mouse = input.getMouse()
     this._pointerTarget.set(mouse.x, mouse.y)
