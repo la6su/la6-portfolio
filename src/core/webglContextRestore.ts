@@ -22,7 +22,11 @@ export function waitForWebGLContextRestore(
 
     const onLost = (event: Event): void => {
       event.preventDefault()
-      restoreContext?.restoreContext()
+      if (restoreContext) {
+        // Chromium ignores restoreContext() while the loss event is still
+        // being dispatched, even after preventDefault() has been called.
+        window.setTimeout(() => restoreContext.restoreContext(), 0)
+      }
     }
     const onRestored = (): void => finish(true)
     const onAbort = (): void => finish(false)

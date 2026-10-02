@@ -766,6 +766,18 @@ a light surface/dark heading in Inverse, and the selected mode persisted when
 navigating Works → Manifesto. Returning to Auto restored the dark surface and
 light heading on Manifesto. This confirms those route theme states on software
 WebGL2; physical-GPU rendering remains open.
+Manual synthetic WebGL2 context loss exposed a recovery failure after Three's
+WebGL backend disposed itself: the context was restored once by the browser,
+then remained lost after backend cleanup. The recovery path had requested a
+second restore itself, while its event helper also requested restoration
+during `webglcontextlost` dispatch. The helper now schedules that request after
+event dispatch and the owner waits for that single restore. Repeating the
+synthetic loss/restore cycle on production Chromium/SwiftShader yielded the
+expected loss → restore → backend-disposal loss → restore sequence, a usable
+WebGL2 context, one scene canvas, and no renderer failure overlay. Three emits
+its expected device-lost console warning; no app errors or recovery-failure
+message appeared. This is software-backend lifecycle evidence, not physical
+GPU acceptance.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals

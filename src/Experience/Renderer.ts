@@ -281,7 +281,6 @@ export class Renderer {
         : null;
       await disposeUnifiedRendererNow(this.instance);
       if (restoreContext && restoredAfterDispose) {
-        restoreContext.restoreContext();
         const restored = await restoredAfterDispose;
         await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
         if (!restored || !this.isWebGLContextUsable(canvas)) {
