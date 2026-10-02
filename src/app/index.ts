@@ -16,7 +16,6 @@ import { jlzRouteRecords } from './routes'
 
 let mounted = false
 let unmountMountedVueApp: (() => Promise<void>) | null = null
-let destroyAppShell: (() => Promise<void>) | null = null
 
 /** Own the direct-entry hash handoff until the renderer is ready. */
 export function createDeferredInitialHashGate(): {
@@ -90,6 +89,8 @@ export async function mountVueApp(): Promise<void> {
   // no-ops; AppShell keeps the statically declared overlay hidden.
   const routeTransition = new RouteTransition()
   let appMounted = false
+  let destroyAppShell: (() => Promise<void>) | null = null
+  let unmountPromise: Promise<void> | null = null
   const initialHashGate = createDeferredInitialHashGate()
   const hashNavigationFrame = createSingleFrameOwner()
   const appUnsubs: Array<() => void> = []
@@ -212,22 +213,29 @@ export async function mountVueApp(): Promise<void> {
   }
   document.addEventListener('click', onClick, true)
 
-  unmountMountedVueApp = async () => {
-    if (disposed) return
+  const unmountApp = (): Promise<void> => {
+    if (unmountPromise) return unmountPromise
     disposed = true
     hashNavigationFrame.cancel()
     initialHashGate.invalidate()
     appUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     document.removeEventListener('click', onClick, true)
     routeTransition.dispose()
-    await destroyAppShell?.()
-    if (appMounted) app.unmount()
-    appMounted = false
-    destroyAppShell = null
-    delete window.__jlzRouterReady
-    mounted = false
-    unmountMountedVueApp = null
+    unmountPromise = (async () => {
+      try {
+        await destroyAppShell?.()
+      } finally {
+        if (appMounted) app.unmount()
+        appMounted = false
+        destroyAppShell = null
+        delete window.__jlzRouterReady
+        mounted = false
+        if (unmountMountedVueApp === unmountApp) unmountMountedVueApp = null
+      }
+    })()
+    return unmountPromise
   }
+  unmountMountedVueApp = unmountApp
 
   try {
     await routerReady
@@ -245,7 +253,7 @@ export async function mountVueApp(): Promise<void> {
     appMounted = true
     window.__jlzRouterReady = true
   } catch (error) {
-    await unmountMountedVueApp()
+    await unmountApp()
     throw error
   }
 

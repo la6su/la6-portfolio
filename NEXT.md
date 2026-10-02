@@ -102,6 +102,9 @@ Current known facts:
   keeping the mounted Vue control and Experience SFX state synchronized.
 - Startup and device-loss error messages no longer claim a WebGL2 adapter
   failure or prescribe hardware acceleration for unrelated renderer errors.
+- Vue Router teardown is now owned by the mount that created it. Concurrent
+  unmount calls share one promise, and shell disposal failure still runs Vue
+  and listener cleanup; a stale mount failure cannot tear down its successor.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
