@@ -172,6 +172,13 @@ preserve custom policy only when code or measurements prove the difference.
   graph is allocated. The library owns BloomNode's internal targets and its
   disposal. This keeps diagnostics from coupling production code to Three's
   private representation.
+- `WebGPUPostPipeline` retained a rebuild path for scene/camera replacement and
+  `RenderPipeline` checked for that replacement every frame. The persistent
+  Tres host owns one scene and camera, and recovery creates a new renderer and
+  a fresh pipeline, so no caller can replace those references in place.
+  Removed `setScene`, `_needsBuild`, and the unreachable old-graph teardown
+  before-build path. The TSL graph now builds lazily once per renderer and is
+  released with that renderer's pipeline.
 - The compat seams for Tres/Cientos are required: `bun run check:stdlib`
   confirms all 28 three-stdlib symbols and five curated WebGPU compatibility
   symbols are live for the pinned dependency graph. Since drift can break the
@@ -1043,6 +1050,14 @@ adoption; removed the unused raw root getter. ParticleBurst's false prop was
 removed because its constructor and trigger lifecycle already own visibility.
 Vue type-check, ESLint, 105/105 unit tests, production build/budgets, Firefox
 home reveal and Works repeated mount/release checks pass (2/2).
+
+**WebGPU post graph lifetime:** Removed the unused scene/camera swap and
+rebuild path from `WebGPUPostPipeline`; the persistent Tres scene/camera remain
+stable, and renderer recovery already constructs a fresh pipeline. The TSL
+graph now builds once on first WebGPU render per renderer. Vue type-check,
+lint, compatibility guards, unit suite and production build/budgets pass;
+physical WebGPU shader compilation and visual parity remain unverified because
+this environment cannot access the NVIDIA driver.
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

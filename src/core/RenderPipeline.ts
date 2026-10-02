@@ -84,8 +84,6 @@ export class RenderPipeline {
             this._webgpuPipeline = WebGPUPostPipeline.create(this._renderer, scene, camera)
             this._webgpuParamsDirty = true
           }
-          const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
-          if (sceneChanged) this._webgpuParamsDirty = true
           if (this._webgpuParamsDirty) {
             // `_params` is already the stable change-detection snapshot;
             // WebGPUPostPipeline copies its channels directly into uniforms.

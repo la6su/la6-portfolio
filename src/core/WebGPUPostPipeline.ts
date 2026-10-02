@@ -41,7 +41,6 @@ export class WebGPUPostPipeline {
   private _renderer: WebGPURenderer
   private _scene: Scene
   private _camera: Camera
-  private _needsBuild = true
   private _scenePass: PassNode | null = null
   private _bloomNode: BloomNode | null = null
 
@@ -65,18 +64,6 @@ export class WebGPUPostPipeline {
     return new WebGPUPostPipeline(renderer, scene, camera)
   }
 
-  setScene(scene: Scene, camera: Camera): boolean {
-    if (scene !== this._scene || camera !== this._camera) {
-      this._scene = scene
-      this._camera = camera
-      this._needsBuild = true
-      return true
-    }
-    // Background is handled by PassNode's clear color (scene.background)
-    // via Background.js — no need to composite it manually in the TSL graph.
-    return false
-  }
-
   updateParams(params: Readonly<PostParams>): void {
     this._bloomStrength.value = params.bloom
     this._bloomRadius.value = params.bloomRadius
@@ -98,9 +85,8 @@ export class WebGPUPostPipeline {
   }
 
   render(): void {
-    if (this._needsBuild) {
+    if (!this._pipeline) {
       this._buildPipeline()
-      this._needsBuild = false
     }
     // IMPORTANT: TSL RenderPipeline has its own render() — it renders the
     // scene+post graph via its outputNode. Do NOT call renderer.render()
@@ -113,20 +99,6 @@ export class WebGPUPostPipeline {
   }
 
   private _buildPipeline(): void {
-    if (this._pipeline) {
-      try {
-        this._pipeline.dispose()
-      } catch {
-        /* ignore */
-      } finally {
-        // Do not retain a disposed graph while a replacement is being built.
-        this._pipeline = null
-      }
-    }
-
-    this._disposeBloomNode()
-    this._disposeScenePass()
-
     // Scene pass: render scene to texture. PassNode clears with
     // scene.background automatically (Background.js handles this).
     const scenePass = tslPass(this._scene, this._camera)
