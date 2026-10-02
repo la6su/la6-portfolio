@@ -90,6 +90,11 @@ preserve custom policy only when code or measurements prove the difference.
   forwarding predicates; `Experience` now owns the demand flag and consumes
   the sole shared activity predicate for settling. Ambient breathing remains
   separate because it intentionally ignores four independent render sources.
+- Route reconciliation called `refreshRouteConfig()` (a one-use alias of
+  `SceneCoordinator.init()`), then immediately called `syncRouteVisuals()` even
+  though `init()` already performs that sync. Removed the alias and duplicate
+  call. `StageRegistry` still syncs after lazy stage creation/disposal changes
+  route visibility, where the state has actually changed.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an

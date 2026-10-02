@@ -173,8 +173,7 @@ export class ExperienceUI {
         try {
           // Rebuild page-specific fog/post/section ranges before route owners
           // reconcile visibility; otherwise SPA navigation keeps boot config.
-          coordinator.refreshRouteConfig()
-          coordinator.syncRouteVisuals()
+          coordinator.init()
           const stages = this.host.stages
           const routeStagesReady = stages.reconcileRoute(newPage)
           if (newPage === 'home') {
