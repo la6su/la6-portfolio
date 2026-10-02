@@ -150,6 +150,12 @@ preserve custom policy only when code or measurements prove the difference.
   a Vue post-flush language watcher. Firefox production checks pass for direct
   route canonical metadata and for preserving the case canonical + article
   type after an EN/RU toggle (2/2).
+- Lazy Works and Cyprus stages initialized viewport-dependent transforms from
+  `window.innerWidth/innerHeight`, while Experience already receives Tres's
+  canonical reactive viewport. StageRegistry now reads the current Tres
+  width/height snapshot when configuring either lazy stage. This removes the
+  parallel viewport source and avoids creating a stage with stale dimensions
+  if the viewport changes while its async import/load is pending.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -899,6 +905,13 @@ check and 97/97 unit tests pass. Full route/resource/accessibility portfolio
 suite passed 31 scenarios with five opt-in renderer skips before the fallback
 fix; the two failed DOM-only scenarios were then replayed and passed in both
 Chromium and Firefox.
+
+**Lazy-stage viewport ownership:** Works and Cyprus now initialize from the
+Tres size refs already watched by Experience, rather than reading the browser
+global a second time. Vue type-check, ESLint, 105/105 unit tests, production
+build and bundle budgets pass; Vite emits 351 modules, Three is 310.95 kB gzip,
+and the Experience chunk is 32.68 kB gzip. Physical WebGPU/WebGL hardware
+acceptance remains open.
 
 ## Follow-on goal policy
 

@@ -31,6 +31,8 @@ import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 interface StageRegistryContext {
   currentPage: () => PageId
   camera: Camera
+  /** Current CSS-pixel dimensions from Tres's viewport observer. */
+  viewport: () => { width: number; height: number }
   host: SceneStagePorts
   /** The effective text polarity resolved by ContentReveal. */
   isContactLight: () => boolean
@@ -97,7 +99,8 @@ export class StageRegistry {
       },
       configure: (stage) => {
         stage.setActive(this._ctx.currentPage() === 'works', 0)
-        stage.resize(window.innerWidth, window.innerHeight)
+        const { width, height } = this._ctx.viewport()
+        stage.resize(width, height)
         stage.setCamera(this._ctx.camera)
       },
       release: async (stage) => {
@@ -236,7 +239,8 @@ export class StageRegistry {
       attach: (stage) => this._ctx.host.contactCyprus.mount(stage),
       load: (stage) => stage.load(),
       configure: (stage) => {
-        stage.resize(window.innerWidth, window.innerHeight)
+        const { width, height } = this._ctx.viewport()
+        stage.resize(width, height)
         stage.setCamera(this._ctx.camera)
         stage.setActive(this._ctx.currentPage() === 'contact' && this._cyprusActive)
         stage.prewarm()

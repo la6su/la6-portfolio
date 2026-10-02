@@ -200,6 +200,10 @@ export class Experience {
     this._stages = new StageRegistry({
       currentPage: this._host.page,
       camera: this._host.camera,
+      viewport: () => ({
+        width: host.sizes.width.value,
+        height: host.sizes.height.value,
+      }),
       host: this._host.stages,
       isContactLight: () => this.contentReveal?.isLight ?? false,
       reducedMotion: () => this._reducedMotion,

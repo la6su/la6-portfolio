@@ -16,6 +16,7 @@ describe('StageRegistry resource teardown', () => {
     const registry = new StageRegistry({
       currentPage: () => 'services',
       camera: {} as never,
+      viewport: () => ({ width: 1280, height: 720 }),
       host: {} as SceneStagePorts,
       isContactLight: () => false,
       reducedMotion: () => false,
@@ -42,6 +43,7 @@ describe('StageRegistry resource teardown', () => {
     const registry = new StageRegistry({
       currentPage: () => 'contact',
       camera: {} as never,
+      viewport: () => ({ width: 1280, height: 720 }),
       host: {} as SceneStagePorts,
       isContactLight: () => false,
       reducedMotion: () => false,
@@ -72,6 +74,7 @@ describe('StageRegistry resource teardown', () => {
     const registry = new StageRegistry({
       currentPage: () => 'contact',
       camera: {} as never,
+      viewport: () => ({ width: 1280, height: 720 }),
       host: ports,
       isContactLight: () => false,
       reducedMotion: () => false,
