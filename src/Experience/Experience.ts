@@ -39,7 +39,6 @@ import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import type { ServicesStage } from './World/ServicesStage'
 import { disposeAllCaseTextures } from './World/caseTexture'
-import { contentRoot } from '../core/contentRoot'
 import { devDiagnostic } from '../core/devDiagnostic'
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 
@@ -553,13 +552,8 @@ export class Experience {
       }
     }
 
-    // Mark the intro section active on init so its DOM content is visible
-    // (ContentReveal toggles .section-active on jlz:section-change, but no
-    // event fires for the initial section).
-    const firstSection = contentRoot().querySelector('[data-section="intro"]')
-    firstSection?.classList.add('section-active')
-    // Apply the initial section theme and active state. DOM text reveals are
-    // owned by entry-app and start only after the splash is dismissed.
+    // Resolve initial content theme and scene state through the normal section
+    // event; useJlzPage already activates the home intro when route DOM mounts.
     eventBus.emit('jlz:section-change', {
       sectionId: 'intro',
       context: 'Studio — Home',

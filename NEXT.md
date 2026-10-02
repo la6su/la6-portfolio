@@ -120,11 +120,11 @@ preserve custom policy only when code or measurements prove the difference.
   the fan-out and missing lazy carousel behavior. Firefox production preview
   reduced-motion interaction passes (1/1); Chromium could not launch because
   its Playwright headless executable is absent in this environment.
-- Theme polarity was fanned out from `Experience` to GroundPlane, SplashCube,
-  route typography/ink stages and Works particles, while SceneCoordinator
-  already owned all those scene references. Moved this scene-only fan-out to
-  `SceneCoordinator.syncTheme()` and removed the Experience helper; the
-  section-indexed EnvSphere snap/transition remains at the theme-event boundary.
+- Home intro activation happened twice: `useJlzPage.postRender()` marks the
+  mounted route's intro section active before runtime startup, then
+  `Experience.init()` repeated the same query/class mutation later. Removed
+  Experience's DOM lookup and `contentRoot` dependency; the initial typed
+  `jlz:section-change` remains for ContentReveal and scene consumers.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an

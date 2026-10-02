@@ -156,6 +156,9 @@ test("direct section hashes activate the matching story slot after runtime readi
 
 test("home text reveal waits for splash dismissal", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-section="intro"]')).toHaveClass(
+    /section-active/,
+  );
   const title = page
     .locator('[data-page-view="home"] .studio-title:not([data-blur-fade="off"])')
     .first();
