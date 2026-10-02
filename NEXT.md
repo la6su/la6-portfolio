@@ -762,6 +762,11 @@ Execution order:
    menu provide their own scroll regions. Verify short landscape, small-height
    and enlarged-text layouts before changing this contract, since scene progress
    and DOM section visibility share the route's story position.
+   A production Chromium check at 640×360 measured all four case-study copy
+   panes at 94 px tall with 127–314 px of content. Each pane responded to its
+   own vertical scroll while the story track stayed at the current chapter;
+   no horizontal overflow or page errors appeared. Enlarged-text and mobile
+   menu scroll behavior remain open.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
