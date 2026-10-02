@@ -59,6 +59,10 @@ Current known facts:
 - Tres 5.9.2 propagates a parent's disposal policy during subtree removal.
   Resource-owned static subtrees now set `dispose: null` once at their root;
   per-node overrides remain where a child is removed independently.
+- Renderer update no longer hides a missing render pipeline by drawing directly
+  through WebGPURenderer. Recovery already closes the frame window while the
+  pipeline is absent; normal frames now require the owned pipeline. Low-tier
+  direct rendering remains an explicit policy inside `RenderPipeline`.
 - Production build and bundle budgets passed after the latest renderer
   simplification (`fd13967`). The user confirmed physical Firefox WebGPU and
   TSL post-processing. Firefox's compatibility feature-level notice comes
@@ -114,7 +118,10 @@ configuration only after checking their real consumers.
 Reviewed static transforms in five owners now use Tres props. Lab uses
 Cientos OrbitControls. TSL remains one shared graph across WebGPU and WebGL2;
 graph errors reach the normal failure path instead of silently switching
-render modes. Continue the full owner and helper inventory.
+render modes. Three's `RenderPipeline.render()` temporarily disables tone
+mapping only after updating its captured output transform, so the narrow
+project guard around graph rendering is still required to keep that transform
+at `NoToneMapping`. Continue the full owner and helper inventory.
 
 Exit when every scene node and GPU resource has an explicit owner, no helper
 duplicates a library feature, and continuous frames are requested only by

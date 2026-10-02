@@ -62,7 +62,7 @@ export class Renderer {
   public postManager = new PostProcessingManager();
 
   // Shared Three TSL graph, skipped only by the low-tier quality policy.
-  pipeline: RenderPipeline | null = null;
+  private pipeline: RenderPipeline | null = null;
 
   // Device-loss recovery is bounded by the backend policy.
   private _deviceLostAttempts = 0;
@@ -341,9 +341,10 @@ export class Renderer {
     // updates it on section change. Do NOT touch scene.fog here — that
     // would overwrite the per-section fog with a stale envColor value.
 
-    // Advance and upload post state only when the selected backend and quality
-    // tier actually use the TSL graph. The pipeline still verifies the live
-    // Three backend before building or rendering that graph.
+    // Recovery closes the frame window while its replacement pipeline is built.
+    const pipeline = this.pipeline
+    if (!pipeline) return
+
     if (this.capabilities.postProcessing) {
       this.postManager.update(dt);
       // Quality-tier intensity scaling is applied by PostProcessingManager
@@ -351,17 +352,11 @@ export class Renderer {
       // crossfaded display values straight to the pipeline; updateParams
       // remains the single change-detection owner (it diffs against its own
       // snapshot and force-pushes on a recreated pipeline's first render).
-      if (this.pipeline) {
-        this.pipeline.updateParams(this.postManager.postParams);
-      }
+      pipeline.updateParams(this.postManager.postParams);
     }
 
     // Render scene → post → screen
-    if (this.pipeline) {
-      this.pipeline.render(scene, camera);
-    } else {
-      this.instance.render(scene, camera);
-    }
+    pipeline.render(scene, camera);
   }
 
   public getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot {
