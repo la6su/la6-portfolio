@@ -410,6 +410,10 @@ Chromium was used for inverse-theme interaction instead. Keyboard/focus,
 reduced-motion, client takeover, and route transitions still need focused
 browser review. WebGPU/TSL and WebGL2 backend/recovery need a supported browser
 and GPU runtime; source/build success does not close those gates.
+On 2026-10-02, the cached headless Firefox process launched but returned
+`NS_ERROR_OUT_OF_MEMORY` while navigating to the production preview, so the
+current no-scene/manual interaction check could not run. The loopback preview
+was stopped; no browser behavior is inferred from that failed attempt.
 
 Latest production build and lint both pass. Bundle gates report Three at
 310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
