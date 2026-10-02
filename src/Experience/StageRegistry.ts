@@ -77,9 +77,7 @@ export class StageRegistry {
     return this.owners.labGamepad.stage
   }
 
-  /** Lazily create rich `/works` media only on that route, never on first
-   *  paint. The lifecycle flow (request guard, memoization, stale release)
-   *  lives in LazyStage.ts; only the stage-specific wiring stays here. */
+  /** Works-only media waits for its card assets and nested installation. */
   private _worksPlaneStageContract(): LazyStageContract<WorksPlaneStage> {
     return {
       label: 'WorksPlaneStage',
@@ -125,8 +123,7 @@ export class StageRegistry {
     return disposeLazyStage(this._worksPlaneStageContract())
   }
 
-  /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
-   * of the shared initial scene graph. Lifecycle flow: LazyStage.ts. */
+  /** Contact greeting, loaded only on the Contact route. */
   private _contactTypographyStageContract(): LazyStageContract<ContactTypographyStage> {
     return {
       label: 'ContactTypographyStage',
@@ -157,8 +154,7 @@ export class StageRegistry {
     return disposeLazyStage(this._contactTypographyStageContract())
   }
 
-  /** Lazily load the Contact ink halo so the TSL graph stays out of the
-   * shared initial scene graph. Lifecycle flow: LazyStage.ts. */
+  /** Contact ink halo, loaded only on the Contact route. */
   private _contactHaloStageContract(): LazyStageContract<ContactHaloStage> {
     return {
       label: 'ContactHaloStage',
@@ -190,9 +186,7 @@ export class StageRegistry {
     return disposeLazyStage(this._contactHaloStageContract())
   }
 
-  /** Lazily load the /manifesto ink wash so the TSL graph stays out of the
-   *  shared initial scene graph (same contract as the contact halo).
-   *  Lifecycle flow: LazyStage.ts. */
+  /** Manifesto ink wash, loaded only on the Manifesto route. */
   private _manifestoInkStageContract(): LazyStageContract<ManifestoInkStage> {
     return {
       label: 'ManifestoInkStage',
@@ -226,8 +220,7 @@ export class StageRegistry {
     return disposeLazyStage(this._manifestoInkStageContract())
   }
 
-  /** Lazily load the Contact location asset instead of keeping it in the home
-   *  scene. Lifecycle flow: LazyStage.ts. */
+  /** Contact location model, loaded only on the Contact route. */
   private _contactCyprusStageContract(): LazyStageContract<ContactCyprusStage> {
     return {
       label: 'ContactCyprusStage',
@@ -300,9 +293,7 @@ export class StageRegistry {
     return Promise.resolve()
   }
 
-  /** Lazily create the Lab experiment object on its first /lab visit. The
-   *  object is a static scene object — it is never disposed per route leave,
-   *  only on final destroy. Lifecycle flow: LazyStage.ts. */
+  /** The Lab object remains mounted after the first visit until runtime teardown. */
   private _labGamepadContract(): LazyStageContract<LabExperimentObject> {
     return {
       label: 'LabGamepad',
