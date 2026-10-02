@@ -44,12 +44,7 @@ export class ContentReveal {
   }
 
   private applyInitialTheme(): void {
-    const active = this.contentRoot().querySelector<HTMLElement>(
-      '[data-section].section-active, [data-page-section].section-active',
-    )
-    const sectionId =
-      active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
-    this.applyTheme(sectionId)
+    this.applyTheme(this.activeSectionId())
   }
 
   private getConfigs(): readonly PhaseConfig[] {
@@ -64,6 +59,17 @@ export class ContentReveal {
     // The active Vue route owns the semantic story root. Keep a document
     // fallback only for the short pre-mount bootstrap window.
     return document.getElementById('spa-content') ?? document
+  }
+
+  private activeSectionId(): string {
+    const active = this.contentRoot().querySelector<HTMLElement>(
+      '[data-section].section-active, [data-page-section].section-active',
+    )
+    return (
+      active?.getAttribute('data-section') ??
+      active?.getAttribute('data-page-section') ??
+      'intro'
+    )
   }
 
   private setupSectionSync() {
@@ -124,27 +130,15 @@ export class ContentReveal {
     // its theme immediately.)
     this.routeChangeUnsub = eventBus.on('jlz:route-change', () => {
       this.cachedConfigs = null
-      const active = this.contentRoot().querySelector<HTMLElement>(
-        '[data-section].section-active, [data-page-section].section-active',
-      )
-      const sectionId =
-        active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
-      this.applyTheme(sectionId)
+      this.applyTheme(this.activeSectionId())
     })
 
     // Vue's active class is the source for the section under the current
     // theme. The DOM fallback covers the instant before the first route render.
     this.themeChangeUnsub = eventBus.on('jlz:theme-change', () => {
-      const active = this.contentRoot().querySelector<HTMLElement>(
-        '[data-section].section-active, [data-page-section].section-active',
-      )
-      const sectionId =
-        active?.getAttribute('data-section') ??
-        active?.getAttribute('data-page-section') ??
-        'intro'
       // snap=true: theme toggle → EnvSphere must change instantly (no lerp)
       // to match the instant CSS uk-light flip.
-      this.applyTheme(sectionId, true)
+      this.applyTheme(this.activeSectionId(), true)
     })
   }
 
