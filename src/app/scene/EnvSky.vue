@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, shallowRef } from 'vue'
-import { Vector3 } from 'three'
 import type { Mesh, MeshBasicMaterial, PlaneGeometry } from 'three'
 import { traceDevLifecycle } from '../../core/devLifecycleTrace'
 
 const props = defineProps<{ material: MeshBasicMaterial }>()
 const emit = defineEmits<{ ready: [mesh: Mesh<PlaneGeometry, MeshBasicMaterial>] }>()
 const mesh = shallowRef<Mesh<PlaneGeometry, MeshBasicMaterial> | null>(null)
-const position = new Vector3(0, 0, -44)
 
 onMounted(() => {
   if (!mesh.value)
@@ -28,7 +26,7 @@ onBeforeUnmount(() => {
     ref="mesh"
     name="pavilion-sky"
     :material="props.material"
-    :position="position"
+    :position="[0, 0, -44]"
     :render-order="-1001"
     :frustum-culled="false"
     :dispose="null"

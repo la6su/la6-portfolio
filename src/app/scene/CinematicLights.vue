@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { markRaw, onMounted, shallowRef } from 'vue'
+import { onMounted, shallowRef } from 'vue'
 import {
-  Vector3,
   type DirectionalLight,
   type Group,
   type HemisphereLight,
@@ -27,10 +26,6 @@ const fill = shallowRef<DirectionalLight | null>(null)
 const rim = shallowRef<DirectionalLight | null>(null)
 const volumetric = shallowRef<PointLight | null>(null)
 const hemisphere = shallowRef<HemisphereLight | null>(null)
-const keyPosition = markRaw(new Vector3(...intro.keyPos))
-const fillPosition = markRaw(new Vector3(-4, 2, 1))
-const rimPosition = markRaw(new Vector3(0, 2, -4))
-const volumetricPosition = markRaw(new Vector3(0, 1.5, 0))
 
 onMounted(() => {
   if (
@@ -60,21 +55,21 @@ onMounted(() => {
       name="cinematic-key"
       :color="intro.keyColor"
       :intensity="intro.keyIntensity"
-      :position="keyPosition"
+      :position="intro.keyPos"
     />
     <TresDirectionalLight
       ref="fill"
       name="cinematic-fill"
       :color="intro.fillColor"
       :intensity="intro.fillIntensity"
-      :position="fillPosition"
+      :position="[-4, 2, 1]"
     />
     <TresDirectionalLight
       ref="rim"
       name="cinematic-rim"
       :color="intro.rimColor"
       :intensity="intro.rimIntensity"
-      :position="rimPosition"
+      :position="[0, 2, -4]"
     />
     <TresPointLight
       ref="volumetric"
@@ -82,7 +77,7 @@ onMounted(() => {
       :color="intro.volumetricColor"
       :intensity="intro.volumetricIntensity"
       :distance="14"
-      :position="volumetricPosition"
+      :position="[0, 1.5, 0]"
     />
     <TresHemisphereLight
       ref="hemisphere"

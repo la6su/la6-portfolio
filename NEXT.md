@@ -80,6 +80,13 @@ or preserve a wrapper solely because a test currently encodes it.
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
   building shared abstractions.
+- Scene-owner review has started with static transform ownership: `ServicesStageOwner`
+  now declares orbit scale/rotation/position as Tres props instead of mutating
+  mounted meshes, and `CinematicLights`, `GroundPlane`, and `EnvSky` use the
+  same declarative props for fixed light/object positions and orientation.
+  This removes setup-only Three `Vector3`/`Euler` instances and keeps imperative
+  ownership for the stage's live animation. Vue type-check and full production
+  build passed; this is a narrow slice, not completion of the scene audit.
 - `NEXT.md` was 1,158 lines and mixed the queue with historical implementation
   narration. This rewrite is the current plan; old progress claims are not
   acceptance evidence. Re-establish evidence as phases are executed.
@@ -181,7 +188,8 @@ source and bundle deltas are recorded against the audit baseline.
    loaded asset, algorithmic TSL object, or route-lazy feature. Prefer Vue/Tres
    declarations for stable hierarchy/props; use imperative Three only for
    generated geometry, custom algorithms, offscreen rendering, or APIs not
-   represented by Tres.
+   represented by Tres. **In progress:** static transforms in four owners now
+   live in Tres props; continue the inventory before claiming coverage.
 2. Compare each Cientos/control/material/loader/lifecycle use with its current
    Tres/Three equivalent. Remove hand-built equivalents only after behavior
    and lifecycle parity are understood.
