@@ -25,6 +25,7 @@ defineProps<{ mode: 'home' | 'content'; activeSectionId: string }>()
         uk-close
         data-close-cinematic-sheet
         aria-label="Close contact footer"
+        data-i18n-aria-label="common.closeContactFooter"
       ></button>
       <div class="jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left">
         <span class="jlz-contact-footer__kicker uk-text-uppercase" data-i18n="contactFooter.kicker"

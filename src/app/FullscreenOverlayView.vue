@@ -1,33 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import UIkit from "../core/uikit";
 import { eventBus } from "../core/EventBus";
-import { getLang, t } from "../core/i18n";
 
 const container = ref<HTMLDivElement | null>(null);
-const language = ref(getLang());
-const labels = computed(() => {
-  return {
-    language: language.value.toLowerCase(),
-    viewer: t("common.fullscreenViewer"),
-    close: t("common.close"),
-    previous: t("common.previous"),
-    next: t("common.next"),
-  };
-});
-let unsubscribeLanguage: (() => void) | undefined;
 
 onMounted(() => {
   if (container.value) {
     UIkit.update(container.value);
   }
-  unsubscribeLanguage = eventBus.on("jlz:lang-change", () => {
-    language.value = getLang();
-  });
 });
 
 onBeforeUnmount(() => {
-  unsubscribeLanguage?.();
   eventBus.emit("jlz:fullscreen-overlay-unmounted");
 });
 </script>
@@ -41,14 +25,15 @@ onBeforeUnmount(() => {
     class="jlz-fs-overlay uk-modal uk-modal-full uk-light"
     role="dialog"
     aria-modal="true"
-    :lang="labels.language"
-    :aria-label="labels.viewer"
+    aria-label="Fullscreen project viewer"
+    data-i18n-aria-label="common.fullscreenViewer"
   >
     <div class="uk-modal-dialog jlz-fs-dialog">
       <button
         class="uk-modal-close-full uk-close-large jlz-fs-close"
         type="button"
-        :aria-label="labels.close"
+        aria-label="Close"
+        data-i18n-aria-label="common.close"
       >
         <span uk-icon="icon: close; ratio: 1.25" aria-hidden="true"></span>
       </button>
@@ -73,14 +58,16 @@ onBeforeUnmount(() => {
       <button
         class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center"
         type="button"
-        :aria-label="labels.previous"
+        aria-label="Previous"
+        data-i18n-aria-label="common.previous"
       >
         <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
       </button>
       <button
         class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center"
         type="button"
-        :aria-label="labels.next"
+        aria-label="Next"
+        data-i18n-aria-label="common.next"
       >
         <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
       </button>

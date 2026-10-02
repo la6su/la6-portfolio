@@ -168,6 +168,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
           type="button"
           data-baku-carousel-control="prev"
           aria-label="Previous work"
+          data-i18n-aria-label="home.previousWork"
           data-cursor="view"
         >
           <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
@@ -177,6 +178,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
           type="button"
           data-baku-carousel-control="next"
           aria-label="Next work"
+          data-i18n-aria-label="home.nextWork"
           data-cursor="view"
         >
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>

@@ -42,6 +42,7 @@ import { RouterLink } from 'vue-router'
           uk-close
           data-close-cinematic-sheet
           aria-label="Close navigation"
+          data-i18n-aria-label="menu.closeNavigation"
         ></button>
       </div>
       <!-- Main 2-column grid: stat | top-level navigation -->

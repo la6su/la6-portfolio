@@ -20,10 +20,10 @@
 //   lab.*          — lab content page
 //   contact.*      — contact content page
 //   meta.*         — per-page <title> + <meta description> (route-based SEO)
-//   common.*       — shared CTAs (explore, readMore, send) + secret hints
+//   common.*       — shared CTAs and accessible control names
 //
-// English text is always the default in templates (no-JS fallback).
-// applyTranslations() only replaces textContent when a translation exists.
+// English text and attributes are always the template defaults (no-JS
+// fallback). applyTranslations() updates marked text, placeholders and labels.
 
 import { eventBus } from './EventBus'
 
@@ -45,9 +45,14 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.lab': 'Lab',
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
+    'nav.brand': 'JUSTLOVEJAZZ — Studio',
+    'nav.storyline': 'Narrative sections',
+    'nav.routes': 'Portfolio routes',
+    'nav.goToSection': 'Go to section',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
+    'menu.closeNavigation': 'Close navigation',
 
     // Cinematic shell + contact finale
     'story.hint': 'Scroll · swipe',
@@ -60,6 +65,11 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Common CTAs
     'common.explore': 'Explore',
     'common.close': 'Close',
+    'common.closeContactFooter': 'Close contact footer',
+    'common.switchLanguage': 'Switch language',
+    'common.toggleInverseTheme': 'Toggle inverse theme',
+    'common.toggleSound': 'Toggle sound',
+    'common.skipToContent': 'Skip to content',
     'common.fullscreenViewer': 'Fullscreen project viewer',
     'common.previous': 'Previous',
     'common.next': 'Next',
@@ -79,6 +89,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — works
     'home.works.title': 'Works',
+    'home.previousWork': 'Previous work',
+    'home.nextWork': 'Next work',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Manifesto',
@@ -231,9 +243,14 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.lab': 'Лаборатория',
     'nav.contact': 'Контакты',
     'nav.blog': 'Блог',
+    'nav.brand': 'JUSTLOVEJAZZ — Студия',
+    'nav.storyline': 'Разделы истории',
+    'nav.routes': 'Разделы портфолио',
+    'nav.goToSection': 'Перейти к разделу',
 
     // Menu overlay (RU)
     'menu.navigate': 'Меню',
+    'menu.closeNavigation': 'Закрыть меню навигации',
 
     // Cinematic shell + contact finale
     'story.hint': 'Листайте · свайпайте',
@@ -247,6 +264,11 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Common CTAs
     'common.explore': 'Исследовать',
     'common.close': 'Закрыть',
+    'common.closeContactFooter': 'Закрыть контакты',
+    'common.switchLanguage': 'Сменить язык',
+    'common.toggleInverseTheme': 'Переключить инверсную тему',
+    'common.toggleSound': 'Переключить звук',
+    'common.skipToContent': 'Перейти к содержимому',
     'common.fullscreenViewer': 'Полноэкранный просмотр проекта',
     'common.previous': 'Предыдущий проект',
     'common.next': 'Следующий проект',
@@ -266,6 +288,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Home — works
     'home.works.title': 'Работы',
+    'home.previousWork': 'Предыдущая работа',
+    'home.nextWork': 'Следующая работа',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Манифест',
@@ -449,8 +473,7 @@ export function t(key: string): string {
   return TRANSLATIONS[currentLang]?.[key] ?? TRANSLATIONS.EN?.[key] ?? key
 }
 
-/** Apply translations to all [data-i18n] elements in the document.
- *  Also handles data-i18n-placeholder for input placeholder attributes. */
+/** Apply translations to marked text and attributes throughout the document. */
 export function applyTranslations(): void {
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n')
@@ -459,5 +482,9 @@ export function applyTranslations(): void {
   document.querySelectorAll<HTMLElement>('[data-i18n-placeholder]').forEach((el) => {
     const key = el.getAttribute('data-i18n-placeholder')
     if (key && el instanceof HTMLInputElement) el.placeholder = t(key)
+  })
+  document.querySelectorAll<HTMLElement>('[data-i18n-aria-label]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-aria-label')
+    if (key) el.setAttribute('aria-label', t(key))
   })
 }

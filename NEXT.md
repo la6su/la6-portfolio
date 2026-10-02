@@ -390,7 +390,9 @@ content with prior-state restoration, and focus return. Lint and the production
 build pass; browser keyboard/screen-reader verification remains open.
 The persistent full-screen project dialog also had hard-coded English labels
 for its dialog name and close/previous/next controls. Those labels now have EN
-and RU entries and update through the existing language-change event.
+and RU entries. The shared translator applies marked `aria-label` attributes
+alongside text and placeholders, so persistent console, menu, contact and home
+carousel controls follow the active locale without per-component listeners.
 
 Chromium visual QA reproduced the inverse-theme contrast issue on `/works` and
 `/manifesto`: polarity classes and foreground tokens changed, but the HTML
