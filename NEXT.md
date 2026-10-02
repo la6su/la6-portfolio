@@ -87,6 +87,11 @@ pipeline, and demand scheduling; `SceneCoordinator` and
 `StageRegistry`/`LazyStage` manage route-scoped async scene lifetimes. Unit
 tests are under `tests/unit`; browser specs remain under `tests`.
 
+The lazy showreel still waits for the first open before assigning its video
+source. On terminal teardown it now clears the source and calls `load()` after
+pausing, aborting an active media fetch before removing the element and
+disposing its textures.
+
 Current known facts:
 
 - Deep audit found a shared inverse-theme defect on content routes, including

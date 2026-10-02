@@ -316,14 +316,21 @@ export class ShowreelTheater {
     if (this.disposed) return
     this.disposed = true
     this.mediaListeners.abort()
-    this.video?.pause()
+    const video = this.video
+    video?.pause()
+    if (video) {
+      // Stop an in-flight source request before releasing the element. A
+      // removed media node can otherwise keep fetching after its owner dies.
+      video.removeAttribute('src')
+      video.load()
+      video.remove()
+    }
     this.videoTexture?.dispose()
     this.posterTexture?.dispose()
     traceDevLifecycle('scene-owner:showreel-media-disposed')
     // Tres owns the portal quad and its material/geometry. This controller
     // owns the video/poster textures and HTML media element only.
     this.quad = null
-    this.video?.remove()
     this.video = null
     this.videoTexture = null
     this.posterTexture = null
