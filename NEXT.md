@@ -203,6 +203,10 @@ preserve custom policy only when code or measurements prove the difference.
   Removed the root bind/reference and repeated static writes; the controller
   now binds only the mesh whose scale it animates, exposes reactive visibility
   to the shared SFC, and Tres remains the static prop owner.
+- JunniParticles also bound visibility through a static SFC prop but directly
+  mutated the mesh because its cache was not reactive. Converted that cache to
+  a shallow ref and removed duplicate bind-time name/frustum/visibility writes;
+  mutable instance count and matrix setup remain controller algorithms.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -995,6 +999,13 @@ and root lifecycle handoff; the behavior controller keeps only the animated
 mesh binding and reactive visibility state. Vue type-check, ESLint, 105/105
 unit tests, production build/budgets and Firefox repeated Contact route cycles
 pass (1/1).
+
+**JunniParticles scene ownership:** Visibility now flows from its shallow
+reactive state through the existing Tres prop; removed repeated bind-time
+name/frustum/visibility assignments. Kept instance matrix creation and count
+updates in the behavior owner. Vue type-check, ESLint, 105/105 unit tests,
+production build/budgets, Firefox home reveal and Contact route-cycle checks
+pass (2/2).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

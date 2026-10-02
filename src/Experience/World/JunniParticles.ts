@@ -21,6 +21,7 @@
 // requested rendering (World.update runs only while needsRender is true).
 
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import { SpriteNodeMaterial } from 'three/webgpu'
 import {
   Fn,
@@ -85,7 +86,7 @@ export class JunniParticles {
   private readonly _range: THREE.Vector3
   private _reduced = false
   private _mesh: THREE.InstancedMesh | null = null
-  private _visible = true
+  private readonly _visible = shallowRef(true)
   private _count: number
   geometry: THREE.BufferGeometry
   readonly material: SpriteNodeMaterial
@@ -278,10 +279,9 @@ export class JunniParticles {
 
   get count(): number { return this._count }
   get mesh(): THREE.InstancedMesh | null { return this._mesh }
-  get visible(): boolean { return this._visible }
+  get visible(): boolean { return this._visible.value }
   set visible(value: boolean) {
-    this._visible = value
-    if (this._mesh) this._mesh.visible = value
+    this._visible.value = value
   }
 
   /** Adopt the Vue/Tres-declared instance node; this controller owns its resources. */
@@ -291,9 +291,6 @@ export class JunniParticles {
     if (this._mesh && this._mesh !== mesh)
       throw new Error('JunniParticles can only own one mounted instance node.')
     this._mesh = mesh
-    mesh.name = 'particles'
-    mesh.frustumCulled = false
-    mesh.visible = this._visible
     mesh.count = this._count
     this.writeIdentityMatrices(mesh)
   }

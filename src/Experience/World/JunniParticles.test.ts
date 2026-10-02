@@ -15,7 +15,7 @@ describe('declarative Junni particle owner', () => {
     expect(controller).not.toBeInstanceOf(THREE.Object3D)
     controller.bindMesh(mesh)
     controller.visible = false
-    expect(mesh.visible).toBe(false)
+    expect(controller.visible).toBe(false)
 
     controller.setCount(2)
     expect(mesh.geometry).toBe(controller.geometry)
@@ -24,7 +24,7 @@ describe('declarative Junni particle owner', () => {
 
     controller.dispose()
     controller.dispose()
-    expect(mesh.visible).toBe(false)
+    expect(controller.visible).toBe(false)
     expect(mesh.parent).toBe(parent)
     expect(materialDispose).toHaveBeenCalledTimes(1)
     expect(firstGeometryDispose).toHaveBeenCalledTimes(1)
