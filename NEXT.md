@@ -48,9 +48,9 @@ Current known facts:
 - Resource disposal waits for Vue/Tres to detach declared nodes before GPU
   release. Host renderer disposal is deferred until scene owners unmount.
 - The unit suite was moved out of `src`; no test run is claimed by this plan.
-- `SceneTransformPass` returns the active config and section index it already
-  resolved; the redundant phase-id config Map and coordinator forwarding
-  method are gone.
+- `SceneTransformPass` returns its active/from/to configs and section index;
+  Experience no longer re-reads route sections or looks phase ids up in a
+  duplicate config Map.
 - Production build and bundle budgets passed after the latest renderer
   simplification (`fd13967`). The user confirmed physical Firefox WebGPU and
   TSL post-processing. Firefox's compatibility feature-level notice comes

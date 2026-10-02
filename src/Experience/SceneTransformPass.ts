@@ -20,8 +20,10 @@ import type { SectionStateMachine } from './SectionStateMachine'
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
   worldState: WorldState
-  /** Active route config and index already resolved by this transform pass. */
-  phaseConfig: PhaseConfig | undefined
+  /** Route configs and index already resolved by this transform pass. */
+  fromConfig: PhaseConfig | undefined
+  toConfig: PhaseConfig | undefined
+  activeConfig: PhaseConfig | undefined
   sectionIndex: number
 }
 
@@ -62,7 +64,9 @@ export class SceneTransformPass {
   // sat inside a fresh object graph on every demand-driven frame.
   private _poolResult: WorldTransformResult = {
     cameraTarget: { position: this._poolPos, lookAt: this._poolLookAt, fov: 0 },
-    phaseConfig: undefined,
+    fromConfig: undefined,
+    toConfig: undefined,
+    activeConfig: undefined,
     sectionIndex: 0,
     worldState: {
       phaseProgress: 0,
@@ -330,7 +334,9 @@ export class SceneTransformPass {
     cameraTarget.fov = THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t)
     // Arrival metadata drives discrete systems (theme, post, cube) while the
     // transform/material values remain a continuous from→to blend.
-    result.phaseConfig = configs[activeIndex]
+    result.activeConfig = configs[activeIndex]
+    result.fromConfig = fromCfg
+    result.toConfig = toCfg
     result.sectionIndex = activeIndex
     worldState.phaseProgress = t
     bakuMaterial.role = toBaku.role

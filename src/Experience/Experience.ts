@@ -16,7 +16,7 @@ import { FrameTiming } from '../core/FrameTiming'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
 import { ShowreelController } from './ShowreelController'
-import { WORKS_SLOT_INDEX, WORLD_SLOT_COUNT } from '../core/worldSlots'
+import { WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
@@ -808,18 +808,19 @@ export class Experience {
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._storyNav?.getOverallProgress() ?? 0
     const sceneStart = frameTiming ? performance.now() : 0
-    const { cameraTarget, worldState, phaseConfig: cfg, sectionIndex: idx } =
-      this.coordinator.updateTransform(ns)
+    const {
+      cameraTarget,
+      worldState,
+      activeConfig: cfg,
+      fromConfig: fromCfg,
+      toConfig: toCfg,
+      sectionIndex: idx,
+    } = this.coordinator.updateTransform(ns)
     this.coordinator.update(dt, this._needsRender)
     const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
     // Drive the baku material blend — from→to slot colors + phaseProgress
     // (scroll t) through SplashCube.updateWorldBlend.
-    const sections = this.coordinator.sections
     if (this.baku) {
-      const fromCfg = sections[idx]?.phaseConfig
-      // Blend toward the next slot (clamped to the last of the six).
-      const toIdx = Math.min(idx + 1, WORLD_SLOT_COUNT - 1)
-      const toCfg = sections[toIdx]?.phaseConfig
       if (fromCfg && toCfg) {
         this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
