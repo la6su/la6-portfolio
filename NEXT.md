@@ -765,8 +765,14 @@ Execution order:
    A production Chromium check at 640×360 measured all four case-study copy
    panes at 94 px tall with 127–314 px of content. Each pane responded to its
    own vertical scroll while the story track stayed at the current chapter;
-   no horizontal overflow or page errors appeared. Enlarged-text and mobile
-   menu scroll behavior remain open.
+   no horizontal overflow or page errors appeared. A 200% root-font-size
+   Chromium emulation exposed clipped content in Services, Manifesto, and Lab
+   on a narrow viewport. Scrolling the active section in-page kept the outer
+   story track position unchanged. Added section-level vertical overflow for
+   compact viewport media queries; lint and production build pass. The browser
+   automation runtime failed to initialize after this CSS change, so the new
+   rule still needs a post-build browser check. Mobile-menu scroll behavior
+   remains open.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.

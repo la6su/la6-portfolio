@@ -132,6 +132,20 @@ body[data-lab-camera='on']
   scroll-snap-stop: always;
 }
 
+// Compact viewports and text enlargement can make a semantic section taller
+// than its one-screen story frame. Let the section itself scroll in that case;
+// the outer track still advances between fixed story frames.
+@media (max-width: 959px), (max-height: 650px) {
+  #spa-content[data-page-view='home']
+    > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]),
+  #spa-content
+    > .jlz-page
+    > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
 #spa-content > .jlz-page > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
   color: var(--jlz-color-text);
   background: transparent;
