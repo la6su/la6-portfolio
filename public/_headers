@@ -5,9 +5,10 @@
 # translate to Cache-Control response headers.
 #
 # Strategy:
-#   - Fingerprinted assets (vite emits [name]-[hash].js/.css) → immutable, 1 year.
+#   - Fingerprinted root JS/CSS/WASM (vite emits [name]-[hash].ext) → immutable, 1 year.
 #     Safe because the hash changes on content change.
-#   - /assets/* (project covers, fonts) → 1 year immutable (content-addressed).
+#   - Stable public media under /assets/projects, /assets/gltf and /assets/video
+#     → always revalidate; these publicDir paths do not include content hashes.
 #   - /vendor/prism/* + /js/blog.js → 1 year immutable (version-pinned in repo).
 #   - logo.svg, site.webmanifest, robots.txt, sitemap.xml → revalidate.
 #   - HTML (index.html, blog.html, blog/*) → no-cache (always fresh, OG tags matter).
@@ -32,9 +33,21 @@
 /blog/*
   Cache-Control: public, max-age=0, must-revalidate
 
-# ── Fingerprinted vite assets — immutable (hash in filename) ──
-/assets/*
+# ── Fingerprinted Vite output at the /assets root ──
+/assets/:file.js
   Cache-Control: public, max-age=31536000, immutable
+/assets/:file.css
+  Cache-Control: public, max-age=31536000, immutable
+/assets/:file.wasm
+  Cache-Control: public, max-age=31536000, immutable
+
+# ── Public media uses stable paths; revalidate when content is redeployed ──
+/assets/projects/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/gltf/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/video/*
+  Cache-Control: public, max-age=0, must-revalidate
 
 # ── Vendored libs (version-pinned, content-addressed) ──
 /vendor/*

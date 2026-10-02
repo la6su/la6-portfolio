@@ -473,16 +473,29 @@ The cached Playwright WebKit binary also cannot launch on this host because
 `libicu74`, `libxml2`, and `libflite1` are missing. The preview was stopped;
 system browser dependencies were not installed.
 
-Latest production build and lint both pass. Bundle gates report Three at
-310.94/350 kB gzip and UIkit at 53.84/56 kB. The 1080p 30 fps showreel
+The 2026-10-02 production build and lint pass after the cache-rule fix.
+Bundle gates report Three at 310.94/350 kB gzip and UIkit at 53.84/56 kB. The
+1080p 30 fps showreel
 `coming-soon.mp4` was re-encoded with H.264 CRF 26 after a full-clip SSIM
 comparison (0.9929) and frame inspection; its size fell from 5.27 MB to
 4.16 MB with the AAC audio stream copied unchanged. Recheck the complete media
-budget in the build below. The Contact-only Three
-`DRACOLoader` path emits both standard and glTF decoder asset sets because
-the addon declares both URL families; this is a possible deploy-size
-optimization, but changing decoder path ownership needs its own compatibility
-and network verification. The active glTF decoder path is already route-lazy.
+budget in the build below. The Contact-only Three `DRACOLoader` module still
+emits both standard and glTF decoder asset sets because the addon declares
+both URL families. `ContactCyprusStage` selects the glTF WASM wrapper and
+binary and clears the standalone `dep_js` path; only a browser network trace
+can confirm requests on the deploy target. Do not delete copied decoder files
+without a supported-browser check.
+
+Deployment cache audit found that `/assets/*` incorrectly marked all public
+media as immutable even though `/assets/projects/*`, `/assets/gltf/*`, and
+`/assets/video/*` use stable, unhashed paths. `public/_headers` now gives those
+three public asset groups immediate revalidation and limits one-year immutable
+caching to Vite's hashed root JS/CSS/WASM outputs. The current emitted Vite
+asset set is flat under `/assets/`, while public media is nested under the
+three explicit directories, so these patterns do not overlap for this build.
+The rebuilt `dist/_headers` matches its source. This configuration still needs
+deployment-server verification; Caddy/HAProxy do not consume `_headers`
+automatically.
 
 Execution order:
 
