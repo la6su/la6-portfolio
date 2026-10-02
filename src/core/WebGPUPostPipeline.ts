@@ -32,16 +32,6 @@ import type { Scene, Camera } from 'three'
 import { withNoToneMapping } from './toneMappingGuard'
 import type { PostParams } from './postParams'
 
-interface RenderTargetOwner {
-  dispose?: () => void
-}
-
-interface BloomResourceOwner extends RenderTargetOwner {
-  _renderTargetBright?: RenderTargetOwner | null
-  _renderTargetsHorizontal?: Array<RenderTargetOwner | null>
-  _renderTargetsVertical?: Array<RenderTargetOwner | null>
-}
-
 /**
  * TSL post-processing pipeline for WebGPU. Replaces direct renderer.render()
  * on the WebGPU path with a bloom + vignette + grain graph.
@@ -301,25 +291,4 @@ export class WebGPUPostPipeline {
     this._disposeScenePass()
   }
 
-  /** Counts only live render targets owned by this post graph. */
-  getResourceInfo(): { renderTargets: number; passes: number } {
-    const renderTargets = new Set<RenderTargetOwner>()
-    if (this._scenePass) renderTargets.add(this._scenePass.renderTarget)
-
-    // The bloom internals below are three-private (undeclared on BloomNode),
-    // so the resource census reads them through one narrow owner view.
-    const bloom = this._bloomNode as (BloomNode & BloomResourceOwner) | null
-    if (bloom?._renderTargetBright) renderTargets.add(bloom._renderTargetBright)
-    for (const target of bloom?._renderTargetsHorizontal ?? []) {
-      if (target) renderTargets.add(target)
-    }
-    for (const target of bloom?._renderTargetsVertical ?? []) {
-      if (target) renderTargets.add(target)
-    }
-
-    return {
-      renderTargets: renderTargets.size,
-      passes: this._scenePass ? 1 : 0,
-    }
-  }
 }

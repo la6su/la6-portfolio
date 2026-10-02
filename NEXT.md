@@ -166,6 +166,12 @@ preserve custom policy only when code or measurements prove the difference.
   into coordinator and Cyprus stage mutations. Moved that mapping to
   Experience with the route handler; ExperienceUI no longer depends on
   SceneCoordinator and only publishes/handles UI-facing interactions.
+- The post resource panel read BloomNode's private render-target arrays solely
+  to display `post targets` and `post passes`. Removed those counters and the
+  private-field casts; kept only the public fact that the lazy WebGPU post
+  graph is allocated. The library owns BloomNode's internal targets and its
+  disposal. This keeps diagnostics from coupling production code to Three's
+  private representation.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -932,6 +938,13 @@ Vue type-check, ESLint, 105/105 unit tests and production build/budgets pass;
 Firefox production-preview Works and Contact repeated route mount/release
 scenarios still pass (2/2). Chromium/WebKit and physical GPU acceptance remain
 open.
+
+**Post diagnostics simplification:** Removed DevPanel's render-target/pass
+counters, which depended on BloomNode's undeclared private arrays. The runtime
+snapshot now reports only whether the app-owned WebGPU graph is allocated;
+Three owns and disposes the internal Bloom targets. Vue type-check, ESLint,
+105/105 unit tests, production build and bundle budgets pass. Renderer visual
+parity and soak acceptance remain open on physical GPUs.
 
 ## Follow-on goal policy
 

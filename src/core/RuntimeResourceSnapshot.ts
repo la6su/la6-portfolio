@@ -16,8 +16,6 @@ export interface RuntimeResourceSnapshot {
     programs: number | null
   }
   post: {
-    renderTargets: number
-    passes: number
     webgpuPipeline: boolean
   }
 }
@@ -30,8 +28,6 @@ export interface RendererResourceInfo {
 }
 
 interface PostResourceInfo {
-  renderTargets: number
-  passes: number
   webgpuPipeline: boolean
 }
 

@@ -147,13 +147,8 @@ export class RenderPipeline {
     // renderer teardown owns the underlying backend pipeline resources.
   }
 
-  /** Counts the post resources this owner can enumerate for development soaks. */
-  public getResourceInfo(): { renderTargets: number; passes: number; webgpuPipeline: boolean } {
-    const post = this._webgpuPipeline?.getResourceInfo()
-    return {
-      renderTargets: post?.renderTargets ?? 0,
-      passes: post?.passes ?? 0,
-      webgpuPipeline: this._webgpuPipeline !== null,
-    }
+  /** Whether the lazy native WebGPU graph has been allocated. */
+  public get hasWebGPUPostPipeline(): boolean {
+    return this._webgpuPipeline !== null
   }
 }

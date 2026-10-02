@@ -390,14 +390,11 @@ export class Renderer {
   }
 
   public getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot {
-    const post = this.pipeline?.getResourceInfo();
     return captureRuntimeResourceSnapshot(
       scene,
       this.instance as unknown as RendererResourceInfo,
       {
-        renderTargets: post?.renderTargets ?? 0,
-        passes: post?.passes ?? 0,
-        webgpuPipeline: post?.webgpuPipeline ?? false,
+        webgpuPipeline: this.pipeline?.hasWebGPUPostPipeline ?? false,
       },
     );
   }

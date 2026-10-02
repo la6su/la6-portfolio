@@ -80,8 +80,6 @@ export class DevPanel {
     sceneGeometries: 0,
     sceneMaterials: 0,
     sceneTextures: 0,
-    postTargets: 0,
-    postPasses: 0,
     rendererCanvasCount: 0,
     documentCanvasCount: 0,
   }
@@ -144,8 +142,6 @@ export class DevPanel {
     f.addBinding(this.stats, 'sceneGeometries', { readonly: true, label: 'scene geometries' })
     f.addBinding(this.stats, 'sceneMaterials', { readonly: true, label: 'scene materials' })
     f.addBinding(this.stats, 'sceneTextures', { readonly: true, label: 'scene textures' })
-    f.addBinding(this.stats, 'postTargets', { readonly: true, label: 'post targets' })
-    f.addBinding(this.stats, 'postPasses', { readonly: true, label: 'post passes' })
   }
 
   // ── Navigation is deliberately absent: the cinematic story track owns it,
@@ -250,8 +246,6 @@ export class DevPanel {
       this.stats.sceneGeometries = resources.scene.geometries
       this.stats.sceneMaterials = resources.scene.materials
       this.stats.sceneTextures = resources.scene.textures
-      this.stats.postTargets = resources.post.renderTargets
-      this.stats.postPasses = resources.post.passes
 
       // Actual rendered frames, not the browser's independent rAF cadence.
       if (performance.now() - this._lastRenderedAt > 750) {
