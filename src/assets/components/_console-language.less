@@ -902,6 +902,21 @@ body[data-cinematic-sheet] .jlz-console-bar {
   }
 }
 
+@media (max-height: 650px) {
+  .jlz-menu-overlay .jlz-menu-container {
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    flex: 0 0 auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 // ── Canonical control banks ──
 // One tactile language for the lower navigation island and the top menu
 // bank. Square housings with a phosphor corner-tick bezel (the TUI frame),

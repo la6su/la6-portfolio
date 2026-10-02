@@ -769,10 +769,17 @@ Execution order:
    Chromium emulation exposed clipped content in Services, Manifesto, and Lab
    on a narrow viewport. Scrolling the active section in-page kept the outer
    story track position unchanged. Added section-level vertical overflow for
-   compact viewport media queries; lint and production build pass. The browser
-   automation runtime failed to initialize after this CSS change, so the new
-   rule still needs a post-build browser check. Mobile-menu scroll behavior
-   remains open.
+   compact viewport media queries. Post-build Chromium at 320×640 verified
+   Services, Manifesto, and Lab scroll internally after resizing the root font
+   to 200%; the outer track stayed put and no horizontal overflow or page
+   errors appeared. The same check exposed a menu layout defect: the mobile
+   container had a scroll path at 320×640, but short landscape let the grid
+   collapse to zero height. Compact-height CSS now makes the menu container
+   the scroll owner and lets its grid keep intrinsic height. Chromium verified
+   the final Contact link is reachable after scrolling at 320×640 and 640×360
+   with 200% root font size, with no horizontal overflow or page errors. Lint
+   and the production build pass. Other mobile-menu keyboard and touch cases
+   remain open.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
