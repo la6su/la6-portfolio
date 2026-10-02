@@ -411,6 +411,12 @@ SSR; those handlers therefore survived later route renders in the same build
 process. The subscriptions now start on client `onMounted`, before that hook's
 `postRender()` route announcement, and are released on client unmount. Lint and
 the full production build pass; no test suite was run.
+The same SSR review found `CaseStudyView` subscribed to `jlz:lang-change` at
+setup and published its Works project intent into a module-global singleton
+during SSR. The locale listener now starts on mount, while the project intent
+is published only when `import.meta.env.SSR` is false; client setup still sets
+it before the route-ready announcement. The full production build successfully
+prerendered all four case studies after this change. No test suite was run.
 
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s

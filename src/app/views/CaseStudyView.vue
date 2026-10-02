@@ -20,6 +20,7 @@ const projectIndex = computed(() => PROJECTS.findIndex((item) => item.id === pro
 const project = computed(() => PROJECTS[projectIndex.value])
 const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
 const language = ref(getLang())
+let unsubscribe = (): void => undefined
 const applyCaseStudyMeta = (): void => {
   const published = Boolean(project.value && study.value)
   const title = published ? `${project.value!.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
@@ -35,9 +36,6 @@ const applyCaseStudyMeta = (): void => {
     robots: published ? undefined : 'noindex,follow',
   })
 }
-const unsubscribe = eventBus.on('jlz:lang-change', () => {
-  language.value = getLang()
-})
 onBeforeUnmount(() => {
   unsubscribe()
 })
@@ -80,10 +78,18 @@ const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.v
 
 // Set intent before useJlzPage publishes route readiness. Reused detail routes
 // re-publish after their DOM changes so the cinematic track is rebuilt once.
-let releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
+let releaseCaseIntent = (): void => undefined
+if (!import.meta.env.SSR) {
+  releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
+}
 onBeforeUnmount(() => releaseCaseIntent())
 const activeSectionId = useJlzPage('works', () => rootEl.value, 'case-1')
-onMounted(applyCaseStudyMeta)
+onMounted(() => {
+  unsubscribe = eventBus.on('jlz:lang-change', () => {
+    language.value = getLang()
+  })
+  applyCaseStudyMeta()
+})
 watch(
   projectId,
   () => {
