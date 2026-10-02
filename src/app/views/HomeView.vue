@@ -10,7 +10,7 @@ import NavMenu from './NavMenu.vue'
 import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
-useJlzPage('home', () => rootEl.value)
+const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
 </script>
 
 <template>
@@ -23,13 +23,14 @@ useJlzPage('home', () => rootEl.value)
     uk-height-viewport
   >
     <!-- ═══ 6 child sections (4 story frames + 2 sheets) — 1:1 cube states ═══ -->
-    <ContactFooter mode="home" />
+    <ContactFooter mode="home" :active-section-id="activeSectionId" />
 
     <!-- 01 · Studio (front face +Z, start section) -->
     <section
       class="uk-section uk-section-small uk-section-large@m"
       id="section-intro"
       data-section="intro"
+      :class="{ 'section-active': activeSectionId === 'intro' }"
     >
       <div
         class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -92,6 +93,7 @@ useJlzPage('home', () => rootEl.value)
       class="uk-section uk-section-small uk-section-large@m"
       id="section-about"
       data-section="about"
+      :class="{ 'section-active': activeSectionId === 'about' }"
     >
       <div
         class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -145,6 +147,7 @@ useJlzPage('home', () => rootEl.value)
       class="uk-section uk-section-small uk-section-large@m"
       id="section-works"
       data-section="works"
+      :class="{ 'section-active': activeSectionId === 'works' }"
     >
       <div
         class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -189,6 +192,7 @@ useJlzPage('home', () => rootEl.value)
       class="uk-section uk-section-small uk-section-large@m"
       id="section-contact"
       data-section="contact"
+      :class="{ 'section-active': activeSectionId === 'contact' }"
     >
       <div
         class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -240,6 +244,6 @@ useJlzPage('home', () => rootEl.value)
       </div>
     </section>
 
-    <NavMenu mode="home" />
+    <NavMenu mode="home" :active-section-id="activeSectionId" />
   </main>
 </template>

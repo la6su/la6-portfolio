@@ -1,6 +1,6 @@
 // Owns the DOM lifecycle shared by the semantic route components:
 //
-// - activate the home intro section;
+// - keep the active semantic section in Vue state;
 // - apply translations and page metadata;
 // - announce route changes;
 // - bind menu behavior to the mounted page;
@@ -9,7 +9,7 @@
 // Navigation updates semantic DOM and signals the persistent 3D runtime via
 // `jlz:route-change`; it does not recreate the scene.
 
-import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import UIkit from '../core/uikit'
 
 import { eventBus } from '../core/EventBus'
@@ -18,7 +18,31 @@ import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
 
-export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
+export function useJlzPage(
+  page: PageId,
+  rootEl: () => HTMLElement | null,
+  initialSectionId: string,
+) {
+  const activeSectionId = ref(initialSectionId)
+  const sectionUnsubs = [
+    eventBus.on('jlz:section-change', ({ sectionId }) => {
+      if (page === 'home') activeSectionId.value = sectionId
+    }),
+    eventBus.on('jlz:page-section-change', ({ sectionId }) => {
+      if (page !== 'home') activeSectionId.value = sectionId
+    }),
+  ]
+  watch(
+    activeSectionId,
+    (sectionId) => {
+      const root = rootEl()
+      const active = root?.querySelector<HTMLElement>(
+        `[data-section="${sectionId}"], [data-page-section="${sectionId}"]`,
+      )
+      if (active) UIkit.update(active)
+    },
+    { flush: 'post' },
+  )
   let idleHandle: number | null = null
   let announcerRafHandle: number | null = null
   let mounted = false
@@ -26,6 +50,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
 
   onBeforeUnmount(() => {
     mounted = false
+    sectionUnsubs.forEach((unsubscribe) => unsubscribe())
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = null
     if (announcerRafHandle !== null) {
@@ -42,11 +67,6 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   function postRender(): void {
     const el = rootEl()
     if (!el) return
-    if (page === 'home') {
-      // Home: activate the intro section (the section template does not add
-      // `section-active` in home mode).
-      el.querySelector<HTMLElement>('[data-section="intro"]')?.classList.add('section-active')
-    }
     applyTranslations()
     applyMetaTags(page)
     // The app owner publishes this only after its initial route has mounted.
@@ -83,4 +103,6 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     mounted = true
     postRender()
   })
+
+  return activeSectionId
 }

@@ -249,7 +249,15 @@ export class CinematicNav {
     this._onSectionChange?.(index)
 
     if (this._page() !== 'home') {
-      eventBus.emit('jlz:page-section-change', { index, count: this._sectionCount })
+      const sectionId = this._track?.querySelectorAll<HTMLElement>('[data-page-section]')[index]
+        ?.dataset.pageSection
+      if (sectionId) {
+        eventBus.emit('jlz:page-section-change', {
+          index,
+          count: this._sectionCount,
+          sectionId,
+        })
+      }
     }
   }
 

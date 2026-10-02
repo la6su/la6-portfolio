@@ -13,7 +13,7 @@ import { rendererAvailable } from '../../core/rendererAvailability'
 const rootEl = ref<HTMLElement | null>(null)
 const releaseCaseIntent = setWorksCaseProject(null)
 onBeforeUnmount(releaseCaseIntent)
-useJlzPage('works', () => rootEl.value)
+const activeSectionId = useJlzPage('works', () => rootEl.value, 'works-01')
 const number = (value: number): string => String(value).padStart(2, '0')
 const roomCount = number(WORKS_ROOMS.length)
 const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
@@ -22,7 +22,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
 <template>
   <main id="spa-content" ref="rootEl" data-page-view="content" class="uk-position-relative">
     <article class="jlz-page jlz-works-page" data-page-view="works">
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <h1 class="uk-hidden-visually" data-i18n="works.observatory">An observatory of ideas.</h1>
       <section
         v-for="(room, index) in WORKS_ROOMS"
@@ -30,7 +30,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
         :id="`section-works-${number(index + 1)}`"
         :data-page-section="`works-${number(index + 1)}`"
         class="jlz-page-section jlz-works-section"
-        :class="{ 'section-active': index === 0 }"
+        :class="{ 'section-active': activeSectionId === `works-${number(index + 1)}` }"
         :aria-labelledby="`work-title-${index}`"
       >
         <div class="jlz-works-stage uk-container uk-container-expand">
@@ -106,7 +106,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
           </nav>
         </div>
       </section>
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

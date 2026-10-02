@@ -2,7 +2,7 @@
 // Shared navigation sheet. `mode` selects the section attribute namespace:
 // home uses `data-section` for cube synchronization; content pages use
 // `data-page-section` for route navigation.
-defineProps<{ mode: 'home' | 'content' }>()
+defineProps<{ mode: 'home' | 'content'; activeSectionId: string }>()
 
 import { NAV_ITEMS } from '../navItems'
 import { RouterLink } from 'vue-router'
@@ -12,7 +12,10 @@ import { RouterLink } from 'vue-router'
   <section
     id="section-menu"
     class="jlz-menu-overlay uk-section uk-section-xsmall uk-flex uk-flex-column"
-    :class="{ 'jlz-page-section': mode === 'content' }"
+    :class="[
+      { 'jlz-page-section': mode === 'content' },
+      { 'section-active': activeSectionId === (mode === 'home' ? 'menu' : 'page-menu') },
+    ]"
     :data-section="mode === 'home' ? 'menu' : undefined"
     :data-page-section="mode === 'content' ? 'page-menu' : undefined"
     data-cinematic-menu

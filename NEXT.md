@@ -92,6 +92,14 @@ or preserve a wrapper solely because a test currently encodes it.
   and clears `window.__jlzRouterReady`. The route composable now reads that
   single app-lifecycle fact, avoiding a stale first-route announcement if the
   app is mounted again.
+- Active semantic section ownership now lives in each Vue route's
+  `useJlzPage()` state and template class bindings, including the shared
+  contact/menu sheets. `CinematicNav` includes the selected `sectionId` in its
+  page event; `ContentReveal` now applies theme policy without mutating
+  `.section-active` or scheduling its own UIKit update frame. The route
+  composable calls UIKit after Vue's post-flush update. Production build and
+  home prerender succeed with exactly one initial active section; browser
+  navigation behavior still needs runtime verification.
 - Known release-evidence gaps from prior work: WebKit could not launch in the
   current environment; actual physical WebGPU/TSL compilation and visual
   output have not been demonstrated on a real GPU. Recheck environment and
@@ -228,8 +236,8 @@ are explicit.
 
 Phase 1 is active. Startup cancellation now has a guard; its focused
 regression case and runtime ownership trace remain. A duplicate route-mount
-flag has been removed. Phase 2 is active: unit
-tests have been relocated and redundant per-frame config lookups removed; next
-continue the ownership audit before selecting a broader collapse.
+flag and imperative section-class owner have been removed. Phase 2 is active:
+unit tests have been relocated and redundant per-frame config lookups removed;
+next continue the ownership audit before selecting a broader collapse.
 Phases 3–4 are pending audit evidence; no production-ready claim is made.
 Keep this status current after each completed slice.

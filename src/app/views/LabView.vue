@@ -7,7 +7,7 @@ import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
-useJlzPage('lab', () => rootEl.value)
+const activeSectionId = useJlzPage('lab', () => rootEl.value, 'lab-01')
 
 interface Experiment {
   num: string
@@ -87,18 +87,18 @@ const EXPERIMENTS: readonly Experiment[] = [
   >
     <article class="jlz-page" data-page-view="lab">
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
 
       <!-- 1-4: experiments (1 = start, active) -->
       <section
-        v-for="(exp, i) in EXPERIMENTS"
+        v-for="exp in EXPERIMENTS"
         :key="exp.num"
         :class="[
           'jlz-page-section',
           'uk-section',
           'uk-section-small',
           'uk-section-large@m',
-          i === 0 ? 'section-active' : '',
+          activeSectionId === `lab-${exp.num}` ? 'section-active' : '',
         ]"
         :id="`section-lab-${exp.num}`"
         :data-page-section="`lab-${exp.num}`"
@@ -172,7 +172,7 @@ const EXPERIMENTS: readonly Experiment[] = [
       </section>
 
       <!-- 5: MENU SHEET -->
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

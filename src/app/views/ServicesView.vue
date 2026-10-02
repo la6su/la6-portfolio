@@ -8,7 +8,7 @@ import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
-useJlzPage('services', () => rootEl.value)
+const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-creativeDirection')
 </script>
 
 <template>
@@ -21,13 +21,14 @@ useJlzPage('services', () => rootEl.value)
     uk-height-viewport
   >
     <article class="jlz-page jlz-services-page" data-page-view="services">
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
 
       <!-- 01 · Creative Direction (start, active) -->
       <section
-        class="jlz-page-section section-active uk-section uk-section-small uk-section-large@m"
+        class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-creativeDirection"
         data-page-section="services-creativeDirection"
+        :class="{ 'section-active': activeSectionId === 'services-creativeDirection' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -96,6 +97,7 @@ useJlzPage('services', () => rootEl.value)
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-interactiveDev"
         data-page-section="services-interactiveDev"
+        :class="{ 'section-active': activeSectionId === 'services-interactiveDev' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -177,6 +179,7 @@ useJlzPage('services', () => rootEl.value)
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-motionRealtime"
         data-page-section="services-motionRealtime"
+        :class="{ 'section-active': activeSectionId === 'services-motionRealtime' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -239,6 +242,7 @@ useJlzPage('services', () => rootEl.value)
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
         id="section-services-aiSystems"
         data-page-section="services-aiSystems"
+        :class="{ 'section-active': activeSectionId === 'services-aiSystems' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
@@ -299,7 +303,7 @@ useJlzPage('services', () => rootEl.value)
         </div>
       </section>
 
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

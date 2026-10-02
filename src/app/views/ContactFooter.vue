@@ -1,13 +1,16 @@
 <script setup lang="ts">
 // Shared Contact finale. Its section identifiers keep renderer synchronization
 // and deep links stable; `data-contact-footer` is the styling/interaction hook.
-defineProps<{ mode: 'home' | 'content' }>()
+defineProps<{ mode: 'home' | 'content'; activeSectionId: string }>()
 </script>
 
 <template>
   <section
     :id="mode === 'home' ? 'section-lab' : 'section-page-lab'"
-    :class="mode === 'content' ? 'jlz-page-section' : undefined"
+    :class="[
+      mode === 'content' ? 'jlz-page-section' : undefined,
+      { 'section-active': activeSectionId === (mode === 'home' ? 'lab' : 'page-lab') },
+    ]"
     class="uk-section uk-section-small uk-section-large@m"
     :data-section="mode === 'home' ? 'lab' : undefined"
     :data-page-section="mode === 'content' ? 'page-lab' : undefined"

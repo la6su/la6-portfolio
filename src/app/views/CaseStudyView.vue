@@ -77,7 +77,7 @@ const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.v
 // re-publish after their DOM changes so the cinematic track is rebuilt once.
 let releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
 onBeforeUnmount(() => releaseCaseIntent())
-useJlzPage('works', () => rootEl.value)
+const activeSectionId = useJlzPage('works', () => rootEl.value, 'case-1')
 onMounted(applyCaseStudyMeta)
 watch(
   projectId,
@@ -95,7 +95,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
 <template>
   <main id="spa-content" ref="rootEl" class="uk-position-relative" data-page-view="content">
     <article class="jlz-page jlz-case-study-page" data-page-view="case-study" :data-case-project="projectId">
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <template v-if="study && project">
         <section
           v-for="(chapter, index) in labels.chapters"
@@ -103,7 +103,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
           :id="`section-case-${index + 1}`"
           :data-page-section="`case-${index + 1}`"
           class="jlz-page-section jlz-case-chapter"
-          :class="{ 'section-active': index === 0 }"
+          :class="{ 'section-active': activeSectionId === `case-${index + 1}` }"
         >
           <div class="jlz-works-stage uk-container uk-container-expand">
             <header class="jlz-works-coordinate uk-flex uk-flex-between">
@@ -207,13 +207,18 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
           </div>
         </section>
       </template>
-      <section v-else class="jlz-page-section section-active">
+      <section
+        v-else
+        class="jlz-page-section"
+        data-page-section="case-unavailable"
+        :class="{ 'section-active': activeSectionId === 'case-unavailable' }"
+      >
         <div class="uk-container">
           <h1>{{ labels.unavailable }}</h1>
           <RouterLink :to="{ name: 'works' }">← {{ labels.back }}</RouterLink>
         </div>
       </section>
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

@@ -8,7 +8,7 @@ import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
-useJlzPage('contact', () => rootEl.value)
+const activeSectionId = useJlzPage('contact', () => rootEl.value, 'contact-01')
 </script>
 
 <template>
@@ -21,13 +21,14 @@ useJlzPage('contact', () => rootEl.value)
     uk-height-viewport
   >
     <article class="jlz-page jlz-contact-page" data-page-view="contact">
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
 
       <!-- 01 · Email (start, active) -->
       <section
-        class="jlz-page-section jlz-contact-section section-active uk-section uk-section-small uk-section-large@m"
+        class="jlz-page-section jlz-contact-section uk-section uk-section-small uk-section-large@m"
         id="section-contact-01"
         data-page-section="contact-01"
+        :class="{ 'section-active': activeSectionId === 'contact-01' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-center uk-height-1-1"
@@ -61,6 +62,7 @@ useJlzPage('contact', () => rootEl.value)
         class="jlz-page-section jlz-contact-section uk-section uk-section-small uk-section-large@m"
         id="section-contact-02"
         data-page-section="contact-02"
+        :class="{ 'section-active': activeSectionId === 'contact-02' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-center uk-height-1-1"
@@ -141,6 +143,7 @@ useJlzPage('contact', () => rootEl.value)
         class="jlz-page-section jlz-contact-section uk-section uk-section-small uk-section-large@m"
         id="section-contact-03"
         data-page-section="contact-03"
+        :class="{ 'section-active': activeSectionId === 'contact-03' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-center uk-height-1-1"
@@ -168,6 +171,7 @@ useJlzPage('contact', () => rootEl.value)
         class="jlz-page-section jlz-contact-section uk-section uk-section-small uk-section-large@m"
         id="section-contact-04"
         data-page-section="contact-04"
+        :class="{ 'section-active': activeSectionId === 'contact-04' }"
       >
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-center uk-height-1-1"
@@ -200,7 +204,7 @@ useJlzPage('contact', () => rootEl.value)
         </div>
       </section>
 
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

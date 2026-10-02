@@ -8,7 +8,7 @@ import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
-useJlzPage('manifesto', () => rootEl.value)
+const activeSectionId = useJlzPage('manifesto', () => rootEl.value, 'manifesto-purpose')
 
 interface Principle {
   num: string
@@ -81,18 +81,18 @@ const PRINCIPLES: readonly Principle[] = [
   >
     <article class="jlz-page" data-page-view="manifesto">
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
-      <ContactFooter mode="content" />
+      <ContactFooter mode="content" :active-section-id="activeSectionId" />
 
       <!-- 1-4: Purpose / Clarity / Emotion / Simplicity (1 = start, active) -->
       <section
-        v-for="(p, i) in PRINCIPLES"
+        v-for="p in PRINCIPLES"
         :key="p.key"
         :class="[
           'jlz-page-section',
           'uk-section',
           'uk-section-small',
           'uk-section-large@m',
-          i === 0 ? 'section-active' : '',
+          activeSectionId === p.key.replace('manifesto.', 'manifesto-') ? 'section-active' : '',
         ]"
         :id="`section-${p.key.replace('manifesto.', 'manifesto-')}`"
         :data-page-section="`${p.key.replace('manifesto.', 'manifesto-')}`"
@@ -144,7 +144,7 @@ const PRINCIPLES: readonly Principle[] = [
       </section>
 
       <!-- 5: MENU SHEET -->
-      <NavMenu mode="content" />
+      <NavMenu mode="content" :active-section-id="activeSectionId" />
     </article>
   </main>
 </template>

@@ -14,7 +14,6 @@ import type { PageId } from '../core/routeManifest'
 import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'
-import UIkit from '../core/uikit'
 
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
@@ -27,7 +26,6 @@ export class ContentReveal {
   private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
   private page: () => PageId
-  private _uiKitUpdateFrame: number | null = null
   private _destroyed = false
   private readonly _initialHtmlLight: boolean
   private readonly _initialBodyLight: boolean
@@ -75,10 +73,6 @@ export class ContentReveal {
     // Home: jlz:section-change (data-section)
     this.sectionUnsub = eventBus.on('jlz:section-change', (payload) => {
       if (!payload?.sectionId) return
-      const matching = this.contentRoot().querySelector<HTMLElement>(
-        `[data-section="${payload.sectionId}"]`,
-      )
-      if (!matching) return
       this.currentSectionId = payload.sectionId
       // Derive the 6-section index from the sectionId so EnvSphere can show
       // the active section's own colour on every scroll step.
@@ -87,41 +81,14 @@ export class ContentReveal {
         (c) => c.domSection === payload.sectionId || c.id === payload.sectionId,
       )
       this.currentSectionIndex = idx >= 0 ? idx : -1
-      this.activateSection(`[data-section="${payload.sectionId}"]`)
+      this.applyTheme(payload.sectionId)
     })
 
     // Content pages: jlz:page-section-change (data-page-section)
-    this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
-      const sections = this.contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
-      const el = sections[index]
-      if (el) {
-        const id = el.getAttribute('data-page-section') ?? ''
-        this.currentSectionId = id
-        this.currentSectionIndex = index
-        this.activateSection(`[data-page-section="${id}"]`)
-      }
-    })
-  }
-
-  private activateSection(selector: string): void {
-    const root = this.contentRoot()
-    const matching = root.querySelector<HTMLElement>(selector)
-    if (!matching) return
-
-    root.querySelectorAll<HTMLElement>('[data-section], [data-page-section]').forEach((el) => {
-      el.classList.remove('section-active')
-    })
-    matching.classList.add('section-active')
-    this.applyTheme(this.currentSectionId ?? '')
-    if (this._uiKitUpdateFrame !== null) cancelAnimationFrame(this._uiKitUpdateFrame)
-    this._uiKitUpdateFrame = requestAnimationFrame(() => {
-      this._uiKitUpdateFrame = null
-      if (this._destroyed || !matching.isConnected) return
-      try {
-        UIkit.update(matching)
-      } catch {
-        /* not ready */
-      }
+    this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index, sectionId }) => {
+      this.currentSectionId = sectionId
+      this.currentSectionIndex = index
+      this.applyTheme(sectionId)
     })
   }
 
@@ -214,10 +181,6 @@ export class ContentReveal {
   destroy() {
     if (this._destroyed) return
     this._destroyed = true
-    if (this._uiKitUpdateFrame !== null) {
-      cancelAnimationFrame(this._uiKitUpdateFrame)
-      this._uiKitUpdateFrame = null
-    }
     this.sectionUnsub?.()
     this.sectionUnsub = null
     this.pageSectionUnsub?.()
