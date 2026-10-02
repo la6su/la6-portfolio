@@ -3,18 +3,17 @@
 //
 // SceneHost loads this wrapper as an async component ONLY while the Lab
 // camera-exploration policy is active (lab route + fine pointer + motion
-// allowed), which keeps the whole Cientos/camera-controls/stdlib surface out
+// allowed), which keeps the Cientos/three-stdlib surface out
 // of the eager app chunks (the `vendor-lab-controls` chunk rule in
 // vite.config.ts routes it into its own lazy file).
 //
 // Interaction contract:
 // rotate-only orbit around the authored content target (origin, where the
-// Lab gamepad floats). The wheel stays page scroll — the Cientos default
-// maps it to DOLLY, which would hijack scrolling wherever the Lab section
-// pass-through exposes the canvas — and middle/right buttons stay untouched
-// page behavior. Azimuth/polar/distance limits keep the gamepad framed.
-import { CameraControls } from '@tresjs/cientos'
-import CameraControlsClass from 'camera-controls'
+// Lab gamepad floats). Wheel zoom and pan are disabled so wheel input remains
+// page scroll; only left-button drag rotates the camera. Angle and distance
+// limits keep the gamepad framed.
+import { OrbitControls } from '@tresjs/cientos'
+import { MOUSE } from 'three'
 import type { PerspectiveCamera } from 'three'
 
 defineProps<{ camera: PerspectiveCamera }>()
@@ -22,10 +21,9 @@ defineProps<{ camera: PerspectiveCamera }>()
 const emit = defineEmits<{ start: [] }>()
 
 const MOUSE_BUTTONS = {
-  left: CameraControlsClass.ACTION.ROTATE,
-  middle: CameraControlsClass.ACTION.NONE,
-  right: CameraControlsClass.ACTION.NONE,
-  wheel: CameraControlsClass.ACTION.NONE,
+  LEFT: MOUSE.ROTATE,
+  MIDDLE: -1,
+  RIGHT: -1,
 }
 const MIN_AZIMUTH = -Math.PI / 3
 const MAX_AZIMUTH = Math.PI / 3
@@ -36,10 +34,12 @@ const MAX_DISTANCE = 6
 </script>
 
 <template>
-  <CameraControls
+  <OrbitControls
     :camera="camera"
     make-default
     :mouse-buttons="MOUSE_BUTTONS"
+    :enable-zoom="false"
+    :enable-pan="false"
     :min-azimuth-angle="MIN_AZIMUTH"
     :max-azimuth-angle="MAX_AZIMUTH"
     :min-polar-angle="MIN_POLAR"

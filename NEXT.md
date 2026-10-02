@@ -32,7 +32,7 @@ or preserve a wrapper solely because a test currently encodes it.
 ## Audited state (2026-10-02)
 
 - Working tree was clean at audit start; audit baseline: `f1de5ee`.
-- Current review (`2026-10-02`): clean worktree at `6fbb77e`.
+- Current review began at `c3527e3` (`2026-10-02`).
 - Audit baseline: `src/` had 190 TS/Vue/Less files, including 35 Vitest files
   (`*.test.ts`, 2,377 lines total); Playwright had two specs under root
   `tests/`. Vitest included `src/**/*.test.ts`.
@@ -133,12 +133,20 @@ or preserve a wrapper solely because a test currently encodes it.
   construction error currently logs once and draws the scene directly; audit
   whether that visual degradation policy is needed. Forced-WebGL Chromium
   smoke confirmed the graph allocated and rendered without console errors.
-  Firefox smoke reached `/lab` with the WebGL2 backend and one Three core URL
-  after a clean reload. A duplicate-Three warning appeared during Vite's stale
-  dependency optimizer reload and did not recur after reload; do not add a
-  runtime dedupe layer for this transient dev condition. Firefox's Lab route
-  still reports Vue's `Missing ref owner context` warning from Cientos
-  `CameraControls`. WebKit and physical WebGPU remain unverified. The procedural
+  Firefox smoke reached `/lab` with the WebGL2 backend, one scene canvas, one
+  active section, and no app errors. A duplicate-Three warning appeared during
+  Vite's stale dependency optimizer reload and did not recur after a clean
+  reload; do not add a runtime dedupe layer for this transient dev condition.
+  Lab now uses Cientos `OrbitControls` with rotation only; the direct
+  `camera-controls` dependency and its deprecated `verticalDragToForward`
+  warning were removed. A capture-phase stop on the scene host preserves the
+  browser context menu; Firefox dispatch confirmed the canvas event is not
+  canceled. Tres 5.9.2 defaults to removed `PCFSoftShadowMap` for WebGPU; the
+  host now selects `PCFShadowMap` through the public `shadowMapType` prop, so a
+  clean Firefox Lab run logs only the expected WebGPU-unavailable/WebGL2
+  backend notice. Type-check, compatibility checks, production build and bundle
+  budgets pass for this slice. WebKit and physical WebGPU remain unverified.
+  The procedural
   circle branch in `JunniParticles` had no caller (the only owner always passes
   the Section3 sprite sheet) and was removed; this effect now has one authored
   implementation. The route handler now resets Contact scene state once before
@@ -372,6 +380,9 @@ Phase 1 is active. Startup cancellation now has a guard; its focused
 regression case and runtime ownership trace remain. A duplicate route-mount
 flag and imperative section-class owner have been removed. Phase 2 is active:
 unit tests have been relocated and redundant per-frame config lookups removed;
-next continue the ownership audit before selecting a broader collapse.
-Phases 3–4 are pending audit evidence; no production-ready claim is made.
+continue the ownership audit before selecting a broader collapse. Phase 3 is
+active: the TSL post graph is shared across backends and static transforms are
+declarative in reviewed scene owners; the rest of the scene ownership and
+allocation audit remains. Phase 4 is pending. No production-ready claim is
+made.
 Keep this status current after each completed slice.

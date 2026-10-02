@@ -226,7 +226,7 @@ export class Experience {
         isSettled: () => !this.coordinator || this._isLoopSettled(),
       },
     )
-    // Tres/Cientos invalidate calls (for example CameraControls changes)
+    // Tres/Cientos invalidate calls (for example Lab camera-control changes)
     // enter the same demand path as internal activity.
     this._unsubExternalInvalidate = this._host.loop.onExternalInvalidate(() =>
       this._raiseRenderDemand('external'),

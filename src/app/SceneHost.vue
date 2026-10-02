@@ -14,6 +14,7 @@ import {
 import { useRoute } from 'vue-router'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
+import { PCFShadowMap } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry } from 'three'
 import { planUnifiedBackend, type FinalMode } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
@@ -157,7 +158,7 @@ const cameraNode = cameraSlot.value
 // Lab camera exploration is enabled only for fine-pointer users who can
 // scroll the semantic page without being trapped by the canvas.
 // The Lab route is where interactive camera exploration belongs: the
-// declarative `<CameraControls>` (ecosystem camera-controls under the hood)
+// declarative `<OrbitControls>` (Three controls wrapped by Cientos)
 // orbits the gamepad while the cinematic writer yields. The decision lives
 // HERE, once: lab route AND a fine pointer (touch keeps the page-scroll
 // contract — the canvas sets touch-action: none, so 1-finger orbit would
@@ -206,8 +207,8 @@ onBeforeUnmount(() => {
 })
 
 // Rotate-only exploration limits and the wheel contract live inside the
-// wrapper (src/app/scene/LabCameraControls.vue). The whole Cientos/
-// camera-controls/stdlib dependency surface loads only when the exploration
+// wrapper (src/app/scene/LabCameraControls.vue). The Cientos/
+// three-stdlib dependency surface loads only when the exploration
 // policy first activates on the Lab route (async component = lazy chunk).
 const LabCameraControls = defineAsyncComponent(() => import('./scene/LabCameraControls.vue'))
 const LabGamepadOwner = defineAsyncComponent(() => import('./scene/LabGamepadOwner.vue'))
@@ -215,7 +216,7 @@ const LabGamepadOwner = defineAsyncComponent(() => import('./scene/LabGamepadOwn
 // that SFC and its stage leaves out of the persistent canvas's startup graph.
 const WorksStageOwner = defineAsyncComponent(() => import('./scene/WorksStageOwner.vue'))
 
-// Cold-start wake: camera-controls' own pointer handlers only dispatch
+// Cold-start wake: OrbitControls' pointer handlers only dispatch
 // events — the first drag must open a scheduler window itself. The wrapped
 // manager invalidate translates into typed external render demand;
 // every later frame keeps the window open through the controls' own
@@ -437,12 +438,20 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <div v-if="!noScene" class="jlz-scene-host" aria-hidden="true">
+  <!-- Preserve the browser context menu on the interactive canvas;
+       OrbitControls otherwise cancels it. -->
+  <div
+    v-if="!noScene"
+    class="jlz-scene-host"
+    aria-hidden="true"
+    @contextmenu.capture.stop
+  >
     <TresCanvas
       ref="tresRef"
       class="canvas jlz-scene-canvas"
       render-mode="on-demand"
       :dpr="[1, dprCap]"
+      :shadow-map-type="PCFShadowMap"
       :renderer="rendererFactory"
       :style="{ pointerEvents: labCameraActive ? 'auto' : 'none' }"
       @ready="onReady"

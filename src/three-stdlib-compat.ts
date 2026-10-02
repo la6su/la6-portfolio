@@ -7,7 +7,7 @@
 // barrel fails resolution-time import validation in the bundler even though
 // none of those modules are used.
 //
-// The app mounts CameraControls from the Cientos component set.
+// The app mounts OrbitControls from the Cientos component set.
 // This shim re-exports only the 28 three-stdlib modules the Cientos bundle
 // statically references, each from its own file (relative paths into the
 // package — its exports map allows only the barrel entry), so the graph stays

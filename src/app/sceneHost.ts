@@ -37,7 +37,7 @@ export interface SceneLoopPort {
   stop(): void
   /**
    * Register (or clear) the ecosystem wake handler. Fired when Tres/Cientos
-   * code calls the renderer-manager `invalidate()` (CameraControls change
+   * code calls the renderer-manager `invalidate()` (Lab controls change
    * events, future Cientos helpers) so the scheduler can open a window.
    * Returns the unsubscribe function.
    */
@@ -83,7 +83,7 @@ export interface SceneStagePorts {
 export interface SceneHostReady {
   /** Current semantic page from the persistent Vue Router instance. */
   page: () => PageId
-  /** Whether Lab CameraControls currently own the shared camera pose. */
+  /** Whether Lab controls currently own the shared camera pose. */
   isLabCameraActive: () => boolean
   /** The Tres-owned scene (`context.scene.value`) — the one THREE.Scene. */
   scene: THREE.Scene
