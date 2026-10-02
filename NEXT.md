@@ -726,6 +726,12 @@ buttons, duplicate IDs, or broken `aria-labelledby` / `aria-describedby`
 references were found. The standalone blog has no locale switch and its
 interface and article sources are English-only, so the bilingual public-route
 criterion still needs an explicit locale-path policy before implementation.
+Production Chromium directly loaded `/`, `/services`, `/works`, `/manifesto`,
+`/lab`, and `/contact` in EN then RU. All six updated title, description, and
+`html[lang]`; canonical URLs remained at each route, with no page errors or
+horizontal overflow at 390×844. All four case-study routes were also checked
+in RU, including their chapter copy, meta description, language attributes,
+and canonical paths.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals
