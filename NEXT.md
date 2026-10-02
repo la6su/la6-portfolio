@@ -431,6 +431,9 @@ On 2026-10-02, the cached headless Firefox process launched but returned
 `NS_ERROR_OUT_OF_MEMORY` while navigating to the production preview, so the
 current no-scene/manual interaction check could not run. The loopback preview
 was stopped; no browser behavior is inferred from that failed attempt.
+The cached Playwright WebKit binary also cannot launch on this host because
+`libicu74`, `libxml2`, and `libflite1` are missing. The preview was stopped;
+system browser dependencies were not installed.
 
 Latest production build and lint both pass. Bundle gates report Three at
 310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
