@@ -2,14 +2,18 @@
 // Home route: its section order matches the cube orientation in
 // `routeManifest.ts`; `data-section` attributes synchronize the 3D scene.
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
+import { langFromPath, localizedPagePath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
+const route = useRoute()
+const pageHref = (page: import('../../core/routeManifest').PageId): string =>
+  localizedPagePath(page, langFromPath(route.path))
 const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
 </script>
 
@@ -128,7 +132,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
                 </p>
               </div>
               <RouterLink
-                :to="{ name: 'services' }"
+                :to="pageHref('services')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
                 <span
@@ -185,7 +189,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
-      <RouterLink :to="{ name: 'works' }" class="jlz-works-entrance uk-button uk-button-default">
+      <RouterLink :to="pageHref('works')" class="jlz-works-entrance uk-button uk-button-default">
         <span data-i18n="works.enterRooms">Explore the four rooms</span> ↗
       </RouterLink>
     </section>
@@ -232,7 +236,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
                 </p>
               </div>
               <RouterLink
-                :to="{ name: 'manifesto' }"
+                :to="pageHref('manifesto')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
                 <span

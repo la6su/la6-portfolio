@@ -14,6 +14,11 @@ import undercurrent from '../../content/blog/undercurrent-webgpu-fluid.html?raw'
 import glassmorphism from '../../content/blog/glassmorphism-webgpu.html?raw'
 import onDemand from '../../content/blog/on-demand-rendering.html?raw'
 import tsl from '../../content/blog/tsl-changes-everything.html?raw'
+import indexRu from '../../content/blog/ru/index.html?raw'
+import undercurrentRu from '../../content/blog/ru/undercurrent-webgpu-fluid.html?raw'
+import glassmorphismRu from '../../content/blog/ru/glassmorphism-webgpu.html?raw'
+import onDemandRu from '../../content/blog/ru/on-demand-rendering.html?raw'
+import tslRu from '../../content/blog/ru/tsl-changes-everything.html?raw'
 
 /** The `<main>` inner HTML of each static blog page, keyed by page key. */
 export const BLOG_CONTENT: Record<string, string> = {
@@ -22,4 +27,13 @@ export const BLOG_CONTENT: Record<string, string> = {
   'glassmorphism-webgpu': glassmorphism,
   'on-demand-rendering': onDemand,
   'tsl-changes-everything': tsl,
+}
+
+/** Fully localized editorial source, keyed identically to the EN registry. */
+export const BLOG_CONTENT_RU: Record<string, string> = {
+  index: indexRu,
+  'undercurrent-webgpu-fluid': undercurrentRu,
+  'glassmorphism-webgpu': glassmorphismRu,
+  'on-demand-rendering': onDemandRu,
+  'tsl-changes-everything': tslRu,
 }

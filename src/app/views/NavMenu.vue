@@ -5,7 +5,19 @@
 defineProps<{ mode: 'home' | 'content'; activeSectionId: string }>()
 
 import { NAV_ITEMS } from '../navItems'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
+import { getLang } from '../../core/i18n'
+import { localizedPagePath, localizedPath } from '../../core/routeManifest'
+
+const route = useRoute()
+const pageHref = (page: import('../../core/routeManifest').PageId): string => {
+  void route.path
+  return localizedPagePath(page, getLang())
+}
+const blogHref = (): string => {
+  void route.path
+  return localizedPath(getLang(), '/blog')
+}
 </script>
 
 <template>
@@ -64,7 +76,7 @@ import { RouterLink } from 'vue-router'
             <li v-for="item in NAV_ITEMS" :key="item.num" class="jlz-menu-nav__item">
               <RouterLink
                 v-if="item.page"
-                :to="{ name: item.page }"
+                :to="pageHref(item.page)"
                 class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1"
                 data-magnetic
                 data-page-transition
@@ -75,7 +87,7 @@ import { RouterLink } from 'vue-router'
               </RouterLink>
               <a
                 v-else
-                :href="item.href"
+                :href="blogHref()"
                 class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1"
                 data-magnetic
                 data-page-transition

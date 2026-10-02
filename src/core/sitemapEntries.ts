@@ -10,7 +10,7 @@
 import { BLOG_ARTICLES, BLOG_INDEX, blogArticlePath } from './blogPages'
 import { CASE_STUDIES } from '../Data/CaseStudies'
 import { PAGE_META_DATA } from './pageMetaData'
-import { ROUTE_MANIFEST } from './routeManifest'
+import { localizedPath, ROUTE_MANIFEST } from './routeManifest'
 import type { SitemapEntry } from './sitemap'
 import type { PageId } from './routeManifest'
 
@@ -22,7 +22,6 @@ interface SitemapSection {
 
 /** The app-route sections: the canonical home entry, then the SPA routes. */
 function buildAppSitemapSections(): SitemapSection[] {
-  const [home, ...spaRoutes] = ROUTE_MANIFEST
   const toEntry = (path: string, page: PageId): SitemapEntry => ({
     path,
     changefreq: PAGE_META_DATA[page].changefreq,
@@ -31,11 +30,17 @@ function buildAppSitemapSections(): SitemapSection[] {
   return [
     {
       comment: 'Main page — 3D experience (canonical entry)',
-      entries: home ? [toEntry(home.path, home.page)] : [],
+      entries: ROUTE_MANIFEST.filter((entry) => entry.path === '/').flatMap((entry) => [
+        toEntry(entry.path, entry.page),
+        toEntry(localizedPath('RU', entry.path), entry.page),
+      ]),
     },
     {
-      comment: 'SPA pages (client-side routes, same HTML base)',
-      entries: spaRoutes.map((entry) => toEntry(entry.path, entry.page)),
+      comment: 'Localized app pages',
+      entries: ROUTE_MANIFEST.filter((entry) => entry.path !== '/').flatMap((entry) => [
+        toEntry(entry.path, entry.page),
+        toEntry(localizedPath('RU', entry.path), entry.page),
+      ]),
     },
   ]
 }
@@ -51,16 +56,29 @@ function buildBlogSitemapSections(): SitemapSection[] {
           changefreq: BLOG_INDEX.changefreq,
           priority: BLOG_INDEX.priority,
         },
+        {
+          path: localizedPath('RU', BLOG_INDEX.path),
+          changefreq: BLOG_INDEX.changefreq,
+          priority: BLOG_INDEX.priority,
+        },
       ],
     },
     {
       comment: 'Blog articles',
-      entries: BLOG_ARTICLES.map((article): SitemapEntry => ({
-        path: blogArticlePath(article.slug),
-        lastmod: article.publishedTime.slice(0, 10),
-        changefreq: 'monthly',
-        priority: article.priority,
-      })),
+      entries: BLOG_ARTICLES.flatMap((article): SitemapEntry[] => [
+        {
+          path: blogArticlePath(article.slug),
+          lastmod: article.publishedTime.slice(0, 10),
+          changefreq: 'monthly',
+          priority: article.priority,
+        },
+        {
+          path: localizedPath('RU', blogArticlePath(article.slug)),
+          lastmod: article.publishedTime.slice(0, 10),
+          changefreq: 'monthly',
+          priority: article.priority,
+        },
+      ]),
     },
   ]
 }
@@ -70,11 +88,10 @@ function buildCaseStudySitemapSections(): SitemapSection[] {
   return [
     {
       comment: 'Works case studies',
-      entries: CASE_STUDIES.map((study): SitemapEntry => ({
-        path: `/works/${study.projectId}`,
-        changefreq: 'monthly',
-        priority: 0.8,
-      })),
+      entries: CASE_STUDIES.flatMap((study): SitemapEntry[] => [
+        { path: `/works/${study.projectId}`, changefreq: 'monthly', priority: 0.8 },
+        { path: `/ru/works/${study.projectId}`, changefreq: 'monthly', priority: 0.8 },
+      ]),
     },
   ]
 }

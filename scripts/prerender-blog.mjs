@@ -46,8 +46,8 @@ const server = await createServer({
 
 try {
   const { default: BlogPage } = await server.ssrLoadModule('/src/app/views/blog/BlogPage.vue')
-  const { BLOG_CONTENT } = await server.ssrLoadModule('/src/core/blogContent.ts')
-  const { BLOG_PAGE_META, renderBlogDocument } = await server.ssrLoadModule('/src/core/blogMeta.ts')
+  const { BLOG_CONTENT, BLOG_CONTENT_RU } = await server.ssrLoadModule('/src/core/blogContent.ts')
+  const { BLOG_PAGE_META, BLOG_PAGE_META_RU, renderBlogDocument } = await server.ssrLoadModule('/src/core/blogMeta.ts')
   const { BLOG_ARTICLES, blogArticlePath } = await server.ssrLoadModule('/src/core/blogPages.ts')
   const { createSSRApp, h } = await import('vue')
   const { renderToString } = await import('@vue/server-renderer')
@@ -61,29 +61,30 @@ try {
 
   const outDir = resolve(root, 'blog')
   mkdirSync(outDir, { recursive: true })
+  mkdirSync(resolve(root, 'ru/blog'), { recursive: true })
 
-  for (const page of pages) {
-    const meta = BLOG_PAGE_META[page.key]
-    if (!meta) throw new Error(`BLOG_PAGE_META is missing "${page.key}"`)
-    const body = BLOG_CONTENT[page.key]
-    if (!body || body.length === 0) throw new Error(`blog content is missing for "${page.key}"`)
+  for (const lang of ['EN', 'RU']) {
+    const content = lang === 'RU' ? BLOG_CONTENT_RU : BLOG_CONTENT
+    const metadata = lang === 'RU' ? BLOG_PAGE_META_RU : BLOG_PAGE_META
+    for (const page of pages) {
+      const meta = metadata[page.key]
+      if (!meta) throw new Error(`Blog metadata is missing "${lang}:${page.key}"`)
+      const body = content[page.key]
+      if (!body || body.length === 0) throw new Error(`blog content is missing for "${lang}:${page.key}"`)
 
-    const bodyHtml = await renderToString(
-      createSSRApp(h(BlogPage, { variant: page.variant, body })),
-    )
-    const document = renderBlogDocument(page.key, meta, bodyHtml)
-
-    // The index lives at the root (`blog.html` → `/blog`); articles live under
-    // `blog/<slug>.html` → `/blog/<slug>`. These paths are the Vite build
-    // inputs, so the emitted files keep the same layout in `dist/`.
-    const out =
-      page.variant === 'index' ? resolve(root, 'blog.html') : resolve(outDir, `${page.key}.html`)
-    writeFileSync(out, document, 'utf8')
-    console.log(
-      `[prerender-blog] wrote ${out} (${document.length} chars) — ${
-        page.variant === 'index' ? '/blog' : blogArticlePath(page.key)
-      }`,
-    )
+      const path = lang === 'RU'
+        ? page.variant === 'index' ? '/ru/blog' : `/ru${blogArticlePath(page.key)}`
+        : page.variant === 'index' ? '/blog' : blogArticlePath(page.key)
+      const bodyHtml = await renderToString(
+        createSSRApp(h(BlogPage, { variant: page.variant, body, lang, path })),
+      )
+      const document = renderBlogDocument(page.key, meta, bodyHtml, undefined, lang)
+      const out = lang === 'RU'
+        ? page.variant === 'index' ? resolve(root, 'ru/blog.html') : resolve(root, `ru/blog/${page.key}.html`)
+        : page.variant === 'index' ? resolve(root, 'blog.html') : resolve(outDir, `${page.key}.html`)
+      writeFileSync(out, document, 'utf8')
+      console.log(`[prerender-blog] wrote ${out} (${document.length} chars) — ${path}`)
+    }
   }
 
   // The generated documents are committed build output (the Vite build
@@ -98,6 +99,8 @@ try {
       '--write',
       'blog.html',
       'blog',
+      'ru/blog.html',
+      'ru/blog',
     ],
     {
       cwd: root,

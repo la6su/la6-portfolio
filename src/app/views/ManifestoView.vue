@@ -2,12 +2,15 @@
 // Manifesto route with four principles and the shared Contact and Menu
 // overlays.
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 
+import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
+const route = useRoute()
 const activeSectionId = useJlzPage('manifesto', () => rootEl.value, 'manifesto-purpose')
 
 interface Principle {
@@ -136,7 +139,7 @@ const PRINCIPLES: readonly Principle[] = [
                   {{ line }}
                 </p>
               </div>
-              <a :href="p.href" class="uk-button uk-button-text jlz-manifesto-link"
+              <a :href="localizedPath(langFromPath(route.path), p.href)" class="uk-button uk-button-text jlz-manifesto-link"
                 ><span>{{ p.routeLabel }}</span
                 ><span aria-hidden="true">↗</span></a
               >

@@ -48,7 +48,12 @@ export default defineConfig(({ mode }) => {
       { find: /^three-stdlib$/, replacement: resolve(root, 'src/three-stdlib-compat.ts') },
     ],
   },
-  define: VUE_FEATURE_FLAGS,
+  define: {
+    ...VUE_FEATURE_FLAGS,
+    'import.meta.env.VITE_SITE_ORIGIN': JSON.stringify(
+      process.env.JLZ_SITE_ORIGIN ?? process.env.VITE_SITE_ORIGIN ?? '',
+    ),
+  },
   optimizeDeps: {
     // These are reached after the app's async scene import (and DevPanel is
     // dev-only). Pin them in the initial scan so Vite does not replace the
@@ -87,6 +92,13 @@ export default defineConfig(({ mode }) => {
           BLOG_ARTICLES.map((article) => [
             `blog/${article.slug}`,
             resolve(root, `blog/${article.slug}.html`),
+          ]),
+        ),
+        'ru/blog': resolve(root, 'ru/blog.html'),
+        ...Object.fromEntries(
+          BLOG_ARTICLES.map((article) => [
+            `ru/blog/${article.slug}`,
+            resolve(root, `ru/blog/${article.slug}.html`),
           ]),
         ),
       },

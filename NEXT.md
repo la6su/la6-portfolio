@@ -751,18 +751,31 @@ existing unit/browser suites. The quality workflow rebuilds and diff-checks
 tracked generated outputs, then runs unit/lint; its browser job runs the
 cross-engine matrix and host-teardown scenario. These configured suites were
 not run locally because the repository contract requires an explicit request.
-Production-preview direct navigation returned 200 for all 15 generated public
-URLs: six main pages, four case studies, the blog index, and four articles.
-Each rendered a semantic `<main>`, expected English title, and path-specific
-canonical URL; no page errors appeared. With `jlz:lang=RU` already in browser
-storage, Services and a case study loaded in Russian and updated `<html lang>`
-and title. Blog documents are static English pages and remain English. The
-current language switch is storage-backed rather than URL-addressable; its
-initial RU prerender/SEO behavior and whether Blog needs Russian content remain
-product decisions pending clarification. Local Vite preview sometimes exposes
-its local origin in runtime canonical tags, while initial static metadata uses
-the configured production origin; deployed-origin canonical behavior still
-needs validation through the actual ingress.
+The user confirmed Russian pages must be indexable. Locale policy is now
+URL-based: existing bare paths remain English; Russian pages use `/ru/...`,
+with `/ru/` as the Russian home canonical. There is no language auto-redirect
+from cookies or browser headers. This follows Google's guidance to give each
+language a separate URL and annotate alternate pages with reciprocal
+`hreflang` links ([multilingual sites](https://developers.google.com/search/docs/advanced/crawling/managing-multi-regional-sites),
+[localized versions](https://developers.google.com/search/docs/specialty/international/localized-versions)).
+The route manifest/router, language switch, app and case-study navigation,
+runtime metadata, and no-scene navigation preserve the selected locale. The
+static build now emits English and Russian main pages, case studies, blog index,
+and all four articles. Blog articles have separate Russian editorial sources
+and translated metadata; every pair has a self-canonical and reciprocal
+`en`/`ru` alternates plus `x-default`. All 30 generated URLs are listed in the
+sitemap.
+Manual production-preview inspection with JavaScript disabled returned 200 for
+all 30 URLs and the exact `/ru` alias. Each page had the expected `<html lang>`,
+localized title and H1, path-specific canonical, and all three alternate
+links. On the live app, the switcher changed `/services` to `/ru/services`,
+translated the title, H1, and accessible label, and switched back to English;
+no page errors occurred. In the `?no-scene` path, after the splash Enter action,
+the fallback console switched `/services` to `/ru/services`; its Works and
+home links then pointed to `/ru/works` and `/ru/`. Opening Works kept the RU
+title and content, with no page errors. Build, lint, and `git diff --check`
+pass. The actual reverse-proxy route rewrites and deployed responses still
+require validation through the ingress.
 Manual production Chromium with SwiftShader produced Three's
 `WebGPU is not available, running under WebGL2 backend` fallback warning, then
 created a WebGL2 context on `.jlz-scene-canvas`. Across Home → Works →
@@ -788,8 +801,9 @@ synthetic loss/restore cycle on production Chromium/SwiftShader yielded the
 expected loss → restore → backend-disposal loss → restore sequence, a usable
 WebGL2 context, one scene canvas, and no renderer failure overlay. Three emits
 its expected device-lost console warning; no app errors or recovery-failure
-message appeared. This is software-backend lifecycle evidence, not physical
-GPU acceptance.
+message appeared. Teardown/timeout also cancels the scheduled restore callback
+so an aborted owner does not touch a closing context. This is software-backend
+lifecycle evidence, not physical GPU acceptance.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals

@@ -10,13 +10,15 @@ import BlogLayout from './BlogLayout.vue'
 
 defineProps<{
   variant: 'index' | 'article'
+  lang: 'EN' | 'RU'
+  path: string
   /** The `<main>` inner HTML (first-party editorial source). */
   body: string
 }>()
 </script>
 
 <template>
-  <BlogLayout :variant="variant">
+  <BlogLayout :variant="variant" :lang="lang" :path="path">
     <main id="main" tabindex="-1" class="uk-section uk-section-large" role="main" v-html="body"></main>
   </BlogLayout>
 </template>

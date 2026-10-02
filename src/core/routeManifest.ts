@@ -18,6 +18,26 @@ export const ROUTE_MANIFEST = [
   { path: '/contact', page: 'contact' },
 ] as const
 
+export type SiteLang = 'EN' | 'RU'
+
+/** Strip the Russian URL prefix while preserving the page path. */
+export function unlocalizedPath(path: string): string {
+  const stripped = path.replace(/^\/ru(?=\/|$)/i, '')
+  return stripped || '/'
+}
+
+/** The language is explicit in the public path; bare routes are English. */
+export function langFromPath(path: string): SiteLang {
+  return /^\/ru(?:\/|$)/i.test(path) ? 'RU' : 'EN'
+}
+
+/** Build the public URL for a language variant of a page path. */
+export function localizedPath(lang: SiteLang, path: string): string {
+  const basePath = unlocalizedPath(path)
+  if (lang === 'EN') return basePath
+  return basePath === '/' ? '/ru/' : `/ru${basePath}`
+}
+
 /** The closed page vocabulary is derived from the route table itself. */
 export type PageId = (typeof ROUTE_MANIFEST)[number]['page']
 
@@ -38,13 +58,17 @@ export function pathForPage(page: PageId): string {
   return PATH_BY_PAGE.get(page)!
 }
 
+export function localizedPagePath(page: PageId, lang: SiteLang): string {
+  return localizedPath(lang, pathForPage(page))
+}
+
 /**
  * Lenient resolution: the mapped page, or `home` for unknown paths. This is
  * the initial-load behaviour — a shared deep link to a stale or preview path
  * should still present the application at its home face.
  */
 export function resolvePage(path: string): PageId {
-  return PAGE_BY_PATH.get(path) ?? 'home'
+  return PAGE_BY_PATH.get(unlocalizedPath(path)) ?? 'home'
 }
 
 /** Resolve the page shown by a URL, including Works case-study routes. */
@@ -54,5 +78,5 @@ export function resolvePagePath(path: string): PageId {
 
 /** True for a case-study detail route owned by the works section. */
 export function isCaseStudyPath(path: string): boolean {
-  return /^\/works\/[a-z0-9-]+$/.test(path)
+  return /^\/works\/[a-z0-9-]+$/.test(unlocalizedPath(path))
 }

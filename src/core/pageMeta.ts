@@ -12,9 +12,10 @@
 //
 
 import { t, getLang } from './i18n'
-import { pathForPage } from './routeManifest'
+import { localizedPath, pathForPage } from './routeManifest'
 import { PAGE_META_DATA, type PageMetaData } from './pageMetaData'
 import type { PageId } from './routeManifest'
+import { SITE_ORIGIN } from './siteConfig'
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 
@@ -48,6 +49,17 @@ function ensureCanonical(): HTMLLinkElement {
   return el
 }
 
+function ensureAlternate(lang: string): HTMLLinkElement {
+  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${lang}"]`)
+  if (!el) {
+    el = document.createElement('link')
+    el.rel = 'alternate'
+    el.hreflang = lang
+    document.head.appendChild(el)
+  }
+  return el
+}
+
 /**
  * Apply per-page meta tags for the given page. Uses i18n for
  * title/description and the route manifest for the canonical path.
@@ -59,8 +71,11 @@ export function applyMetaTags(page: PageId, overrides: PageMetaOverrides = {}): 
 
   const title = overrides.title ?? t(cfg.titleKey)
   const description = overrides.description ?? t(cfg.descKey)
-  const origin = window.location.origin
-  const url = `${origin}${overrides.canonicalPath ?? pathForPage(page)}`
+  const origin = SITE_ORIGIN
+  const basePath = overrides.canonicalPath ?? pathForPage(page)
+  const englishUrl = `${origin}${localizedPath('EN', basePath)}`
+  const russianUrl = `${origin}${localizedPath('RU', basePath)}`
+  const url = getLang() === 'RU' ? russianUrl : englishUrl
 
   // <title>
   document.title = title
@@ -89,4 +104,7 @@ export function applyMetaTags(page: PageId, overrides: PageMetaOverrides = {}): 
 
   // Canonical
   ensureCanonical().href = url
+  ensureAlternate('en').href = englishUrl
+  ensureAlternate('ru').href = russianUrl
+  ensureAlternate('x-default').href = englishUrl
 }

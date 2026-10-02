@@ -2,12 +2,16 @@
 // Services route: four story beats, with the console window reserved for the
 // opening proposition and final action rather than repeated page furniture.
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 
+import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 
 const rootEl = ref<HTMLElement | null>(null)
+const route = useRoute()
+const blogHref = (path: string): string => localizedPath(langFromPath(route.path), path)
 const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-creativeDirection')
 </script>
 
@@ -78,7 +82,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                     </li>
                   </ul>
                   <a
-                    href="/blog/glassmorphism-webgpu"
+                    :href="blogHref('/blog/glassmorphism-webgpu')"
                     class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle uk-margin-medium-top"
                   >
                     <span
@@ -160,7 +164,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-bottom-small; delay: 90; repeat: true">
                     <a
-                      href="/blog/on-demand-rendering"
+                      :href="blogHref('/blog/on-demand-rendering')"
                       class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
                     >
                       <span
@@ -224,7 +228,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-left-small; delay: 120; repeat: true">
                     <a
-                      href="/blog/tsl-changes-everything"
+                      :href="blogHref('/blog/tsl-changes-everything')"
                       class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
                     >
                       <span

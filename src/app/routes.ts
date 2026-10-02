@@ -2,7 +2,7 @@
 
 import type { RouteRecordRaw, RouteRecordSingleView } from 'vue-router'
 
-import { ROUTE_MANIFEST, resolvePagePath } from '../core/routeManifest'
+import { localizedPath, ROUTE_MANIFEST, resolvePagePath } from '../core/routeManifest'
 import type { PageId } from '../core/routeManifest'
 import HomeView from './views/HomeView.vue'
 import CaseStudyView from './views/CaseStudyView.vue'
@@ -32,7 +32,15 @@ export function jlzRouteRecords(): RouteRecordRaw[] {
     name: entry.page,
     component: PAGE_VIEWS[entry.page],
   }))
+  records.push(
+    ...ROUTE_MANIFEST.map((entry) => ({
+      path: localizedPath('RU', entry.path),
+      name: `${entry.page}-ru`,
+      component: PAGE_VIEWS[entry.page],
+    })),
+  )
   records.push({ path: '/works/:projectId', name: 'case-study', component: CaseStudyView })
+  records.push({ path: '/ru/works/:projectId', name: 'case-study-ru', component: CaseStudyView })
   records.push({
     path: '/:pathMatch(.*)*',
     name: 'fallback',

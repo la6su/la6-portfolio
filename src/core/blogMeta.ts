@@ -13,6 +13,7 @@
 // Pure by design — no DOM, no window — unit-testable without a browser.
 
 import { BLOG_ARTICLES, BLOG_INDEX_PATH, blogArticlePath } from './blogPages'
+import { localizedPath } from './routeManifest'
 import { SITE_ORIGIN } from './siteConfig'
 
 /** The site origin used for canonical/OG URLs (override for staging). */
@@ -136,9 +137,67 @@ export const BLOG_PAGE_META: { index: BlogIndexMeta } & Record<BlogArticleSlug, 
   },
 }
 
+/** Russian editorial metadata; paired with separately authored RU article HTML. */
+export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<BlogArticleSlug, BlogArticleMeta> = {
+  index: {
+    title: 'Блог — кейсы и заметки о процессе | JUSTLOVEJAZZ',
+    description: 'Кейсы и инженерные заметки JUSTLOVEJAZZ о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
+    robots: 'index, follow, max-image-preview:large, max-snippet:-1',
+    ogType: 'website',
+    ogTitle: 'Блог JUSTLOVEJAZZ — кейсы и заметки о процессе',
+    ogDescription: 'Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.',
+    imageAlt: 'Обложка блога JUSTLOVEJAZZ',
+  },
+  'undercurrent-webgpu-fluid': {
+    title: 'Undercurrent — симуляция жидкости на WebGPU | Блог JUSTLOVEJAZZ',
+    description: 'Кейс Undercurrent: как мы создали симулятор жидкости в реальном времени на TSL-графах и уложились в бюджет 60 кадров в секунду.',
+    ogType: 'article',
+    ogTitle: 'Undercurrent — симуляция жидкости на WebGPU',
+    ogDescription: 'Как мы создали симулятор жидкости в реальном времени на TSL-графах.',
+    twitterDescription: 'Кейс о симуляции жидкости на WebGPU и бюджете кадра.',
+    imageAlt: 'Обложка кейса Undercurrent',
+    keywords: 'WebGPU, TSL, симуляция жидкости, Three.js, кейс, графика реального времени',
+    article: { section: 'Кейсы', tags: ['WebGPU', 'TSL', 'Симуляция жидкости'] },
+  },
+  'glassmorphism-webgpu': {
+    title: 'Стекло на WebGPU | Блог JUSTLOVEJAZZ',
+    description: 'Кейс о физическом стекле на WebGPU и WebGL2: передача света, clearcoat, иризация и отражения в Three.js.',
+    ogType: 'article',
+    ogTitle: 'Стекло на WebGPU',
+    ogDescription: 'Физический стеклянный материал с отражениями и иризацией для WebGPU и WebGL2.',
+    twitterDescription: 'Как мы создали стеклянный материал в Three.js.',
+    imageAlt: 'Обложка статьи о стекле на WebGPU',
+    keywords: 'WebGPU, стекло, MeshPhysicalMaterial, Three.js, иризация, кейс',
+    article: { section: 'Кейсы', tags: ['WebGPU', 'Three.js', 'Материалы'] },
+  },
+  'on-demand-rendering': {
+    title: 'Рендеринг по запросу — ноль draw calls в простое | Блог JUSTLOVEJAZZ',
+    description: 'Как мы остановили ненужную отрисовку GPU в простое с помощью событийной модели, сохранив отзывчивость интерактивной сцены.',
+    ogType: 'article',
+    ogTitle: 'Рендеринг по запросу — ноль draw calls в простое',
+    ogDescription: 'Событийная отрисовка снижает нагрузку GPU, когда сцена не меняется.',
+    twitterDescription: 'Как мы остановили ненужные draw calls в Three.js.',
+    imageAlt: 'Обложка статьи о рендеринге по запросу',
+    keywords: 'рендеринг по запросу, производительность GPU, Three.js, WebGPU, заметка о процессе',
+    article: { section: 'Заметки о процессе', tags: ['Производительность', 'WebGPU', 'Three.js'] },
+  },
+  'tsl-changes-everything': {
+    title: 'Почему TSL меняет всё | Блог JUSTLOVEJAZZ',
+    description: 'Типобезопасные шейдеры на TypeScript, компиляция для WebGPU и WebGL2 и отказ от склейки строк GLSL.',
+    ogType: 'article',
+    ogTitle: 'Почему TSL меняет всё',
+    ogDescription: 'Шейдеры на TypeScript и единый граф для WebGPU и WebGL2.',
+    twitterDescription: 'TSL, TypeScript и общие шейдеры для разных backend.',
+    imageAlt: 'Обложка статьи о TSL',
+    keywords: 'TSL, Three.js, WebGPU, шейдеры, TypeScript, заметка о процессе',
+    article: { section: 'Заметки о процессе', tags: ['TSL', 'WebGPU', 'Шейдеры'] },
+  },
+}
+
 /** The static path of a page key (`index` → the list page). */
-export function blogMetaPath(key: BlogPageKey): string {
-  return key === 'index' ? BLOG_INDEX_PATH : blogArticlePath(key)
+export function blogMetaPath(key: BlogPageKey, lang: 'EN' | 'RU' = 'EN'): string {
+  const path = key === 'index' ? BLOG_INDEX_PATH : blogArticlePath(key)
+  return localizedPath(lang, path)
 }
 
 /** Escape a value for use inside a double-quoted HTML attribute. */
@@ -173,13 +232,16 @@ function jsonLd(
   key: BlogPageKey,
   meta: BlogIndexMeta | BlogArticleMeta,
   origin: string,
+  lang: 'EN' | 'RU',
 ): Record<string, unknown> {
-  const url = `${origin}${blogMetaPath(key)}`
+  const url = `${origin}${blogMetaPath(key, lang)}`
+  const pageMeta = lang === 'RU' ? BLOG_PAGE_META_RU : BLOG_PAGE_META
   if (meta.ogType === 'article') {
     const publishedTime = BLOG_ARTICLES.find((article) => article.slug === key)!.publishedTime
     return {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
+      inLanguage: lang === 'RU' ? 'ru' : 'en',
       headline: meta.ogTitle,
       description: meta.ogDescription,
       image: OG_IMAGE,
@@ -199,7 +261,8 @@ function jsonLd(
   return {
     '@context': 'https://schema.org',
     '@type': 'Blog',
-    name: `${SITE_NAME} Blog`,
+    inLanguage: lang === 'RU' ? 'ru' : 'en',
+    name: lang === 'RU' ? `Блог ${SITE_NAME}` : `${SITE_NAME} Blog`,
     url,
     description: meta.ogDescription,
     publisher: {
@@ -208,11 +271,12 @@ function jsonLd(
       logo: { '@type': 'ImageObject', url: `${origin}/logo.svg` },
     },
     blogPost: BLOG_ARTICLES.map((article) => {
-      const articleMeta = BLOG_PAGE_META[article.slug]
+      const articleMeta = pageMeta[article.slug]
       return {
         '@type': 'BlogPosting',
         headline: articleMeta.ogTitle,
-        url: `${origin}${blogArticlePath(article.slug)}`,
+        inLanguage: lang === 'RU' ? 'ru' : 'en',
+        url: `${origin}${blogMetaPath(article.slug, lang)}`,
         datePublished: article.publishedTime,
       articleSection: articleMeta.article.section,
       }
@@ -231,11 +295,12 @@ export function renderBlogDocument(
   meta: BlogIndexMeta | BlogArticleMeta,
   body: string,
   origin: string = BLOG_SITE_ORIGIN,
+  lang: 'EN' | 'RU' = 'EN',
 ): string {
   // The body comes from `renderToString` (Vue SSR) — strip the fragment/v-if
   // comment markers so the emitted document is clean static HTML.
   body = stripSsrComments(body)
-  const path = blogMetaPath(key)
+  const path = blogMetaPath(key, lang)
   const url = `${origin}${path}`
   const head: string[] = [
     '    <meta charset="UTF-8" />',
@@ -256,11 +321,14 @@ export function renderBlogDocument(
     '    <link rel="mask-icon" href="/logo.svg" color="#232534" />',
     '    <link rel="manifest" href="/site.webmanifest" />',
     `    <link rel="canonical" href="${esc(url)}" />`,
+    `    <link rel="alternate" hreflang="en" href="${esc(`${origin}${blogMetaPath(key, 'EN')}`)}" />`,
+    `    <link rel="alternate" hreflang="ru" href="${esc(`${origin}${blogMetaPath(key, 'RU')}`)}" />`,
+    `    <link rel="alternate" hreflang="x-default" href="${esc(`${origin}${blogMetaPath(key, 'EN')}`)}" />`,
     '',
     '    <!-- Open Graph -->',
     propertyTag('og:type', meta.ogType),
     propertyTag('og:site_name', SITE_NAME),
-    propertyTag('og:locale', 'en_US'),
+    propertyTag('og:locale', lang === 'RU' ? 'ru_RU' : 'en_US'),
     propertyTag('og:title', meta.ogTitle),
     propertyTag('og:description', meta.ogDescription),
     propertyTag('og:url', url),
@@ -301,7 +369,7 @@ export function renderBlogDocument(
       : []),
     '',
     '    <script type="application/ld+json">',
-    `${JSON.stringify(jsonLd(key, meta, origin), null, 2).replace(/^/gm, '      ')}`,
+    `${JSON.stringify(jsonLd(key, meta, origin, lang), null, 2).replace(/^/gm, '      ')}`,
     '    </script>',
   )
 
@@ -325,7 +393,7 @@ export function renderBlogDocument(
 
   return [
     '<!doctype html>',
-    '<html lang="en">',
+    `<html lang="${lang === 'RU' ? 'ru' : 'en'}">`,
     '  <head>',
     ...head,
     '  </head>',

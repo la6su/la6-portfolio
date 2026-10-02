@@ -7,9 +7,9 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { eventBus } from '../core/EventBus'
-import { applyTranslations } from '../core/i18n'
+import { applyTranslations, setLang } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
-import { resolvePagePath } from '../core/routeManifest'
+import { langFromPath, localizedPath, resolvePagePath } from '../core/routeManifest'
 import { RouteTransition } from '../UI/RouteTransition'
 import AppShell from './AppShell.vue'
 import { jlzRouteRecords } from './routes'
@@ -100,6 +100,7 @@ export async function mountVueApp(): Promise<void> {
   let coverNavigation = true
   router.beforeEach(async (to, from) => {
     if (disposed) return false
+    setLang(langFromPath(to.path))
     if (to.path === from.path) return
     if (coverNavigation) {
       coverNavigation = false
@@ -188,9 +189,14 @@ export async function mountVueApp(): Promise<void> {
 
   // jlz:lang-change — re-apply translations + per-page meta to the live DOM.
   appUnsubs.push(
-    eventBus.on('jlz:lang-change', () => {
+    eventBus.on('jlz:lang-change', ({ lang }) => {
       applyTranslations()
       applyMetaTags(resolvePagePath(router.currentRoute.value.path))
+      const current = router.currentRoute.value
+      const localized = localizedPath(lang === 'RU' ? 'RU' : 'EN', current.path)
+      if (localized !== current.path) {
+        void router.replace({ path: localized, query: current.query, hash: current.hash })
+      }
     }),
   )
 

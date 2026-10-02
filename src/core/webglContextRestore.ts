@@ -9,10 +9,15 @@ export function waitForWebGLContextRestore(
 
   return new Promise<boolean>((resolve) => {
     let settled = false
+    let deferredRestore: number | undefined
 
     const finish = (restored: boolean): void => {
       if (settled) return
       settled = true
+      if (deferredRestore !== undefined) {
+        window.clearTimeout(deferredRestore)
+        deferredRestore = undefined
+      }
       if (restoreContext) canvas.removeEventListener('webglcontextlost', onLost)
       canvas.removeEventListener('webglcontextrestored', onRestored)
       signal?.removeEventListener('abort', onAbort)
@@ -25,7 +30,10 @@ export function waitForWebGLContextRestore(
       if (restoreContext) {
         // Chromium ignores restoreContext() while the loss event is still
         // being dispatched, even after preventDefault() has been called.
-        window.setTimeout(() => restoreContext.restoreContext(), 0)
+        deferredRestore = window.setTimeout(() => {
+          deferredRestore = undefined
+          if (!settled) restoreContext.restoreContext()
+        }, 0)
       }
     }
     const onRestored = (): void => finish(true)

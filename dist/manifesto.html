@@ -1,72 +1,49 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
     <title>Manifesto — JUSTLOVEJAZZ</title>
 
-    <meta
-      name="description"
-      content="Purpose, clarity, emotion, simplicity. The principles that guide our work."
-    />
+    <meta name="description" content="Purpose, clarity, emotion, simplicity. The principles that guide our work.">
 
-    <link rel="canonical" href="https://justlovejazz.dev/manifesto" />
+    <link rel="canonical" href="https://justlovejazz.dev/manifesto">
 
-    <meta property="og:title" content="Manifesto — JUSTLOVEJAZZ" />
-    <meta
-      property="og:description"
-      content="Purpose, clarity, emotion, simplicity. The principles that guide our work."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:url" content="https://justlovejazz.dev/manifesto" />
+    <meta property="og:title" content="Manifesto — JUSTLOVEJAZZ">
+    <meta property="og:description" content="Purpose, clarity, emotion, simplicity. The principles that guide our work.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="JUSTLOVEJAZZ">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://justlovejazz.dev/manifesto">
     <!-- Raster og:image: social crawlers (Twitter/Facebook/LinkedIn) do not
          render SVG previews; /preview.jpg is the 1200x630 share card. -->
-    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
-    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg">
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Manifesto — JUSTLOVEJAZZ" />
-    <meta
-      name="twitter:description"
-      content="Purpose, clarity, emotion, simplicity. The principles that guide our work."
-    />
-    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Manifesto — JUSTLOVEJAZZ">
+    <meta name="twitter:description" content="Purpose, clarity, emotion, simplicity. The principles that guide our work.">
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg">
 
-    <meta name="theme-color" content="#050507" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#050507">
+    <meta name="color-scheme" content="dark light">
 
-    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/logo.svg" />
-    <link rel="mask-icon" href="/logo.svg" color="#232534" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/logo.svg">
+    <link rel="mask-icon" href="/logo.svg" color="#232534">
+    <link rel="manifest" href="/site.webmanifest">
 
     <!-- Self-hosted fonts — the splash renders before JS boots, so both
          faces are preloaded: Commissioner (variable, splash spiral + body)
          and JetBrains Mono (loader labels). Served immutable via /fonts/*. -->
-    <link
-      rel="preload"
-      href="/fonts/commissioner-variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/jetbrains-mono-latin.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin="">
+    <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin="">
 
-    <link rel="stylesheet" href="/fonts/commissioner.css" />
-    <link rel="stylesheet" href="/fonts/jetbrains-mono.css" />
+    <link rel="stylesheet" href="/fonts/commissioner.css">
+    <link rel="stylesheet" href="/fonts/jetbrains-mono.css">
 
     <style>:root{--bg:#05090d;--blue:#7184bd;--blue-mid:#4b5e86;--blue-dark:#26364d;--line:#172630;--green:#50e7ae;--yellow:#c9ad36;--white:#dce5ef}*,:before,:after{box-sizing:border-box}html,body{background:var(--jlz-color-bg,var(--bg));width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Commissioner,system-ui,sans-serif}button,a{font:inherit}.sr-only{clip:rect(0, 0, 0, 0)!important;white-space:nowrap!important;border:0!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;position:absolute!important;overflow:hidden!important}.skip-link{z-index:99999;color:#fff;background:#091017;padding:8px 12px;position:fixed;top:12px;left:12px;transform:translateY(-150%)}.skip-link:focus{transform:translateY(0)}#jlz-app-loader{z-index:30000;isolation:isolate;background:radial-gradient(circle at 50% 50%, #34ad8f13, transparent 34%), var(--bg);opacity:1;contain:paint;position:fixed;inset:0;overflow:hidden;transform:scale(1)}#jlz-app-loader.is-exiting{pointer-events:none;animation:1.2s cubic-bezier(.65,0,.35,1) forwards loader-exit}@keyframes loader-exit{0%{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.018)}}.jlz-splash-grid{z-index:0;opacity:.22;pointer-events:none;background-color:#0000;background-image:linear-gradient(#6482960b 1px,#0000 1px),linear-gradient(90deg,#6482960b 1px,#0000 1px);background-position:0 0,0 0;background-repeat:repeat,repeat;background-size:32px 32px;background-attachment:scroll,scroll;background-origin:padding-box,padding-box;background-clip:border-box,border-box;position:absolute;inset:0;-webkit-mask-image:radial-gradient(circle,#000 20%,#0000 90%);mask-image:radial-gradient(circle,#000 20%,#0000 90%)}.jlz-splash-vignette{z-index:2;pointer-events:none;background:radial-gradient(#0000 22%,#01050859 64%,#010508f0 100%);position:absolute;inset:0}.jlz-splash-frame{z-index:3;pointer-events:none;border:1px solid #4b667a38;border-radius:17px;position:absolute;inset:9px}.jlz-splash-frame:before,.jlz-splash-frame:after{content:"";width:8px;height:8px;position:absolute}.jlz-splash-frame:before{border-top:1px solid #50e7aeb3;border-left:1px solid #50e7aeb3;top:52px;left:-1px}.jlz-splash-frame:after{border-bottom:1px solid #50e7aeb3;border-right:1px solid #50e7aeb3;bottom:52px;right:-1px}.jlz-splash-svg{z-index:5;text-rendering:geometricprecision;pointer-events:none;width:min(100vw,100vh);height:min(100vw,100vh);position:absolute;top:50%;left:50%;overflow:visible;transform:translate(-50%,-50%)}.portal-line{fill:none;vector-effect:non-scaling-stroke;shape-rendering:geometricprecision}.portal-line.outer{stroke:#1d303a;stroke-width:1.1px}.portal-line.mid{stroke:#13232c;stroke-width:1px}.portal-line.inner{stroke:#50e7ae3d;stroke-width:1px}.portal-mark{fill:var(--green)}.spiral{transform-box:view-box;transform-origin:700px 700px}.spiral-frame{fill:none;stroke:var(--line);stroke-width:1px;vector-effect:non-scaling-stroke}.jlz-splash-svg .spiral{transform-box:view-box;transform-origin:700px 700px;will-change:transform, opacity;animation:.72s cubic-bezier(.16,1,.3,1) both portal-depth-enter}.jlz-splash-svg .spiral[data-base-rotation="-1"]{--portal-base-rotation:-1deg;--portal-start-scale:1.34;--portal-start-x:0px;--portal-start-y:0px;--portal-delay:0s;--portal-final-opacity:1}.jlz-splash-svg .spiral[data-base-rotation="1.7"]{--portal-base-rotation:1.7deg;--portal-start-scale:1.26;--portal-start-x:0px;--portal-start-y:0px;--portal-delay:55ms;--portal-final-opacity:.72}.jlz-splash-svg .spiral[data-base-rotation="-2.8"]{--portal-base-rotation:-2.8deg;--portal-start-scale:1.18;--portal-start-x:0px;--portal-start-y:0px;--portal-delay:.105s;--portal-final-opacity:.52}.jlz-splash-svg .spiral[data-base-rotation="4.2"]{--portal-base-rotation:4.2deg;--portal-start-scale:1.12;--portal-start-x:0px;--portal-start-y:0px;--portal-delay:.15s;--portal-final-opacity:.32}.jlz-splash-svg .spiral[data-base-rotation="-5.5"]{--portal-base-rotation:-5.5deg;--portal-start-scale:1.07;--portal-start-x:0px;--portal-start-y:0px;--portal-delay:.19s;--portal-final-opacity:.22}@keyframes portal-depth-enter{0%{opacity:0;transform:translate(var(--portal-start-x), var(--portal-start-y)) rotate(calc(var(--portal-base-rotation) + 3deg)) scale(var(--portal-start-scale))}38%{opacity:var(--portal-final-opacity);transform:translate(0, 0) rotate(calc(var(--portal-base-rotation) - 1deg)) scale(.985)}to{opacity:var(--portal-final-opacity);transform:translate(0, 0) rotate(var(--portal-base-rotation)) scale(1)}}.jlz-splash-svg .spiral[data-base-rotation="-1"]{animation-delay:0s}.jlz-splash-svg .spiral[data-base-rotation="1.7"]{animation-delay:55ms}.jlz-splash-svg .spiral[data-base-rotation="-2.8"]{animation-delay:.105s}.jlz-splash-svg .spiral[data-base-rotation="4.2"]{animation-delay:.15s}.jlz-splash-svg .spiral[data-base-rotation="-5.5"]{animation-delay:.19s}.spiral-text{fill:var(--blue);letter-spacing:6px;text-rendering:geometricprecision;dominant-baseline:middle;font-family:Commissioner,Arial,sans-serif;font-weight:650}.spiral-text.outer{font-size:37px}.spiral-text.medium{fill:var(--blue-mid);letter-spacing:4px;font-size:20px}.spiral-text.small{fill:var(--blue-dark);letter-spacing:3px;font-family:JetBrains Mono,monospace;font-size:9px}.portal-core{fill:#03080b;stroke:#50e7ae66;stroke-width:1px;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:50%;animation:4.5s ease-in-out infinite portal-breathe}.portal-core-glow{fill:url(#portal-core-glow);opacity:.75}.portal-core-inner{fill:none;stroke:#536c8c38;stroke-width:1px;vector-effect:non-scaling-stroke}.portal-core-inner.green{stroke:#50e7ae38}@keyframes portal-breathe{0%,to{transform:scale(.985)}50%{transform:scale(1.015)}}.portal-center{fill:var(--green);filter:drop-shadow(0 0 6px #50e7aea6)drop-shadow(0 0 16px #50e7ae2e)}#jlz-splash-enter{z-index:30;color:#6579a9;cursor:not-allowed;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);background:#02080b47;border:1px solid #5b739673;border-radius:0;place-items:center;width:min(8vmin,94px);height:min(8vmin,94px);transition:transform .3s,color .3s,border-color .3s,box-shadow .3s;display:grid;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}#jlz-splash-enter:before,#jlz-splash-enter:after{content:"";border-color:currentColor;width:8px;height:8px;position:absolute}#jlz-splash-enter:before{border-top:1px solid;border-left:1px solid;top:-1px;left:-1px}#jlz-splash-enter:after{border-bottom:1px solid;border-right:1px solid;bottom:-1px;right:-1px}#jlz-splash-enter span{letter-spacing:3px;text-indent:3px;font-family:JetBrains Mono,monospace;font-size:8px}#jlz-splash-enter.is-ready{cursor:pointer;color:var(--green);border-color:#50e7aeb3;box-shadow:0 0 25px #50e7ae14,inset 0 0 18px #50e7ae0a}#jlz-splash-enter.is-ready:hover{transform:translate(-50%,-50%)scale(1.04);box-shadow:0 0 42px #50e7ae1f,inset 0 0 22px #50e7ae0f}#jlz-splash-enter.is-ready:focus-visible{outline:1px solid var(--green);outline-offset:5px}.jlz-splash-meta{z-index:25;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;color:#304258;pointer-events:none;align-items:center;gap:12px;font-family:JetBrains Mono,monospace;font-size:7px;display:flex;position:absolute;top:calc(50% + min(15vmin,180px));left:50%;transform:translate(-50%)}.jlz-splash-meta:before{content:"";background:var(--yellow);width:3px;height:3px}.splash-label{z-index:15;letter-spacing:1.6px;text-transform:uppercase;color:#2c3d50;white-space:nowrap;pointer-events:none;font-family:JetBrains Mono,monospace;font-size:6px;position:absolute}.splash-label.tl{top:13%;left:4%}.splash-label.tr{color:#347662;top:13%;right:4%}.splash-label.bl{bottom:7%;left:4%}.splash-label.br{color:#806f29;bottom:7%;right:4%}.jlz-loader-config{z-index:100;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);background:#05090d73;border:1px solid #495d7059;display:flex;position:absolute;top:34px;right:28px}.jlz-loader-config button{color:#526276;cursor:pointer;letter-spacing:1px;background:0 0;border:0;border-right:1px solid #495d7040;width:38px;height:32px;padding:0;font-family:JetBrains Mono,monospace;font-size:9px}.jlz-loader-config button:last-child{border-right:0}.jlz-loader-config button:hover{color:var(--green)}.jlz-loader-config button:focus-visible{outline:1px solid var(--green);outline-offset:-3px}.jlz-sound-icon{border-left:1px solid;border-right:1px solid;width:9px;height:9px;display:inline-block}.jlz-splash-svg{transition:transform .42s cubic-bezier(.16,1,.3,1)}.jlz-splash-svg.is-settled{transform:translate(-50%,-50%)scale(1)}@media (prefers-reduced-motion:reduce){#jlz-app-loader.is-exiting{pointer-events:none;animation-duration:1ms;animation-timing-function:linear}.jlz-splash-svg{transition:none}.jlz-splash-svg .spiral{will-change:auto;opacity:var(--portal-final-opacity);transform:translate(0, 0) rotate(var(--portal-base-rotation)) scale(1);animation:none}.portal-core{animation:none}}@media (width<=700px){.jlz-loader-config{top:20px;right:20px}.jlz-loader-config button{width:44px;min-width:44px;height:44px}.jlz-splash-meta{top:calc(50% + 18vmin)}.splash-label{font-size:5px}}</style>
 
@@ -76,8 +53,11 @@
     <noscript>
       <style>#jlz-app-loader{display:none!important}</style>
     </noscript>
-    <script type="module" crossorigin src="/assets/index-D1PhuFlm.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/chunk-runtime-DjMZykf2.js">
+    <script type="module" crossorigin="" src="/assets/index-Dvj81U-G.js"></script>
+    <link rel="modulepreload" crossorigin="" href="/assets/chunk-runtime-DjMZykf2.js">
+      <link rel="alternate" hreflang="en" href="https://justlovejazz.dev/manifesto">
+    <link rel="alternate" hreflang="ru" href="https://justlovejazz.dev/ru/manifesto">
+    <link rel="alternate" hreflang="x-default" href="https://justlovejazz.dev/manifesto">
   </head>
 
   <body>
@@ -108,23 +88,18 @@
          SQUARE TYPOGRAPHIC PORTAL
          ======================================================= -->
 
-      <svg
-        class="jlz-splash-svg"
-        viewBox="0 0 1400 1400"
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden="true"
-      >
+      <svg class="jlz-splash-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <defs>
           <radialGradient id="portal-light">
-            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12" />
-            <stop offset=".45" stop-color="#50e7ae" stop-opacity=".025" />
-            <stop offset="1" stop-color="#50e7ae" stop-opacity="0" />
+            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12"></stop>
+            <stop offset=".45" stop-color="#50e7ae" stop-opacity=".025"></stop>
+            <stop offset="1" stop-color="#50e7ae" stop-opacity="0"></stop>
           </radialGradient>
 
           <radialGradient id="portal-core-glow">
-            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12" />
-            <stop offset=".55" stop-color="#50e7ae" stop-opacity=".025" />
-            <stop offset="1" stop-color="#50e7ae" stop-opacity="0" />
+            <stop offset="0" stop-color="#50e7ae" stop-opacity=".12"></stop>
+            <stop offset=".55" stop-color="#50e7ae" stop-opacity=".025"></stop>
+            <stop offset="1" stop-color="#50e7ae" stop-opacity="0"></stop>
           </radialGradient>
         </defs>
 
@@ -132,67 +107,36 @@
            ATMOSPHERIC LIGHT
            ===================================================== -->
 
-        <circle cx="700" cy="700" r="470" fill="url(#portal-light)" />
+        <circle cx="700" cy="700" r="470" fill="url(#portal-light)"></circle>
 
         <!-- =====================================================
            OUTER ARCHITECTURE
            ===================================================== -->
 
-        <rect class="portal-line outer" x="185" y="185" width="1030" height="1030" />
+        <rect class="portal-line outer" x="185" y="185" width="1030" height="1030"></rect>
 
-        <rect class="portal-line mid" x="285" y="285" width="830" height="830" />
+        <rect class="portal-line mid" x="285" y="285" width="830" height="830"></rect>
 
         <!-- =====================================================
            DEPTH 01 — OUTER TEXT
            ===================================================== -->
 
         <g class="spiral" data-base-rotation="-1">
-          <rect class="spiral-frame" x="205" y="205" width="990" height="990" />
+          <rect class="spiral-frame" x="205" y="205" width="990" height="990"></rect>
 
-          <text
-            class="spiral-text outer"
-            x="700"
-            y="177"
-            text-anchor="middle"
-            textLength="950"
-            lengthAdjust="spacing"
-          >
+          <text class="spiral-text outer" x="700" y="177" text-anchor="middle" textLength="950" lengthAdjust="spacing">
             ZARAZENI INCLUSION · INTERACTIVE WEB · DIGITAL EXPERIENCE
           </text>
 
-          <text
-            class="spiral-text outer"
-            x="700"
-            y="177"
-            text-anchor="middle"
-            textLength="950"
-            lengthAdjust="spacing"
-            transform="rotate(90 700 700)"
-          >
+          <text class="spiral-text outer" x="700" y="177" text-anchor="middle" textLength="950" lengthAdjust="spacing" transform="rotate(90 700 700)">
             KEMASUKAN · AUFNAHME · AISÄLLYTTÄMINEN · CREATIVE SYSTEMS
           </text>
 
-          <text
-            class="spiral-text outer"
-            x="700"
-            y="177"
-            text-anchor="middle"
-            textLength="950"
-            lengthAdjust="spacing"
-            transform="rotate(180 700 700)"
-          >
+          <text class="spiral-text outer" x="700" y="177" text-anchor="middle" textLength="950" lengthAdjust="spacing" transform="rotate(180 700 700)">
             NAME · VISUALITY · INTERACTION · MOTION · LIGHT · WEBGPU
           </text>
 
-          <text
-            class="spiral-text outer"
-            x="700"
-            y="177"
-            text-anchor="middle"
-            textLength="950"
-            lengthAdjust="spacing"
-            transform="rotate(-90 700 700)"
-          >
+          <text class="spiral-text outer" x="700" y="177" text-anchor="middle" textLength="950" lengthAdjust="spacing" transform="rotate(-90 700 700)">
             ВКЛЮЧЕНИЕ · LIGHT · WEBGL · THREE.JS · DESIGN · MOTION
           </text>
         </g>
@@ -202,52 +146,21 @@
            ===================================================== -->
 
         <g class="spiral" data-base-rotation="1.7" opacity=".72">
-          <rect class="spiral-frame" x="300" y="300" width="800" height="800" />
+          <rect class="spiral-frame" x="300" y="300" width="800" height="800"></rect>
 
-          <text
-            class="spiral-text medium"
-            x="700"
-            y="285"
-            text-anchor="middle"
-            textLength="760"
-            lengthAdjust="spacing"
-          >
+          <text class="spiral-text medium" x="700" y="285" text-anchor="middle" textLength="760" lengthAdjust="spacing">
             JUSTLOVEJAZZ · TSL · THREE · WEBGPU · CREATIVE SYSTEMS
           </text>
 
-          <text
-            class="spiral-text medium"
-            x="700"
-            y="285"
-            text-anchor="middle"
-            textLength="760"
-            lengthAdjust="spacing"
-            transform="rotate(90 700 700)"
-          >
+          <text class="spiral-text medium" x="700" y="285" text-anchor="middle" textLength="760" lengthAdjust="spacing" transform="rotate(90 700 700)">
             GPU · CRAFTED MOTION · LIGHT · WEBGPU · DIGITAL EXPERIENCE
           </text>
 
-          <text
-            class="spiral-text medium"
-            x="700"
-            y="285"
-            text-anchor="middle"
-            textLength="760"
-            lengthAdjust="spacing"
-            transform="rotate(180 700 700)"
-          >
+          <text class="spiral-text medium" x="700" y="285" text-anchor="middle" textLength="760" lengthAdjust="spacing" transform="rotate(180 700 700)">
             IMMERSION · VISUALITY · INTERACTION · CODE · EXPERIENCE
           </text>
 
-          <text
-            class="spiral-text medium"
-            x="700"
-            y="285"
-            text-anchor="middle"
-            textLength="760"
-            lengthAdjust="spacing"
-            transform="rotate(-90 700 700)"
-          >
+          <text class="spiral-text medium" x="700" y="285" text-anchor="middle" textLength="760" lengthAdjust="spacing" transform="rotate(-90 700 700)">
             DIGITAL · CREATIVE · SYSTEMS · WEB · TSL · THREE.JS
           </text>
         </g>
@@ -257,52 +170,21 @@
            ===================================================== -->
 
         <g class="spiral" data-base-rotation="-2.8" opacity=".52">
-          <rect class="spiral-frame" x="395" y="395" width="610" height="610" />
+          <rect class="spiral-frame" x="395" y="395" width="610" height="610"></rect>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="382"
-            text-anchor="middle"
-            textLength="575"
-            lengthAdjust="spacing"
-          >
+          <text class="spiral-text small" x="700" y="382" text-anchor="middle" textLength="575" lengthAdjust="spacing">
             WEBGPU · THREE.JS · TSL · IMMERSION · VISUALITY
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="382"
-            text-anchor="middle"
-            textLength="575"
-            lengthAdjust="spacing"
-            transform="rotate(90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="382" text-anchor="middle" textLength="575" lengthAdjust="spacing" transform="rotate(90 700 700)">
             INTERACTION · DIGITAL EXPERIENCE · MOTION · LIGHT
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="382"
-            text-anchor="middle"
-            textLength="575"
-            lengthAdjust="spacing"
-            transform="rotate(180 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="382" text-anchor="middle" textLength="575" lengthAdjust="spacing" transform="rotate(180 700 700)">
             LA6SU · JUSTLOVEJAZZ · CREATIVE SYSTEMS · DESIGN
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="382"
-            text-anchor="middle"
-            textLength="575"
-            lengthAdjust="spacing"
-            transform="rotate(-90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="382" text-anchor="middle" textLength="575" lengthAdjust="spacing" transform="rotate(-90 700 700)">
             GPU · CODE · MOTION · WEB · THREE · TSL · LIGHT
           </text>
         </g>
@@ -312,52 +194,21 @@
            ===================================================== -->
 
         <g class="spiral" data-base-rotation="4.2" opacity=".32">
-          <rect class="spiral-frame" x="470" y="470" width="460" height="460" />
+          <rect class="spiral-frame" x="470" y="470" width="460" height="460"></rect>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="458"
-            text-anchor="middle"
-            textLength="425"
-            lengthAdjust="spacing"
-          >
+          <text class="spiral-text small" x="700" y="458" text-anchor="middle" textLength="425" lengthAdjust="spacing">
             IMMERSION · WEBGPU · TSL · THREE · MOTION
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="458"
-            text-anchor="middle"
-            textLength="425"
-            lengthAdjust="spacing"
-            transform="rotate(90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="458" text-anchor="middle" textLength="425" lengthAdjust="spacing" transform="rotate(90 700 700)">
             VISUALITY · INTERACTION · DIGITAL · CODE
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="458"
-            text-anchor="middle"
-            textLength="425"
-            lengthAdjust="spacing"
-            transform="rotate(180 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="458" text-anchor="middle" textLength="425" lengthAdjust="spacing" transform="rotate(180 700 700)">
             JUSTLOVEJAZZ · CREATIVE SYSTEMS · LIGHT
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="458"
-            text-anchor="middle"
-            textLength="425"
-            lengthAdjust="spacing"
-            transform="rotate(-90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="458" text-anchor="middle" textLength="425" lengthAdjust="spacing" transform="rotate(-90 700 700)">
             DIGITAL EXPERIENCE · WEBGL · DESIGN
           </text>
         </g>
@@ -367,52 +218,21 @@
            ===================================================== -->
 
         <g class="spiral" data-base-rotation="-5.5" opacity=".22">
-          <rect class="spiral-frame" x="535" y="535" width="330" height="330" />
+          <rect class="spiral-frame" x="535" y="535" width="330" height="330"></rect>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="526"
-            text-anchor="middle"
-            textLength="300"
-            lengthAdjust="spacing"
-          >
+          <text class="spiral-text small" x="700" y="526" text-anchor="middle" textLength="300" lengthAdjust="spacing">
             JUSTLOVEJAZZ · WEBGPU · TSL · THREE.JS
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="526"
-            text-anchor="middle"
-            textLength="300"
-            lengthAdjust="spacing"
-            transform="rotate(90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="526" text-anchor="middle" textLength="300" lengthAdjust="spacing" transform="rotate(90 700 700)">
             IMMERSION · MOTION · LIGHT · CODE
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="526"
-            text-anchor="middle"
-            textLength="300"
-            lengthAdjust="spacing"
-            transform="rotate(180 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="526" text-anchor="middle" textLength="300" lengthAdjust="spacing" transform="rotate(180 700 700)">
             DIGITAL EXPERIENCE · VISUALITY
           </text>
 
-          <text
-            class="spiral-text small"
-            x="700"
-            y="526"
-            text-anchor="middle"
-            textLength="300"
-            lengthAdjust="spacing"
-            transform="rotate(-90 700 700)"
-          >
+          <text class="spiral-text small" x="700" y="526" text-anchor="middle" textLength="300" lengthAdjust="spacing" transform="rotate(-90 700 700)">
             CREATIVE SYSTEMS · DESIGN
           </text>
         </g>
@@ -424,46 +244,41 @@
            everything here is SVG.
            ===================================================== -->
 
-        <circle class="portal-core-glow" cx="700" cy="700" r="175" />
+        <circle class="portal-core-glow" cx="700" cy="700" r="175"></circle>
 
-        <rect class="portal-line inner" x="575" y="575" width="250" height="250" />
+        <rect class="portal-line inner" x="575" y="575" width="250" height="250"></rect>
 
-        <rect class="portal-line inner" x="620" y="620" width="160" height="160" opacity=".55" />
+        <rect class="portal-line inner" x="620" y="620" width="160" height="160" opacity=".55"></rect>
 
-        <rect class="portal-core" x="652" y="652" width="96" height="96" />
+        <rect class="portal-core" x="652" y="652" width="96" height="96"></rect>
 
-        <rect class="portal-core-inner" x="665" y="665" width="70" height="70" />
+        <rect class="portal-core-inner" x="665" y="665" width="70" height="70"></rect>
 
-        <rect class="portal-core-inner green" x="680" y="680" width="40" height="40" />
+        <rect class="portal-core-inner green" x="680" y="680" width="40" height="40"></rect>
 
         <!-- registration marks -->
 
         <g class="portal-mark">
-          <rect x="697" y="182" width="6" height="6" />
-          <rect x="697" y="1212" width="6" height="6" />
+          <rect x="697" y="182" width="6" height="6"></rect>
+          <rect x="697" y="1212" width="6" height="6"></rect>
 
-          <rect x="182" y="697" width="6" height="6" />
-          <rect x="1212" y="697" width="6" height="6" />
+          <rect x="182" y="697" width="6" height="6"></rect>
+          <rect x="1212" y="697" width="6" height="6"></rect>
 
-          <rect x="460" y="460" width="5" height="5" />
-          <rect x="935" y="935" width="5" height="5" />
+          <rect x="460" y="460" width="5" height="5"></rect>
+          <rect x="935" y="935" width="5" height="5"></rect>
         </g>
 
-        <rect class="portal-center" x="697" y="697" width="6" height="6" />
+        <rect class="portal-center" x="697" y="697" width="6" height="6"></rect>
 
-        <rect x="457" y="457" width="7" height="7" fill="#c9ad36" />
+        <rect x="457" y="457" width="7" height="7" fill="#c9ad36"></rect>
       </svg>
 
       <!-- =======================================================
          ENTER
          ======================================================= -->
 
-      <button
-        id="jlz-splash-enter"
-        type="button"
-        aria-label="Enter JUSTLOVEJAZZ"
-        aria-disabled="true"
-      >
+      <button id="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ" aria-disabled="true">
         <span data-jlz-splash="enter"> ENTER </span>
       </button>
 
@@ -472,13 +287,7 @@
          ======================================================= -->
 
       <div class="jlz-splash-meta">
-        <span
-          id="jlz-splash-status"
-          data-jlz-splash="state"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <span id="jlz-splash-status" data-jlz-splash="state" role="status" aria-live="polite" aria-atomic="true">
           INITIALIZING
         </span>
       </div>
@@ -496,8 +305,8 @@
           <span class="jlz-sound-icon" aria-hidden="true"></span>
         </button>
 
-        <button id="cfg-lang" type="button" aria-label="Change language" data-i18n-aria-label="common.switchLanguage">
-          <span class="jlz-lang-value" data-jlz-lang-value> EN </span>
+        <button id="cfg-lang" type="button" aria-label="Switch language" data-i18n-aria-label="common.switchLanguage">
+          <span class="jlz-lang-value" data-jlz-lang-value=""> EN </span>
         </button>
       </div>
     </div>
@@ -505,7 +314,7 @@
     <!-- Neutral mount node: the landmark <main id="spa-content"> is owned by
          the route SFCs (and the prerender), keeping a single main landmark.
          vite `prerender-index` injects the home shell into this exact div. -->
-    <div id="app"><!--jlz-app-content-start--><main id="spa-content" tabindex="-1" role="main" class="uk-position-relative" data-page-view="content" uk-height-viewport><article class="jlz-page" data-page-view="manifesto"><!-- 0: CONTACT FINALE (canonical Lab runtime slot) --><section id="section-page-lab" class="jlz-page-section uk-section uk-section-small uk-section-large@m" data-page-section="page-lab" data-contact-footer><div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"><button class="uk-close-large uk-margin-auto-left" type="button" uk-close data-close-cinematic-sheet aria-label="Close contact footer" data-i18n-aria-label="common.closeContactFooter"></button><div class="jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left"><span class="jlz-contact-footer__kicker uk-text-uppercase" data-i18n="contactFooter.kicker">Final frame · open channel</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off" data-i18n="contactFooter.title"> Let’s make something worth remembering. </h2><p class="uk-text-lead uk-margin-small-top" data-i18n="contactFooter.lead"> Tell us where the story should go next. </p></div><div class="jlz-contact-footer__actions uk-flex uk-flex-middle uk-width-1-1"><a class="uk-button uk-button-primary jlz-telegram-cta" href="https://t.me/justlovejazz" target="_blank" rel="noopener" data-magnetic data-cursor="view"><span class="jlz-telegram-cta__halo" aria-hidden="true"></span><span class="jlz-telegram-cta__icon" uk-icon="icon: commenting; ratio: 1.15" aria-hidden="true"></span><span class="jlz-telegram-cta__copy"><span class="jlz-telegram-cta__label" data-i18n="contactFooter.telegram">TG</span><span class="jlz-telegram-cta__handle">@justlovejazz</span></span></a><a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com<span class="jlz-mail-cta__arrow" aria-hidden="true"> ↗</span></a></div></div></section><h1 class="uk-hidden-visually" data-i18n="nav.manifesto">Manifesto</h1><!-- 1-4: Purpose / Clarity / Emotion / Simplicity (1 = start, active) --><!--[--><section class="jlz-page-section uk-section uk-section-small uk-section-large@m section-active" id="section-manifesto-purpose" data-page-section="manifesto-purpose"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="01">01</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.purpose.title">Purpose</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.purpose.lead">We don&#39;t build what everyone builds.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">01<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Start with the tension, not the format.</p><p class="jlz-manifesto-evidence">A brief becomes a point of view before it becomes a component.</p><div class="jlz-service-desc uk-flex uk-flex-column"><!--[--><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.purpose.desc1">We solve different problems.</p><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.purpose.desc2">We improve experience and understand the pain.</p><!--]--></div><a href="/blog/tsl-changes-everything" class="uk-button uk-button-text jlz-manifesto-link"><span>See the work</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-clarity" data-page-section="manifesto-clarity"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="02">02</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.clarity.title">Clarity</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.clarity.lead">Clean structure.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">02<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Every effect must explain a state.</p><p class="jlz-manifesto-evidence">Semantic DOM, one scene owner, one measurable reason to animate.</p><div class="jlz-service-desc uk-flex uk-flex-column"><!--[--><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.clarity.desc1">Clear logic.</p><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.clarity.desc2">No noise.</p><!--]--></div><a href="/blog/on-demand-rendering" class="uk-button uk-button-text jlz-manifesto-link"><span>Read the method</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-emotion" data-page-section="manifesto-emotion"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="03">03</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.emotion.title">Emotion</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.emotion.lead">We use motion, light, and sound to evoke a sense of presence.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">03<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Presence is authored through rhythm.</p><p class="jlz-manifesto-evidence">Light, sound and motion settle into a state the visitor can read.</p><!----><a href="/blog/undercurrent-webgpu-fluid" class="uk-button uk-button-text jlz-manifesto-link"><span>Enter Services</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-simplicity" data-page-section="manifesto-simplicity"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="04">04</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.simplicity.title">Simplicity</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.simplicity.lead">We strive for minimalism — but not emptiness.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">04<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Remove until the signal gets stronger.</p><p class="jlz-manifesto-evidence">The interface leaves room for the project and keeps the next action clear.</p><!----><a href="/blog/glassmorphism-webgpu" class="uk-button uk-button-text jlz-manifesto-link"><span>Start a project</span><span aria-hidden="true">↗</span></a></div></div></div></section><!--]--><!-- 5: MENU SHEET --><section id="section-menu" class="jlz-menu-overlay uk-section uk-section-xsmall uk-flex uk-flex-column jlz-page-section" data-page-section="page-menu" data-cinematic-menu><div class="jlz-menu-field" aria-hidden="true"><span class="jlz-menu-field__horizon"></span><span class="jlz-menu-field__pulse"></span></div><div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center"><div class="jlz-menu-sheet__header uk-flex uk-flex-between uk-margin-bottom"><span class="jlz-menu-sheet__eyebrow uk-text-meta uk-text-uppercase" data-i18n="menu.navigate">Menu</span><span class="jlz-menu-sheet__index uk-text-meta uk-text-uppercase" aria-hidden="true">Index / 07</span><button class="uk-close-large" type="button" uk-close data-close-cinematic-sheet aria-label="Close navigation" data-i18n-aria-label="menu.closeNavigation"></button></div><!-- Main 2-column grid: stat | top-level navigation --><div class="jlz-menu-grid uk-grid uk-grid-medium uk-flex uk-flex-middle" uk-grid><div class="jlz-menu-col jlz-menu-col--stat uk-flex uk-flex-column uk-width-1-1 uk-width-2-5@m uk-visible@m"><div class="jlz-menu-preview" aria-hidden="true"><span class="jlz-menu-preview__number">01</span><span class="jlz-menu-preview__label">Studio</span><span class="jlz-menu-preview__cursor"></span><span class="jlz-menu-preview__echo">ENTER THE WORLD</span></div></div><div class="jlz-menu-col jlz-menu-col--nav uk-flex uk-flex-column uk-width-1-1 uk-width-expand@m"><ul class="jlz-menu-nav uk-nav uk-nav-default"><!--[--><li class="jlz-menu-nav__item"><a href="/" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">01</span><span class="jlz-menu-nav__label" data-i18n="nav.studio">Studio</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/services" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">02</span><span class="jlz-menu-nav__label" data-i18n="nav.services">Services</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/works" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">03</span><span class="jlz-menu-nav__label" data-i18n="nav.works">Works</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a aria-current="page" href="/manifesto" class="router-link-active router-link-exact-active jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">04</span><span class="jlz-menu-nav__label" data-i18n="nav.manifesto">Manifesto</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/lab" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">05</span><span class="jlz-menu-nav__label" data-i18n="nav.lab">Lab</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/blog" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">06</span><span class="jlz-menu-nav__label" data-i18n="nav.blog">Blog</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/contact" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition><span class="jlz-menu-nav__num">07</span><span class="jlz-menu-nav__label" data-i18n="nav.contact">Contact</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><!--]--></ul></div></div></div></section></article></main><!--jlz-app-content-end--></div>
+    <div id="app"><!--jlz-app-content-start--><main id="spa-content" tabindex="-1" role="main" class="uk-position-relative" data-page-view="content" uk-height-viewport=""><article class="jlz-page" data-page-view="manifesto"><!-- 0: CONTACT FINALE (canonical Lab runtime slot) --><section id="section-page-lab" class="jlz-page-section uk-section uk-section-small uk-section-large@m" data-page-section="page-lab" data-contact-footer=""><div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"><button class="uk-close-large uk-margin-auto-left" type="button" uk-close="" data-close-cinematic-sheet="" aria-label="Close contact footer" data-i18n-aria-label="common.closeContactFooter"></button><div class="jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left"><span class="jlz-contact-footer__kicker uk-text-uppercase" data-i18n="contactFooter.kicker">Final frame · open channel</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off" data-i18n="contactFooter.title">Let’s make something worth remembering.</h2><p class="uk-text-lead uk-margin-small-top" data-i18n="contactFooter.lead">Tell us where the story should go next.</p></div><div class="jlz-contact-footer__actions uk-flex uk-flex-middle uk-width-1-1"><a class="uk-button uk-button-primary jlz-telegram-cta" href="https://t.me/justlovejazz" target="_blank" rel="noopener" data-magnetic="" data-cursor="view"><span class="jlz-telegram-cta__halo" aria-hidden="true"></span><span class="jlz-telegram-cta__icon" uk-icon="icon: commenting; ratio: 1.15" aria-hidden="true"></span><span class="jlz-telegram-cta__copy"><span class="jlz-telegram-cta__label" data-i18n="contactFooter.telegram">TG</span><span class="jlz-telegram-cta__handle">@justlovejazz</span></span></a><a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com<span class="jlz-mail-cta__arrow" aria-hidden="true"> ↗</span></a></div></div></section><h1 class="uk-hidden-visually" data-i18n="nav.manifesto">Manifesto</h1><!-- 1-4: Purpose / Clarity / Emotion / Simplicity (1 = start, active) --><!--[--><section class="jlz-page-section uk-section uk-section-small uk-section-large@m section-active" id="section-manifesto-purpose" data-page-section="manifesto-purpose"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow="" data-eyebrow-text="01">01</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.purpose.title">Purpose</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.purpose.lead">We don't build what everyone builds.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">01<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Start with the tension, not the format.</p><p class="jlz-manifesto-evidence">A brief becomes a point of view before it becomes a component.</p><div class="jlz-service-desc uk-flex uk-flex-column"><!--[--><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.purpose.desc1">We solve different problems.</p><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.purpose.desc2">We improve experience and understand the pain.</p><!--]--></div><a href="/blog/tsl-changes-everything" class="uk-button uk-button-text jlz-manifesto-link"><span>See the work</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-clarity" data-page-section="manifesto-clarity"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow="" data-eyebrow-text="02">02</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.clarity.title">Clarity</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.clarity.lead">Clean structure.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">02<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Every effect must explain a state.</p><p class="jlz-manifesto-evidence">Semantic DOM, one scene owner, one measurable reason to animate.</p><div class="jlz-service-desc uk-flex uk-flex-column"><!--[--><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.clarity.desc1">Clear logic.</p><p class="uk-text-meta uk-margin-remove" data-i18n="manifesto.clarity.desc2">No noise.</p><!--]--></div><a href="/blog/on-demand-rendering" class="uk-button uk-button-text jlz-manifesto-link"><span>Read the method</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-emotion" data-page-section="manifesto-emotion"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow="" data-eyebrow-text="03">03</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.emotion.title">Emotion</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.emotion.lead">We use motion, light and interaction to create a sense of presence.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">03<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Presence is authored through rhythm.</p><p class="jlz-manifesto-evidence">Light, sound and motion settle into a state the visitor can read.</p><!----><a href="/blog/undercurrent-webgpu-fluid" class="uk-button uk-button-text jlz-manifesto-link"><span>Enter Services</span><span aria-hidden="true">↗</span></a></div></div></div></section><section class="jlz-page-section uk-section uk-section-small uk-section-large@m" id="section-manifesto-simplicity" data-page-section="manifesto-simplicity"><div class="uk-container uk-container-expand uk-height-1-1 jlz-manifesto-room"><div class="jlz-manifesto-head"><span class="jlz-eyebrow uk-display-inline-block" data-eyebrow="" data-eyebrow-text="04">04</span><h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="manifesto.simplicity.title">Simplicity</h2><p class="uk-text-lead uk-margin-small-top jlz-manifesto-lead" data-i18n="manifesto.simplicity.lead">We strive for minimalism — but not emptiness.</p></div><div class="jlz-manifesto-grid"><div class="jlz-manifesto-index" aria-hidden="true">04<span>/04</span></div><div class="jlz-manifesto-protocol"><p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p><p class="jlz-manifesto-protocol__line">Remove until the signal gets stronger.</p><p class="jlz-manifesto-evidence">The interface leaves room for the project and keeps the next action clear.</p><!----><a href="/blog/glassmorphism-webgpu" class="uk-button uk-button-text jlz-manifesto-link"><span>Start a project</span><span aria-hidden="true">↗</span></a></div></div></div></section><!--]--><!-- 5: MENU SHEET --><section id="section-menu" class="jlz-menu-overlay uk-section uk-section-xsmall uk-flex uk-flex-column jlz-page-section" data-page-section="page-menu" data-cinematic-menu=""><div class="jlz-menu-field" aria-hidden="true"><span class="jlz-menu-field__horizon"></span><span class="jlz-menu-field__pulse"></span></div><div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center"><div class="jlz-menu-sheet__header uk-flex uk-flex-between uk-margin-bottom"><span class="jlz-menu-sheet__eyebrow uk-text-meta uk-text-uppercase" data-i18n="menu.navigate">Menu</span><span class="jlz-menu-sheet__index uk-text-meta uk-text-uppercase" aria-hidden="true">Index / 07</span><button class="uk-close-large" type="button" uk-close="" data-close-cinematic-sheet="" aria-label="Close navigation" data-i18n-aria-label="menu.closeNavigation"></button></div><!-- Main 2-column grid: stat | top-level navigation --><div class="jlz-menu-grid uk-grid uk-grid-medium uk-flex uk-flex-middle" uk-grid=""><div class="jlz-menu-col jlz-menu-col--stat uk-flex uk-flex-column uk-width-1-1 uk-width-2-5@m uk-visible@m"><div class="jlz-menu-preview" aria-hidden="true"><span class="jlz-menu-preview__number">01</span><span class="jlz-menu-preview__label">Studio</span><span class="jlz-menu-preview__cursor"></span><span class="jlz-menu-preview__echo">ENTER THE WORLD</span></div></div><div class="jlz-menu-col jlz-menu-col--nav uk-flex uk-flex-column uk-width-1-1 uk-width-expand@m"><ul class="jlz-menu-nav uk-nav uk-nav-default"><!--[--><li class="jlz-menu-nav__item"><a href="/" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">01</span><span class="jlz-menu-nav__label" data-i18n="nav.studio">Studio</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/services" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">02</span><span class="jlz-menu-nav__label" data-i18n="nav.services">Services</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/works" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">03</span><span class="jlz-menu-nav__label" data-i18n="nav.works">Works</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a aria-current="page" href="/manifesto" class="router-link-active router-link-exact-active jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">04</span><span class="jlz-menu-nav__label" data-i18n="nav.manifesto">Manifesto</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/lab" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">05</span><span class="jlz-menu-nav__label" data-i18n="nav.lab">Lab</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/blog" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">06</span><span class="jlz-menu-nav__label" data-i18n="nav.blog">Blog</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><li class="jlz-menu-nav__item"><a href="/contact" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic="" data-page-transition=""><span class="jlz-menu-nav__num">07</span><span class="jlz-menu-nav__label" data-i18n="nav.contact">Contact</span><span class="jlz-menu-nav__arrow" aria-hidden="true">→</span></a></li><!--]--></ul></div></div></div></section></article></main><!--jlz-app-content-end--></div>
 
     <div id="jlz-route-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
@@ -604,5 +413,6 @@
         }, 850)
       })()
     </script>
-  </body>
-</html>
+
+
+</body></html>

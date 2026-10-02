@@ -36,6 +36,7 @@ function initSoundToggle(): void {
 
 // ── Config: language toggle EN/RU ──
 import { initI18n, toggleLang, getLang, t, applyTranslations } from './core/i18n'
+import { localizedPath } from './core/routeManifest'
 
 // Typed event facade for the classic splash script and browser automation,
 // which cannot import the application module graph.
@@ -64,7 +65,13 @@ function initLangToggle(): void {
   }
   update()
   btn.addEventListener('click', () => {
-    toggleLang()
+    const lang = toggleLang()
+    // The splash can change language before Vue Router is mounted. Update the
+    // entry URL in place so the first router resolution sees the right locale.
+    if (!window.__jlzRouterReady) {
+      const path = localizedPath(lang, window.location.pathname)
+      window.history.replaceState(window.history.state, '', `${path}${window.location.search}${window.location.hash}`)
+    }
     update()
   })
 }

@@ -1,5 +1,5 @@
 User-agent: *
-# Main page (/) and blog (/blog + articles) are crawlable.
+# English and Russian public pages are crawlable.
 Allow: /
 
 Sitemap: https://justlovejazz.dev/sitemap.xml

@@ -6,6 +6,7 @@ import { PROJECTS } from '../../Data/Projects'
 import { setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
 import { getLang } from '../../core/i18n'
+import { localizedPath } from '../../core/routeManifest'
 import { applyMetaTags } from '../../core/pageMeta'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
@@ -131,7 +132,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
         >
           <div class="jlz-works-stage uk-container uk-container-expand">
             <header class="jlz-works-coordinate uk-flex uk-flex-between">
-              <RouterLink class="uk-link-text" :to="{ name: 'works' }">← {{ labels.back }}</RouterLink>
+              <RouterLink class="uk-link-text" :to="localizedPath(language, '/works')">← {{ labels.back }}</RouterLink>
               <span>0{{ index + 1 }} / {{ chapter }}</span>
             </header>
             <div class="jlz-works-heading">
@@ -202,7 +203,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
               <template v-else>
                 <p class="jlz-works-premise">{{ localizedStudy.result }}</p>
                 <p class="jlz-case-status">{{ labels.status }}</p>
-                <RouterLink :to="{ name: 'contact' }" class="uk-button uk-button-text jlz-works-enter"
+                <RouterLink :to="localizedPath(language, '/contact')" class="uk-button uk-button-text jlz-works-enter"
                   >{{ labels.contact }} ↗</RouterLink
                 >
                 <nav class="jlz-case-related" :aria-label="labels.next">
@@ -210,7 +211,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                     v-for="item in related"
                     :key="item.projectId"
                     class="uk-link-muted"
-                    :to="`/works/${item.projectId}`"
+                    :to="localizedPath(language, `/works/${item.projectId}`)"
                     >{{ PROJECTS.find((p) => p.id === item.projectId)?.title }} ↗</RouterLink
                   >
                 </nav>
@@ -239,7 +240,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
       >
         <div class="uk-container">
           <h1>{{ labels.unavailable }}</h1>
-          <RouterLink :to="{ name: 'works' }">← {{ labels.back }}</RouterLink>
+          <RouterLink :to="localizedPath(language, '/works')">← {{ labels.back }}</RouterLink>
         </div>
       </section>
       <NavMenu mode="content" :active-section-id="activeSectionId" />

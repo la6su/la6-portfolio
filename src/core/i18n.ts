@@ -1,8 +1,8 @@
 // src/core/i18n.ts — Internationalization (EN/RU). The typed locale port.
 //
-// `getLang()` and `t(key)` are pull-based reads. `toggleLang()` is the sole
-// writer; it persists to localStorage and publishes `jlz:lang-change` for
-// consumers that must re-render (scene textures, noise text and meta tags).
+// `getLang()` and `t(key)` are pull-based reads. The current public URL owns
+// the locale; `toggleLang()` publishes `jlz:lang-change` so consumers can
+// re-render scene textures, copy, and metadata while the router changes URL.
 // It is already unit-locked (`src/__tests__/i18n.test.ts`), including the
 // EN/RU dictionary parity guard.
 //
@@ -26,10 +26,9 @@
 // fallback). applyTranslations() updates marked text, placeholders and labels.
 
 import { eventBus } from './EventBus'
+import { langFromPath } from './routeManifest'
 
 export type Lang = 'EN' | 'RU'
-
-const STORAGE_KEY = 'jlz:lang'
 
 // ── Translation dictionaries ──
 /** Complete EN/RU content data. Exported for the parity regression check. */
@@ -467,19 +466,15 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
 let currentLang: Lang = 'EN'
 
-/** Initialize i18n — load saved language, apply translations. */
+/** Initialize i18n from the locale encoded in the current public URL. */
 export function initI18n(): void {
-  let saved: string | null = null
-  try {
-    saved = localStorage.getItem(STORAGE_KEY)
-  } catch {
-    /* ignore */
-  }
-  // Initialization is a complete state load, not a conditional mutation.
-  // Resetting to EN for an absent/invalid value keeps repeated boot/HMR
-  // deterministic instead of leaking a previous module-scoped RU value.
-  currentLang = saved === 'RU' ? 'RU' : 'EN'
+  currentLang = typeof window === 'undefined' ? 'EN' : langFromPath(window.location.pathname)
   applyTranslations()
+}
+
+/** Set the locale during static rendering before rendering localized content. */
+export function setLang(lang: Lang): void {
+  currentLang = lang
 }
 
 /** Get current language. */
@@ -490,11 +485,6 @@ export function getLang(): Lang {
 /** Toggle EN ↔ RU. */
 export function toggleLang(): Lang {
   currentLang = currentLang === 'EN' ? 'RU' : 'EN'
-  try {
-    localStorage.setItem(STORAGE_KEY, currentLang)
-  } catch {
-    /* ignore */
-  }
   applyTranslations()
   eventBus.emit('jlz:lang-change', { lang: currentLang })
   return currentLang

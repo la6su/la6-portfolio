@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { PROJECTS } from '../../Data/Projects'
 import { CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { WORKS_ROOMS, setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
+import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
+const route = useRoute()
+const casePath = (projectId: string): string =>
+  localizedPath(langFromPath(route.path), `/works/${projectId}`)
 const releaseCaseIntent = setWorksCaseProject(null)
 onBeforeUnmount(releaseCaseIntent)
 const activeSectionId = useJlzPage('works', () => rootEl.value, 'works-01')
@@ -52,7 +56,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
             <div class="jlz-works-actions uk-flex uk-flex-middle">
               <RouterLink
                 v-if="CASE_STUDY_BY_PROJECT.has(PROJECTS[room.projectIndex]!.id)"
-                :to="`/works/${PROJECTS[room.projectIndex]!.id}`"
+                :to="casePath(PROJECTS[room.projectIndex]!.id)"
                 class="uk-button uk-button-text jlz-works-enter"
               >
                 <span data-i18n="works.enterCase">Inside the project</span>

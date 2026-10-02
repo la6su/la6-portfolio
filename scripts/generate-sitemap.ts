@@ -45,7 +45,7 @@ writeFileSync(
   robotsPath,
   [
     'User-agent: *',
-    '# Main page (/) and blog (/blog + articles) are crawlable.',
+    '# English and Russian public pages are crawlable.',
     'Allow: /',
     '',
     `Sitemap: ${origin}/sitemap.xml`,

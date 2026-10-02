@@ -1,12 +1,13 @@
 // Generate static entry documents for the SPA's known public routes.
 // The client still owns interaction and scene startup; these documents give
 // direct requests and non-JS crawlers the correct semantic page and metadata.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createServer } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { JSDOM } from "jsdom";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
@@ -70,6 +71,7 @@ function applyMetadata(document, metadata) {
   html = setMeta(html, "property", "og:description", metadata.description);
   html = setMeta(html, "property", "og:url", origin + metadata.path);
   html = setMeta(html, "property", "og:type", metadata.type ?? "website");
+  html = setMeta(html, "property", "og:locale", metadata.lang === "RU" ? "ru_RU" : "en_US");
   html = setMeta(html, "property", "og:image", origin + "/preview.jpg");
   html = setMeta(
     html,
@@ -83,14 +85,52 @@ function applyMetadata(document, metadata) {
   const canonical = html.match(/<link\b(?=[^>]*\brel="canonical")[^>]*>/)?.[0];
   if (!canonical)
     throw new Error("Static route document is missing canonical link");
-  return html.replace(
+  html = html.replace(
     canonical,
     setTagAttribute(canonical, "href", origin + metadata.path),
   );
+  html = html.replace(/<html\b[^>]*\blang="[^"]*"/, (tag) =>
+    setTagAttribute(tag, "lang", metadata.lang === "RU" ? "ru" : "en"),
+  );
+  const basePath = metadata.basePath ?? (metadata.path.replace(/^\/ru(?=\/|$)/, "") || "/");
+  const alternates = [
+    ["en", basePath],
+    ["ru", basePath === "/" ? "/ru/" : "/ru" + basePath],
+    ["x-default", basePath],
+  ]
+    .map(([lang, path]) => `    <link rel="alternate" hreflang="${lang}" href="${origin}${path}" />`)
+    .join("\n");
+  return html.replace("</head>", `${alternates}\n  </head>`);
+}
+
+function translateDocument(document, lang, dictionary) {
+  const dom = new JSDOM(document);
+  const root = dom.window.document;
+  root.documentElement.lang = lang === "RU" ? "ru" : "en";
+  for (const element of root.querySelectorAll("[data-i18n]")) {
+    const value = dictionary[element.getAttribute("data-i18n")];
+    if (value) element.textContent = value;
+  }
+  for (const element of root.querySelectorAll("[data-i18n-placeholder]")) {
+    const value = dictionary[element.getAttribute("data-i18n-placeholder")];
+    if (value) element.setAttribute("placeholder", value);
+  }
+  for (const element of root.querySelectorAll("[data-i18n-aria-label]")) {
+    const value = dictionary[element.getAttribute("data-i18n-aria-label")];
+    if (value) element.setAttribute("aria-label", value);
+  }
+  for (const element of root.querySelectorAll("[data-i18n-title]")) {
+    const value = dictionary[element.getAttribute("data-i18n-title")];
+    if (value) element.setAttribute("title", value);
+  }
+  const output = dom.serialize().replace(/[ \t]+$/gm, "");
+  dom.window.close();
+  return output;
 }
 
 try {
   const modules = await Promise.all([
+    server.ssrLoadModule("/src/app/views/HomeView.vue"),
     server.ssrLoadModule("/src/app/views/ServicesView.vue"),
     server.ssrLoadModule("/src/app/views/WorksView.vue"),
     server.ssrLoadModule("/src/app/views/ManifestoView.vue"),
@@ -104,6 +144,7 @@ try {
     server.ssrLoadModule("/src/app/routes.ts"),
   ]);
   const [
+    home,
     services,
     works,
     manifesto,
@@ -126,15 +167,8 @@ try {
       "Built index.html is missing the prerender content markers",
     );
   }
-  const homeMetadata = pageMeta.PAGE_META_DATA.home;
-  const homeDocument = applyMetadata(template, {
-    title: i18n.TRANSLATIONS.EN[homeMetadata.titleKey],
-    description: i18n.TRANSLATIONS.EN[homeMetadata.descKey],
-    path: "/",
-  });
-  writeFileSync(resolve(dist, "index.html"), homeDocument, "utf8");
-
   const views = [
+    { page: "home", path: "/", component: home.default },
     { page: "services", path: "/services", component: services.default },
     { page: "works", path: "/works", component: works.default },
     { page: "manifesto", path: "/manifesto", component: manifesto.default },
@@ -142,7 +176,8 @@ try {
     { page: "contact", path: "/contact", component: contact.default },
   ];
 
-  async function renderRoute(path, component) {
+  async function renderRoute(path, component, lang) {
+    i18n.setLang(lang);
     const router = createRouter({
       history: createMemoryHistory(),
       routes: routing.jlzRouteRecords(),
@@ -154,15 +189,16 @@ try {
     return renderToString(app);
   }
 
-  async function writeRoute(path, component, metadata, relativeOutput) {
-    const body = await renderRoute(path, component);
+  async function writeRoute(path, basePath, component, metadata, relativeOutput, lang) {
+    const body = await renderRoute(path, component, lang);
     const content = template.replace(
       new RegExp(startMarker + "[\\s\\S]*?" + endMarker),
       startMarker + body + endMarker,
     );
-    const document = applyMetadata(
-      content,
-      Object.assign({}, metadata, { path }),
+    const document = translateDocument(
+      applyMetadata(content, Object.assign({}, metadata, { path, basePath, lang })),
+      lang,
+      i18n.TRANSLATIONS[lang],
     );
     const output = resolve(dist, relativeOutput);
     mkdirSync(dirname(output), { recursive: true });
@@ -170,19 +206,32 @@ try {
     console.log("[prerender-routes] wrote " + output + " — " + path);
   }
 
-  for (const route of views) {
-    const meta = pageMeta.PAGE_META_DATA[route.page];
-    const translations = i18n.TRANSLATIONS.EN;
-    await writeRoute(
-      route.path,
-      route.component,
-      {
-        title: translations[meta.titleKey],
-        description: translations[meta.descKey],
-      },
-      route.path.slice(1) + ".html",
-    );
+  for (const lang of ["EN", "RU"]) {
+    for (const route of views) {
+      const meta = pageMeta.PAGE_META_DATA[route.page];
+      const translations = i18n.TRANSLATIONS[lang];
+      const path = lang === "RU"
+        ? route.path === "/" ? "/ru/" : "/ru" + route.path
+        : route.path;
+      const outputPath = lang === "RU"
+        ? route.path === "/" ? "ru/index.html" : `ru${route.path}.html`
+        : route.path === "/" ? "index.html" : route.path.slice(1) + ".html";
+      await writeRoute(
+        path,
+        route.path,
+        route.component,
+        {
+          title: translations[meta.titleKey],
+          description: translations[meta.descKey],
+        },
+        outputPath,
+        lang,
+      );
+    }
   }
+  // The directory index serves `/ru/`; the exact `/ru` URL also needs a
+  // localized document so static hosts do not fall back to the English root.
+  copyFileSync(resolve(dist, "ru/index.html"), resolve(dist, "ru.html"));
 
   for (const study of studies.CASE_STUDIES) {
     const project = projects.PROJECTS.find(
@@ -194,16 +243,25 @@ try {
     const studyData = studies.CASE_STUDY_BY_PROJECT.get(study.projectId);
     const description =
       studyData?.outcome ?? "Independent creative technology studies.";
-    await writeRoute(
-      path,
-      caseStudy.default,
-      {
-        title: project.title + " — JUSTLOVEJAZZ",
-        description,
-        type: "article",
-      },
-      path.slice(1) + ".html",
-    );
+    for (const lang of ["EN", "RU"]) {
+      const localized = lang === "RU" ? "/ru" + path : path;
+      const outputPath = (lang === "RU" ? "ru/" : "") + path.slice(1) + ".html";
+      const localizedDescription = lang === "RU"
+        ? studyData?.ru?.outcome ?? description
+        : description;
+      await writeRoute(
+        localized,
+        path,
+        caseStudy.default,
+        {
+          title: project.title + " — JUSTLOVEJAZZ",
+          description: localizedDescription,
+          type: "article",
+        },
+        outputPath,
+        lang,
+      );
+    }
   }
 } finally {
   await server.close();

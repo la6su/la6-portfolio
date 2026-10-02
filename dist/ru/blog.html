@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="Кейсы и инженерные заметки JUSTLOVEJAZZ о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии."
+    />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1"
+    />
+
+    <title>Блог — кейсы и заметки о процессе | JUSTLOVEJAZZ</title>
+
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <link rel="mask-icon" href="/logo.svg" color="#232534" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="canonical" href="https://justlovejazz.dev/ru/blog" />
+    <link rel="alternate" hreflang="en" href="https://justlovejazz.dev/blog" />
+    <link
+      rel="alternate"
+      hreflang="ru"
+      href="https://justlovejazz.dev/ru/blog"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://justlovejazz.dev/blog"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta
+      property="og:title"
+      content="Блог JUSTLOVEJAZZ — кейсы и заметки о процессе"
+    />
+    <meta
+      property="og:description"
+      content="Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии."
+    />
+    <meta property="og:url" content="https://justlovejazz.dev/ru/blog" />
+    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta
+      property="og:image:secure_url"
+      content="https://justlovejazz.dev/preview.jpg"
+    />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Обложка блога JUSTLOVEJAZZ" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta
+      name="twitter:title"
+      content="Блог JUSTLOVEJAZZ — кейсы и заметки о процессе"
+    />
+    <meta
+      name="twitter:description"
+      content="Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии."
+    />
+    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta name="twitter:image:alt" content="Обложка блога JUSTLOVEJAZZ" />
+
+    <link
+      rel="preload"
+      href="/fonts/commissioner-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "inLanguage": "ru",
+        "name": "Блог JUSTLOVEJAZZ",
+        "url": "https://justlovejazz.dev/ru/blog",
+        "description": "Кейсы и инженерные заметки о WebGPU, TSL-шейдерах, интерактивном 3D и работе студии.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://justlovejazz.dev/logo.svg"
+          }
+        },
+        "blogPost": [
+          {
+            "@type": "BlogPosting",
+            "headline": "Undercurrent — симуляция жидкости на WebGPU",
+            "inLanguage": "ru",
+            "url": "https://justlovejazz.dev/ru/blog/undercurrent-webgpu-fluid",
+            "datePublished": "2026-07-15T10:00:00Z",
+            "articleSection": "Кейсы"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "Стекло на WebGPU",
+            "inLanguage": "ru",
+            "url": "https://justlovejazz.dev/ru/blog/glassmorphism-webgpu",
+            "datePublished": "2026-06-20T10:00:00Z",
+            "articleSection": "Кейсы"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "Рендеринг по запросу — ноль draw calls в простое",
+            "inLanguage": "ru",
+            "url": "https://justlovejazz.dev/ru/blog/on-demand-rendering",
+            "datePublished": "2026-05-10T10:00:00Z",
+            "articleSection": "Заметки о процессе"
+          },
+          {
+            "@type": "BlogPosting",
+            "headline": "Почему TSL меняет всё",
+            "inLanguage": "ru",
+            "url": "https://justlovejazz.dev/ru/blog/tsl-changes-everything",
+            "datePublished": "2026-04-05T10:00:00Z",
+            "articleSection": "Заметки о процессе"
+          }
+        ]
+      }
+    </script>
+    <link rel="stylesheet" crossorigin href="/assets/blog-Cs1Z0bcn.css">
+  </head>
+  <body>
+    <div class="jlz-reading-progress" aria-hidden="true">
+      <div class="jlz-reading-progress__bar"></div>
+    </div>
+    <a href="#main" class="skip-link">К основному содержанию</a>
+    <header class="jlz-blog-header" role="banner">
+      <nav
+        class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
+        uk-navbar
+        aria-label="Main navigation"
+      >
+        <div class="uk-navbar-left">
+          <a href="/ru/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/ru/blog">Блог</a></li>
+            <li><a href="/blog">EN</a></li>
+            <li><a href="/ru/">В студию ↗</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main
+      id="main"
+      tabindex="-1"
+      class="uk-section uk-section-large"
+      role="main"
+    >
+      <div class="uk-container uk-container-expand jlz-journal">
+        <section class="jlz-journal-hero" aria-labelledby="journal-title">
+          <p class="jlz-landing-eyebrow">01 / ЗАМЕТКИ ИЗ ПРОЦЕССА</p>
+          <h1 id="journal-title" class="uk-heading-xlarge uk-margin-remove-top">
+            Создано, чтобы чувствовать.
+          </h1>
+          <p class="jlz-journal-hero__lead">
+            Короткие заметки о создании интерактивных систем: материале,
+            ограничениях и решениях, благодаря которым работа становится
+            цельной.
+          </p>
+        </section>
+        <article class="jlz-journal-feature">
+          <div class="jlz-journal-feature__index" aria-hidden="true">01</div>
+          <div>
+            <p class="jlz-journal-meta">
+              <span>WebGPU / жидкости</span
+              ><time datetime="2026-07-15">15 июл 2026</time>
+            </p>
+            <h2>
+              <a href="/ru/blog/undercurrent-webgpu-fluid"
+                >Undercurrent: жидкость в рамках бюджета.</a
+              >
+            </h2>
+          </div>
+          <p class="jlz-journal-feature__summary">
+            Симуляция становится инструментом дизайна, только если остаётся
+            отзывчивой. Поэтому бюджет кадра мы определяем до того, как начинаем
+            гнаться за картинкой.
+          </p>
+          <a
+            class="jlz-journal-arrow"
+            href="/ru/blog/undercurrent-webgpu-fluid"
+            aria-label="Читать кейс Undercurrent"
+            >↗</a
+          >
+        </article>
+        <section class="jlz-journal-list" aria-labelledby="journal-notes-title">
+          <div class="jlz-journal-list__head">
+            <p class="jlz-landing-eyebrow">02 / ИНЖЕНЕРНЫЕ ЗАМЕТКИ</p>
+            <h2 id="journal-notes-title" class="uk-heading-medium">
+              Решения, которые формируют результат.
+            </h2>
+          </div>
+          <a class="jlz-journal-note" href="/ru/blog/glassmorphism-webgpu"
+            ><span class="jlz-journal-note__number">02</span
+            ><span class="jlz-journal-note__title">Стекло на WebGPU</span
+            ><span class="jlz-journal-note__tag">Материалы</span
+            ><span class="jlz-journal-note__arrow" aria-hidden="true"
+              >↗</span
+            ></a
+          >
+          <a class="jlz-journal-note" href="/ru/blog/on-demand-rendering"
+            ><span class="jlz-journal-note__number">03</span
+            ><span class="jlz-journal-note__title">Рендеринг по запросу</span
+            ><span class="jlz-journal-note__tag">Производительность</span
+            ><span class="jlz-journal-note__arrow" aria-hidden="true"
+              >↗</span
+            ></a
+          >
+          <a class="jlz-journal-note" href="/ru/blog/tsl-changes-everything"
+            ><span class="jlz-journal-note__number">04</span
+            ><span class="jlz-journal-note__title">Почему TSL меняет всё</span
+            ><span class="jlz-journal-note__tag">Инструменты</span
+            ><span class="jlz-journal-note__arrow" aria-hidden="true"
+              >↗</span
+            ></a
+          >
+        </section>
+      </div>
+    </main>
+    <footer class="jlz-blog-footer" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <!-- Inline SVGs: the prerendered documents carry no JavaScript, so
+           uk-icon (a UIkit JS component) never renders there. -->
+        <p class="uk-text-meta uk-margin-small-top">
+          © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio
+        </p>
+      </div>
+    </footer>
+    <script defer src="/js/blog.js"></script>
+  </body>
+</html>
