@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { CASE_STUDIES, CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { PROJECTS } from '../../Data/Projects'
@@ -85,6 +85,7 @@ const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.v
 let releaseCaseIntent = setWorksCaseProject(projectIndex.value >= 0 ? projectIndex.value : null)
 onBeforeUnmount(() => releaseCaseIntent())
 useJlzPage('works', () => rootEl.value)
+onMounted(applyCaseStudyMeta)
 watch(
   projectId,
   () => {
@@ -94,7 +95,7 @@ watch(
   },
   { flush: 'post' },
 )
-watch([project, study], applyCaseStudyMeta, { immediate: true, flush: 'post' })
+watch([project, study], applyCaseStudyMeta, { flush: 'post' })
 </script>
 
 <template>

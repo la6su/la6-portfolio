@@ -131,6 +131,18 @@ preserve custom policy only when code or measurements prove the difference.
   pose back over all three values, making the Experience writes ineffective.
   Removed the dead imperative camera initialization; the Camera controller
   remains the single pose owner around the Tres-declared node.
+- Startup also emitted a fabricated `jlz:section-change` for `intro` on every
+  page. The mounted route already marks its initial semantic section active;
+  `ContentReveal` reads that state and applies the initial theme, which
+  Experience then syncs to the scene. Removed the redundant event, avoiding a
+  second ContentReveal/UIkit/theme pass and incorrect `intro` payload on
+  content routes. Real home section changes still use the event.
+- Case-study metadata was applied by an immediate post-flush watcher, then
+  `useJlzPage.onMounted()` overwrote its project canonical URL with `/works`.
+  Apply the project override after the route-owner mount hook and leave the
+  watcher for subsequent case changes. Firefox production direct-entry checks
+  now pass for every public route including both case studies (1 test), and
+  home reveal/startup passes (1 test).
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -783,7 +795,7 @@ identified.
 **Latest verified:** 105 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
-310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.74 kB / 32.70 kB
+310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.64 kB / 32.66 kB
 gzip Experience chunk. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined

@@ -552,14 +552,6 @@ export class Experience {
       }
     }
 
-    // Resolve initial content theme and scene state through the normal section
-    // event; useJlzPage already activates the home intro when route DOM mounts.
-    eventBus.emit('jlz:section-change', {
-      sectionId: 'intro',
-      context: 'Studio — Home',
-      configId: 'sec_intro',
-      index: 1,
-    })
     // Always prepare project controls — single-page, always needs the Works slider.
     this.features?.ensureProjectControls()
     // The scheduler starts the frame callback on first invalidation and stops
