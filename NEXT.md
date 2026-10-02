@@ -191,8 +191,12 @@ Current known facts:
   asynchronous and reports its own mount failures through `webgl-failed`.
   `bun run lint` and the full `bun run build` pass, including prerender,
   generated sitemap/robots, and configured bundle/media budgets. The rebuild
-  produced no tracked output changes. No-scene browser interaction remains an
-  open check.
+  produced no tracked output changes. Headless Chromium manually exercised
+  `/works?no-scene` at 320×640: after splash Enter, the route fallback exposed
+  seven navigation links; language switched to RU; navigation to Manifesto
+  rendered the localized title with no page errors or horizontal overflow
+  (`scrollWidth` 320). This verifies the no-scene route and locale path only;
+  full-console controls and GPU behavior remain separate gates.
 
 - Accessibility source review found that the fullscreen showreel exposed a
   modal with only a Close button; playback toggling depended on clicking the
