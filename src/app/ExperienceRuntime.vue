@@ -20,7 +20,7 @@ async function startRuntime(host: SceneHostReady): Promise<void> {
       const { Experience } = await import('../Experience/Experience')
       if (disposed) return
 
-      const instance = new Experience({ ...host, sizes: host.context.sizes })
+      const instance = new Experience(host)
       runtime = instance
       hostProbe = {
         mode: host.mode,

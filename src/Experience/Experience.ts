@@ -46,15 +46,13 @@ import { traceDevLifecycle } from '../core/devLifecycleTrace'
 /**
  * Instances and scene roots borrowed from the persistent SceneHost. Experience
  * adopts them without constructing a parallel scene or camera. `replaceRenderer`
- * keeps Tres context aligned after device-loss recovery.
+ * keeps Tres aligned after device-loss recovery.
  *
  * Derived from the Vue host event so host capabilities stay declared once:
- * Experience drops Tres context/backend facts it never reads and receives
- * the size manager it needs for route-owned transforms.
+ * Experience drops backend facts it never reads; SceneHostReady exposes the
+ * individual reactive size values that Experience needs.
  */
-type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend'> & {
-  sizes: SceneHostReady['context']['sizes']
-}
+type ExperienceHost = Omit<SceneHostReady, 'backend'>
 
 export class Experience {
   scene!: THREE.Scene

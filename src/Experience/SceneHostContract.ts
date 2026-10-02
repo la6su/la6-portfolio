@@ -87,8 +87,8 @@ export interface SceneHostReady {
   isLabCameraActive: () => boolean
   /** The Tres-owned scene (`context.scene.value`) — the one THREE.Scene. */
   scene: THREE.Scene
-  /** The mounted Tres context (loop/size/camera managers). */
-  context: TresContext
+  /** Reactive dimensions used by project-owned viewport transforms. */
+  sizes: Pick<TresContext['sizes'], 'width' | 'height' | 'pixelRatio'>
   /** The actual renderer instance after init + backend inspection. */
   renderer: UnifiedRenderSurface
   /** Keep Tres's manager and the Vue teardown owner aligned after recovery. */

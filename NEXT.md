@@ -74,6 +74,9 @@ Current known facts:
   visibly instead of being classified as WebGL. After this change, headless
   Firefox initialized `WebGLBackend` on `/lab`, loaded one Three core, and only
   logged Three's expected automatic WebGL2 selection warning.
+- The scene host contract now exposes only Tres's reactive size values needed
+  by Experience instead of leaking the full `TresContext` across the runtime
+  boundary. SceneHost remains the owner of Tres integration.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

@@ -341,7 +341,7 @@ async function onReady(context: TresContext): Promise<void> {
     page: currentPage,
     isLabCameraActive: () => labCameraActive.value,
     scene: context.scene.value,
-    context,
+    sizes: context.sizes,
     renderer,
     replaceRenderer,
     canvas,
