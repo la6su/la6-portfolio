@@ -675,6 +675,19 @@ The cached Playwright WebKit binary also cannot launch on this host because
 `libicu74`, `libxml2`, and `libflite1` are missing. The preview was stopped;
 system browser dependencies were not installed.
 
+On 2026-10-03, the workstation OMP configuration was inspected read-only and
+confirmed to register Firefox DevTools MCP with automatic profile selection.
+That MCP server is not exposed in this Codex session's tool surface, so the
+existing Firefox connection cannot be driven from here; do not launch another
+Firefox against its active profile. This establishes OMP configuration only,
+not current browser connectivity or app behavior. The source lifecycle pass
+found no redundant ownership seam in `ExperienceRuntime`/`SceneHost` teardown
+or the `StageRegistry`/`LazyStage`/Vue stage-slot boundary. On the same date,
+`bun run format:check`, `bun run lint`, and the full `bun run build` all passed;
+the build regenerated no tracked artifact differences and stayed within the
+configured budgets (Three 310.94/350 kB gzip; UIkit 53.84/56 kB; public media
+5,390.23 kB total, largest asset 4,160.18 kB). No test suite was run.
+
 The 2026-10-02 production build and lint pass after the cache-rule fix.
 Bundle gates report Three at 310.94/350 kB gzip and UIkit at 53.84/56 kB. The
 1080p 30 fps showreel
