@@ -105,6 +105,8 @@ Current known facts:
 - Vue Router teardown is now owned by the mount that created it. Concurrent
   unmount calls share one promise, and shell disposal failure still runs Vue
   and listener cleanup; a stale mount failure cannot tear down its successor.
+- Router guards now cancel navigation when teardown starts; post-navigation
+  callbacks cannot reveal an exiting route or dispatch a stale section hash.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

@@ -99,6 +99,7 @@ export async function mountVueApp(): Promise<void> {
   // to hide. Its flag is consumed synchronously by the first guard.
   let coverNavigation = true
   router.beforeEach(async (to, from) => {
+    if (disposed) return false
     if (to.path === from.path) return
     if (coverNavigation) {
       coverNavigation = false
@@ -107,9 +108,10 @@ export async function mountVueApp(): Promise<void> {
     // Startup navigation can settle before AppShell has mounted its overlay.
     if (!appMounted) return
     await routeTransition.cover()
+    if (disposed) return false
   })
   router.afterEach((to, from) => {
-    if (appMounted && to.path !== from.path) routeTransition.reveal()
+    if (!disposed && appMounted && to.path !== from.path) routeTransition.reveal()
   })
   router.onError(() => {
     hashNavigationFrame.cancel()
@@ -128,6 +130,7 @@ export async function mountVueApp(): Promise<void> {
   // the next frame.
   let firstNavigation = true
   router.afterEach((to) => {
+    if (disposed) return
     hashNavigationFrame.cancel()
     const isInitial = firstNavigation
     firstNavigation = false
