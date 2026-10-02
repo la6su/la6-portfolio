@@ -23,6 +23,7 @@ export interface PageMetaOverrides {
   description?: string
   canonicalPath?: string
   type?: 'website' | 'article'
+  robots?: string
 }
 
 /** Ensure a <meta> tag exists in <head>, creating it if missing. */
@@ -81,6 +82,10 @@ export function applyMetaTags(page: PageId, overrides: PageMetaOverrides = {}): 
   ensureMeta('name', 'twitter:card').content = 'summary_large_image'
   ensureMeta('name', 'twitter:title').content = title
   ensureMeta('name', 'twitter:description').content = description
+
+  const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]')
+  if (overrides.robots) ensureMeta('name', 'robots').content = overrides.robots
+  else robots?.remove()
 
   // Canonical
   ensureCanonical().href = url

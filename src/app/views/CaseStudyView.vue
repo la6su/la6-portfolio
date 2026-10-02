@@ -21,13 +21,18 @@ const project = computed(() => PROJECTS[projectIndex.value])
 const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
 const language = ref(getLang())
 const applyCaseStudyMeta = (): void => {
-  const title = project.value ? `${project.value.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
-  const description = study.value?.outcome ?? 'Independent creative technology studies.'
+  const published = Boolean(project.value && study.value)
+  const title = published ? `${project.value!.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
+  const description =
+    published && study.value
+      ? study.value.outcome
+      : 'The requested case study is not available.'
   applyMetaTags('works', {
     title,
     description,
-    canonicalPath: `/works/${projectId.value}`,
-    type: 'article',
+    canonicalPath: published ? `/works/${projectId.value}` : '/works',
+    type: published ? 'article' : 'website',
+    robots: published ? undefined : 'noindex,follow',
   })
 }
 const unsubscribe = eventBus.on('jlz:lang-change', () => {

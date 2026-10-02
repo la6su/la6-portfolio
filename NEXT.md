@@ -360,6 +360,9 @@ metadata carries its own canonical detail path and is reapplied on project and
 locale changes. Unknown paths render the home fallback and use the home
 canonical. Direct-route behavior was confirmed against Vite production preview;
 production-host resolution and crawler delivery remain deployment gates.
+Unavailable dynamic Works slugs now use the Works canonical and `noindex,follow`
+instead of advertising an unavailable placeholder as an article; normal route
+metadata removes that robots override again.
 
 The build now prerenders every known SPA page and published case study into
 its own static HTML entry using the route manifest, page metadata/i18n tables,
