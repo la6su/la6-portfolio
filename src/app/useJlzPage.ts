@@ -10,18 +10,13 @@
 // `jlz:route-change`; it does not recreate the scene.
 
 import { onBeforeUnmount, onMounted } from 'vue'
-import UIkit from 'uikit'
+import UIkit from '../core/uikit'
 
 import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
-
-/** In-file helper: UIkit's imperative update for the mounted subtree. */
-function uiKitUpdate(el: Element): void {
-  ;(UIkit as unknown as { update(el: Element): void }).update(el)
-}
 
   // Announce only subsequent page mounts, not the initial route render.
 let mountedOnce = false
@@ -70,14 +65,14 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     }
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = initMenuLifecycle(el)
-    uiKitUpdate(el)
+    UIkit.update(el)
     // Typed EventBus emission — app-lifetime listeners subscribe to this port.
     eventBus.emit('jlz:route-change')
     if ('requestIdleCallback' in window) {
       idleHandle = requestIdleCallback(
         () => {
           idleHandle = null
-          if (mounted && rootEl() === el) uiKitUpdate(el)
+          if (mounted && rootEl() === el) UIkit.update(el)
         },
         { timeout: 100 },
       )

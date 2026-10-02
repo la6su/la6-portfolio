@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import UIkit from 'uikit'
+import UIkit from '../core/uikit'
 import { NAV_ITEMS } from './navItems'
 import { getLang, t, toggleLang } from '../core/i18n'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
@@ -34,13 +34,13 @@ const unsubscribers: Array<() => void> = []
 watch(soundMuted, async () => {
   await nextTick()
   if (soundIcon.value) {
-    ;(UIkit as unknown as { update(element: Element): void }).update(soundIcon.value)
+    UIkit.update(soundIcon.value)
   }
 })
 
 onMounted(() => {
   if (nav.value) {
-    ;(UIkit as unknown as { update(element: Element): void }).update(nav.value)
+    UIkit.update(nav.value)
   }
   unsubscribers.push(
     eventBus.on('jlz:lang-change', () => {

@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import UIkit from "uikit";
+import UIkit from "../core/uikit";
 import { eventBus } from "../core/EventBus";
 
 const container = ref<HTMLDivElement | null>(null);
 
 onMounted(() => {
   if (container.value) {
-    (UIkit as unknown as { update(element: Element): void }).update(
-      container.value,
-    );
+    UIkit.update(container.value);
   }
 });
 

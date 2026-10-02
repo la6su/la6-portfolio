@@ -14,7 +14,7 @@ import type { PageId } from '../core/routeManifest'
 import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'
-import UIkit from 'uikit'
+import UIkit from '../core/uikit'
 
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
@@ -118,7 +118,7 @@ export class ContentReveal {
       this._uiKitUpdateFrame = null
       if (this._destroyed || !matching.isConnected) return
       try {
-        ;(UIkit as unknown as { update(element: Element): void }).update(matching)
+        UIkit.update(matching)
       } catch {
         /* not ready */
       }

@@ -268,6 +268,10 @@ preserve custom policy only when code or measurements prove the difference.
   with a narrow debug host contract, pass the live carousel and actions at the
   dev-only construction site, and removed the one-line project-navigation
   forwarder from Experience.
+- `@types/uikit` declares runtime `UIkit.update()` as `object`, so four app and
+  reveal call sites repeated the same unchecked cast. Added one type-only
+  integration seam that exposes the runtime method as callable and routed those
+  consumers through it; no helper function or runtime behavior was added.
 - Lab camera control ownership was mirrored from SceneHost's computed
   `labCameraActive` into a module-level boolean for `Camera`. Removed that
   singleton; `SceneHostReady` now passes the live read-only policy to the
@@ -1106,6 +1110,12 @@ navigation forwarder. Vue type-check and ESLint pass; all 106 unit tests pass.
 Production build and bundle budgets pass (351 modules; splash 2.85 kB gzip,
 Three chunk 310.95 kB gzip). Physical WebGPU compilation remains an open
 release acceptance item.
+
+**UIkit type boundary:** Centralized the inaccurate `@types/uikit` declaration
+for `UIkit.update()`, removing repeated unchecked casts from route mounting,
+console refresh, content reveal, and overlay mount. Vue type-check, ESLint,
+compatibility checks, and production build/budgets pass; bundle sizes remain
+unchanged.
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the
