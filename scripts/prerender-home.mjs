@@ -25,6 +25,9 @@ const server = await createServer({
   // needed to load and render the route SFC.
   configFile: false,
   logLevel: 'error',
+  // SSR loading uses Node modules directly; a browser dependency optimizer
+  // only leaves a new deps_temp cache behind on every prerender run.
+  optimizeDeps: { noDiscovery: true },
   server: { middlewareMode: true, hmr: false, ws: false },
   appType: 'custom',
   plugins: [vue()],

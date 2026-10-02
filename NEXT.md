@@ -81,8 +81,10 @@ Current known facts:
   invalidation before adding more compatibility code.
 - This workspace had 738 abandoned `.vite/deps_temp_*` directories (14 GB)
   and no running Vite process. The temporary optimizer caches were removed.
-  This cleans local disk and stale cache state; it does not prove the browser
-  warning is fixed, so repeat the duplicate-core check on the next dev run.
+  The two isolated SSR prerender servers now disable Vite's browser dependency
+  optimizer; a full production build leaves zero `deps_temp_*` directories.
+  The reported Firefox duplicate-core warning still needs a browser runtime
+  check; the SSR cache cleanup alone does not prove it is fixed.
 - Current direct runtime pins match the latest releases checked on
   2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
   Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
