@@ -304,6 +304,10 @@ locale changes. Unknown paths render the home fallback and use the home
 canonical. These are source-level findings; direct URL and crawler behavior
 still require deployment/browser verification.
 
+Accessibility source review found `/contact` had no level-one heading; it now
+has a visually hidden localized H1 while the authored visible sections remain
+unchanged. Continue checking focus and landmark behavior in a browser.
+
 Execution order:
 
 1. Finish a renderer lifecycle trace from factory construction through async

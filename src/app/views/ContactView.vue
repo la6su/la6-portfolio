@@ -22,6 +22,7 @@ const activeSectionId = useJlzPage('contact', () => rootEl.value, 'contact-01')
   >
     <article class="jlz-page jlz-contact-page" data-page-view="contact">
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
+      <h1 class="uk-hidden-visually" data-i18n="nav.contact">Contact</h1>
 
       <!-- 01 · Email (start, active) -->
       <section
