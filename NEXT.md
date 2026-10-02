@@ -405,7 +405,11 @@ behavior. The reduced-motion fan-out is split by domain and currently has no
 mirrored value; keep it until a specific duplicate owner is demonstrated.
 Next inspect `SceneHost` readiness/renderer bridge and the split route policy
 between `Experience`, `SceneCoordinator`, and `StageRegistry` before moving
-state.
+state. [Completed below: SceneHost bridge, route policy and navigation observer
+ownership were traced; no redundant RAF, scheduler or scroll-state owner was
+found. Continue with lifecycle error/teardown paths and inspect route UI
+controllers for behavior that can move back into Vue without losing scene
+ownership.]
 
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
@@ -416,6 +420,45 @@ flushed afterward. A host unmount or renderer error during the readiness wait
 previously left `onReady` suspended on unresolved slots; the wait now races a
 host-owned cancellation signal, with a lifecycle generation check before
 publishing. No browser evidence was available for exercising that race.
+
+SceneHost bridge audit: `loopPort` is the sole adapter from RenderScheduler to
+Tres's RAF (`onBeforeLoop` supplies delta; start/stop control the Tres loop).
+The renderer manager's `replaceRenderFunction` consumes Tres's pending-frame
+notification without drawing, since `RenderPipeline` owns the actual draw.
+`invalidate()` is wrapped only to forward Tres/Cientos wake events into the
+same scheduler; Lab OrbitControls currently needs this path. `onReady`
+restores any previous wrapper/subscription before reconfiguration, and host
+teardown releases both. Recovery swaps `context.renderer.instance` and transfers
+deferred disposal ownership to the replacement; the old instance is explicitly
+disposed by Renderer during recovery. These are distinct Tres integration
+responsibilities, not a second RAF or render scheduler. Tres 5.9.2 installed
+source was used for the size-manager and loop behavior; the current official
+Tres docs identify the same installed release. No bridge removal is justified
+without replacing the custom TSL render path or the current Cientos wake path.
+
+Route-policy audit checkpoint: `Experience.installSceneEventHandlers` owns
+semantic event timing, scroll-section dispatch, and first-frame demand;
+`StageRegistry.reconcileRoute` owns per-route lazy-stage creation/disposal;
+`SceneCoordinator` owns section visibility/configuration and scene updates.
+Works carousel initialization is a persistent home-scene concern and remains
+in Experience/SectionGroups, while the Works plane and Contact/Manifesto/Lab
+lazy owners remain in StageRegistry. Contact Cyprus section activation also
+remains with StageRegistry because it gates that lazy asset's lifetime. The
+remaining review is to inspect lifecycle error handling through host teardown
+and look for scene behavior in `ExperienceUI` that belongs in Vue. No source
+move is warranted from this checkpoint alone.
+
+Navigation ownership trace: in scene mode, `CinematicNav` is the sole scroll
+observer and emits canonical section/world-slot events. `useJlzPage` consumes
+those events only to update Vue's active-section classes, while AppShell
+consumes them for title reveals; neither installs another scroll observer.
+When `?no-scene` is active, SceneHost/ExperienceUI are absent, so `useJlzPage`
+installs the native observer and emits the same event contract for both home
+and content routes. PersistentConsole's active navigation index is a display
+projection of `jlz:story-index-change`, not a second route position owner.
+Route views own their semantic section DOM and current CSS state; route-level
+transition, menu, and route-view selection remain Vue Router/Vue lifetimes.
+This confirms the observer split is mode-specific rather than duplicated.
 
 Route SEO source trace: canonical manifest entries, per-page metadata, blog
 entries, sitemap, and prerender inputs share their data sources. Case-study
