@@ -1016,10 +1016,20 @@ Execution order:
    after Vue's next DOM update. A generation guard cancels stale focus if
    another navigation commits first, and language-only URL changes preserve
    focus on the language control. `bun run lint` and the full production build
-   pass, including updated tracked prerenders and asset hashes. Browser
-   confirmation remains open: the local dev server could not bind its port in
-   this sandbox (`listen EPERM`), and the CUA runtime failed during
-   initialization.
+   pass, including updated tracked prerenders and asset hashes. The user's X11
+   suggestion resolved the local Chromium launch failure: elevated Playwright
+   with system Chromium 152, `--ozone-platform=x11`, and crashpad disabled
+   opened the production preview. At 390×844 in no-scene mode, keyboard
+   navigation `/services` → `/works` left focus on the one `#spa-content`; the
+   language control then changed `/works` → `/ru/works` while retaining focus
+   on itself and setting `html[lang=ru]`. There were no page errors. This
+   confirms SPA focus behavior without the renderer; Firefox/WebGPU and
+   physical-GPU visual coverage remain separate gates. The user reports that
+   Firefox on the workstation starts with WebGPU; that is useful environment
+   information, not yet observed app evidence. The CUA runtime still exits
+   before browser inventory, and launching `/usr/bin/firefox` through
+   Playwright's Juggler adapter exits before creating a session, so browser
+   control must use the workstation Firefox surface once it is available.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
