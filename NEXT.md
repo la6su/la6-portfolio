@@ -732,6 +732,16 @@ Production Chromium directly loaded `/`, `/services`, `/works`, `/manifesto`,
 horizontal overflow at 390×844. All four case-study routes were also checked
 in RU, including their chapter copy, meta description, language attributes,
 and canonical paths.
+After the compact-layout change, a current production Chromium pass loaded all
+15 sitemap URLs directly with HTTP 200, one `h1`, expected titles/canonicals,
+and no failed local requests. That pass exposed a Prism exception on every
+article: the configured GLSL grammar extends C, but the page omitted Prism's
+C dependency ([Prism component metadata](https://github.com/PrismJS/prism/blob/v1.30.0/components.json)).
+Added the upstream C component before GLSL and included Prism's MIT license.
+All four article URLs now load the JavaScript, TypeScript, C, GLSL, and CSS
+grammars without page errors or failed requests; code blocks contain
+highlighted tokens. A GLSL shader snippet also produces Prism tokens. The blog
+index intentionally does not load Prism.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals

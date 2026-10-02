@@ -315,6 +315,8 @@ export function renderBlogDocument(
           '    <script defer src="/vendor/prism/prism-clike.min.js"></script>',
           '    <script defer src="/vendor/prism/prism-javascript.min.js"></script>',
           '    <script defer src="/vendor/prism/prism-typescript.min.js"></script>',
+          // Prism's GLSL component extends C, which depends on C-like.
+          '    <script defer src="/vendor/prism/prism-c.min.js"></script>',
           '    <script defer src="/vendor/prism/prism-glsl.min.js"></script>',
           '    <script defer src="/vendor/prism/prism-css.min.js"></script>',
           '    <script defer src="/js/blog.js"></script>',
