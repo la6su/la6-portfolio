@@ -144,7 +144,7 @@ export async function initUnifiedWebGPUInstance(
   return true;
 }
 
-/** Inspect the actual backend + software-adapter facts after init. */
+/** Inspect the actual backend and optional adapter diagnostics after init. */
 export function inspectUnifiedBackend(renderer: unknown): {
   backendName: string | null;
   isFallbackAdapter: boolean | null;

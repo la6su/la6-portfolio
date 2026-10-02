@@ -127,13 +127,14 @@ or preserve a wrapper solely because a test currently encodes it.
   `GLSLNodeBuilder`. The project had incorrectly restricted its TSL post graph
   to native WebGPU and cleared fog on WebGL based on obsolete assumptions
   about `WebGLRenderer`/`ShaderMaterial`. Post now uses one TSL graph on either
-  backend. Backend selection is Three's automatic WebGPU-to-WebGL2 behavior;
-  the app does not need a second TSL/GLSL implementation. Low-tier devices
-  still skip the full-screen graph as a quality policy. A graph construction
-  or render error now releases any partial graph resources and propagates
-  through the normal frame error path instead of silently changing render
-  modes. Forced-WebGL Chromium
-  smoke confirmed the graph allocated and rendered without console errors.
+  backend. Three selects WebGPU or WebGL2, and TSL is compiled for that active
+  backend. The app no longer tears down and recreates a software-WebGPU
+  renderer to force WebGL; `isFallbackAdapter` only caps its quality tier.
+  Low-tier devices skip the full-screen graph as a quality policy. A graph
+  construction or render error now releases partial graph resources and
+  reaches the normal frame error path instead of silently changing render
+  modes. Forced-WebGL Chromium smoke confirmed the graph allocated and
+  rendered without console errors.
   Firefox smoke reached `/lab` with the WebGL2 backend, one scene canvas, one
   active section, and no app errors. The user has since confirmed physical
   Firefox WebGPU at runtime (`WebGPUBackend`, `TSL post=true`,
@@ -415,8 +416,9 @@ been removed. Phase 2 is active:
 unit tests have been relocated, redundant per-frame config lookups removed,
 and Vite's late Three dependency optimization fixed to avoid loading multiple
 Three cores during dev startup; continue the ownership audit before selecting
-a broader collapse. Phase 3 is active: the TSL post graph is shared across
-backends, graph errors no longer silently change render modes, Showreel scene
+a broader collapse. Phase 3 is active: Three owns backend selection, the TSL
+post graph is shared across backends, graph errors no longer silently change
+render modes, Showreel scene
 switching uses the shared graph correctly, and static transforms are
 declarative in reviewed scene owners; the rest of the scene ownership and
 allocation audit remains. Phase 4 is pending. No production-ready claim is made.

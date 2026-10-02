@@ -97,7 +97,7 @@ export interface SceneHostReady {
   canvas: HTMLCanvasElement
   /** The one camera instance (owned by SceneHost, wrapped by Experience). */
   camera: THREE.PerspectiveCamera
-  /** Final backend mode after the software-adapter policy decision. */
+  /** Backend actually initialized by Three's unified renderer. */
   mode: FinalMode
   /** Actual backend facts after init (backend parity evidence). */
   backend: BackendFacts

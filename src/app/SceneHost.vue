@@ -16,7 +16,7 @@ import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import { PCFShadowMap } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry } from 'three'
-import { planUnifiedBackend, type FinalMode } from '../core/rendererBackend'
+import { modeForBackend, type FinalMode } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { noSceneRequested } from '../core/sceneMode'
@@ -26,7 +26,6 @@ import {
   createUnifiedWebGPUInstance,
   deferRendererDisposal,
   disposeUnifiedRendererNow,
-  initUnifiedWebGPUInstance,
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
@@ -106,8 +105,6 @@ let lifecycleGeneration = 0
 let ownedRenderer: UnifiedRenderSurface | null = null
 let ownedRendererDisposal: (() => Promise<void>) | null = null
 let rendererDisposal: Promise<void> | null = null
-let fallbackRendererInitController: AbortController | null = null
-let fallbackRendererInit: Promise<boolean> | null = null
 let stopTresLoop: (() => void) | null = null
 
 // Tres loop bridge state.
@@ -311,51 +308,17 @@ async function onReady(context: TresContext): Promise<void> {
   // Canvas output is decorative; the route content remains independently
   // available to assistive technology.
   canvas.setAttribute('aria-hidden', 'true')
-  let renderer = context.renderer.instance as UnifiedRenderSurface
+  const renderer = context.renderer.instance as UnifiedRenderSurface
   ownedRenderer = renderer
-  let backend = inspectUnifiedBackend(renderer)
-  let plan = planUnifiedBackend(backend)
-  if (plan.recreate) {
-    // Software WebGPU adapter (SwiftShader ~2 FPS) → hardware WebGL2 through
-    // the same renderer class with its WebGL backend. The canvas is already in the DOM:
-    // dispose the dead instance and swap in the replacement.
-    await disposeHostRenderer(renderer)
-    if (!isCurrent()) return
-    const candidate = createUnifiedWebGPUInstance(canvas, true)
-    ownedRendererDisposal = deferRendererDisposal(candidate)
-    ownedRenderer = candidate
-    const initController = new AbortController()
-    fallbackRendererInitController = initController
-    const initPromise = initUnifiedWebGPUInstance(candidate, initController.signal)
-    fallbackRendererInit = initPromise
-    try {
-      await initPromise
-    } catch (error) {
-      await disposeHostRenderer(candidate)
-      onError(error instanceof Error ? error : new Error(String(error)))
-      return
-    } finally {
-      if (fallbackRendererInitController === initController) {
-        fallbackRendererInitController = null
-      }
-      if (fallbackRendererInit === initPromise) fallbackRendererInit = null
-    }
-    if (!isCurrent()) {
-      await disposeHostRenderer(candidate)
-      return
-    }
-    renderer = candidate
-    context.renderer.instance = renderer
-    backend = inspectUnifiedBackend(renderer)
-    plan = planUnifiedBackend(backend)
-  }
+  const backend = inspectUnifiedBackend(renderer)
+  const mode = modeForBackend(backend.backendName)
   if (!isCurrent()) {
     await disposeHostRenderer(renderer)
     return
   }
   // Publish the selected backend's DPR cap so Tres and the renderer agree.
   // writers (Tres's size manager and the Renderer owner) agree from now on.
-  dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
+  dprCap.value = maxDprForMode(mode, DeviceCapability.getInstance().isMobile)
   ownedRenderer = renderer
   ownedRendererDisposal ??= deferRendererDisposal(renderer)
   const replaceRenderer = (replacement: UnifiedRenderSurface, mode: FinalMode): void => {
@@ -377,7 +340,7 @@ async function onReady(context: TresContext): Promise<void> {
     replaceRenderer,
     canvas,
     camera,
-    mode: plan.mode,
+    mode,
     backend,
     lights,
     ground,
@@ -407,8 +370,6 @@ onBeforeUnmount(() => {
   settled = true
   disposed = true
   lifecycleGeneration += 1
-  fallbackRendererInitController?.abort()
-  fallbackRendererInitController = null
   stopTresLoop?.()
   stopTresLoop = null
   liveManager = null
@@ -422,10 +383,6 @@ onBeforeUnmount(() => {
 // otherwise the backend is torn down while its declarative resource owners are
 // still running their before-unmount cleanup.
 onUnmounted(async () => {
-  // The software-adapter path initializes its replacement asynchronously.
-  // Abort above, then let initUnifiedWebGPUInstance release the candidate
-  // after init settles before this owner performs its terminal disposal.
-  await fallbackRendererInit?.catch(() => undefined)
   await rendererDisposal?.catch(() => undefined)
   try {
     await disposeHostRenderer(ownedRenderer)

@@ -13,7 +13,7 @@ import {
 import {
   deviceLostAction,
   MAX_DEVICE_LOST_RECOVERIES,
-  planUnifiedBackend,
+  modeForBackend,
   type FinalMode,
 } from "../core/rendererBackend";
 import { waitForWebGLContextRestore } from "../core/webglContextRestore";
@@ -43,8 +43,8 @@ type DeviceLossCapableRenderer = WebGPURenderer & {
 /**
  * The SceneHost renderer factory creates, initializes, and inspects the
  * actual backend. This owner adopts the instance for pipeline management,
- * capability, and recovery instead of constructing another renderer. The
- * `mode` is the final backend selected by the host's software-adapter policy.
+ * capability, and recovery instead of constructing another renderer. `mode`
+ * names the backend Three initialized.
  */
 export interface AdoptedRenderer {
   instance: RenderSurface;
@@ -72,9 +72,9 @@ export class Renderer {
   private _recoveryAbortController: AbortController | null = null;
   private _recoveryPromise: Promise<void> | null = null;
   private _disposePromise: Promise<void> | null = null;
-  // forceWebGL the current instance was created with (software-adapter
-  // policy: a SwiftShader WebGPU adapter re-creates on the WebGL backend)
-  // — device-loss recovery must match it.
+  // Preserve the active backend during device-loss recovery. Initial backend
+  // selection is left to Three; a recovered WebGL context is explicitly kept
+  // on WebGL, and the dev-only forced-WebGL path stays forced for its smoke.
   private _forceWebGL = false;
   // The persistent SceneHost canvas is Vue-owned DOM. The replacement hook
   // keeps the Tres context in sync after device-loss recovery re-creates the
@@ -119,7 +119,8 @@ export class Renderer {
     this._onInstanceReplaced = adopted.onInstanceReplaced ?? null;
     // Recovery must preserve the final backend selected by SceneHost.
     this._forceWebGL = adopted.mode === "webgl";
-    this.capabilities.setFinalRendererMode(adopted.mode);
+    const backend = inspectUnifiedBackend(this.instance);
+    this.capabilities.setFinalRendererMode(adopted.mode, backend.isFallbackAdapter);
     // Capability tier and post settings must reflect the backend selected
     // above, not merely the initial navigator.gpu feature detection. Tres
     // already applied the live size and DPR before publishing SceneHost.ready.
@@ -284,30 +285,14 @@ export class Renderer {
         await discardReplacement();
         return;
       }
-      let plan = planUnifiedBackend(inspectUnifiedBackend(replacement));
-      if (plan.recreate) {
-        // The replacement landed on a software adapter again — force WebGL2.
-        this._forceWebGL = true;
-        await discardReplacement();
-        // Re-create on the same persistent SceneHost canvas.
-        replacement = await createUnifiedWebGPUInstanceAndInit(
-          canvas,
-          true,
-          abortController.signal,
-        );
-        if (!replacement) return;
-        if (this._disposed || generation !== this._lifecycleGeneration) {
-          await discardReplacement();
-          return;
-        }
-        plan = planUnifiedBackend(inspectUnifiedBackend(replacement));
-      }
+      const backend = inspectUnifiedBackend(replacement);
+      const mode = modeForBackend(backend.backendName);
       if (this._disposed || generation !== this._lifecycleGeneration) {
         await discardReplacement();
         return;
       }
       this.instance = replacement;
-      this.capabilities.setFinalRendererMode(plan.mode);
+      this.capabilities.setFinalRendererMode(mode, backend.isFallbackAdapter);
 
       const viewport = this.viewport()
       this.instance.setPixelRatio(Math.min(viewport.dpr, this.capabilities.maxDpr))
@@ -317,7 +302,7 @@ export class Renderer {
       this.attachDeviceLossRecovery(this.instance);
       // Keep Tres context aligned with the live replacement. The loop needs
       // no re-attachment because the pipeline reads the adopted instance.
-      this._onInstanceReplaced?.(this.instance, plan.mode);
+      this._onInstanceReplaced?.(this.instance, mode);
       // The old PMREM environment died with the lost device — ask Experience
       // to regenerate it (and re-bind it to the glass cube).
       eventBus.emit("jlz:renderer-recovered");

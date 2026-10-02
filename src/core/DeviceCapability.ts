@@ -89,15 +89,16 @@ export class DeviceCapability {
    * Commit the renderer that was actually created. WebGPU availability is only
    * a hint: WebGPURenderer can still fall back to WebGL after async init.
    */
-  public setFinalRendererMode(mode: Exclude<RendererMode, 'unsupported'>): void {
+  public setFinalRendererMode(
+    mode: Exclude<RendererMode, 'unsupported'>,
+    isFallbackAdapter: boolean | null = null,
+  ): void {
     this.mode = mode
-    this.tier = this.detectTier()
+    this.tier = isFallbackAdapter === true ? 'low' : this.detectTier()
   }
 
-  // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
-  // of dead code (never called anywhere; Renderer.ts does its own post-hoc
-  // WebGPU adapter check after wg.init() via explicit backend marker and
-  // isFallbackAdapter).
+  // WebGPU API presence is only an initial hint. SceneHost commits the actual
+  // initialized backend after Three completes renderer.init().
 
   private detectRenderMode(): RendererMode {
     // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).
