@@ -758,6 +758,14 @@ Manifesto → Contact SPA navigation it kept exactly one scene canvas; the scene
 canvas and host stayed `aria-hidden`, with no page errors or failed requests.
 This confirms software WebGL2 fallback and persistent canvas ownership; it
 does not establish behavior or visual parity on physical GPU hardware.
+On that software fallback, a 390×844 Home screenshot showed the Entered page,
+its 390×844 scene canvas, readable hero and visible scene after the loader
+exited, without browser errors. Works and Manifesto inverse-theme interaction
+were also checked: each changed from a dark surface/light heading in Auto to
+a light surface/dark heading in Inverse, and the selected mode persisted when
+navigating Works → Manifesto. Returning to Auto restored the dark surface and
+light heading on Manifesto. This confirms those route theme states on software
+WebGL2; physical-GPU rendering remains open.
 Reduced-motion source review found that the splash still ran 720 ms spiral
 scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
 only the central pulse had been disabled. The reduce rule now holds the spirals
