@@ -309,6 +309,11 @@ Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 while the authored visible sections remain unchanged. Continue checking focus
 and landmark behavior in a browser.
 
+Production `vite preview` could not bind `127.0.0.1:4173` in this execution
+environment (`listen EPERM`), matching the earlier dev-server bind restriction.
+Therefore direct-route, inverse-theme, keyboard, WebGPU, and WebGL2 runtime
+acceptance remain unverified here; source/build success does not close them.
+
 Latest production build and lint both pass. Bundle gates report Three at
 310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
 5.27 MB `coming-soon.mp4` is the largest file). The Contact-only Three
