@@ -84,6 +84,12 @@ preserve custom policy only when code or measurements prove the difference.
   Removed the field and its stale-field explanation; current frame gating uses
   the local snapshot. Navigation keeps the threshold-crossing frame open, and
   the following frames stay active through the carousel morph.
+- The render-demand path raised `_needsRender` when any activity was present,
+  then called `shouldRender(_needsRender, activity)` to re-evaluate the same
+  activity OR. `demandSettles()` was only `!anyActivity()`. Removed both
+  forwarding predicates; `Experience` now owns the demand flag and consumes
+  the sole shared activity predicate for settling. Ambient breathing remains
+  separate because it intentionally ignores four independent render sources.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an
@@ -726,9 +732,9 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Latest verified:** 103 unit tests, Vue type-check, ESLint, production build and
+**Latest verified:** 102 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
-351 modules (one fewer after removing the Lab camera policy singleton),
+351 modules (the current demand-path simplification changes no module count),
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined

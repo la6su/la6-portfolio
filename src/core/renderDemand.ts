@@ -18,7 +18,7 @@
 //     wall-clock timer; this file only decides when the scene is idle enough.
 //
 // Pure by design: no DOM, timers, renderer or globals. Unit-testable without
-// a browser; the loop renders only when `shouldRender` says so.
+// a browser; the runtime owns the demand flag and uses this activity check.
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in
@@ -118,17 +118,4 @@ export function idleForAmbientBreath(a: RenderActivity, reducedMotion: boolean):
     !a.particles &&
     !a.ambientScene
   )
-}
-
-/** True when a frame should be drawn: demand is already set, or something is active. */
-export function shouldRender(needsRender: boolean, a: RenderActivity): boolean {
-  return needsRender || anyActivity(a)
-}
-
-/**
- * After a rendered frame, demand may settle (the flag may be cleared) only when
- * nothing is still active. This is the same 14-flag set as `anyActivity`.
- */
-export function demandSettles(a: RenderActivity): boolean {
-  return !anyActivity(a)
 }

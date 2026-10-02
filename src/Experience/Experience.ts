@@ -21,9 +21,7 @@ import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
   anyActivity,
-  demandSettles,
   idleForAmbientBreath,
-  shouldRender,
   type RenderActivity,
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
@@ -630,9 +628,8 @@ export class Experience {
 
   /**
    * Post-frame settle decision for the single loop driver: the
-   * loop may stop after this frame only when the draw gate would have been
-   * a no-op (demand clear AND nothing active — the demandSettles 14-flag
-   * set) AND the cursor spring has converged (it needs frames even when the
+   * loop may stop after this frame only when demand is clear, nothing is
+   * active, and the cursor spring has converged (it needs frames even when the
    * scene is settled). Equivalent to "the next frame would draw nothing".
    */
   private _isLoopSettled(): boolean {
@@ -641,7 +638,7 @@ export class Experience {
       this._renderDisabled ||
       ((!import.meta.env.DEV || !this._debugContinuousRendering) &&
         !this._needsRender &&
-        demandSettles(this._activitySnapshot) &&
+        !anyActivity(this._activitySnapshot) &&
         this.cursor?.isSettled !== false)
     )
   }
@@ -909,7 +906,7 @@ export class Experience {
     // Apply camera and renderer work only when explicit demand or active scene
     // behavior requires a frame.
     if (import.meta.env.DEV && this._debugContinuousRendering) this._needsRender = true
-    if (shouldRender(this._needsRender, activity)) {
+    if (this._needsRender) {
       const smoothing = cfg?.camSmoothing ?? DEFAULT_CAMERA_SMOOTHING
       const cameraStart = frameTiming ? performance.now() : 0
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
@@ -936,7 +933,7 @@ export class Experience {
       this._readinessGate?.markRendered()
       // Keep demand raised while any activity remains; otherwise the next
       // scheduler pass can settle.
-      if (demandSettles(activity)) {
+      if (!anyActivity(activity)) {
         this._needsRender = false
       }
     }
