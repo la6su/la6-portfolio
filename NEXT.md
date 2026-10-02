@@ -421,6 +421,22 @@ previously left `onReady` suspended on unresolved slots; the wait now races a
 host-owned cancellation signal, with a lifecycle generation check before
 publishing. No browser evidence was available for exercising that race.
 
+Async teardown source trace: the supported app-level `unmountVueApp()` path
+awaits `AppShell.destroyExperience()` (which awaits `Experience.destroy()`) and
+only then calls `app.unmount()`. Experience stops the scheduler and listeners
+synchronously, awaits an active `compileAsync` prewarm, then awaits lazy-stage
+and showreel release before the root host is unmounted and flushes deferred
+renderer disposal. The dedicated host-teardown spec encodes release-before-
+backend assertions, but it was not run under the repository no-test-suite
+rule. Vue's `onBeforeUnmount` fallback in `ExperienceRuntime` starts that same
+async teardown without awaiting it; it is safe for cleanup initiation, not a
+barrier to child unmount. Vite documents `import.meta.hot.dispose` with a
+synchronous callback signature, so it cannot directly provide an async wait
+([HMR API](https://vite.dev/guide/api-hmr.html)). HMR replacement while GPU
+prewarm is active remains an open lifecycle gate; preserve the explicit
+app-unmount ordering and investigate a real HMR runtime reproduction before
+changing teardown contracts.
+
 SceneHost bridge audit: `loopPort` is the sole adapter from RenderScheduler to
 Tres's RAF (`onBeforeLoop` supplies delta; start/stop control the Tres loop).
 The renderer manager's `replaceRenderFunction` consumes Tres's pending-frame
@@ -459,6 +475,10 @@ projection of `jlz:story-index-change`, not a second route position owner.
 Route views own their semantic section DOM and current CSS state; route-level
 transition, menu, and route-view selection remain Vue Router/Vue lifetimes.
 This confirms the observer split is mode-specific rather than duplicated.
+`ExperienceUI` remains the owner of scene-attached navigation behavior and
+project overlays; route Vue views remain the semantic markup/state owners.
+Project selection crosses that boundary through typed events, with no mirrored
+active project index found in the current views.
 
 Route SEO source trace: canonical manifest entries, per-page metadata, blog
 entries, sitemap, and prerender inputs share their data sources. Case-study
