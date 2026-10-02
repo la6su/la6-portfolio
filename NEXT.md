@@ -308,6 +308,14 @@ Accessibility source review found `/contact` had no level-one heading; it now
 has a visually hidden localized H1 while the authored visible sections remain
 unchanged. Continue checking focus and landmark behavior in a browser.
 
+Latest production build and lint both pass. Bundle gates report Three at
+310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
+5.27 MB `coming-soon.mp4` is the largest file). The Contact-only Three
+`DRACOLoader` path emits both standard and glTF decoder asset sets because
+the addon declares both URL families; this is a possible deploy-size
+optimization, but changing decoder path ownership needs its own compatibility
+and network verification. The active glTF decoder path is already route-lazy.
+
 Execution order:
 
 1. Finish a renderer lifecycle trace from factory construction through async
