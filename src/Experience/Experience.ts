@@ -28,7 +28,6 @@ import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
 import type { SceneHostReady } from './SceneHostContract'
 import { eventBus } from '../core/EventBus'
-import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
@@ -280,7 +279,7 @@ export class Experience {
       const routeGeneration = ++this._routeGeneration
       const page = this._host.page()
       const isCurrent = () =>
-        isCurrentRouteContinuation(routeGeneration, this._routeGeneration, page, this._host.page())
+        routeGeneration === this._routeGeneration && page === this._host.page()
       try {
         // Rebuild page-specific fog/post/section ranges before route owners
         // reconcile visibility; otherwise SPA navigation keeps boot config.

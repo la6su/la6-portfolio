@@ -86,6 +86,8 @@ Current known facts:
   it now uses the documented light base polarity before applying inverse mode.
 - Blog publication time now has one source in the article index; sitemap
   `lastmod`, Open Graph, and JSON-LD derive from it.
+- The single-use route-continuation predicate is now local to the async route
+  handler instead of being a one-function core module.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
