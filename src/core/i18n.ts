@@ -56,6 +56,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.storyline': 'Narrative sections',
     'nav.routes': 'Portfolio routes',
     'nav.goToSection': 'Go to section',
+    'nav.section': 'Section',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
@@ -264,6 +265,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.storyline': 'Разделы истории',
     'nav.routes': 'Разделы портфолио',
     'nav.goToSection': 'Перейти к разделу',
+    'nav.section': 'Раздел',
 
     // Menu overlay (RU)
     'menu.navigate': 'Меню',

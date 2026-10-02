@@ -15,6 +15,7 @@ import {
   type StorySide,
 } from '../core/storyState'
 import { eventBus } from '../core/EventBus'
+import { t } from '../core/i18n'
 
 // Story slot indices are derived from the canonical six-slot model
 // (worldSlots) instead of re-declared here — the slot model is the single
@@ -230,12 +231,11 @@ export class CinematicNav {
 
   private _refreshLabels(): void {
     this._navButtons.forEach((button, index) => {
-      const label =
-        this._mainSections[index]?.querySelector('h1, h2')?.textContent?.trim() ||
-        `Section ${index + 1}`
+      const heading = this._mainSections[index]?.querySelector('h1, h2')?.textContent?.trim()
+      const label = heading || `${t('nav.section')} ${index + 1}`
       const labelEl = button.querySelector<HTMLElement>('[data-story-label]')
       if (labelEl) labelEl.textContent = label
-      button.setAttribute('aria-label', `Go to ${label}`)
+      button.setAttribute('aria-label', `${t('nav.goToSection')} ${label}`)
     })
   }
 

@@ -421,6 +421,8 @@ attribute path; Works project apertures expose their visually hidden project
 title directly as the button name instead of overriding it with an English
 prefix. A source scan of all 40 Vue SFCs confirmed that every marked
 `data-i18n-aria-label` key resolves in the EN/RU dictionaries.
+The runtime CinematicNav label refresh also uses translated section wording
+and a localized fallback for headings that are absent from a route.
 The persistent console's aria labels use its reactive locale state directly:
 its full renderer chrome can mount after `useJlzPage`'s initial document
 translation pass, so relying on static translation markers there could leave a
