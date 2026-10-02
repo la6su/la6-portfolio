@@ -31,7 +31,8 @@ or preserve a wrapper solely because a test currently encodes it.
 
 ## Audited state (2026-10-02)
 
-- Working tree was clean at audit start; current HEAD: `f1de5ee`.
+- Working tree was clean at audit start; audit baseline: `f1de5ee`.
+- Current review (`2026-10-02`): clean worktree at `6fbb77e`.
 - Audit baseline: `src/` had 190 TS/Vue/Less files, including 35 Vitest files
   (`*.test.ts`, 2,377 lines total); Playwright had two specs under root
   `tests/`. Vitest included `src/**/*.test.ts`.
@@ -47,7 +48,7 @@ or preserve a wrapper solely because a test currently encodes it.
   `SceneTransformPass.ts` 436. The first architectural task is to decide
   ownership and remove overlap, not to mechanically redistribute these files.
 - `SceneHost.vue` declares TresCanvas and many scene owners, while also
-  carrying renderer setup/fallback/recovery coordination, ready slots, route
+  carrying renderer setup/backend-recovery coordination, ready slots, route
   policy, reduced-motion/pointer policy, and the Tres-loop bridge. Determine
   which of these are genuine host responsibilities and which can move to
   declarative Vue owners or existing Tres APIs.
@@ -126,11 +127,18 @@ or preserve a wrapper solely because a test currently encodes it.
   `GLSLNodeBuilder`. The project had incorrectly restricted its TSL post graph
   to native WebGPU and cleared fog on WebGL based on obsolete assumptions
   about `WebGLRenderer`/`ShaderMaterial`. Post now uses one TSL graph on either
-  backend; low-tier devices still skip the full-screen graph as a quality
-  policy, and a graph compilation failure logs once then draws the scene
-  directly. Forced-WebGL Chromium smoke confirmed the graph allocated and
-  rendered without console errors; Firefox and WebKit still need verification.
-  The WebGPU to WebGL2 backend choice remains for the cross-browser goal. The procedural
+  backend. Backend selection is Three's automatic WebGPU-to-WebGL2 behavior;
+  the app does not need a second TSL/GLSL implementation. Low-tier devices
+  still skip the full-screen graph as a quality policy. A separate graph
+  construction error currently logs once and draws the scene directly; audit
+  whether that visual degradation policy is needed. Forced-WebGL Chromium
+  smoke confirmed the graph allocated and rendered without console errors.
+  Firefox smoke reached `/lab` with the WebGL2 backend and one Three core URL
+  after a clean reload. A duplicate-Three warning appeared during Vite's stale
+  dependency optimizer reload and did not recur after reload; do not add a
+  runtime dedupe layer for this transient dev condition. Firefox's Lab route
+  still reports Vue's `Missing ref owner context` warning from Cientos
+  `CameraControls`. WebKit and physical WebGPU remain unverified. The procedural
   circle branch in `JunniParticles` had no caller (the only owner always passes
   the Section3 sprite sheet) and was removed; this effect now has one authored
   implementation. The route handler now resets Contact scene state once before
@@ -270,8 +278,8 @@ The reduction audit must inspect these concrete boundaries:
 
 **Exit evidence:** one documented ownership diagram; startup cancellation
 regression covered; no duplicate route authority or renderer/loop owner;
-failure and teardown paths release resources once; app and scene still work in
-no-scene and fallback modes.
+failure and teardown paths release resources once; app and scene still work
+without scene stages and with Three's automatic WebGL2 backend.
 
 ### 2. Reduce framework duplication and file-system noise
 
@@ -319,7 +327,8 @@ source and bundle deltas are recorded against the audit baseline.
    that the actual input contract rules out. Do not optimize by guesswork.
 
 **Exit evidence:** each scene object has a clear Vue/Tres or algorithmic owner;
-one frame policy; TSL output and fallback are exercised in supported browsers;
+one frame policy; the same TSL graph is exercised on WebGPUBackend and
+WebGLBackend in supported browsers, with no app-authored shader fallback;
 no resource leak across route cycles; representative GPU captures or measured
 frame/allocation evidence for claimed performance improvements.
 
@@ -340,7 +349,8 @@ frame/allocation evidence for claimed performance improvements.
 
 **Exit evidence:** clean install and production build; automated route/lifecycle
 coverage in available engines; Firefox/Chromium/WebKit evidence as available;
-real WebGPU/TSL verification on supported hardware; fallback verified; no
+real WebGPU/TSL verification on supported hardware; automatic WebGL2 backend
+selection verified when WebGPU is unavailable; no
 unexplained compatibility seam; deployment, content, and accessibility limits
 are explicit.
 
