@@ -322,8 +322,7 @@ export class SceneCoordinator {
     this._transform.invalidate()
   }
 
-  /** Reduced-motion policy for the scene update loop and its owners. */
-  /** Forward a policy change; frame predicates read the canonical runtime value. */
+  /** Forward a reduced-motion preference change to scene owners. */
   public setReducedMotion(reduced: boolean): void {
     this.owners.envSphere.setReducedMotion(reduced)
     this.owners.baku.setReducedMotion(reduced)

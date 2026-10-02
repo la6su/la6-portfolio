@@ -5,9 +5,8 @@ export type QualityTier = 'high' | 'medium' | 'low'
  * Pure per-mode DPR cap — the fill-rate budget. Full-screen TSL post scales
  * with pixel count: a 2× DPR renders four pixels per CSS pixel and can miss
  * v-sync on 120/144Hz panels even with light geometry, so 1.5 stays crisp
- * while cutting ~44% of the fill work. The WebGL fallback renders directly
- * (no post chain) and drops to 1 on mobile. Single source of truth shared by
- * the DeviceCapability singleton and the SceneHost's live TresCanvas `:dpr`
+ * while cutting ~44% of the fill work. WebGL2 drops to 1 on mobile. This is
+ * shared by DeviceCapability and SceneHost's live TresCanvas `:dpr`
  * cap — Tres re-applies the prop on every internal sizes change, so both
  * writers must agree or the stale one wins after a resize.
  */
@@ -21,9 +20,9 @@ export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
   return 1
 }
 
-/** TSL post is available only on the native WebGPU backend. */
-export function supportsPostProcessing(mode: RendererMode, tier: QualityTier): boolean {
-  return mode === 'webgpu' && tier !== 'low'
+/** Keep the full-screen TSL graph off low-tier devices on either backend. */
+export function supportsPostProcessing(tier: QualityTier): boolean {
+  return tier !== 'low'
 }
 
 const TIER_SETTINGS: Record<QualityTier, { postMultiplier: number }> = {
@@ -68,23 +67,7 @@ export class DeviceCapability {
   }
 
   public get postProcessing(): boolean {
-    return supportsPostProcessing(this.mode, this.tier)
-  }
-
-  /**
-   * True ONLY when WebGPURenderer actually got WebGPUBackend (not WebGLBackend
-   * fallback) AND the adapter is NOT a software fallback (SwiftShader).
-   *
-   * Set by Renderer.init() after `wg.init()` + adapter inspection. Stays
-   * `false` on WebGL2 path and on WebGPU→WebGL fallback.
-   *
-   * This flag gates the "premium" visual path (TSL node overrides, real
-   * glass transmission). On non-premium paths
-   * the project falls back to the parity path (JS-driven material props,
-   * opacity-based glass) that already works.
-   */
-  public get isRealWebGPU(): boolean {
-    return this.mode === 'webgpu'
+    return supportsPostProcessing(this.tier)
   }
 
   private constructor() {

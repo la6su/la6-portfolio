@@ -125,15 +125,11 @@ export class Renderer {
     // already applied the live size and DPR before publishing SceneHost.ready.
     this.postManager.refreshPreset();
 
-    // ── Diagnostic: log final render path + EnvSphere path ──
-    // Helps debug "I don't see the shader background" — the console will show
-    // which path is active: premium WebGPU (TSL shader) vs parity WebGL2
-    // (CanvasTexture fallback).
+    // ── Diagnostic: report the selected backend and TSL post policy ──
     const finalBackend = `WebGPU (${this.instance.backend?.constructor?.name ?? "?"})`;
     devDiagnostic(
       'info',
-      `[Renderer.init] Final path: ${finalBackend} | isRealWebGPU=${this.capabilities.isRealWebGPU} | ` +
-        `EnvSphere=${this.capabilities.isRealWebGPU ? "TSL shader (premium)" : "CanvasTexture (parity)"}`,
+      `[Renderer.init] Final backend: ${finalBackend} | TSL post=${this.capabilities.postProcessing}`,
     );
 
     // Build the post pipeline around the adopted WebGPURenderer.
@@ -388,7 +384,7 @@ export class Renderer {
       scene,
       this.instance as unknown as RendererResourceInfo,
       {
-        webgpuPipeline: this.pipeline?.hasWebGPUPostPipeline ?? false,
+        tslPostPipeline: this.pipeline?.hasTSLPostPipeline ?? false,
       },
     );
   }

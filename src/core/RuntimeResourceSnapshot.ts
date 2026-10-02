@@ -16,7 +16,7 @@ export interface RuntimeResourceSnapshot {
     programs: number | null
   }
   post: {
-    webgpuPipeline: boolean
+    tslPostPipeline: boolean
   }
 }
 
@@ -28,7 +28,7 @@ export interface RendererResourceInfo {
 }
 
 interface PostResourceInfo {
-  webgpuPipeline: boolean
+  tslPostPipeline: boolean
 }
 
 function collectMaterialTextures(material: THREE.Material, textures: Set<THREE.Texture>): void {

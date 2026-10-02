@@ -1,4 +1,4 @@
-// src/core/WebGPUPostPipeline.ts — TSL-based post-processing for WebGPU path.
+// TSL post-processing shared by WebGPU and WebGL2 backends.
 //
 // Uses three's native RenderPipeline + PassNode + BloomNode.
 // Vignette + grain via simple TSL Fn. No ShaderMaterial.
@@ -33,10 +33,9 @@ import { withNoToneMapping } from './toneMappingGuard'
 import type { PostParams } from './postParams'
 
 /**
- * TSL post-processing pipeline for WebGPU. Replaces direct renderer.render()
- * on the WebGPU path with a bloom + vignette + grain graph.
+ * Bloom, grading, refraction, grain, and vignette in one backend-compiled graph.
  */
-export class WebGPUPostPipeline {
+export class TSLPostPipeline {
   private _pipeline: TSLRenderPipeline | null = null
   private readonly _renderer: WebGPURenderer
   private readonly _scene: Scene

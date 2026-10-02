@@ -2,7 +2,7 @@
 //
 // Every post layer shares this runtime shape: PostProcessingManager
 // crossfades them per section, RenderPipeline diffs them against its snapshot,
-// WebGPUPostPipeline writes them into the TSL uniform nodes. Declaring the
+// TSLPostPipeline writes them into the TSL uniform nodes. Declaring the
 // shape once makes adding a channel a one-file change. RenderPipeline keeps a
 // stable snapshot for change detection and hands it directly to the TSL owner.
 

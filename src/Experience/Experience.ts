@@ -288,6 +288,7 @@ export class Experience {
         // reconcile visibility; otherwise SPA navigation keeps boot config.
         this.coordinator.init()
         const routeStagesReady = this._stages.reconcileRoute(page)
+        this.coordinator.setContactSceneSection(0)
         if (page === 'home') {
           void this.ensureCarouselInitialized().then(() => {
             if (isCurrent()) this._raiseRenderDemand('nav')
@@ -302,12 +303,9 @@ export class Experience {
         }
         if (page === 'contact') {
           this._stages.setContactCyprusStageSection(0)
-          this.coordinator.setContactSceneSection(0)
           void routeStagesReady.then(() => {
             if (isCurrent()) this._raiseRenderDemand('nav')
           })
-        } else {
-          this.coordinator.setContactSceneSection(0)
         }
         if (page === 'manifesto') {
           void routeStagesReady.then(() => {

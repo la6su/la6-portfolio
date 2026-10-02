@@ -120,14 +120,22 @@ or preserve a wrapper solely because a test currently encodes it.
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
   building shared abstractions.
-- Renderer degradation is product policy and must be distinguished from
-  duplicate feature implementations: WebGPU to WebGL2 is currently retained
-  for the stated cross-browser goal, while WebGPU-only post effects degrade to
-  direct scene rendering. Audit whether each WebGL2 visual limitation is real
-  in the current Three version before keeping workarounds. The procedural
+- Three `0.186.1` source and [WebGPURenderer docs](https://threejs.org/docs/pages/WebGPURenderer.html)
+  confirm `WebGPURenderer` selects `WebGLBackend` when
+  WebGPU is unavailable, and that backend compiles TSL through
+  `GLSLNodeBuilder`. The project had incorrectly restricted its TSL post graph
+  to native WebGPU and cleared fog on WebGL based on obsolete assumptions
+  about `WebGLRenderer`/`ShaderMaterial`. Post now uses one TSL graph on either
+  backend; low-tier devices still skip the full-screen graph as a quality
+  policy, and a graph compilation failure logs once then draws the scene
+  directly. Forced-WebGL Chromium smoke confirmed the graph allocated and
+  rendered without console errors; Firefox and WebKit still need verification.
+  The WebGPU to WebGL2 backend choice remains for the cross-browser goal. The procedural
   circle branch in `JunniParticles` had no caller (the only owner always passes
   the Section3 sprite sheet) and was removed; this effect now has one authored
-  implementation.
+  implementation. The route handler now resets Contact scene state once before
+  page-specific work, and the ambient-motion predicate no longer queries the
+  same Contact typography owner twice.
 - Scene-owner review has started with static transform ownership: `ServicesStageOwner`
   now declares orbit scale/rotation/position as Tres props instead of mutating
   mounted meshes, and `CinematicLights`, `GroundPlane`, and `EnvSky` use the
@@ -301,10 +309,11 @@ source and bundle deltas are recorded against the audit baseline.
    owns frame production; avoid component-local RAFs where Tres loop policy
    fits. Keep continuous work only for visible animation and ensure idle scenes
    stop requesting frames.
-4. Audit renderer, post-processing, TSL parameters, and fallback. Delete
+4. Audit renderer, post-processing, TSL parameters, and backend policy. Delete
    duplicated backend/capability state and graph plumbing; keep bespoke TSL
-   effects. Verify WebGL2 fallback never imports or executes WebGPU-only
-   operations. Avoid premature shader abstraction.
+   effects. Verify the same TSL scene and post graph on WebGPU and WebGL2,
+   then document only concrete backend feature gaps. Avoid premature shader
+   abstraction.
 5. Audit allocation in frame/update methods and GPU lifetime per scene owner.
    Remove repeated allocations, redundant traversals and defensive branches
    that the actual input contract rules out. Do not optimize by guesswork.
