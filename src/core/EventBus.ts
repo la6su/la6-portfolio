@@ -40,7 +40,7 @@ export interface AppEvents {
   /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }
   /** Fired by CinematicNav when a non-home page's active section changes. */
-  'jlz:page-section-change': { index: number; count: number; sectionId: string }
+  'jlz:page-section-change': { index: number; sectionId: string }
   /** Persistent Vue shell requests a story-track section. */
   'jlz:story-navigate': { index: number }
   /** CinematicNav updates the persistent shell's active section state. */

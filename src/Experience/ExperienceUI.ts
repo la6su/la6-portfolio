@@ -12,7 +12,6 @@ import type { StageRegistry } from './StageRegistry'
 import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
-import { WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
@@ -43,8 +42,6 @@ export interface ExperienceUIHost {
 export class ExperienceUI {
   /** Vertical native story track plus top/bottom sheets. */
   storyNav: CinematicNav | null = null
-  /** True after the static project data and overlay are ready to use. */
-  private projectUiReady = false
   /** Behavior controller for the Vue-owned fullscreen overlay. */
   overlay: FullscreenOverlay | null = null
   private activeProjectIndex = 0
@@ -65,13 +62,10 @@ export class ExperienceUI {
       this.overlay = null
       this._unwireCarousel?.()
       this._unwireCarousel = null
-      this.projectUiReady = false
     })
 
-    // CinematicNav — vertical native story track plus top/bottom sheets.
-    // The section count is the worldSlots contract (single source of the
-    // six-slot model), not a literal.
-    this.storyNav = new CinematicNav(WORLD_SLOT_COUNT, this.host.page)
+    // CinematicNav owns navigation over the canonical world-slot track.
+    this.storyNav = new CinematicNav(this.host.page)
     // Native scroll wakes the shared render loop.
     this.storyNav.onActivity = () => {
       this.host.raise('nav')
@@ -211,15 +205,10 @@ export class ExperienceUI {
   }
 
   ensureProjectControls(): void {
-    if (this.projectUiReady || this._destroyed) return
+    if (this.overlay || this._destroyed) return
     try {
       this.initializeProjectControls()
     } catch (error) {
-      this.projectUiReady = false
-      this._unwireCarousel?.()
-      this._unwireCarousel = null
-      this.overlay?.dispose()
-      this.overlay = null
       if (import.meta.env.DEV) {
         console.error('[ExperienceUI] project controls init failed:', error)
       }
@@ -227,7 +216,7 @@ export class ExperienceUI {
   }
 
   private initializeProjectControls(): void {
-    if (this.projectUiReady || this._destroyed) return
+    if (this.overlay || this._destroyed) return
     // Always prepare project controls — single-page experience.
     // Experience calls this after buildScene(), before
     // any user controls can emit project-selection events.
@@ -236,19 +225,25 @@ export class ExperienceUI {
     if (!(element instanceof HTMLDivElement) || !element.isConnected) {
       throw new Error('Fullscreen overlay was not mounted by AppShell.')
     }
-    this.overlay = new FullscreenOverlay(element)
-
-    // The home carousel exists even on a content deep link. Wire it once
-    // regardless of the active route, and release the callback with this UI
-    // owner so a later Experience can adopt the same scene object safely.
-    const carousel = this.host.carousel
-    if (carousel) {
-      carousel.setCamera(this.host.camera.instance)
-      this._unwireCarousel = carousel.onCardClick((idx) => {
-        this.onProjectSelect(idx)
-      })
+    const overlay = new FullscreenOverlay(element)
+    try {
+      // The home carousel exists even on a content deep link. Wire it once
+      // regardless of the active route, and release the callback with this UI
+      // owner so a later Experience can adopt the same scene object safely.
+      const carousel = this.host.carousel
+      if (carousel) {
+        carousel.setCamera(this.host.camera.instance)
+        this._unwireCarousel = carousel.onCardClick((idx) => {
+          this.onProjectSelect(idx)
+        })
+      }
+      this.overlay = overlay
+    } catch (error) {
+      this._unwireCarousel?.()
+      this._unwireCarousel = null
+      overlay.dispose()
+      throw error
     }
-    this.projectUiReady = true
   }
 
   /** Frame access to the BakuCarousel (index 3 in the 6-section layout; the
@@ -264,7 +259,7 @@ export class ExperienceUI {
 
   /** Select the adjacent project from the one canonical active index. */
   public navigateProject(direction: -1 | 1): void {
-    if (!this.projectUiReady) return
+    if (!this.overlay) return
     const carousel = this.getCarousel()
     if (direction < 0) carousel?.prev()
     else carousel?.next()
@@ -276,7 +271,8 @@ export class ExperienceUI {
   }
 
   onProjectSelect(idx: number, preload: boolean = false): void {
-    if (!this.projectUiReady || !this.overlay || PROJECTS.length === 0) return
+    const overlay = this.overlay
+    if (!overlay || PROJECTS.length === 0) return
     const projs = PROJECTS
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     this.activeProjectIndex = safeIdx
@@ -297,9 +293,9 @@ export class ExperienceUI {
       hasNext: true,
     }
     if (preload) {
-      this.overlay.preload(opts)
+      overlay.preload(opts)
     } else {
-      this.overlay.open(opts)
+      overlay.open(opts)
     }
   }
 
@@ -313,7 +309,6 @@ export class ExperienceUI {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
     }
-    this.projectUiReady = false
     this._unwireCarousel?.()
     this._unwireCarousel = null
     this._overlayHostUnsub?.()

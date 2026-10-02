@@ -35,7 +35,6 @@ type SideState = StorySide
 export class CinematicNav {
   public el: HTMLElement
 
-  private _sectionCount: number
   private _page: () => PageId
   private _track: HTMLElement | null = null
   private _mainSections: HTMLElement[] = []
@@ -63,10 +62,8 @@ export class CinematicNav {
    */
   onActivity: (() => void) | null = null
 
-  constructor(sectionCount: number, page: () => PageId) {
+  constructor(page: () => PageId) {
     this._page = page
-    // The six-slot model is the worldSlots contract, not a literal.
-    this._sectionCount = Math.max(WORLD_SLOT_COUNT, sectionCount)
     const nav = document.getElementById('cinematic-nav')
     if (!nav) throw new Error('Cinematic navigation must be declared by PersistentConsole.')
     this.el = nav
@@ -254,7 +251,6 @@ export class CinematicNav {
       if (sectionId) {
         eventBus.emit('jlz:page-section-change', {
           index,
-          count: this._sectionCount,
           sectionId,
         })
       }
@@ -324,7 +320,7 @@ export class CinematicNav {
     if (this._side === 'footer') return 0
     if (this._side === 'menu') return 1
     if (!this._track)
-      return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, this._sectionCount)
+      return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, WORLD_SLOT_COUNT)
     // The main→slot progress rescale is the pure storyState contract.
     const height = this._track.clientHeight || window.innerHeight
     return storyProgressFromScroll(
@@ -332,7 +328,7 @@ export class CinematicNav {
       height,
       MAIN_COUNT,
       FIRST_MAIN,
-      this._sectionCount,
+      WORLD_SLOT_COUNT,
     )
   }
 

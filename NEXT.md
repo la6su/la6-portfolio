@@ -64,6 +64,10 @@ Current known facts:
   output and a future percentage-based fallback removal; neither had evidence.
 - Story scroll normalization now shares the canonical main-position clamp;
   DOM navigation and frame-driven scene arrival keep their separate clocks.
+- `CinematicNav` now reads the canonical world-slot count directly. The
+  unused `count` field was removed from the page-section event, and
+  ExperienceUI derives project-control readiness from its live overlay instead
+  of mirroring it in a boolean.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
