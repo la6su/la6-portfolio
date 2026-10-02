@@ -22,7 +22,7 @@ const startApp = () =>
         'The application failed to boot.</p>' +
         '<span style="color:rgba(230,237,243,0.38);font-size:0.6rem;letter-spacing:0.1em;">' +
         'ERR:BOOT — APP MODULE NOT REACHABLE</span><br/>' +
-        '<button onclick="location.reload()" style="margin-top:0.9rem;padding:0.55rem 1.1rem;' +
+        '<button type="button" data-jlz-boot-reload style="margin-top:0.9rem;padding:0.55rem 1.1rem;' +
         'background:none;border:1px solid rgba(230,237,243,0.16);color:#e6edf3;cursor:pointer;' +
         'font-family:inherit;font-size:0.62rem;font-weight:600;letter-spacing:0.14em;' +
         'text-transform:uppercase;">Reload</button></div>'
@@ -41,6 +41,7 @@ const startApp = () =>
         fallback.setAttribute('aria-describedby', description.id)
       }
       const reloadButton = fallback.querySelector<HTMLButtonElement>('button')
+      reloadButton?.addEventListener('click', () => window.location.reload())
       fallback.addEventListener('keydown', (event: KeyboardEvent) => {
         if (event.key !== 'Tab') return
         event.preventDefault()
