@@ -31,7 +31,7 @@ import {
 } from '../core/unifiedRenderer'
 import type { SceneHostReady, SceneLoopPort } from '../Experience/SceneHostContract'
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
-import { createReadySlot, readyNode } from './readySlot'
+import { createReadySlot } from './readySlot'
 import { useSceneStages } from './useSceneStages'
 import CinematicLights from './scene/CinematicLights.vue'
 import CinematicCamera from './scene/CinematicCamera.vue'
@@ -235,7 +235,7 @@ const {
   declarativeCarousel,
   declarativeShowreelTheater,
   clear: clearSceneStages,
-} = useSceneStages(() => !disposed, () => readyNode(worksRootSlot))
+} = useSceneStages(() => !disposed, () => worksRootSlot.promise)
 
 async function disposeHostRenderer(renderer: UnifiedRenderSurface | null): Promise<void> {
   if (!renderer) return
@@ -290,15 +290,15 @@ async function onReady(context: TresContext): Promise<void> {
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
   const [camera, lights, ground, sectionRoots, servicesStage, envSphere, baku, introFrames, cursorTrail] =
     await Promise.all([
-      readyNode(cameraSlot),
-      readyNode(lightsSlot),
-      readyNode(groundSlot),
-      readyNode(sectionRootsSlot),
-      readyNode(servicesStageSlot),
-      readyNode(envSphereSlot),
-      readyNode(bakuSlot),
-      readyNode(introFramesSlot),
-      readyNode(cursorTrailSlot),
+      cameraSlot.promise,
+      lightsSlot.promise,
+      groundSlot.promise,
+      sectionRootsSlot.promise,
+      servicesStageSlot.promise,
+      envSphereSlot.promise,
+      bakuSlot.promise,
+      introFramesSlot.promise,
+      cursorTrailSlot.promise,
     ])
   if (!envSkySlot.value.value) await envSkySlot.promise
   if (!isCurrent()) return

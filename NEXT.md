@@ -77,6 +77,9 @@ Current known facts:
 - The scene host contract now exposes only Tres's reactive size values needed
   by Experience instead of leaking the full `TresContext` across the runtime
   boundary. SceneHost remains the owner of Tres integration.
+- Declarative node readiness now awaits each slot's Promise directly; the
+  sync-or-Promise `readyNode()` helper added no fast path inside `Promise.all`
+  and has been removed.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

@@ -26,11 +26,3 @@ export function createReadySlot<T>(): ReadySlot<T> {
     },
   }
 }
-
-/**
- * The slot's node or its pending promise: `await readyNode(slot)` resolves
- * immediately on the sync fast path and waits on the mount race otherwise.
- */
-export function readyNode<T>(slot: ReadySlot<T>): T | Promise<T> {
-  return slot.value.value ?? slot.promise
-}
