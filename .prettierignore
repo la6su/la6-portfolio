@@ -1,0 +1,7 @@
+# Build outputs and generated route documents must remain untouched by format.
+dist/
+node_modules/
+coverage/
+prerender/
+blog/*.html
+public/sitemap.xml

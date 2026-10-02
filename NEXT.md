@@ -384,9 +384,11 @@ unnecessary abstractions. Update this plan from findings and stop when each
 remaining complexity has a concrete product or platform reason.
 
 The existing Prettier scripts have no repository config or generated-file
-ignore list; the default project-wide check flags authored files and generated
-artifacts. Define a safe formatting contract after architecture changes so a
-format command cannot rewrite build output or impose Prettier defaults.
+ignore list. `.prettierignore` now protects build output, generated prerenders,
+generated blog route documents, and the generated sitemap from write commands.
+A source-only baseline check still flags 169 authored files under Prettier's
+default style; a blanket rewrite would obscure the ongoing architecture diff,
+so agreeing and applying a source style remains open.
 
 Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
@@ -409,8 +411,8 @@ Execution order:
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
-5. Establish a formatting contract: authored-file scope and generated-file
-   ignores must be explicit before changing formatting. Remove obsolete styles,
+5. Establish a formatting contract: generated-file ignores now exist; define
+   authored-file style before applying formatting. Remove obsolete styles,
    code, docs, and config only after checking exact imports/callers.
 6. Run lint and the full production build after coherent changes. Do not run
    unit or browser test suites without the user's explicit request; report the
