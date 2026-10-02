@@ -189,14 +189,39 @@ Current known facts:
   `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
   outrun AppShell's `splash-entered` listener. Renderer startup remains
   asynchronous and reports its own mount failures through `webgl-failed`.
+  A follow-up 320×640 production-preview check found that native scrolling on
+  renderer-free content routes left the active section stuck on the first
+  chapter because `CinematicNav` is not mounted in this mode. `useJlzPage` now
+  observes the `.jlz-page` scroll track only for `?no-scene`, applies the same
+  clamped midpoint section mapping, and emits the normal page-section event so
+  active styling, reveal, and theme consumers stay in sync. Route replacement
+  and unmount cancel its listener and pending animation frame. Chromium verified
+  Works advances through Porsche 911 Spider → Alise → 19 Lab → Pro193 at
+  320×640, with no horizontal overflow or page errors. The existing
+  `bun run lint` and full production build pass; GPU-backed runtime behavior is
+  still an open acceptance gate.
   `bun run lint` and the full `bun run build` pass, including prerender,
   generated sitemap/robots, and configured bundle/media budgets. The rebuild
-  produced no tracked output changes. Headless Chromium manually exercised
+  regenerated tracked `dist` assets and prerendered route documents.
+  Headless Chromium manually exercised
   `/works?no-scene` at 320×640: after splash Enter, the route fallback exposed
   seven navigation links; language switched to RU; navigation to Manifesto
   rendered the localized title with no page errors or horizontal overflow
   (`scrollWidth` 320). This verifies the no-scene route and locale path only;
   full-console controls and GPU behavior remain separate gates.
+- Case-study route review found that RU chapter labels wrapped around English
+  project copy, captions, and metadata. The last chapter also forced `lang=en`
+  while surrounding route metadata could already be Russian. Case study records
+  now carry Russian copy alongside English, and the view selects the matching
+  copy for chapter text, constraints, proof, media alt/captions, and metadata;
+  each narrative block declares its actual language. The unavailable-case
+  title and description now follow the selected locale too. Production
+  Chromium manually opened all four case-study routes, switched to RU in the
+  no-scene route fallback, and confirmed Russian copy/descriptions,
+  `html[lang=ru]`, chapter `lang=ru`, correct canonical paths, no horizontal
+  overflow, and no page errors. Static prerenders retain English default copy,
+  `lang=en`, and canonical URLs for each case route. Lint and the full build
+  pass.
 
 - Accessibility source review found that the fullscreen showreel exposed a
   modal with only a Close button; playback toggling depended on clicking the

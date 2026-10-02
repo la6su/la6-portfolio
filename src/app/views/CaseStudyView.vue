@@ -20,14 +20,19 @@ const projectIndex = computed(() => PROJECTS.findIndex((item) => item.id === pro
 const project = computed(() => PROJECTS[projectIndex.value])
 const related = computed(() => CASE_STUDIES.filter((item) => item.projectId !== projectId.value))
 const language = ref(getLang())
+const localizedStudy = computed(() => {
+  const current = study.value
+  if (!current) return null
+  return language.value === 'RU' ? current.ru : current
+})
 let unsubscribe = (): void => undefined
 const applyCaseStudyMeta = (): void => {
   const published = Boolean(project.value && study.value)
-  const title = published ? `${project.value!.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
+  const title = published ? `${project.value!.title} — JUSTLOVEJAZZ` : labels.value.unavailableTitle
   const description =
-    published && study.value
-      ? study.value.outcome
-      : 'The requested case study is not available.'
+    published && localizedStudy.value
+      ? localizedStudy.value.outcome
+      : labels.value.unavailableDescription
   applyMetaTags('works', {
     title,
     description,
@@ -54,6 +59,10 @@ const labels = computed(() =>
         result: 'Что получилось.',
         next: 'Продолжить исследование',
         contact: 'Обсудить похожий проект',
+        constraintNote: 'Условие, учтённое при разработке',
+        clientProject: 'Клиентский проект',
+        unavailableTitle: 'Работы — JUSTLOVEJAZZ',
+        unavailableDescription: 'Запрошенный кейс недоступен.',
         unavailable: 'Кейс ещё не подготовлен',
         status: 'Материалы проекта готовятся к публикации.',
       }
@@ -70,6 +79,10 @@ const labels = computed(() =>
         result: 'What remains.',
         next: 'Continue exploring',
         contact: 'Discuss a similar project',
+        constraintNote: 'Constraint carried into the build',
+        clientProject: 'Client project',
+        unavailableTitle: 'Works — JUSTLOVEJAZZ',
+        unavailableDescription: 'The requested case study is not available.',
         unavailable: 'Case study not yet available',
         status: 'Project material is being prepared for publication.',
       },
@@ -107,7 +120,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
   <main id="spa-content" ref="rootEl" class="uk-position-relative" data-page-view="content">
     <article class="jlz-page jlz-case-study-page" data-page-view="case-study" :data-case-project="projectId">
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
-      <template v-if="study && project">
+      <template v-if="study && project && localizedStudy">
         <section
           v-for="(chapter, index) in labels.chapters"
           :key="index"
@@ -132,29 +145,29 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                 {{ index === 1 ? labels.question : index === 2 ? labels.material : labels.result }}
               </h2>
             </div>
-            <div class="jlz-works-narrative jlz-case-copy" :lang="index < 3 ? 'en' : undefined">
+            <div class="jlz-works-narrative jlz-case-copy" :lang="language === 'RU' ? 'ru' : 'en'">
               <template v-if="index === 0">
-                <p class="jlz-works-premise">{{ study.outcome }}</p>
-                <p class="jlz-works-context">{{ study.role }}</p>
+                <p class="jlz-works-premise">{{ localizedStudy.outcome }}</p>
+                <p class="jlz-works-context">{{ localizedStudy.role }}</p>
                 <p class="jlz-works-discipline uk-margin-top">
-                  {{ study.stack.join(' / ') }}
+                  {{ localizedStudy.stack.join(' / ') }}
                 </p>
                 <dl class="jlz-case-facts uk-description-list uk-margin-top">
-                  <template v-for="item in study.constraints" :key="item">
+                  <template v-for="item in localizedStudy.constraints" :key="item">
                     <dt>{{ item }}</dt>
-                    <dd>Constraint carried into the build</dd>
+                    <dd>{{ labels.constraintNote }}</dd>
                   </template>
                 </dl>
               </template>
               <template v-else-if="index === 1">
-                <p class="jlz-works-premise">{{ study.problem }}</p>
-                <p class="jlz-works-context">{{ study.response }}</p>
+                <p class="jlz-works-premise">{{ localizedStudy.problem }}</p>
+                <p class="jlz-works-context">{{ localizedStudy.response }}</p>
                 <ul class="uk-accordion jlz-case-notes" uk-accordion>
                   <li>
                     <a class="uk-accordion-title" href="#">{{ labels.constraints }}</a>
                     <div class="uk-accordion-content">
                       <ul class="uk-list">
-                        <li v-for="item in study.constraints" :key="item">
+                        <li v-for="item in localizedStudy.constraints" :key="item">
                           {{ item }}
                         </li>
                       </ul>
@@ -163,23 +176,23 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                 </ul>
               </template>
               <template v-else-if="index === 2">
-                <p class="jlz-works-premise">{{ study.context }}</p>
+                <p class="jlz-works-premise">{{ localizedStudy.context }}</p>
                 <ul class="jlz-case-proof uk-list uk-list-divider uk-margin-top">
-                  <li v-for="proof in study.proof" :key="proof.label">
+                  <li v-for="proof in localizedStudy.proof" :key="proof.label">
                     <span>{{ proof.label }}</span
                     ><strong>{{ proof.value }}</strong>
                   </li>
                 </ul>
-                <figure v-if="study.media[0]" class="jlz-case-media uk-margin-top">
+                <figure v-if="localizedStudy.media[0]" class="jlz-case-media uk-margin-top">
                   <img
                     :src="project.detailTextureUrl"
-                    :alt="study.media[0].alt"
-                    :width="study.media[0].width"
-                    :height="study.media[0].height"
+                    :alt="localizedStudy.media[0].alt"
+                    :width="localizedStudy.media[0].width"
+                    :height="localizedStudy.media[0].height"
                     loading="lazy"
                   />
                   <figcaption>
-                    {{ study.media[0].caption ?? 'Project material / review state' }}
+                    {{ localizedStudy.media[0].caption ?? labels.material }}
                   </figcaption>
                 </figure>
                 <button v-if="rendererAvailable" type="button" class="uk-button uk-button-text jlz-works-enter" @click="open">
@@ -187,7 +200,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                 </button>
               </template>
               <template v-else>
-                <p class="jlz-works-premise" lang="en">{{ study.result }}</p>
+                <p class="jlz-works-premise">{{ localizedStudy.result }}</p>
                 <p class="jlz-case-status">{{ labels.status }}</p>
                 <RouterLink :to="{ name: 'contact' }" class="uk-button uk-button-text jlz-works-enter"
                   >{{ labels.contact }} ↗</RouterLink
@@ -212,7 +225,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
               data-cursor="view"
             ></button>
             <footer class="jlz-works-footnote">
-              <span>{{ project.year }} / {{ study.disclosure }}</span
+              <span>{{ project.year }} / {{ labels.clientProject }}</span
               ><span>{{ project.title }} — 0{{ index + 1 }} / 04</span>
             </footer>
           </div>

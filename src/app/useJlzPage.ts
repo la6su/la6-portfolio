@@ -17,6 +17,11 @@ import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
+import { noSceneRequested } from '../core/sceneMode'
+import { clampStoryPosition, mainSectionFromPosition } from '../core/storyState'
+import { worldSlotIndex } from '../core/worldSlots'
+
+const FIRST_MAIN = worldSlotIndex('intro')!
 
 export function useJlzPage(
   page: PageId,
@@ -40,12 +45,24 @@ export function useJlzPage(
   let announcerRafHandle: number | null = null
   let mounted = false
   let disposeMenuLifecycle: (() => void) | null = null
+  let noSceneScroller: HTMLElement | null = null
+  let noSceneScrollHandler: (() => void) | null = null
+  let noSceneScrollFrame: number | null = null
 
   onBeforeUnmount(() => {
     mounted = false
     sectionUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = null
+    if (noSceneScroller && noSceneScrollHandler) {
+      noSceneScroller.removeEventListener('scroll', noSceneScrollHandler)
+    }
+    noSceneScroller = null
+    noSceneScrollHandler = null
+    if (noSceneScrollFrame !== null) {
+      cancelAnimationFrame(noSceneScrollFrame)
+      noSceneScrollFrame = null
+    }
     if (announcerRafHandle !== null) {
       cancelAnimationFrame(announcerRafHandle)
       announcerRafHandle = null
@@ -60,6 +77,15 @@ export function useJlzPage(
   function postRender(): void {
     const el = rootEl()
     if (!el) return
+    if (noSceneScroller && noSceneScrollHandler) {
+      noSceneScroller.removeEventListener('scroll', noSceneScrollHandler)
+    }
+    noSceneScroller = null
+    noSceneScrollHandler = null
+    if (noSceneScrollFrame !== null) {
+      cancelAnimationFrame(noSceneScrollFrame)
+      noSceneScrollFrame = null
+    }
     applyTranslations()
     applyMetaTags(page)
     // The app owner publishes this only after its initial route has mounted.
@@ -81,6 +107,29 @@ export function useJlzPage(
     UIkit.update(el)
     // Typed EventBus emission — app-lifetime listeners subscribe to this port.
     eventBus.emit('jlz:route-change')
+    if (noSceneRequested) {
+      noSceneScroller = el.querySelector<HTMLElement>('.jlz-page')
+      const mainSections = [...(noSceneScroller?.querySelectorAll<HTMLElement>('[data-page-section]') ?? [])]
+        .filter((section) => !['page-lab', 'page-menu'].includes(section.dataset.pageSection ?? ''))
+      let lastSectionId = ''
+      noSceneScrollHandler = () => {
+        if (noSceneScrollFrame !== null) return
+        noSceneScrollFrame = requestAnimationFrame(() => {
+          noSceneScrollFrame = null
+          if (!noSceneScroller || mainSections.length === 0) return
+          const height = Math.max(1, noSceneScroller.clientHeight || window.innerHeight)
+          const position = clampStoryPosition(noSceneScroller.scrollTop / height, mainSections.length)
+          const index = mainSectionFromPosition(position, 0, mainSections.length)
+          const section = mainSections[index]
+          const sectionId = section?.dataset.pageSection
+          if (!sectionId || sectionId === lastSectionId) return
+          lastSectionId = sectionId
+          eventBus.emit('jlz:page-section-change', { worldIndex: FIRST_MAIN + index, sectionId })
+        })
+      }
+      noSceneScroller?.addEventListener('scroll', noSceneScrollHandler, { passive: true })
+      noSceneScrollHandler()
+    }
     if ('requestIdleCallback' in window) {
       idleHandle = requestIdleCallback(
         () => {
