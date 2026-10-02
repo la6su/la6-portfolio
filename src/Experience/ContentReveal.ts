@@ -17,6 +17,8 @@ import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import { worldSlotIndex } from '../core/worldSlots'
 
 const FIRST_CONTENT_SLOT = worldSlotIndex('intro')!
+const CONTACT_FOOTER_SLOT = worldSlotIndex('lab')!
+const MENU_SLOT = worldSlotIndex('menu')!
 
 export class ContentReveal {
   /** Latest resolved theme, including initial resolution before listeners attach. */
@@ -106,6 +108,8 @@ export class ContentReveal {
     if (contentConfigIndex < 0 && this.page() !== 'home') {
       const localIndex = this.activeContentSectionIndex()
       if (localIndex >= 0) contentConfigIndex = localIndex + FIRST_CONTENT_SLOT
+      else if (sectionId === 'page-lab') contentConfigIndex = CONTACT_FOOTER_SLOT
+      else if (sectionId === 'page-menu') contentConfigIndex = MENU_SLOT
     }
     const contentConfig = contentConfigIndex >= 0 ? configs[contentConfigIndex] : undefined
     const cfg =

@@ -157,6 +157,13 @@ Current known facts:
   nested wrappers and duplicate scheduler demand. `bun run build`, lint, and
   `git diff --check` pass. Recovery/resize behavior still requires runtime
   evidence on a supported GPU/browser.
+- The world-slot trace found one remaining theme bridge gap on content pages:
+  theme toggles while the Contact footer or Menu sheet was active could not
+  resolve `page-lab` / `page-menu` through the main-section list and sent
+  scene index `-1`. `ContentReveal` now maps those semantic sheet IDs to the
+  canonical Lab/footer slot 0 and Menu slot 5; normal story sections continue
+  to map from local section index to canonical slots 1–4. Verify sheet theme
+  changes visually in browser when that environment is available.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -392,10 +399,10 @@ Execution order:
    route callbacks, and recovery subscriptions. The SceneHost invalidate
    wrapper now restores its predecessor on reconfiguration/teardown. Continue
    with loop quiescence and recovery evidence on an actual browser.
-4. Trace route IDs, local chapter indices, and canonical world-slot indices
-   across `CinematicNav`, `EventBus`, `ContentReveal`, `Experience`, and stage
-   owners. Keep those domains explicit in names/types and remove literal
-   conversions where the world-slot manifest has the fact.
+4. Route IDs, local chapter indices, and canonical world-slot indices were
+   traced across `CinematicNav`, `EventBus`, `ContentReveal`, `Experience`,
+   and stage owners; a footer/menu polarity bridge defect was fixed. Review
+   case-study and unavailable-route states next, then confirm visual parity.
 5. For each `StageRegistry` contract, note creation, attach, optional load,
    visibility/configuration, detach, resource release, and late-result cleanup.
    Keep a generic helper only where at least two distinct contracts use its
