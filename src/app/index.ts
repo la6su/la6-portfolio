@@ -236,6 +236,10 @@ export async function mountVueApp(): Promise<void> {
 
   try {
     await routerReady
+    // `unmountVueApp()` can be called while initial navigation is still
+    // pending. Its teardown owns the pending mount too: never resurrect the
+    // Vue tree after that teardown has completed.
+    if (disposed) return
     // A fresh client render (createApp) replaces `#app`'s content on mount:
     // the build-time prerender keeps the home route shell available before JS
     // boots, and the SFC re-renders identical DOM rather than hydrating it.

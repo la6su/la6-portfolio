@@ -1,1158 +1,209 @@
 # Refactor plan — la6-portfolio
 
-This is the repository's only work queue. Keep it current and actionable:
-update phase status and evidence when work changes; do not append session logs.
-Removed project documents are not requirements and must not be reconstructed.
+This is the repository's canonical work queue. Keep it short enough to steer
+implementation: record current evidence, decisions, ordered work, and exit
+conditions. Do not append session transcripts or treat passing checks as proof
+that an architecture is good.
 
-## Objective and architecture
+## Goal
 
-Deliver a production-ready EN/RU portfolio based on Vue 3, TresJS, Three.js
-WebGPU and TSL, with a working WebGL 2 fallback and usable semantic content
-when no renderer can start. Use
-[three-vue-tres](https://github.com/hawk86104/three-vue-tres) as the reference
-for declarative Vue/Tres scene composition and focused behavior components.
-Adopt its relevant patterns, not its unrelated editor, plugin, or publishing
-systems.
+Deliver a production-ready EN/RU portfolio with a small, understandable
+codebase. Vue owns application state and declarative UI/scene composition;
+TresJS owns its Vue-to-Three integration and render lifecycle where its public
+API covers the need; Three.js owns rendering primitives and GPU APIs; Cientos
+owns the controls/helpers it already provides. Project code should contain
+portfolio behavior only: story-to-scene mapping, bespoke scene interaction,
+the TSL effects that create the visual identity, and browser-specific policy
+that cannot be delegated to those libraries.
 
-Keep the architecture small and legible. Vue owns application and scene
-hierarchy; Tres owns component and renderer integration; Three owns rendering
-primitives and GPU APIs; Cientos owns its controls/helpers. Project code owns
-only product-specific behavior: story-to-world mapping, scene transitions,
-render-demand policy, TSL effects, backend recovery, and async resource
-lifecycle. Every persistent DOM/GPU resource has one owner and a visible
-cleanup path. Prefer library behavior when it supplies the same contract;
-preserve custom policy only when code or measurements prove the difference.
+Use [TvT.js v5](https://github.com/hawk86104/three-vue-tres) as a reference
+for focused Vue/Tres composition and framework delegation. Its README
+describes Tres as the declarative Vue interface to Three.js and identifies the
+Vue/Tres stack; it also describes a broader editor, plugin, and delivery
+ecosystem. This portfolio needs the former patterns, not that ecosystem.
+Translate the pattern to WebGPU/TSL; do not copy TvT's unrelated product
+architecture.
 
-## Agent workflow
+Success means less bespoke code and fewer competing owners, with the same
+portfolio behavior and documented degradation where hardware/browser support
+differs. Do not split files just to meet a line count, add generic frameworks,
+or preserve a wrapper solely because a test currently encodes it.
 
-1. Read `AGENTS.md`, this plan, `package.json`, and affected sources before a
-   structural change. Trace runtime, build, generated-content, and test callers
-   before deleting anything.
-2. Work in vertical slices: name the ownership change, make the smallest
-   complete source change, run relevant gates, update this plan, and commit it.
-3. Prefer Vue/Tres declarations for stable nodes and props. Keep imperative
-   code for algorithms or Three APIs that cannot be expressed cleanly in Vue.
-   Do not merge or split modules based on line count alone.
-4. Do not claim browser, GPU, WebGPU, recovery, accessibility, or performance
-   evidence beyond what was actually exercised. Record real remaining gaps.
-5. Tracked `dist/` is the repository's current release artifact: regenerate it
-   with the sources for release-facing changes, but do not change its tracking
-   policy until the external deployment consumer is identified.
-6. Treat a passing build or test as evidence for a behavior, never as evidence
-   that its architecture should be retained. Before preserving an abstraction,
-   state the distinct responsibility and the direct caller that needs it.
+## Audited state (2026-10-02)
 
-## Current audit decisions
+- Working tree was clean at audit start; current HEAD: `f1de5ee`.
+- `src/` has 190 TS/Vue/Less source files. 35 Vitest files (`*.test.ts`,
+  2,377 lines total) are colocated throughout `src`; Playwright has two specs
+  under root `tests/`. Vitest explicitly includes `src/**/*.test.ts`.
+- The source has broad folders (`app`, `Experience`, `core`, `UI`, `Data`,
+  `Utils`) but no consistent boundary between app/runtime policy and scene
+  behavior. `Experience.ts` is 1,085 lines; `SceneHost.vue` 494;
+  `StageRegistry.ts` 356; `SceneCoordinator.ts` 341;
+  `SceneTransformPass.ts` 436. The first architectural task is to decide
+  ownership and remove overlap, not to mechanically redistribute these files.
+- `SceneHost.vue` declares TresCanvas and many scene owners, while also
+  carrying renderer setup/fallback/recovery coordination, ready slots, route
+  policy, reduced-motion/pointer policy, and the Tres-loop bridge. Determine
+  which of these are genuine host responsibilities and which can move to
+  declarative Vue owners or existing Tres APIs.
+- `Experience.ts` still coordinates startup, renderer adoption, world
+  construction, UI/events, recovery, and render demand. The coordinator,
+  registry, passes, and UI owner must be checked for policy versus forwarding
+  and duplicate state. Preserve only independently justified algorithms and
+  async resource ownership.
+- `vite.config.ts` contains extensive hand-authored chunk rules, Three/Tres
+  compatibility aliases, and a proxy-safe HMR workaround. Treat each as
+  conditional technical debt: identify its reproducible consumer and current
+  necessity before retaining it. Do not remove deployment workarounds without
+  checking the actual hosting/proxy contract.
+- TSL effects are bespoke product visuals; keep them where they express
+  unique appearance. Audit repeated material/uniform setup, disposal, easing,
+  shader helpers, and animation scheduling against Three/Tres/Vue APIs before
+  building shared abstractions.
+- `NEXT.md` was 1,158 lines and mixed the queue with historical implementation
+  narration. This rewrite is the current plan; old progress claims are not
+  acceptance evidence. Re-establish evidence as phases are executed.
+- A real app-start race was confirmed in `src/app/index.ts`: unmount could run
+  while `mountVueApp()` awaited `router.isReady()`, after which the continuation
+  mounted the app anyway. A disposed guard now prevents that remount. A focused
+  regression case remains needed; no automated result is claimed yet.
+- Known release-evidence gaps from prior work: WebKit could not launch in the
+  current environment; actual physical WebGPU/TSL compilation and visual
+  output have not been demonstrated on a real GPU. Recheck environment and
+  record these as external acceptance items if still unavailable.
 
-- Admin and Builder were removed in commit `07cc2a2`: no editor, document
-  schema/storage, compile/save API, `/admin` UI, `/p` publishing pipeline, or
-  generated builder content remains. Portfolio copy and project data stay
-  source-controlled in app/content files; publishing is a normal repository
-  build. Do not recreate these systems unless the product goal changes.
+## Architecture direction
 
-- The source tree is already mostly declarative for the scene: `SceneHost.vue`
-  and owner SFCs declare stable roots and leaves; controllers adopt those nodes
-  and own algorithms/resources. Continue the audit for remaining parallel
-  construction and duplicated disposal.
-- Current constructor audit: scene section roots, Works installation meshes,
-  and case planes are Vue/Tres-declared. Cyprus's `primitive` is the loaded
-  glTF hierarchy; showreel's private `Scene`/`OrthographicCamera` serve its
-  offscreen render algorithm. `EnvSphereOwner` directly declares each rounded
-  surface so its per-mesh geometry cleanup stays separate from its shared
-  materials; Cientos `RoundedBox` wraps a mesh and fallback material without
-  simplifying that ownership contract.
-- `SceneFramePass` was a one-use forwarding class owned only by
-  `SceneCoordinator`; it had no independent disposal lifecycle. Moved its
-  per-frame owner updates and Works chapter state into the coordinator and
-  removed the class. `SceneTransformPass` remains separate for the pooled
-  scroll-to-world algorithm and its transform caches.
-- UI interactions use `ExperienceUIHost` accessors backed by the composition
-  root for Baku, the burst, carousel, and Works stage. Removed coordinator
-  getters that exposed those owner objects without coordinating them. Continue
-  auditing remaining coordinator APIs for genuine policy versus forwarding.
-- `RenderPipeline` used Three's `backend.constructor.name` as a fallback for
-  test doubles even though the pinned WebGPU backend exposes
-  `isWebGPUBackend`; removed that redundant name probe. The installed Three
-  implementation has the marker, though its Backend declaration omits it, so
-  the read uses a narrow optional-property type.
-- `worldSlots.ts` owns stable slot identity and index. Replaced repeated Intro,
-  Works, and Contact slot literals in the coordinator and both scene passes
-  with derived constants; Contact/Services chapter-local indices remain local
-  because they are different contracts.
-- In `Experience.update()`, `_bakuCarouselActive` duplicated the live
-  `carousel.isAnimating` value and was immediately read only into a local.
-  Removed the field and its stale-field explanation; current frame gating uses
-  the local snapshot. Navigation keeps the threshold-crossing frame open, and
-  the following frames stay active through the carousel morph.
-- The render-demand path raised `_needsRender` when any activity was present,
-  then called `shouldRender(_needsRender, activity)` to re-evaluate the same
-  activity OR. `demandSettles()` was only `!anyActivity()`. Removed both
-  forwarding predicates; `Experience` now owns the demand flag and consumes
-  the sole shared activity predicate for settling. Ambient breathing remains
-  separate because it intentionally ignores four independent render sources.
-- Route reconciliation called `refreshRouteConfig()` (a one-use alias of
-  `SceneCoordinator.init()`), then immediately called `syncRouteVisuals()` even
-  though `init()` already performs that sync. Removed the alias and duplicate
-  call. `StageRegistry` still syncs after lazy stage creation/disposal changes
-  route visibility, where the state has actually changed.
-- `Experience.update()` re-sent the same persistent camera to the Works and
-  Contact lazy stages on every frame. `StageRegistry.configure()` already
-  assigns that camera when each stage is created, and both setters reject the
-  identical object. Removed the two hot-path calls; Tres-owned resize remains
-  the only changing viewport input.
-- Experience mirrored Tres's reactive viewport refs in a mutable `{ width,
-  height, dpr }` object solely so `Renderer` could size a replacement after
-  device recovery. Removed that duplicate state: project transforms receive
-  width/height directly from the size watcher, and recovery reads a current
-  snapshot from Tres's canonical refs when needed.
-- Theme polarity was fanned out from `Experience` to GroundPlane, SplashCube,
-  route typography/ink stages and Works particles, while SceneCoordinator
-  already owned all those scene references. Moved this scene-only fan-out to
-  `SceneCoordinator.syncTheme()` and removed the Experience helper; the
-  section-indexed EnvSphere snap/transition remains at the theme-event boundary.
-- Reduced-motion changes were also fanned out individually by `Experience`
-  even though scene owners are already assembled under `SceneCoordinator`.
-  Moved EnvSphere, SplashCube, carousel, particle burst, route stages and trail
-  updates into the coordinator; renderer/post, lights, camera, showreel and
-  story navigation remain with their separate owners. Startup applies the
-  current preference after async scene construction so a mid-boot preference
-  change reaches owners created during that interval. Unit coverage asserts
-  the fan-out and missing lazy carousel behavior. Firefox production preview
-  reduced-motion interaction passes (1/1); Chromium could not launch because
-  its Playwright headless executable is absent in this environment.
-- Home intro activation happened twice: `useJlzPage.postRender()` marks the
-  mounted route's intro section active before runtime startup, then
-  `Experience.init()` repeated the same query/class mutation later. Removed
-  Experience's DOM lookup and `contentRoot` dependency; the initial typed
-  `jlz:section-change` remains for ContentReveal and scene consumers.
-- `Experience.init()` also wrote a hard-coded camera position, target and
-  projection matrix after constructing the `Camera` owner. No draw can occur
-  before scheduler wake; the first `Camera.update()` writes its own smooth
-  pose back over all three values, making the Experience writes ineffective.
-  Removed the dead imperative camera initialization; the Camera controller
-  remains the single pose owner around the Tres-declared node.
-- Startup also emitted a fabricated `jlz:section-change` for `intro` on every
-  page. The mounted route already marks its initial semantic section active;
-  `ContentReveal` reads that state and applies the initial theme, which
-  Experience then syncs to the scene. Removed the redundant event, avoiding a
-  second ContentReveal/UIkit/theme pass and incorrect `intro` payload on
-  content routes. Real home section changes still use the event.
-- Case-study metadata was applied by an immediate post-flush watcher, then
-  `useJlzPage.onMounted()` overwrote its project canonical URL with `/works`.
-  Apply the project override after the route-owner mount hook and leave the
-  watcher for subsequent case changes. Firefox production direct-entry checks
-  now pass for every public route including both case studies (1 test), and
-  home reveal/startup passes (1 test).
-- CaseStudyView still duplicated `pageMeta.ts`'s DOM writes for title, lang,
-  description, Open Graph and canonical tags. Extended the existing helper
-  with optional route metadata overrides; the view now supplies only its
-  title/description/path/type values. Replaced its hand-managed microtask with
-  a Vue post-flush language watcher. Firefox production checks pass for direct
-  route canonical metadata and for preserving the case canonical + article
-  type after an EN/RU toggle (2/2).
-- Lazy Works and Cyprus stages initialized viewport-dependent transforms from
-  `window.innerWidth/innerHeight`, while Experience already receives Tres's
-  canonical reactive viewport. StageRegistry now reads the current Tres
-  width/height snapshot when configuring either lazy stage. This removes the
-  parallel viewport source and avoids creating a stage with stale dimensions
-  if the viewport changes while its async import/load is pending.
-- `ExperienceUI` owned both overlay dismissal and the scene's route policy
-  (coordinator reconfiguration, lazy stage reconciliation, section reset and
-  render demand). Moved the scene work to Experience, which owns the
-  coordinator, StageRegistry and scheduler; ExperienceUI now only dismisses
-  its overlay at that UI event boundary. Experience owns the stale-route
-  generation guard and unsubscribes it during teardown.
-- `ExperienceUI` also translated the page-section navigation event directly
-  into coordinator and Cyprus stage mutations. Moved that mapping to
-  Experience with the route handler; ExperienceUI no longer depends on
-  SceneCoordinator and only publishes/handles UI-facing interactions.
-- The post resource panel read BloomNode's private render-target arrays solely
-  to display `post targets` and `post passes`. Removed those counters and the
-  private-field casts; kept only the public fact that the lazy WebGPU post
-  graph is allocated. The library owns BloomNode's internal targets and its
-  disposal. This keeps diagnostics from coupling production code to Three's
-  private representation.
-- `WebGPUPostPipeline` retained a rebuild path for scene/camera replacement and
-  `RenderPipeline` checked for that replacement every frame. The persistent
-  Tres host owns one scene and camera, and recovery creates a new renderer and
-  a fresh pipeline, so no caller can replace those references in place.
-  Removed `setScene`, `_needsBuild`, and the unreachable old-graph teardown
-  before-build path. The TSL graph now builds lazily once per renderer and is
-  released with that renderer's pipeline.
-- `LazyStageContract.onDispose` had one caller: Cyprus resetting registry-local
-  section state. Removed the one-off generic hook and moved that reset into
-  `StageRegistry.disposeContactCyprusStage()`, where the state is owned. Kept
-  generic create/load/stale-attach/release orchestration because its race and
-  detach-before-dispose behaviors are exercised by dedicated lifecycle tests;
-  Vue `nextTick` still owns removal of declared scene nodes.
-- Both renderer post classes also exposed static `create()` methods that only
-  forwarded constructor arguments; the renderer factory assigned fields after
-  constructing an empty instance. Removed these redundant factories, made
-  lifetime-stable renderer/scene/camera references readonly, and construct the
-  pipeline directly at the renderer owner.
-- The compat seams for Tres/Cientos are required: `bun run check:stdlib`
-  confirms all 28 three-stdlib symbols and five curated WebGPU compatibility
-  symbols are live for the pinned dependency graph. Since drift can break the
-  production module graph or leave dead shim exports after a dependency bump,
-  wired this existing checker into `build` before prerendering and bundling.
-- Inspected the installed Tres 5.9.2 renderer manager and Three r186 source.
-  Tres's RAF invokes before-loop hooks on each tick, then its default render
-  callback renders the scene only while an invalidated frame is pending. The
-  app must keep Tres as the RAF/invalidation host but replace that callback so
-  Experience performs the only actual draw and successful-frame accounting.
-  Tres also calls renderer `dispose()` before unmounting its Vue scene tree;
-  SceneHost's deferred dispose is required to release declarative owners first.
-  Keep these bridges unless Tres exposes a lifecycle contract that removes
-  those ordering requirements. Replaced stale `constructor.name` comments with
-  the explicit backend-marker contract the code uses.
-- Contact typography's Vue owner declared `visible=false` while its behavior
-  controller retained the root and mutated `root.visible`. Removed that root
-  reference and bind/unbind parameter; the controller exposes a shallow
-  reactive visibility value and the SFC binds it to Tres's `visible` prop.
-  The controller still owns glyph behavior/resources, while Vue owns the
-  hierarchy and route visibility.
-- Contact Cyprus also split visibility between direct `_root.visible` writes
-  and a static Vue prop. Moved its prewarm/fade visibility state to a shallow
-  reactive value bound to the SFC prop; retained the root reference only for
-  its camera-local transforms. Controller tests cover visibility transitions
-  and reduced-motion snap.
-- `PointerInkStage` repeated its Tres-declared group visibility/name and mesh
-  name, position, frustum, render order and initial scale during node binding.
-  Removed the root bind/reference and repeated static writes; the controller
-  now binds only the mesh whose scale it animates, exposes reactive visibility
-  to the shared SFC, and Tres remains the static prop owner.
-- JunniParticles also bound visibility through a static SFC prop but directly
-  mutated the mesh because its cache was not reactive. Converted that cache to
-  a shallow ref and removed duplicate bind-time name/frustum/visibility writes;
-  mutable instance count and matrix setup remain controller algorithms.
-- Services, Baku carousel, and Lab gamepad repeated the same visibility split:
-  controllers wrote directly to roots while their Tres owners exposed
-  `:visible`. Made their visibility state shallow-reactive and let Tres props
-  apply it. Removed repeated node-name writes from Baku/Lab bind methods because
-  those names already live in the SFC templates. Their root bindings remain
-  only for transform updates and behavior. Controller tests now assert that
-  visibility state changes without mutating Vue-owned scene nodes.
-- WorksPlaneStage also assigned route visibility to its mounted root while
-  `WorksStageOwner` declared a static false prop. Added a reactive visibility
-  snapshot to the stage contract and bound the existing Tres prop to it;
-  removed mount/dispose root visibility writes. The root binding remains for
-  card transforms and render ordering.
-- Two false visibility bindings still duplicated explicit Three-owner state.
-  Moved DrawTrail visibility through its existing `setVisible` API (and removed
-  an unused raw-object getter); it initializes hidden when adopted. ParticleBurst
-  already initializes and updates its own InstancedMesh visibility, so removed
-  the static false prop from its Tres node. These behavior-owned transient
-  leaves have one visibility authority without introducing a Vue ref bridge.
-- A live switch to reduced motion snapped scene owners, then called
-  `RenderScheduler.settleNow()` before a frame could display the snapped state.
-  Changed this to request one `motion-preference` draw; the normal settled
-  predicate closes the loop after it. Updated the scheduler contract and added
-  regression coverage for snap-then-draw behavior.
-- DevPanel's force-render toggle only assigned Experience's private demand
-  flag. It neither invalidated a settled Tres loop nor kept that loop alive,
-  so the control could not force continuous rendering. It now calls an
-  explicit dev-only Experience control; the scheduler remains active while
-  enabled and settles after it is disabled. The panel reads a public
-  `needsRender` snapshot instead of casting into that private field.
-- The coordinator's camera setter only forwarded a stable camera object each
-  frame. The coordinator now retains the persistent Tres camera for its own
-  frame updates; the per-frame setter and its forwarding API are removed.
-- Reduced-motion state was stored independently in Experience and
-  SceneCoordinator, synchronized through a setter, and could diverge while
-  asynchronous scene startup was in flight. Experience is now the sole value
-  owner; SceneCoordinator and SceneTransformPass read its live callback while
-  SceneCoordinator still forwards preference changes to the scene owners.
-- `DevPanel` imported the `Experience` type and read its private story/ground
-  state through unchecked casts; the carousel morph button called a nonexistent
-  `Experience.getCarousel()` and never worked. Replaced the class dependency
-  with a narrow debug host contract, pass the live carousel and actions at the
-  dev-only construction site, and removed the one-line project-navigation
-  forwarder from Experience.
-- `@types/uikit` declares runtime `UIkit.update()` as `object`, so four app and
-  reveal call sites repeated the same unchecked cast. Added one type-only
-  integration seam that exposes the runtime method as callable and routed those
-  consumers through it; no helper function or runtime behavior was added.
-- `SceneHost` kept a local `resolved` flag alongside the one-shot
-  `sceneHost.isSettled` state. Both writes happened synchronously at the same
-  ready/error boundaries, so the local mirror provided no race protection.
-  Removed it and retained the bridge as the sole settle-state owner.
-- Runtime construction used to leave the Vue tree through a mutable
-  `sceneHost.ready` singleton, with `entry-app.ts` constructing Experience and
-  forwarding renderer recovery/disposal. `AppShell` now owns one
-  `ExperienceRuntime`; SceneHost publishes typed ready/error events and a
-  direct renderer-replacement callback. The singleton promise, settle state,
-  and renderer-owner binding are removed. `entry-app.ts` handles only splash
-  readiness and title effects; app teardown calls the exposed Vue root owner
-  before unmounting Tres nodes.
-- Lab camera control ownership was mirrored from SceneHost's computed
-  `labCameraActive` into a module-level boolean for `Camera`. Removed that
-  singleton; `SceneHostReady` now passes the live read-only policy to the
-  camera owner. The body attribute remains only as the CSS integration port.
-- Contact Cyprus activation was stored in `Experience` but only read, changed,
-  and reset by `StageRegistry`. Moved that route-local target state into the
-  registry and removed the two forwarding callbacks from runtime composition;
-  lazy Contact stages read effective polarity from `ContentReveal`, the
-  existing owner that resolves and publishes the theme, instead of a second
-  `Experience` cache.
-- `SceneHost` separately tracked `createdRenderer` and `liveRenderer` across
-  fallback, recovery, and teardown even though only one renderer is owned at a
-  time, and separately mapped its Tres-deferral callback by renderer identity.
-  Collapsed these into `ownedRenderer` plus its paired flush callback; teardown
-  awaits in-flight host disposal before releasing the current candidate,
-  preserving async dispose and late fallback-init ordering. Chromium teardown
-  and loop-wake gates pass (2/2).
-- First-draw readiness used an `Experience` promise/resolver wrapped by a
-  separate timeout/cancellation gate. Moved the render signal into
-  `ReadinessGate`, which now owns the sole readiness promise, timeout, and
-  cancellation. Experience creates it before waking the scheduler; frame
-  errors still do not mark the scene ready. Chromium startup/teardown passes.
-- Works route disposal could race the stage port while it awaited the Vue
-  Works root: teardown saw an empty slot and disposed the controller, after
-  which the still-live host could attach it. The lazy-stage attach contract
-  now carries its request guard; Works rechecks it after root lookup and
-  before adopting the controller. Regression coverage proves a retired route
-  request cannot attach after that await.
-- The Lab manifest ignored the lazy-create request guard and constructed
-  `LabGamepad` after its import even if navigation had already retired that
-  request. The manifest now checks liveness before allocating its geometry and
-  materials; a unit test covers the stale-import path and Chromium production
-  preview still mounts `/lab` successfully.
-- SceneHost's SwiftShader-to-WebGL fallback awaited renderer initialization
-  without cancelling on host unmount, and explicit teardown could dispose that
-  candidate while `init()` was still pending. The host now aborts the helper
-  and waits for init settlement before its terminal disposal; the helper's
-  existing late-abort test verifies that it releases the candidate after init.
-- `inspectUnifiedBackend` retained a constructor-name fallback despite both
-  pinned Three backend classes exposing `isWebGPUBackend` / `isWebGLBackend`.
-  Removed the guess and added tests for both markers and an unknown backend.
-- The route page singleton duplicated the active Vue Router location: route
-  SFCs wrote `PageId` through `setCurrentPage()`, while Experience/Camera read
-  it from a mutable module variable. Removed that mirror and `routePage.ts`;
-  consumers now resolve `window.location.pathname` through the canonical
-  route manifest. Moved case-study-to-Works resolution into that manifest too,
-  removing the second path resolver from `app/routes.ts`. `jlz:route-change`
-  remains because it triggers actual route side effects (content theme,
-  navigation rebinding and stage reconciliation); its payload/consumers remain
-  in the next event-boundary audit.
-- A forced `bun install --force --frozen-lockfile` removed stale local install
-  state that had changed Vite/Rolldown's module graph (357 modules versus 355
-  in a clean archive despite the same direct package versions). The current
-  install now builds at 354 modules after the route-state removal. Tracked
-  `dist/` has been regenerated from that lockfile install; this was dependency
-  residue and artifact drift, not a source architecture defect.
-- Removed the shell-written `data-reduced-motion` mirror. Nothing in app or
-  CSS consumed it; only E2E asserted the attribute. The browser test now checks
-  the actual media preference and resulting transition/input behavior instead.
-- Removed `bootstrapStates.ts` and the startup state transition layer: bootstrap
-  runs once per page, callers ignored `tryTransition()` failures, and the
-  failure-to-continue-without-scene path was absent from the transition table.
-  The shell still reports real `INITIALIZING`, `PREPARING SCENE`, `READY`, and
-  `SIGNAL LOST` UI states. A pre-SceneHost failure now rejects to the static
-  shell fallback; a later failure is shown by the mounted app.
-- Keep `RenderScheduler`: Tres 5.9.2 on-demand gates renderer calls but retains
-  its RAF loop; this project also requires zero idle ticks, settled activity
-  windows, and hidden-tab pause/resume. Reconsider only if equivalent behavior
-  is verified against installed Tres source and browser evidence. The installed
-  `useLoop` source starts its RAF loop at ready and on-demand only suppresses
-  the renderer call when its pending frame count reaches zero. Scene-frame
-  exceptions stop that loop once and are reported to native console; a later
-  invalidation can retry the owner.
-- Delegate viewport observation, renderer DPR/size, and perspective-camera
-  aspect updates to Tres 5.9.2. Its installed source confirms those contracts;
-  `SceneHost.vue` provides a fixed full-viewport canvas parent. Experience
-  watches Tres's size refs only to resize project-specific stage transforms.
-  Device recovery still explicitly sizes the replacement renderer because it
-  is swapped behind Tres's renderer manager.
-- Keep the typed `EventBus` for communication across the classic HTML shell,
-  Vue router/views, and independently owned runtime/UI controllers. Its
-  subscription disposer is now the only removal API: replaced the remaining
-  callback-plus-`off()` pairs in Experience and ContentReveal, removed unused
-  `off()`/`clear()` methods, and delete event keys after their final listener
-  leaves. Type check, lint, and production build pass (352 modules;
-  `chunk-experience` 120.54 kB / 34.17 kB gzip). Do not replace the bus absent
-  a concrete same-owner duplicate; continue auditing event boundaries by
-  whether they bridge actual ownership domains.
-- `ErrorTracker` was removed: it duplicated native console reporting and
-  suppressed unhandled rejection visibility. Boot failures remain explicitly
-  caught and shown by the app shell.
-- The persistent top bar/contact launcher now lives declaratively in
-  `app/PersistentConsole.vue` under `AppShell`; `CinematicNav` retains native
-  scroll, story position, input, and hash behavior. `FullscreenOverlayView.vue`
-  declares the modal structure; its controller adopts the Vue root and owns
-  UIKit/focus, decoded-poster, and keyboard behavior. `ShowreelConsole.vue`
-  renders theater state declaratively and owns its UI subscriptions/input until
-  AppShell unmount. `RouteTransitionView.vue` declares the transition surface;
-  the route controller retains only guard timing and cancel policy.
+Keep a shallow dependency direction:
 
-## Full source audit — findings and work queue (2026-10-02)
-
-This is the current source-to-runtime audit, not a claim that production
-acceptance is complete. Findings below are grounded in inspected call sites,
-plugin wiring, package scripts, and current module ownership. Items marked
-`verify` need runtime/deployment evidence before changing architecture.
-
-### Architecture pressure points requiring a simplification pass
-
-The earlier lifecycle and scene ownership audit established useful safety
-facts, but it over-weighted preserving the resulting structure. The project is
-not yet accepted as cleanly architected. These are concrete hotspots for the
-next refactor slices:
-
-Renderer lifecycle ownership, as implemented in the current slice:
-
-```mermaid
-flowchart TD
-  Host[SceneHost / Tres] -->|construct and init| Shared[unifiedRenderer]
-  Shared -->|adopt| Runtime[Experience Renderer]
-  Runtime -->|create post graph| Pipeline[RenderPipeline / TSL]
-  Runtime -->|device loss| Recovery[recovery on persistent canvas]
-  Recovery -->|replace instance| Host
-  Runtime -->|dispose pipeline + await renderer| Shared
-  Host -->|unmount children, flush deferred disposal| Shared
+```text
+app (Vue routes, shell, page composition)
+  ├─ scene (Tres declarative owners + small product scene behavior)
+  ├─ content (portfolio data and static editorial sources)
+  └─ platform policy only where browser APIs need an app decision
+TresJS / Vue / Three.js / Cientos provide framework and rendering machinery
 ```
 
-The opt-in Firefox context-loss test passes against the production preview and
-verifies recovery on the persistent canvas. Local Chromium still fails before
-recreation because it does not restore the induced context, even with SwiftShader
-forced; physical-GPU recovery evidence remains open. Run it with
-`JLZ_CROSS_BROWSER_MATRIX=1 JLZ_WEBGL_RECOVERY_FIREFOX=1 bunx playwright test --project=firefox tests/portfolio.spec.ts --grep "Renderer recovers from WebGL context loss"`.
-It was rerun after removing the viewport mirror; Firefox production-preview
-recovery passed (1/1) with replacement dimensions sourced from live Tres refs.
-
-| Surface | Current evidence | Refactor direction |
-| --- | --- | --- |
-| App startup and shell | `index.html`/`entry-shell.ts`/`entry-app.ts`/`app/index.ts` divide pre-Vue splash controls, lazy Vue mount, router events, readiness timers, and fallback continuation. Removed the unused reduced-motion DOM mirror and a seven-state transition table that did not govern the one-shot bootstrap. `SceneHost.onReady()` waits for independent scene-node slots in parallel; `EnvSky` remains ordered after `EnvSphere`, which supplies its material. `AppShell` now mounts `ExperienceRuntime`, which dynamically creates/initializes/destroys Experience from typed SceneHost component events. The mutable `sceneHost.ready` singleton and renderer-owner binding are gone; renderer replacement is a direct host capability. `entry-app.ts` only announces scene-start/ready/failure to the pre-Vue splash. `app/index.ts` awaits the root component's runtime destroy method before unmounting. | Continue the method-level lifecycle trace across app mount failure, HMR, route teardown, and explicit no-scene boot. Keep shell DOM work outside Vue only where it must run before the app is mounted. |
-| Navigation state | Vue Router is authoritative for URL/view selection. Removed `routePage.ts` mutable mirror, duplicate case-study resolver, app-wide anchor click interception, and the second runtime path read in `entry-app.ts`. The persistent `SceneHost` now publishes a live `PageId` getter from `useRoute()`; `Experience`, `StageRegistry`, content reveal and camera consume that same value instead of independently reading `window.location.pathname`. Case-study metadata already watches the computed project/study, so its redundant `jlz:route-change` subscription is removed. The route event's unused page payload is removed too; the event now means only “route DOM is ready” for app-lifetime 3D/nav reconciliation. In-app links use named `RouterLink`s; `router.resolve()` validates strict event navigation. Hash-only section controls remain routed to the scene owner. Home prerender installs real router records. | Audit remaining event subscribers for changes that can be expressed as direct Router/Vue subscriptions; keep scene section navigation as a distinct product contract. |
-| Runtime composition | `Experience.ts` is ~55 KB and creates renderer-side policy, scene composition, UI, route stages, readiness, diagnostics, recovery integration, and the render-demand loop. `SceneCoordinator` used to be constructed before its stable scene owners and received 14 getter closures; composition now creates the owners first and passes direct references, with `StageRegistry` supplying only the route stages whose identity changes. `ExperienceUI` is also created after `buildScene()` and receives stable objects directly. `StageRegistry` now also receives the stable Tres stage ports and Three camera directly; getter closures remain only for live route/theme/motion policy or actions. Removed coordinator's three pass-through stage getters. `SceneCoordinator.init()` contained no awaits but exposed an async contract, creating a needless microtask in scene construction and every route reconciliation; converted it to synchronous `init/refreshRouteConfig`, removed the wait wrapper, and retained stale-route guards only for actual lazy stage promises. Updated the lifecycle harness to use the router page port and deleted its obsolete “pending coordinator init” teardown test. Moved one-shot fullscreen poster preloading from `Experience.update()` into the UI owner on the first Works section event, removing DOM overlay state and a one-time UI flag from the frame coordinator. Home-route reconciliation now owns carousel init and its completion redraw; removed the second ensure/continuation from story-section changes, which already share the memoized init promise. Removed Lab camera's module singleton mirror: SceneHost passes its live computed ownership policy directly to `Camera`, while the body attribute remains a CSS port. Simplified the single-frame owner to rely on `cancelAnimationFrame`; its extra generation counter duplicated native cancellation. | Trace the remaining runtime boundaries against TvT's declarative page/component composition. Collapse forwarding state only when it no longer owns a distinct algorithm or async resource lifecycle; keep TSL/post and backend recovery isolated where their APIs require it. |
-| Renderer ownership | `SceneHost.vue` owns the Tres canvas/context and initial renderer init; `Experience/Renderer.ts` adopts it and owns backend recovery; `core/unifiedRenderer.ts` owns construction/init/disposal primitives. Three r186 exposes async `WebGPURenderer.dispose()`. The wrapper now caches and returns one idempotent disposal promise, awaited by init failure, fallback, recovery, Experience teardown, and SceneHost after child unmount. Recovered renderers receive the same host deferral as the initial instance. Removed SceneHost's second WeakSet idempotence guard; it now delegates exactly-once disposal to the shared renderer owner and only selects/flushes Tres deferral. SceneHost uses one `ownedRenderer` reference across initial creation, software fallback, recovery, and teardown instead of separate created/live mirrors; teardown awaits a pending host disposal before releasing the current owner. Added a generation check after initial renderer disposal so an unmounted host does not construct an unnecessary WebGL fallback. `Renderer.update()` shares the pipeline capability. Chromium host teardown passes (2/2) on system Chromium. The production-preview Firefox context-loss scenario passes and verifies recovery on the same canvas. Local Chromium reports that it cannot restore the induced WebGL context before recreation, so Chromium recovery remains unverified. | Exercise software-adapter fallback teardown during init, then verify initial/fallback/recovery/teardown ordering across the browser matrix; reproduce context restoration on supported browser/hardware before changing policy. Keep WebGL2 fallback explicit. |
-| Post effects | `Renderer.ts` → `PostProcessingManager` → `RenderPipeline` → `WebGPUPostPipeline` splits policy, crossfade, renderer routing, TSL graph construction and resource accounting. WebGLBackend skips the graph. Removed `_webgpuParamsCache`, which duplicated the pipeline's existing parameter snapshot before a synchronous TSL uniform write. Reused `copyPostParams()` for both display snap paths and centralized scalar/tint comparisons. Removed the post `border` channel: every route inherited `0`, no scene authored it, and the persistent bezel is CSS-owned. This also removes its TSL uniform, graph nodes, parameter plumbing, and now-unused smoothstep adapter. Corrected stale fallback-path comments; verified installed Three r186 exposes `RenderPipeline.dispose()` and updated an obsolete r184 comment so cleanup ownership matches the installed implementation. `PostProcessingManager` no longer mirrors `DeviceCapability.tier`; it reads the canonical tier when composing targets, while backend changes still explicitly recompute those targets. | Trace each public method and parameter for actual cross-boundary need. Continue looking for repeated policy/state across manager, renderer and TSL owner. Keep the TSL graph isolated from WebGL compatibility only where the backend needs distinct behavior; verify visual output on hardware. |
-
-The film-grain graph also carried a custom vec3 hash implementation even though
-Three r186 exposes a typed integer `hash()` node in `three/tsl`. Replaced the
-project formula with four calls to Three's scalar hash over flattened 1024²
-pixel-cell seeds; bilinear interpolation and static grain coordinates remain
-unchanged. Removed the now-unused `Node`/`tslVec3` imports and corrected a stale
-comment that still claimed ACES was applied by this graph. `vue-tsc`, ESLint,
-and the production build pass (352 modules; experience chunk 120.80 kB / 34.22
-kB gzip). Build/type evidence does not compile the runtime TSL graph on a
-physical WebGPU device; visual and generated shader validation remain open.
-| Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (358 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (235 lines). Vue's `shallowRef` slots drive `<primitive>` mount/unmount, with `nextTick` before GPU controller disposal. The two owners cover distinct async boundaries; `LazyStage` guards import/init/route races, Vue slots own scene-tree timing. Cleanup errors are reported in production as well as development while teardown continues. `StageRegistry.reconcileRoute(page)` owns route-to-stage ensure/dispose policy for startup prewarm and UI navigation; removed duplicate page selection from Experience and ExperienceUI. Async Works root attachment checks the route request before publishing its scene node; Works and Cyprus controllers clean late texture/GLTF results after disposal; Lab now skips construction after a retired dynamic import. Chromium production preview passes Works and Contact repeated mount/release cycles and Lab lazy mount (3/3), and the Lab mount passes again after the stale-create guard. | Audit each stage's resource load/disposal overlap and retain per-stage guards only where a late result allocates resources; compare Vue async component behavior only at the wrapper-load boundary. |
-| Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` defines the case contract; route, sitemap and blog metadata have separate registries. Removed unused project camera coordinates and `slug`; case media now reuses each project's `detailTextureUrl`, removing four repeated paths. `Project` now lives beside `PROJECTS` instead of in Three-dependent `core/types.ts`, and the catalogue is readonly because callers only read it. | Decide whether project/card/case records should share one authored record only where fields really overlap. Preserve separate case prose and sitemap/blog sources with distinct meaning. Add closed-set checks only at real content boundaries. |
-| Performance and DX | `SceneHost.vue` and `Experience.ts` remain large mixed-responsibility modules. DOM reveals now live under `UI/`, and `Experience` no longer owns their events or cleanup. The source-mapped entry graph showed broad `chunk-core` pulled WebGPU/TSL code into static bootstrap imports, while `chunk-camera` pulled in the shared motion policy. A focused `chunk-bootstrap-core` group now isolates the shell's shared ports: recursive static imports fell from 398.86 KiB gzip across 8 files to 12.29 KiB across 4 files; neither `vendor-three` nor `chunk-experience` is statically reachable. The reveal utility also no longer imports Three for a scalar clamp. Production-preview Chromium/Firefox reveal and direct-hash checks pass 4/4. | Continue the remaining renderer and app lifecycle audit, then validate browser startup/network behavior and the full cross-browser/GPU acceptance. Do not expand manual chunk rules without source-map and transitive-graph evidence. |
-
-### Cross-cutting simplification evidence
-
-The audit must treat active code as a candidate too: for each behavior, identify
-whether Vue, Tres, Three, or an installed utility already owns the same state,
-rendering, lifecycle, scheduling, or DOM contract. Prefer deleting the project
-copy and adapting at the actual framework boundary; preserve custom code only
-for portfolio-specific behavior or a demonstrated compatibility gap. Track the
-before/after source size, dependency graph, and route/startup bundle when a
-change affects architecture or performance.
-
-### Repository metadata and verification gates
-
-`package.json` now names `la6-portfolio`, points at its GitHub repository and
-issue tracker, describes the Vue/Tres/WebGPU+TSL stack with WebGL2 fallback, and
-has searchable project keywords. `LICENSE` exists and matches the MIT package
-metadata. `README.md` documents proxy-safe `dev`, direct HMR mode, routes,
-known content placeholders and quality commands. The production `build` now
-includes Vue SFC/template checking before prerendering; plain `tsc` did not
-catch template identifier errors. Keep browser matrix and GPU checks separate
-because they need real browser/runtime evidence.
-
-As of 2026-10-02, installed Tres core/Cientos 5.9.2 match the latest official
-Tres release (2026-09-29); Three 0.186.1 and Vue 3.5.43 also match current npm
-stable tags. Vue 3.6 is still release-candidate tagged, so the stable line is
-retained pending a compatibility audit. Sources: [Tres releases](https://github.com/Tresjs/tres/releases),
-[Three on npm](https://www.npmjs.com/package/three), [Vue versions on npm](https://www.npmjs.com/package/vue?activeTab=versions).
-Latest local quality pass: `vue-tsc` build gate, ESLint, 106/106 unit tests,
-Three-stdlib compatibility check and production bundle budgets all pass. This
-does not replace the remaining Chromium/Firefox/WebKit and physical WebGPU
-acceptance rows below.
-
-The Works stage exposed a concrete mismatch: `StageRegistry` used dynamic import,
-but Vite's broad `World/` manual chunk rule folded `WorksPlaneStage` back into
-the shared world bundle, and `SceneHost.onReady()` waited for a Works root on
-every route. `WorksStageOwner` is now a Vue async component mounted on the first
-Works visit, then retained for the persistent canvas lifetime so its one-shot
-root readiness promise cannot point at an unmounted root after route re-entry.
-Stage instances and GPU leaves still follow route lifecycle. Specific Vite
-groups put the Works controller/installation behind that route. The production
-build confirms separate `WorksStageOwner` (2.78 kB) and `chunk-works-stage`
-(10.17 kB) outputs; initial app code now references the owner through a dynamic
-import. Shared Three remains a larger startup cost and is still under audit.
-
-The same stage path also marked values raw before assigning them to Vue
-`shallowRef`s. Vue's installed `RefImpl` stores shallow values directly; the
-marker was redundant. Removed that call and its unnecessary TypeScript cast.
-Works installation crossed two SFC boundaries through `computed(toRaw(...))`
-and `markRaw(...)`, although the source and props are already shallow. Both
-wrappers are removed; the child now watches the prop it owns. The existing
-scene-slot unit coverage still passes (3/3), and the production build compiles
-the templates and TypeScript successfully.
-
-The lazy lifecycle had one more representational layer: each owner's three
-mutable fields were exposed through paired getter/setter functions and then
-wrapped again as `slot.owner`. `LazyStageOwner` now stores `stage`, `promise`,
-and `request` directly; idempotent release and pending-cleanup tracking remain
-because route leave can race import, Tres mount, and asset loading. The focused
-lazy-stage/registry cases pass 7/7, and the production build remains green.
-
-The TSL handoff carried a second copy of every post parameter in
-`RenderPipeline._webgpuParamsCache`, despite `_params` already being the stable
-change-detection snapshot. `WebGPUPostPipeline.updateParams()` writes each
-channel synchronously into its uniform nodes and retains no params object, so
-the handoff now uses `_params` directly. This deletes one ten-field object and
-one full copy without changing dirty-only uniform updates. Production build
-still passes; the shared core chunk fell from 43.55 kB / 14.94 kB gzip to
-43.35 kB / 14.91 kB gzip.
-
-`DeviceCapability` stored four values derivable from authoritative `mode`,
-`tier`, and `isMobile`: `isRealWebGPU`, `postProcessing`, `maxDpr`, and the
-tier config used only for its intensity multiplier. These are now getters or
-direct tier lookups instead of synchronized fields. `AdoptedRenderer` also
-carried an unused `canvas`; recovery already uses the adopted renderer's DOM
-element, so that pass-through field is gone. Full unit coverage remains 94/94;
-the production build passes with a 43.16 kB / 14.87 kB gzip core chunk.
-
-`PostProcessingManager` duplicated its full display-to-target snap in both
-`setReducedMotion()` and crossfade completion. Both now call the canonical
-`copyPostParams()` helper, which copies tint tuple elements in place. This
-removes two field lists and avoids allocating replacement arrays in both snap
-paths. Full unit suite passes 94/94; build passes, and `chunk-experience`
-decreased from 123.10 kB / 34.56 kB gzip to 122.22 kB / 34.49 kB gzip.
-
-Exact `RenderPipeline` diffing and tolerant manager settling also listed every
-post channel independently. `postParamsMatch()` now owns that list while
-preserving the two comparison modes and allocating nothing on the update path.
-Added coverage for exact comparison, scalar/tint tolerance, and threshold
-crossing. The complete unit suite passes 96/96; build passes, with
-`chunk-experience` now 121.58 kB / 34.37 kB gzip.
-
-The content audit found `Project.viewPosition`, `viewLookAt`, and `slug` had no
-readers, while all four case media URLs repeated their owning project's
-`detailTextureUrl`. Removed the dead contract fields and made case media retain
-only case-specific alt/size/caption metadata. Also removed an unused related
-duplicate image path field. This is a source reduction and data ownership
-cleanup; route behavior remains unchanged.
-
-The only consumer of the `Project` contract imported it from a Three-dependent
-core types module. Moved the contract into `Data/Projects.ts`, next to its
-canonical records, and marked the catalogue readonly after confirming all
-consumers only index, map, find, or iterate it.
-
-Quality-gate audit found `build` ran `tsc` but omitted Vue template checking.
-That gap hid a mistaken dead-code finding: `CaseStudyView.vue`'s `related`
-computed is consumed by its template navigation. Restored it and changed the
-production build gate to call the existing `type-check:vue` script before
-prerender/build, so template errors fail the standard production command.
-
-The route-stage caller audit confirmed the Vue slot refs are the actual input
-to declarative `<primitive>` owners and `nextTick` lets Tres/Vue apply removals
-before controllers release GPU resources. They are not a second scene graph.
-It also exposed a delayed Works-root teardown race; `useSceneStages` now checks
-the host again after awaiting the root and does not call `stage.mount()` on a
-retired tree. A regression case resolves the root only after teardown begins.
-
-Renderer/post flow tracing found that `Renderer.update()` gated post crossfade
-and parameter handoff on real WebGPU alone, although both pipeline creation
-and render policy also require a non-low quality tier. The runtime now uses the
-existing `capabilities.postProcessing` decision, skipping unused CPU interpolation
-and parameter handoff on low-tier WebGPU. RenderPipeline keeps its live backend
-check because it validates the initialized Three backend independently of the
-capability policy.
-
-Recovery's `_recovering` boolean duplicated the active abort-controller slot:
-it was set beside that controller and cleared in the same `finally`. The active
-controller now gates overlap and frame updates, and teardown aborts it while
-letting recovery's own `finally` clear the slot after settlement. This keeps
-the renderer paused through async cleanup without a second state flag.
-Removed a constructor guard around `_disposed`, which is initialized to `false`
-before the constructor body and cannot be true at that point. Unit suite 94/94
-and production build pass; browser/GPU recovery remains hardware-gated.
-
-On renderer replacement, `Renderer` had already classified the new backend and
-chosen `plan.mode`, but `SceneHost` repeated `inspectUnifiedBackend()` and
-`planUnifiedBackend()` just to update Tres's DPR cap. The replacement port now
-passes the selected mode with the renderer, leaving classification with its
-owner and removing a second policy run. Full unit coverage passes 94/94; the
-build passes with unchanged chunk budgets. Physical WebGPU/context-loss recovery
-still needs hardware evidence.
-
-These findings are audit targets, not instructions to mechanically merge files.
-The intended reference from TvT is its practical `src/` organization around
-app entry, common code, components, pages, plugins, and stores, and its use of
-Vue/Tres declarations for reusable scene behavior. This portfolio does not
-need TvT's editor, plugin marketplace, multi-platform publishing or framework
-scaffolding. The target is a much smaller portfolio-specific implementation.
-TresJS 5.9.2 documentation describes Vue components/composables as its
-declarative scene model; local dependencies are Tres 5.9.2 / Three 0.186.1.
-Do not claim API compatibility beyond this installed matrix without checking
-the installed declarations/source and current upstream docs.
-
-| Area | Audited evidence and finding | Next action | Priority / acceptance |
-| --- | --- | --- | --- |
-| Vue/Tres scene graph | `SceneHost.vue`, `sceneHost.ts`, `useSceneStages.ts`, stage owner SFCs, `Experience.buildScene()`, and scene owner controllers show Vue/Tres owning persistent roots. Experience adopts those roots. No demonstrated duplicate stable scene hierarchy remains. | Keep this as baseline; change an owner only when a concrete duplicate or cleanup defect is demonstrated. | Guardrail: no runtime `scene.add/remove` for stable app nodes; one disposal owner per GPU resource. |
-| Scene coordination | `SceneCoordinator` owns route/story policy and the per-frame owner fan-out. Removed `SceneFramePass`, which was only constructed and forwarded to by the coordinator and had no separate disposal. `SceneTransformPass` remains for its pooled scroll-to-world algorithm/cache. Scene-stage getters for typography/halo/manifesto and the internal section-group getter have no external readers and are private. UI interactions previously fetched Baku, burst, carousel, and Works stage through coordinator getters; moved those reads to `ExperienceUIHost`, backed by Experience and StageRegistry, and deleted the forwarding getters. Experience frame policy reads its carousel owner directly. Replaced repeated Intro/Works/Contact slot literals with constants derived by `worldSlots.ts`; slot roots remain Vue-owned. Removed the coordinator camera setter that Experience called with the same persistent camera. `prewarmHomeMedia` uses Three's `WebGPURenderer.compileAsync()` directly; it remains optional. | Continue tracing every Experience/ExperienceUI coordinator call and `SceneTransformPass` context field; remove only proven pass-through state. | P1: every surviving class has a direct responsibility and a caller that benefits from its boundary. |
-| Experience composition root | `Experience.ts` initializes renderer, scene, feature UI, theme, motion, recovery, diagnostics and frame policy. Lifecycle-generation guards stop awaited mounts and the dev-only DevPanel import from creating owners after destroy. Teardown was synchronous at the app boundary even though `StageRegistry.dispose()` waits on Vue `nextTick`; app unmount could therefore dispose the backend before stage controllers released resources. `Experience.destroy()` returns an idempotent completion promise, publishes that promise before teardown callbacks can re-enter, and the app awaits it before Vue unmount. Completion covers route-stage + showreel teardown. The dev host test direct-loads Contact, waits for all three lazy stages and opens the showreel; their release traces precede backend/renderer disposal. The development runtime teardown hook is published before `Experience.init()`, and teardown stops callbacks immediately but waits for active `WebGPURenderer.compileAsync()` home prewarm before releasing scene owners and renderer pipeline. Five deterministic stale-continuation tests cover carousel mount, particle mount, coordinator init, home carousel texture initialization, and GPU prewarm disposal ordering. SceneHost now aborts software-adapter fallback init on unmount and awaits its completion before final renderer disposal; helper coverage proves late-aborted init releases only after settlement. | Continue the method-by-method error/teardown map, including recovery candidates and Tres's own pre-ready initialization; exercise the browser lifecycle boundary on supported hardware when available. Keep coordination here only where it is the single natural owner. | P1: each listener, timer, observer, renderer candidate and async continuation has one owner and terminal cleanup. |
-| Lazy route stages | `LazyStage.ts` centralizes real stale-import, mount, in-flight release and idempotent cleanup races; `StageRegistry.ts` supplies route-specific contracts. Experience awaits registry disposal before its caller unmounts SceneHost, so asynchronous stage release finishes while the backend remains alive. Vue `shallowRef` already preserves Three objects without proxies; removed an extra `markRaw`, duplicate `toRaw`/`markRaw` prop wrappers, and an unnecessary ref cast from the slot layer. Owner state is now a direct `stage`/`promise`/`request` object instead of accessor pairs nested under `.owner`; the release set/WeakMap still covers tested overlapping stale releases. The dev host gate observes Contact typography, Cyprus GLTF and halo stages reaching ready, then proves each reports release before backend disposal. Removed the one-use `onDispose` contract hook; the Cyprus registry method now owns its activation reset. Caller audit confirms the remaining generic create/load/attach/release hooks express distinct async and host ownership boundaries, so they stay. Current sizes: StageRegistry 356 lines, LazyStage 231. | Preserve the tested stale-create/load and Vue detach-before-dispose contract; audit route startup and async failure end-to-end rather than replacing this with an async component wrapper that cannot own controller GPU resources. | P1: route leave during create/mount/load releases exactly once and before backend disposal; no duplicate Vue reactivity wrappers. |
-| Route hash dispatch | `app/index.ts` had both `createSingleFrameOwner` generation/cancel state and `hashNavigationGeneration`; afterEach cancels the owned frame before starting the next poll, so the second stale token duplicated cancellation. Removed the redundant counter; direct and lazy-route hash flows pass in Firefox production browser. New Vitest coverage proves superseded frame callbacks and callbacks cancelled before execution are no-ops; deferred initial hashes dispatch only the newest request and stop after invalidation. Router error and Vue unmount both call the same cancellation owner. | Keep the cancellation helper tests aligned with those two integration cleanup call sites; assess the route hash flow during the full accessibility/navigation browser pass. | P1: no stale hash dispatch; no duplicate generation state. |
-| Bootstrap status | Removed false percentages/delay, the unconsumed reduced-motion dataset, and the ineffective state machine. Splash announces actual `INITIALIZING`, `PREPARING SCENE`, `READY`, and `SIGNAL LOST` states. The no-scene continuation no longer attempts an illegal state transition. | Continue startup ownership audit; keep phase labels tied to actual boot transitions. | No estimated completion percentage without measurable work progress. |
-| Build/dependency integration | Vite 8/Rolldown code-splitting rules and Three/Tres/Cientos compatibility aliases are pinned to observed ecosystem behavior; the stdlib checker guards its imported module set. Unified renderer initialization calls pinned `WebGPURenderer.init()` directly. Both `RenderPipeline` and `inspectUnifiedBackend` use Three's explicit backend markers, with tests asserting that unmarked backends stay unknown. Three's installed Tres teardown closes over its initial renderer instance; SceneHost separately owns and disposes the current recovery replacement after scene unmount, so recovery does not need an extra deferral wrapper. Direct dependency usage was traced; no unused package was proven. | Keep compatibility seams small; on upgrades verify peer compatibility, bundle duplication, lazy chunk placement and checker output. Do not delete shims based on apparent complexity. | P1: lockfile install, type check, stdlib check, build and budgets agree after upgrades. |
-| Static content and routes | Blog sources are consumed by the prerender script and multi-page Vite inputs; they are live build inputs even when not browser-imported. Runtime route manifest is separate from static blog routes by design. Origin normalization is shared by blog metadata and sitemap generation. The latest full build emits 11 sitemap URLs and no editor-generated routes. | Keep the source/output map current and confirm deployment consumes tracked `dist/` or runs the same build. | P1: each generated artifact has one source and deterministic build owner. |
-| CSS and UIkit | `_console-language.less`, `_import.less`, and component sheets contain large authored styling surfaces. LESS entry points compile; emitted selector overlap still needs classification. The former editor-only field rule and generated theme overrides are gone with the editor. A first reachability scan found `.uk-light .uk-heading-2xlarge` unused in app, static blog and content markup; removed that selector. Mixins and classes emitted from `entry-app.ts` or controller code were false positives and retained. | Continue selector reachability against authored HTML, Vue templates and blog markup; account for runtime-generated state classes before deleting. Review declaration overlap separately from responsive/keyframe variants. Check responsive, reduced-motion, focus and EN/RU variants after each slice. | P2: no selector removal without closed markup/input search and browser verification. |
-| Public media and budgets | Source-name reachability found `public/assets/projects/ebb-vibes/cover.webp` had no consumers; the project uses `cover-studio-v2.jpg` and `detail.webp`. Removed the unreachable file. `coming-soon.mp4` dominates transfer size (~5.27 MB); `ffprobe`: H.264 1920×1080 30 fps, AAC, 9.87 s, ~4.28 Mbit/s. Build budget reports media total/largest but does not fail on aggregate media size. | Inspect video delivery/use and quality target; compare a re-encode and browser support before replacing. Then choose per-file/aggregate budgets from measurements. | P2: savings retain visual/audio quality and browser support; budget failures are actionable. |
-| Release/deployment | CI checks and browser-tests; no deploy workflow or host config exists in repository. `dist/` remains tracked pending identification of its consumer. | Identify host, rewrite/history behavior, cache headers and whether host consumes committed `dist/` or builds source. Reproduce from a clean checkout. | P0 verify: documented release path matches deployment. |
-| Render loop and animation | Tres is the only scene render-loop driver; `RenderScheduler` controls its open/close window. Other RAF users are DOM text reveal, UIkit content refresh, route-hash polling and route announcement. | Keep the one scene loop. Inspect per-call cleanup and whether each DOM animation has an independent cancellation owner during unmount. | P1: no second scene loop or uncanceled callback after owner teardown. |
-| Cross-browser/GPU | Latest portfolio production suite covered Chromium and Firefox: 31 passed, 5 renderer-gated skips, and it exposed the DOM-only nav regression recorded above. After replacing dynamic component selection with explicit RouterLink/anchor branches, that full DOM-only route walk passed in both browsers (2/2). WebKit cannot launch locally: cached MiniBrowser is missing ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl libraries. `nvidia-smi` cannot communicate with a driver in this environment. | Run WebKit in CI/host with declared dependencies, then actual WebGPU/WebGL and context recovery on a machine where the NVIDIA driver is available. | P0 release evidence; software render results do not prove physical-GPU behavior. |
-
-### Audit execution order
-
-1. **Architecture map and cuts:** write the startup/router/scene/renderer
-   ownership maps from actual call sites. Identify every state mirror,
-   one-use adapter, registry, manager and event; mark keep/remove with caller
-   evidence. Do not implement more wrappers to produce the maps.
-2. **Collapse app and route state:** make Vue Router the page source; simplify
-   app bootstrap and the shell-to-app handshake; keep only the static no-JS /
-   pre-Vue responsibilities that are needed for useful content and splash.
-3. **Flatten runtime orchestration:** reduce `Experience` and the coordination
-   graph into a small composition root plus feature owners. Remove only proven
-   pass-through classes and duplicated route/activity/readiness state.
-4. **Unify renderer lifecycle:** assign canvas, renderer init, fallback,
-   recovery, device listeners and disposal to one owner. Keep Tres responsible
-   for its own sizing, camera registry and declarative scene integration.
-5. **Simplify post and feature code:** preserve TSL for WebGPU-specific effects;
-   remove overlapping parameter/capability/resource layers when their policy
-   can live at the renderer/feature owner. Audit per-frame allocations and
-   quality/DPR decisions using measurements.
-6. **Content and styling cleanup:** establish canonical project/blog sources,
-   remove duplicate declarations, dead CSS/assets and obsolete compatibility
-   code, then recheck route and generated-output inputs.
-7. **Release acceptance:** after structural work, verify production build,
-   Chromium/Firefox/WebKit, WebGPU and forced WebGL2 on available hardware,
-   keyboard/reduced-motion/accessibility, resource teardown and measured
-   startup/frame budgets. Update the plan with evidence and unresolved limits.
-
-### Immediate next slice
-
-Finish the post-migration lifecycle audit through mount failure, HMR, and
-explicit no-scene startup; verify the root-exposed async destroy contract under
-concurrent teardown and inspect for remaining boot state that Vue/app startup
-already owns. Then continue the method-level Experience and renderer recovery
-audit, preserving only guards tied to an observed async/resource race.
-
-## Phases
-
-Status: `active`, `queued`, or `done`. Mark a phase `done` only when its stated
-acceptance evidence exists.
-
-### 0. Repository and production baseline — active
-
-**Established:** repository/package identity matches `la6su/la6-portfolio`;
-installed matrix is Vue 3.5.43, Vue Router 5.3.1, Tres core/Cientos 5.9.2,
-Three 0.186.1, Vite 8.3.2, plugin-vue 6.0.9, TypeScript 6.0.3; installed
-dependencies are not tracked; generated blog inputs have known
-sources and build consumers; scripts/dependencies and Node/Bun boundaries were
-audited with no proven unused direct dependency. Package identity and links
-match the new repository. README describes the Vue/Tres, WebGPU and WebGL stack.
-CI now runs the production build explicitly and fails when tracked generated
-outputs drift from their sources; unit, type, lint, repo and browser checks
-remain enabled. TypeScript 7.0.2 is released, but the installed
-`typescript-eslint` peer range ends below 6.1.0, so a TypeScript 7 upgrade is
-not currently compatible with the lint matrix.
-
-The stable Vue release remains 3.5.43 (Vue 3.6 is still prerelease); Three r186
-and TresJS docs 5.9.2 match the installed matrix as checked on 2026-10-01.
-Do not perform blanket version bumps: verify Tres/Cientos/Three peer and API
-compatibility together, with the WebGPU/WebGL behavior matrix.
-
-**Remaining:** identify the deploy consumer for tracked `dist/` (79 tracked
-files in the last audit) before changing its tracking policy; prove clean
-checkout install/build and deployed static routing/cache behavior. The only
-local GitHub workflow, `.github/workflows/quality.yml`, runs quality and browser
-checks but has no deployment step. `public/` headers do not establish whether
-Cloudflare Pages, Netlify, or another consumer publishes the output.
-The artifact was tracked from the repository's initial commit and was stale;
-it has now been regenerated from the current source during the brand-asset
-cleanup and again from a forced frozen install after eliminating local install
-residue. Keep tracking it while the host is unknown, and inspect clean-build
-and served-route behavior separately.
-
-**Accept when:** frozen install, repository checks, production build/budgets,
-generated-route checks, and the actual deploy contract are reproducible.
-
-### 1. Declarative scene ownership — done
-
-**Established:** Tres/Vue declares camera, lights, environment, section roots,
-feature roots and many mesh leaves. Works cards, carousel cards, typography,
-ink, Cyprus, Lab, particles, environment, and showreel portal use owner SFCs.
-Controllers adopt Vue nodes; resource disposal has explicit owners. Section
-groups no longer synthesize fallback roots; Works metadata no longer uses a
-WeakMap attachment bag.
-
-**Constructor inventory:** a source-wide search found no imperative
-construction of stable app scene nodes and no runtime `scene.add/remove`.
-Remaining `new THREE.*` matches are materials, custom Lab geometry, or the
-showreel's offscreen `Scene`/`OrthographicCamera`. Cyprus's Vue `<primitive>`
-adopts the loaded glTF hierarchy. The similarly named `scene.add` in
-`WebGPUPostPipeline` is a TSL node operation, not a Three scene mutation.
-These remain algorithm/resource cases; moving them into the template would
-not simplify ownership.
-
-**Verified route/resource soak:** in local software Chromium, visited `/`,
-`/services`, `/works`, `/works/porsche-911-spider`, `/manifesto`, `/lab`, and
-`/contact` three times through SPA navigation. After the cold pass, per-route
-scene and renderer geometry/material/texture counts matched exactly between
-passes two and three; renderer/document canvas counts stayed 1/2; page errors
-were zero. The later passes include all warmed lazy owners. The focused Works
-and Contact route-cycle production tests also pass. Renderer program count was
-not exposed by this WebGPU wrapper (`null`); this proves stable enumerable
-owner counts on software rendering, not physical-GPU allocation behavior.
-
-**Disposal inventory:** reviewed each current `:dispose="null"` scene owner.
-Each suppresses Tres's recursive disposal because the resource is borrowed,
-shared/leased, or released by its stage/controller owner. Services and Lab
-separate SFC-owned geometry from stage-owned material; EnvSky borrows the
-pavilion material; CursorTrail releases its placeholder before Tres disposes
-the replacement ribbon geometry. Removing these opt-outs would duplicate or
-break the existing single-owner cleanup, so no source change was warranted.
-
-**Evidence:** the declared scene hierarchy and single-owner disposal paths have
-been audited, and warmed route cycles show a stable resource plateau. This
-phase does not claim hardware-specific GPU evidence; that remains phase 3.
-
-**Accept when:** scene hierarchy has one Vue/Tres owner, adopted nodes have one
-resource-disposal owner, and route mount/release cycles show no detached nodes,
-leaks, or duplicate construction.
-
-### 2. Runtime orchestration and lifecycle — active
-
-**Established:** Tres `delta` is forwarded through SceneHost; the duplicate
-`Experience/Time` clock is removed. Device capability is snapshotted outside
-camera updates. `Experience.destroy()` and async lazy-stage release have
-focused tests. The unused global error tracker is removed. Route-specific
-stage contracts remain separate from the generic stale-request lifecycle.
-The fullscreen behavior controller is released when its Vue host unmounts.
-`ExperienceUI` now owns that controller lifecycle directly; the forwarding
-`UIManager` and its bootstrap setup/cleanup are removed.
-Project controls initialize synchronously after the ready scene is built; the
-one-frame readiness RAF and duplicate in-flight promise state are removed.
-Initialization failures release a partially created overlay and carousel
-callback.
-The first-render readiness gate now resolves only after a successful frame;
-its timeout rejects into the existing boot error path instead of falsely
-enabling Enter on a blank canvas. Destroy cancels the wait with an explicit
-abort, and `Experience.init()` aborts when renderer/scene awaits return stale.
-`ExperienceRuntime` is now a persistent Vue child of AppShell and owns runtime
-construction, startup failure cleanup, renderer-recovery probe subscription,
-and teardown. SceneHost emits the adopted Tres host directly; no global
-one-shot ready promise sits between the component and its consumer. App
-unmount awaits Experience teardown before Vue removes the Tres resource tree.
-Dedicated tests cover first-frame success, timeout failure, and cancellation.
-Tres's existing reactive size manager and camera registry now own viewport
-observation, renderer sizing/DPR, and camera aspect. The project `Sizes`
-window listener, duplicate camera resize, and ordinary renderer resize writes
-were removed. Experience watches the Tres size refs for only the remaining
-project-owned stage transforms; device recovery applies current dimensions to
-the replacement renderer.
-The DOM-only boot no longer initializes scene-only UI lifecycle subscriptions;
-the unreferenced `twitter` product icon module was removed. Module-private
-pointer input is one ES-module instance and starts only in `Experience.init()`;
-it no longer installs a global listener during module evaluation. Cursor
-activity already wakes the shared loop, so the second Works-only pointer
-listener and RAF were removed; DrawTrail consumes the same Input state in that
-scheduler frame.
-
-**Next audit:** finish the method-by-method `Experience.ts` trace through
-`ExperienceUI`, `StageRegistry`/`LazyStage`, renderer replacement and app
-unmount after the composition move. Audit async cancellation, event listener
-registration, diagnostic globals, stage release ordering and boot failure
-exits. Confirm listeners, timers, observer, RAF, media, controls, pending
-imports and renderer candidates reach terminal cleanup on route leave, boot
-failure, recovery and Vue unmount; simplify remaining state only when that
-trace proves it redundant.
-The first-frame false-success and pending-cancel paths are fixed and covered by
-unit tests; Chromium and Firefox production suites confirm successful boot,
-renderer-failure UI, and host teardown resource ordering.
-The current lifecycle pass added generation checks immediately after the
-carousel and particle Vue mount awaits in `buildScene()`, and after the
-development-only DevPanel import. A stale initialization now stops before it
-constructs later scene controllers or republishes the runtime diagnostic
-global. Five deterministic lifecycle tests cover cancellation during carousel
-mount/init, particle mount, coordinator init and GPU prewarm. The additional
-DevPanel force-render regression tests cover loop wake, continuous activity,
-settling and post-destroy no-op behavior.
-
-**Accept when:** one composition root coordinates runtime; initialization,
-route changes, recovery, and teardown are idempotent and covered by tests;
-no abandoned async task can reattach resources.
-
-### 3. WebGPU, TSL, fallback, and scheduling — active
-
-**Established:** WebGPU and WebGL backend selection is capability-based;
-software/fallback policy and accessible no-GPU continuation exist. Demand
-rendering coalesces invalidations and pauses on hidden tabs. Renderer recovery
-is bounded and tested at policy/DOM boundaries; a device snapshot avoids
-per-frame capability detection. The Contact production test verifies that
-Cyprus downloads only the selected Draco wrapper/WASM pair; Three's loader
-module also emits its default standalone decoder assets, but that GLTF route
-does not request them.
-
-**Remaining:** exercise actual WebGPU and forced WebGL renderer recovery on
-physical GPU hardware. Local Chromium/Firefox production suites currently use
-software WebGL; an earlier SwiftShader context-loss scenario did not recover,
-so hardware recovery remains unresolved. Audit TSL graph/material ownership,
-shader compile/prewarm behavior, CanvasTexture parity, resize/DPR, idle draw
-counts, and route resource plateaus from measurements.
-
-**Accept when:** actual backend behavior is evidenced on supported hardware;
-no-WebGPU uses WebGL 2 where available; no-GPU retains accessible content;
-recovery/teardown work on a real device; settled scenes produce no unnecessary
-loop/draw or unbounded route resource growth.
-
-### 4. App shell, content, accessibility, and browser support — active
-
-**Established:** SPA routes, EN/RU metadata, standalone blog pages,
-browser history, unknown-route fallback, menu/modal keyboard focus, reduced
-motion, mobile overflow, and touch scrolling have production-browser coverage.
-Persistent console, fullscreen modal, showreel chrome, route transition, and
-story rail are Vue-owned.
-Behavior controllers keep media/rendering policies at their existing owners;
-Vue removes app-shell markup and UI listeners on unmount. Firefox is confirmed
-by the user and the local suite.
-
-**Established:** the story rail's active state comes from the existing
-`jlz:story-index-change` event; current page headings supply the rail's labels
-after translation. Keeping that small DOM projection avoids a second set of
-route-specific translated strings. Vue owns the rail root lifetime; the
-controller resets its inert/sheet state and listeners without removing it.
-
-**Established:** production-browser checks cover cold-entry section hashes
-deferred until runtime readiness and in-app hashes to lazy route sections
-after their DOM mounts. Both pass in Chromium and Firefox.
-
-**Established:** if the scene is explicitly disabled or renderer startup fails,
-Vue replaces cinematic controls with route links reused from `NAV_ITEMS`. The
-`?no-scene` path navigates to a lazy SPA route without a canvas in Chromium and
-Firefox. The opt-in both-APIs-disabled Chromium case also continues after its
-accessible boot gate; Three emits one `getSupportedExtensions` TypeError while
-constructing its unavailable WebGL fallback, which Tres reports and the app
-handles as boot failure. Scene-only project and showreel actions are omitted
-in this fallback; case-study and route links remain available.
-
-**Next audit:** finish focus, contrast, touch-target and resize/orientation
-walks across EN/RU routes. Chromium and Firefox production suites now pass on
-this host. Run Safari/WebKit in CI or on a host with WebKit's required system
-libraries; its cached binary cannot launch here.
-
-**Accept when:** route/content and accessibility essentials pass desktop and
-mobile production walks in Chromium, Firefox, and Safari/WebKit; the portfolio
-remains navigable without GPU initialization.
-
-### 5. Performance, dead code, and release audit — active
-
-**Established:** project-owned interpolation helpers were replaced with
-Three's `MathUtils`; unused device getters and compatibility alias, duplicate
-clock, Works WeakMap metadata, and global error tracker were removed. The
-preloaded Commissioner font is WOFF2. Large media was reduced and unreferenced
-assets removed after source/content searches. Frame-owner failures are no
-longer swallowed by the render scheduler. Historical comments about removed
-handlers, no-op methods, and effects were removed from active runtime files;
-they no longer describe current ownership or APIs. Current source slices
-passed Chromium and Firefox production suites, Vue type-check, lint, and 81
-unit tests.
-
-**Next audit:** finish the source-to-output inventory for generated CSS,
-routes, content generators, tests and package scripts (public runtime assets
-and TypeScript scripts are now source-referenced and checked). Audit authored
-LESS selector reachability across Vue, static HTML and blog output;
-inspect video codec/dimensions before selecting media budgets. Remove proven
-dead or duplicate paths in focused commits. Inspect route chunks, texture/font
-cost, CPU frame work and GPU allocations from measurements. Then do a fresh
-independent source review and record release evidence.
-
-**Audit finding:** removed stale comments referring to the deleted `src/pages`
-tree and prior imperative router/admin renderers. Current comments describe
-the Vue Router timing, hash dispatch, and reactive refresh behavior directly.
-The same pass removed references to deleted carousel helpers, scene adapters,
-and glass-cube render paths from their active owner modules.
-The package's unused `type-check` script duplicated the CI-authoritative
-`type-check:vue` entry with plain `tsc`; removed it so the Vue-aware check is
-the single documented type-check command.
-The ESLint ignore list also excluded every production/build script; removed
-that blind spot and configured Node/Bun globals for those files. Lint now
-covers the generators and release checks that run as part of the build.
-The executable TypeScript scripts were also outside `tsconfig.json`. Replaced
-their three Bun-only helpers with Node child-process/path/timer APIs and added
-`scripts/**/*.ts` to the existing Vue-aware type-check graph; this adds no
-runtime dependency and keeps Bun as the package/script runner. The expanded
-check found and fixed an unchecked source-map array access in
-`bundle-breakdown.ts`. Vue type-check, lint, all 77 unit tests, stdlib checks,
-and `git diff --check` passed at that checkpoint; the latest readiness-gate
-slice raises the unit total to 80.
-**Asset audit:** every public runtime media/font/Prism asset is referenced by
-the app or blog output. `favicon.svg` and `logo.svg` were identical;
-all generated and authored pages now use `logo.svg`, and the duplicate source
-asset/cache rule was removed. The manifest keeps one `any` icon entry because
-the mark has no maskable safe-zone padding. A successful production build
-regenerated the tracked release output; no static HTML/manifest/header file
-refers to the removed URL.
-
-**Accept when:** clean install/build, all deterministic checks, Chromium/
-Firefox/WebKit browser matrix, actual GPU/recovery evidence, route/resource
-stress, deployment contract, and hardware-specific performance results pass;
-no known dead active path or unowned persistent resource remains.
-
-## Current checkpoint — 2026-10-02
-
-Vue/Tres owns the application shell and stable scene graph. Project controllers
-retain story-to-world behavior, GPU algorithms, browser policies and lifecycle
-work that Tres does not supply. Recent committed cleanups removed duplicate
-runtime state, renderer sizing, pointer wake logic, and stale bootstrap/UI
-wrappers. The generated site origin now has one normalized source shared by
-blog and sitemap output. Route hash dispatch uses the RAF owner's
-cancellation instead of a second stale token. Experience checks its lifecycle
-generation after Vue mount awaits and after the dev-only DevPanel import.
-
-The repo is `la6-portfolio`; `dist/` remains tracked because the deployment
-consumer is unknown. `quality.yml` runs checks and browser tests but does not
-deploy. Do not change release artifact policy until the actual host contract is
-identified.
-
-**Latest verified:** 106 unit tests, Vue type-check, ESLint, production build and
-bundle budgets pass. The latest build reports 2.85 kB startup gzip, 353
-modules, 2.57 kB entry-app gzip, 18.58 kB Vue app gzip, 310.95 kB shared Three
-gzip, 53.84 kB UIkit gzip, and a 115.66 kB / 32.62 kB gzip Experience chunk.
-Moving runtime composition under Vue reduced entry-app from 3.08 kB to 2.57 kB
-gzip while keeping Three dynamically loaded. An override-origin build
-confirmed the generated blog and sitemap use the staging
-origin; the normal build restored production outputs. The latest combined
-Chromium/Firefox production run passed 33/40 tests; 7 opt-in renderer cases were
-skipped by their explicit guards. Route, keyboard/focus, touch, responsive
-overflow, localized metadata and init-error checks passed. Earlier independent
-production suites passed both browsers. After the renderer-owner and first-draw
-readiness changes, the dedicated startup/teardown gate passes in system
-Chromium (2/2). Its gate
-direct-loads Contact, observes its three lazy
-stages becoming ready, opens showreel, and asserts all four owners plus async
-scene teardown finish before backend disposal. The cached WebKit MiniBrowser cannot launch because its
-ICU 74, libxml2.so.2, Flite, WebKitGTK/JSC and libjxl dependencies are absent.
-`nvidia-smi` cannot reach a GPU driver here. Browser runs use software
-rendering and do not establish physical-GPU WebGPU, recovery or performance.
-The Vue-owned runtime migration passes the host teardown gate in Chromium
-(2/2), a full production Chromium route run (18 passed, 4 renderer-gated
-skips), and Firefox route run (17 passed, 3 renderer-gated skips). After the
-final synchronous splash-boot cleanup, focused Chromium direct-route and
-DOM-only checks pass (2 passed, 1 renderer-gated skip); unit suite remains
-106/106. WebKit and physical-GPU evidence are still open.
-After centralizing route-stage reconciliation, production-preview Chromium
-passes Works and Contact repeated route mount/release cycles and lazy Lab mount
-(3/3).
-After adding the Works async attach guard, the production-preview Works and
-Contact route-cycle tests pass again (2/2).
-After guarding the Lab import, its production-preview lazy mount passes in
-Chromium (1/1).
-
-The route-hash cancellation change and Experience stale-init guards pass build,
-type, lint and unit gates; focused cancellation tests plus the teardown browser
-gate cover the relevant cleanup boundaries. Five deterministic lifecycle tests
-retire Experience during carousel mount, particle mount, coordinator
-initialization, carousel texture initialization, and a pending GPU prewarm;
-they verify stale work stops and GPU owners remain alive until compilation
-settles. The development runtime destroy hook is available during init so app
-unmount can await that ordering. The loader now reports phases instead of
-estimated percentages; Firefox verified the ready status alongside direct and
-lazy hash navigation. The broad audit mapped runtime, app, build, styling and public media; the risks and remaining source audits are
-recorded in the matrix above. The latest renderer slice awaits Three r186's
-asynchronous disposal across init failure, fallback, recovery and Vue host
-teardown. Chromium host teardown passes. Firefox also passes induced WebGL recovery against production preview on the
-persistent canvas; local Chromium still fails before recreation because it
-does not restore the lost context, even with SwiftShader forced.
-Stage cleanup failures are logged in production while teardown continues. The
-remaining architecture audit and browser/GPU acceptance phases are active.
-The latest focused production-preview check also passes DOM reveal-after-splash
-and direct section-hash navigation in Chromium and Firefox (4/4). A measured
-source-map graph change reduced static bootstrap reachability from 398.86 KiB
-gzip / 8 files, including Three, to 12.29 KiB / 4 files, with no Three or
-Experience chunk in the transitive static graph. Three remains a dynamic scene
-dependency and its shared chunk is still 310.95 kB gzip.
-The route-owned carousel redraw change also passes the production-preview
-home story-rail and route-history scenarios in Chromium and Firefox (4/4).
-
-**Next actions:**
-
-1. Continue phase 2's runtime composition audit: trace `Experience.ts`,
-   `ExperienceUI`, `SceneCoordinator`, renderer recovery and startup failure;
-   remove boundaries that only forward state and preserve owners with real
-   algorithms or async resource lifecycles.
-2. Finish the phase 3 route-stage and WebGPU/TSL ownership review, including
-   route churn, recovery, disposal and idle-render behavior. Use hardware
-   evidence before changing backend policy.
-3. Close phase 0 only after identifying the deploy consumer and reproducing
-   clean install/build, routing and cache behavior.
-4. Continue phase 4's EN/RU keyboard, touch, resize and renderer-failure walk;
-   run WebKit in CI or a host with its declared libraries.
-5. Defer CSS/style cleanup, selector reachability, and broad codebase
-   minification to the later simplification phase requested by the user. Keep
-   generated output and public-asset checks in the production release audit,
-   but do not make them the current architecture workstream.
-
-**Verified after Admin/Builder removal, CSS reachability cleanup and runtime simplification:** 97 unit tests, Vue type-check, ESLint,
-stdlib check, production build and bundle budgets pass. The sitemap contains
-11 URLs; Vite builds 352 modules and emits no `/p` pages or editor chunks. The
-current cross-browser suite passed 31 scenarios with five opt-in renderer
-skips before exposing the DOM-only nav issue; the repaired DOM-only route walk
-passes in Chromium and Firefox. Route, blog, keyboard/focus, touch, responsive
-overflow and scene teardown checks passed in the prior scenarios.
-The dev Chromium gate passed the force-render loop test and the SceneHost
-owner-before-renderer teardown test. Production output contains no Tweakpane
-or DevPanel UI strings; startup gzip is 3.02 kB.
-
-**Navigation simplification slice:** app links use Vue Router's native link
-handling (including browser modifier clicks); removed the duplicate route
-path gate and document-wide SPA link interception. Home SSR prerender installs
-the actual router provider. Vue type-check, lint, stdlib check, unit suite
-(97/97), production build and focused Chromium route/fallback/hash checks
-(3/3) pass. DOM-only fallback links explicitly branch on app-page versus
-static-document destinations and now pass their full route walk in Chromium
-and Firefox (2/2).
-
-**Composition and TSL reduction:** `Experience` creates stable scene owners
-before `SceneCoordinator` and passes direct references; only lazy route stages
-remain registry lookups. `ExperienceUI` is created after scene composition and
-receives stable owners directly. Removed the never-authored post `border`
-channel and its dead TSL nodes/casts. Build/type-check/budgets, lint, stdlib
-check and 97/97 unit tests pass. Full route/resource/accessibility portfolio
-suite passed 31 scenarios with five opt-in renderer skips before the fallback
-fix; the two failed DOM-only scenarios were then replayed and passed in both
-Chromium and Firefox.
-
-**Lazy-stage viewport ownership:** Works and Cyprus now initialize from the
-Tres size refs already watched by Experience, rather than reading the browser
-global a second time. Vue type-check, ESLint, 105/105 unit tests, production
-build and bundle budgets pass; Vite emits 351 modules, Three is 310.95 kB gzip,
-and the Experience chunk is 32.68 kB gzip. Physical WebGPU/WebGL hardware
-acceptance remains open.
-
-**Route-policy ownership:** Scene route reconfiguration now lives in
-Experience, alongside the scene coordinator, lazy-stage registry and render
-scheduler. Page-section navigation now reaches the scene through Experience
-as well. ExperienceUI no longer imports or exposes SceneCoordinator; its route
-listener only closes the fullscreen overlay.
-Vue type-check, ESLint, 105/105 unit tests and production build/budgets pass;
-Firefox production-preview Works and Contact repeated route mount/release
-scenarios still pass (2/2). Chromium/WebKit and physical GPU acceptance remain
-open.
-
-**Post diagnostics simplification:** Removed DevPanel's render-target/pass
-counters, which depended on BloomNode's undeclared private arrays. The runtime
-snapshot now reports only whether the app-owned WebGPU graph is allocated;
-Three owns and disposes the internal Bloom targets. Vue type-check, ESLint,
-105/105 unit tests, production build and bundle budgets pass. Renderer visual
-parity and soak acceptance remain open on physical GPUs.
-
-**Contact typography scene ownership:** Replaced direct root visibility writes
-with a controller-owned reactive value bound through the SFC prop; removed the
-unneeded root reference handoff. Vue type-check, ESLint, 105/105 unit tests,
-production build/budgets and Firefox production Contact mount/release cycles
-pass (1/1).
-
-**Contact Cyprus scene ownership:** Fade, prewarm, and reduced-motion state
-now drives the Tres `visible` prop through one shallow reactive value; the
-controller still owns camera-local transform updates. Vue type-check, ESLint,
-105/105 unit tests, production build/budgets and Firefox repeated Contact
-route cycles pass (1/1).
-
-**Shared PointerInk scene ownership:** Contact halo and Manifesto wash share
-one declarative Vue owner. Removed its redundant static Object3D assignments
-and root lifecycle handoff; the behavior controller keeps only the animated
-mesh binding and reactive visibility state. Vue type-check, ESLint, 105/105
-unit tests, production build/budgets and Firefox repeated Contact route cycles
-pass (1/1).
-
-**JunniParticles scene ownership:** Visibility now flows from its shallow
-reactive state through the existing Tres prop; removed repeated bind-time
-name/frustum/visibility assignments. Kept instance matrix creation and count
-updates in the behavior owner. Vue type-check, ESLint, 105/105 unit tests,
-production build/budgets, Firefox home reveal and Contact route-cycle checks
-pass (2/2).
-
-**Services, Baku carousel, and Lab gamepad scene ownership:** Removed direct
-root visibility writes where the Tres SFC already binds `:visible`; controller
-state is now shallow-reactive. Removed duplicated static name writes from
-Baku/Lab node binding. Vue type-check, ESLint, 105/105 unit tests, compat guard,
-production build and bundle budgets pass. Firefox production Lab scene mount
-and direct entry to all public routes pass.
-
-**Works stage visibility ownership:** Works route activation now flows through
-the existing Tres `visible` prop; removed controller writes that bypassed it.
-Vue type-check, ESLint, 105/105 unit tests, production build/budgets and
-Firefox Works repeated mount/release (1/1) pass.
-
-**Transient effect visibility ownership:** DrawTrail now uses its existing
-`setVisible` behavior API from the transform pass and initializes hidden on
-adoption; removed the unused raw root getter. ParticleBurst's false prop was
-removed because its constructor and trigger lifecycle already own visibility.
-Vue type-check, ESLint, 105/105 unit tests, production build/budgets, Firefox
-home reveal and Works repeated mount/release checks pass (2/2).
-
-**WebGPU post graph lifetime:** Removed the unused scene/camera swap and
-rebuild path from `WebGPUPostPipeline`; the persistent Tres scene/camera remain
-stable, and renderer recovery already constructs a fresh pipeline. The TSL
-graph now builds once on first WebGPU render per renderer. Removed two
-pass-through static factories; `Renderer` directly constructs the pipeline.
-Vue type-check,
-lint, compatibility guards, unit suite and production build/budgets pass;
-physical WebGPU shader compilation and visual parity remain unverified because
-this environment cannot access the NVIDIA driver.
-
-**Lazy-stage contract audit:** Verified the generic lifecycle operations against
-their callers and race tests. Vue owns only scene-slot timing; it cannot replace
-controller import/load cancellation or GPU-resource release ordering. Removed
-the one-use Cyprus `onDispose` hook from `LazyStageContract` and moved its
-activation reset to `StageRegistry`. Lint, type-check, 105/105 unit tests,
-compatibility guard and production build/budgets pass.
-
-**Reduced-motion policy ownership:** Removed SceneCoordinator's duplicate
-preference snapshot. It and SceneTransformPass now read the Experience-owned
-live policy; coordinator still fans changes to scene owners. Added a regression
-test proving activity policy updates immediately from the canonical owner.
-Vue type-check, ESLint, 106/106 unit tests, compatibility checks,
-production build/budgets and the Firefox production reduced-motion route walk
-pass (1/1).
-
-**DevPanel ownership boundary:** Removed DevPanel's `Experience` type import
-and unsafe private-field casts. Experience now supplies only the debug values
-and actions the panel consumes; the morph control receives the real home
-carousel, fixing its previously inert button. Removed the one-line public
-navigation forwarder. Vue type-check and ESLint pass; all 106 unit tests pass.
-Production build and bundle budgets pass (351 modules; splash 2.85 kB gzip,
-Three chunk 310.95 kB gzip). Physical WebGPU compilation remains an open
-release acceptance item.
-
-**UIkit type boundary:** Centralized the inaccurate `@types/uikit` declaration
-for `UIkit.update()`, removing repeated unchecked casts from route mounting,
-console refresh, content reveal, and overlay mount. Vue type-check, ESLint,
-compatibility checks, and production build/budgets pass; bundle sizes remain
-unchanged.
-
-**SceneHost settle state:** Removed its local `resolved` boolean; duplicate
-ready/error callbacks now consult the existing one-shot sceneHost state. Vue
-type-check, ESLint, compatibility checks and production build/budgets pass
-(352 modules; splash 2.85 kB gzip, Three chunk 310.95 kB gzip).
-
-**Compat seam release guard:** Wired the existing Cientos/Three compatibility
-checker into the production `build` script, so upgrades fail early when the
-curated imports drift. Direct checker run passes against installed Tres 5.9.2
-and Cientos 5.9.2; the build now runs it automatically.
-
-## Follow-on goal policy
-
-Only after this plan's full release acceptance is evidenced, perform a fresh
-independent audit across application code, generated content, dependencies,
-assets, deployment, and runtime. Use/install additional skills only when a
-finding needs that domain review. Derive a new phased plan and autonomous goal
-from evidence, then repeat audit → plan → implementation → verification until
-production-quality architecture and performance gates pass. Do not create that
-follow-on goal before release acceptance; keep one canonical work queue.
+This is a target boundary, not a mandate to introduce those exact folder names.
+Avoid importing application composition into leaf scene behavior. Pass only
+the live values/actions a scene owner needs. Vue Router remains authoritative
+for route selection; Vue/Tres remain authoritative for declared ownership;
+Three owns GPU objects; every async load and GPU resource has one disposal
+owner. TSL stays as direct Three TSL graphs unless repeated product behavior
+proves a compact shared helper is simpler.
+
+## Ordered work
+
+### 1. Correct runtime ownership and startup races — active
+
+1. Fix the `router.isReady()` cancellation race. Define mount/unmount behavior
+   for cancellation before readiness, during mount, after runtime creation,
+   and on HMR; avoid a generic lifecycle state machine if a disposed guard and
+   awaited teardown suffice.
+2. Trace `app/index.ts` → `AppShell` → `ExperienceRuntime` → `SceneHost` on
+   success, renderer/init failure, no-scene mode, route change, and teardown.
+   Draw the actual owner sequence before moving code.
+3. Audit SceneHost's jobs against Tres 5.9.2's installed public APIs. Remove
+   duplicated loop/size/lifecycle work when Tres owns the same contract.
+   Retain WebGPU adoption/recovery seams only if Tres cannot express the
+   required behavior without compromising declarative scene ownership.
+4. Collapse `Experience`, `SceneCoordinator`, `StageRegistry`,
+   `SceneTransformPass`, and `ExperienceUI` only after recording each public
+   method's caller, state owner, and distinct algorithm. Remove pass-through
+   methods/state; keep independent transition math, route-lazy resources, or
+   frame policy only when their callers require them.
+
+**Exit evidence:** one documented ownership diagram; startup cancellation
+regression covered; no duplicate route authority or renderer/loop owner;
+failure and teardown paths release resources once; app and scene still work in
+no-scene and fallback modes.
+
+### 2. Reduce framework duplication and file-system noise
+
+1. For each wrapper/helper, record: direct caller, behavior it adds, library
+   API considered, and why deletion or delegation is safe. Apply this to
+   readiness slots, lazy-stage utilities, event-bus routing, custom scheduling,
+   disposal helpers, device detection, and compatibility shims.
+2. Remove verified duplicate state and forwarding first; then remove dead
+   exports/imports/config/comments and obsolete test scaffolding that exists
+   only for removed abstractions. Do not preserve code just to keep a test
+   green.
+3. Move unit tests out of `src/` to a predictable `tests/unit/` tree while
+   preserving feature grouping. Update Vitest include/aliases and lint/TS
+   inclusion deliberately. Keep browser specs in `tests/e2e/` (or current
+   root `tests/` if moving adds churn); choose one convention and document it.
+   Tests remain close by naming/grouping, not interleaved with production
+   modules.
+4. Reassess `core` and `Experience` as names: move only modules whose domain
+   becomes clear after ownership decisions. Avoid a broad rename-only commit.
+
+**Exit evidence:** all tests live outside runtime source; no stale references
+or test-only production hooks; every retained utility has a distinct use;
+source and bundle deltas are recorded against the audit baseline.
+
+### 3. Simplify scene and WebGPU/TSL implementation
+
+1. Inventory every scene owner and classify it as declarative stable geometry,
+   loaded asset, algorithmic TSL object, or route-lazy feature. Prefer Vue/Tres
+   declarations for stable hierarchy/props; use imperative Three only for
+   generated geometry, custom algorithms, offscreen rendering, or APIs not
+   represented by Tres.
+2. Compare each Cientos/control/material/loader/lifecycle use with its current
+   Tres/Three equivalent. Remove hand-built equivalents only after behavior
+   and lifecycle parity are understood.
+3. Audit render loop ownership and demand invalidation. Ensure one scheduler
+   owns frame production; avoid component-local RAFs where Tres loop policy
+   fits. Keep continuous work only for visible animation and ensure idle scenes
+   stop requesting frames.
+4. Audit renderer, post-processing, TSL parameters, and fallback. Delete
+   duplicated backend/capability state and graph plumbing; keep bespoke TSL
+   effects. Verify WebGL2 fallback never imports or executes WebGPU-only
+   operations. Avoid premature shader abstraction.
+5. Audit allocation in frame/update methods and GPU lifetime per scene owner.
+   Remove repeated allocations, redundant traversals and defensive branches
+   that the actual input contract rules out. Do not optimize by guesswork.
+
+**Exit evidence:** each scene object has a clear Vue/Tres or algorithmic owner;
+one frame policy; TSL output and fallback are exercised in supported browsers;
+no resource leak across route cycles; representative GPU captures or measured
+frame/allocation evidence for claimed performance improvements.
+
+### 4. Production boundary and release cleanup
+
+1. Review accessibility/semantic DOM, route errors, no-renderer experience,
+   responsive layouts, reduced motion, locale switching, and direct-entry
+   routes as product behavior, not incidental test assertions.
+2. Validate scripts, generated/prerendered blog, sitemap, content/media paths,
+   and release artifact policy. Identify the real deployment consumer before
+   changing tracked `dist/` or proxy/HMR behavior.
+3. Remove dead styles/components and minify UI only after architecture work;
+   this is a separate scope from scene/runtime ownership.
+4. Re-audit the full tree for old/new parallel implementations, duplicated
+   library behavior, unused dependencies, stale docs, and unexplained build
+   shims. Update this plan from findings; stop when remaining complexity has
+   a named product/technical owner and evidence.
+
+**Exit evidence:** clean install and production build; automated route/lifecycle
+coverage in available engines; Firefox/Chromium/WebKit evidence as available;
+real WebGPU/TSL verification on supported hardware; fallback verified; no
+unexplained compatibility seam; deployment, content, and accessibility limits
+are explicit.
+
+## Working rules
+
+- Read repository instructions and affected callers before changing ownership.
+- Make complete architectural slices, not line-count-only splits. Remove the
+  obsolete path in the same change that replaces it.
+- Use checks to verify changed behavior; do not treat a passing suite as proof
+  that the current architecture should stay.
+- Do not claim browser/GPU/performance evidence beyond what was exercised.
+- Update this document when an exit condition is met or audit evidence changes.
+- Commit coherent completed slices with a message that says what ownership or
+  duplication changed.
+
+## Current status
+
+Phase 1 is active. Startup cancellation now has a guard; add a focused
+regression case, then trace runtime ownership and remove duplicated
+policy/wrappers. Phases 2–4 are pending audit evidence; no production-ready
+claim is made. Keep this status current after each completed slice.
