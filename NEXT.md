@@ -74,17 +74,18 @@ Current known facts:
   from Three/browser support. Playwright Firefox exercised WebGL2; WebKit
   remains unverified.
 - Three's WebGPU entry and the app's Three imports are aliased to one dev core.
-  A previous Firefox cold-start check observed one core, but the user now
-  reports `Multiple instances of Three.js` again. Treat duplicate-core
-  elimination as unverified until a fresh Firefox startup and lazy Cientos
-  route activation both stay on one optimized core; inspect optimizer cache
-  invalidation before adding more compatibility code.
+  After clearing stale Vite optimizer state, a fresh headless Firefox dev run
+  loaded `/lab` and lazy `@tresjs/cientos`; it requested one `three.core` URL
+  and did not emit `Multiple instances of Three.js`. The backend was
+  `WebGLBackend` because headless Firefox had no WebGPU. The user's earlier
+  physical Firefox log did report the duplicate, so repeat the check there
+  after a full reload before treating that report as resolved.
 - This workspace had 738 abandoned `.vite/deps_temp_*` directories (14 GB)
   and no running Vite process. The temporary optimizer caches were removed.
   The two isolated SSR prerender servers now disable Vite's browser dependency
   optimizer; a full production build leaves zero `deps_temp_*` directories.
-  The reported Firefox duplicate-core warning still needs a browser runtime
-  check; the SSR cache cleanup alone does not prove it is fixed.
+  The fresh browser run above is the evidence for the duplicate-core check;
+  the cache cleanup alone did not establish that result.
 - Current direct runtime pins match the latest releases checked on
   2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
   Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
