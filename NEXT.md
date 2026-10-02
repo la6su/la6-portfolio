@@ -172,6 +172,11 @@ preserve custom policy only when code or measurements prove the difference.
   graph is allocated. The library owns BloomNode's internal targets and its
   disposal. This keeps diagnostics from coupling production code to Three's
   private representation.
+- The compat seams for Tres/Cientos are required: `bun run check:stdlib`
+  confirms all 28 three-stdlib symbols and five curated WebGPU compatibility
+  symbols are live for the pinned dependency graph. Since drift can break the
+  production module graph or leave dead shim exports after a dependency bump,
+  wired this existing checker into `build` before prerendering and bundling.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -945,6 +950,11 @@ snapshot now reports only whether the app-owned WebGPU graph is allocated;
 Three owns and disposes the internal Bloom targets. Vue type-check, ESLint,
 105/105 unit tests, production build and bundle budgets pass. Renderer visual
 parity and soak acceptance remain open on physical GPUs.
+
+**Compat seam release guard:** Wired the existing Cientos/Three compatibility
+checker into the production `build` script, so upgrades fail early when the
+curated imports drift. Direct checker run passes against installed Tres 5.9.2
+and Cientos 5.9.2; the build now runs it automatically.
 
 ## Follow-on goal policy
 
