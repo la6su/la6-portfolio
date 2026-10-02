@@ -393,6 +393,10 @@ for its dialog name and close/previous/next controls. Those labels now have EN
 and RU entries. The shared translator applies marked `aria-label` attributes
 alongside text and placeholders, so persistent console, menu, contact and home
 carousel controls follow the active locale without per-component listeners.
+The Works archive and Services' two SVG illustrations use the same localized
+attribute path; Works project apertures expose their visually hidden project
+title directly as the button name instead of overriding it with an English
+prefix.
 
 Chromium visual QA reproduced the inverse-theme contrast issue on `/works` and
 `/manifesto`: polarity classes and foreground tokens changed, but the HTML

@@ -74,7 +74,6 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
             type="button"
             class="jlz-works-aperture"
             @click="open(room.projectIndex)"
-            :aria-label="`Open project: ${PROJECTS[room.projectIndex]!.title}`"
             data-cursor="view"
           >
             <span class="uk-hidden-visually">{{ PROJECTS[room.projectIndex]!.title }}</span>
@@ -91,6 +90,7 @@ const open = (idx: number): void => eventBus.emit('jlz:open-project', { idx })
             v-if="index === WORKS_ROOMS.length - 1"
             class="jlz-works-archive"
             aria-label="Project archive"
+            data-i18n-aria-label="works.archiveLabel"
           >
             <span class="jlz-works-discipline" data-i18n="works.archive">The archive</span>
             <button

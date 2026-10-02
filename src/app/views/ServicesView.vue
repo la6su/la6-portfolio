@@ -128,6 +128,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                     class="jlz-service-runtime__field"
                     role="img"
                     aria-label="A responsive signal travelling through a realtime scene"
+                    data-i18n-aria-label="services.signalDiagram"
                     uk-scrollspy="cls: uk-animation-scale-up; repeat: true"
                   >
                     <svg viewBox="0 0 320 180" aria-hidden="true" focusable="false">
@@ -209,6 +210,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                   <div
                     class="jlz-service-motion__words"
                     aria-label="Motion sequence"
+                    data-i18n-aria-label="services.motionSequence"
                     uk-scrollspy="target: > span; cls: uk-animation-slide-bottom-small; delay: 110; repeat: true"
                   >
                     <span data-i18n="services.motionRealtime.word1">Context</span>

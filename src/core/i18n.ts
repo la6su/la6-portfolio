@@ -113,6 +113,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'services.interactiveDev.caption': 'Responsive input. Clear journeys. Measured performance.',
     'services.interactiveDev.detail':
       'One scene, one demand signal, one measurable reason to move.',
+    'services.signalDiagram': 'A responsive signal travelling through a realtime scene',
+    'services.motionSequence': 'Motion sequence',
     'services.motionRealtime.title': 'Motion',
     'services.motionRealtime.lead': "Show how the product works and why it's worth choosing.",
     'services.motionRealtime.word1': 'Context',
@@ -147,6 +149,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'Pro193: an online store for tall men, centred on fit, clothing and a clear path to product.',
     'works.enterRooms': 'Explore the four rooms',
+    'works.archiveLabel': 'Project archive',
     'works.section1.title': 'Motion & CG',
     'works.section2.title': 'Motion & CG',
     'works.section3.title': 'Product website',
@@ -313,6 +316,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Быстрый отклик. Понятный путь. Измеримая производительность.',
     'services.interactiveDev.detail':
       'Одна сцена, один сигнал спроса, одна измеримая причина двигаться.',
+    'services.signalDiagram': 'Отзывчивый сигнал в интерактивной сцене реального времени',
+    'services.motionSequence': 'Последовательность движения',
     'services.motionRealtime.title': 'Моушн',
     'services.motionRealtime.lead': 'Показать, как работает продукт и почему его выбирают.',
     'services.motionRealtime.word1': 'Контекст',
@@ -346,6 +351,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.room4.context':
       'Pro193: интернет-магазин для высоких мужчин, построенный вокруг посадки, вещей и ясного выбора.',
     'works.enterRooms': 'Войти в четыре комнаты',
+    'works.archiveLabel': 'Архив проектов',
     'works.section1.title': 'Моушн и CG',
     'works.section2.title': 'Моушн и CG',
     'works.section3.title': 'Продуктовый сайт',
