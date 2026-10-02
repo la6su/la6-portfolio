@@ -84,6 +84,8 @@ or preserve a wrapper solely because a test currently encodes it.
   now declares orbit scale/rotation/position as Tres props instead of mutating
   mounted meshes, and `CinematicLights`, `GroundPlane`, and `EnvSky` use the
   same declarative props for fixed light/object positions and orientation.
+  `WorksInstallation` also declares its fixed trace position as a prop while
+  retaining matrix generation for its genuinely algorithmic instance layout.
   This removes setup-only Three `Vector3`/`Euler` instances and keeps imperative
   ownership for the stage's live animation. Vue type-check and full production
   build passed; this is a narrow slice, not completion of the scene audit.
@@ -188,7 +190,7 @@ source and bundle deltas are recorded against the audit baseline.
    loaded asset, algorithmic TSL object, or route-lazy feature. Prefer Vue/Tres
    declarations for stable hierarchy/props; use imperative Three only for
    generated geometry, custom algorithms, offscreen rendering, or APIs not
-   represented by Tres. **In progress:** static transforms in four owners now
+   represented by Tres. **In progress:** static transforms in five owners now
    live in Tres props; continue the inventory before claiming coverage.
 2. Compare each Cientos/control/material/loader/lifecycle use with its current
    Tres/Three equivalent. Remove hand-built equivalents only after behavior

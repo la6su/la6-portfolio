@@ -23,7 +23,6 @@ const arcRotations: ReadonlyArray<readonly [number, number, number]> = [
   [0.84, -0.6, 3.6],
 ]
 const instance = new THREE.Object3D()
-const tracePosition = new THREE.Vector3(0, 0, 0.055)
 let mountedNodes: WorksInstallationNodes | null = null
 
 function nodes(): WorksInstallationNodes | null {
@@ -81,7 +80,7 @@ onBeforeUnmount(disposeGeometry)
     <TresMesh
       ref="trace"
       :material="props.installation.signalMaterial"
-      :position="tracePosition"
+      :position="[0, 0, 0.055]"
       :dispose="null"
     >
       <TresTorusGeometry :args="[1.03, 0.006, 5, 100, Math.PI * 1.45]" />
