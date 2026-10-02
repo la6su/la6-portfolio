@@ -87,6 +87,11 @@ or preserve a wrapper solely because a test currently encodes it.
   while `mountVueApp()` awaited `router.isReady()`, after which the continuation
   mounted the app anyway. A disposed guard now prevents that remount. A focused
   regression case remains needed; no automated result is claimed yet.
+- Removed a second route-mount flag from `useJlzPage`: its module-level
+  `mountedOnce` survived Vue app teardown, while `app/index.ts` already owns
+  and clears `window.__jlzRouterReady`. The route composable now reads that
+  single app-lifecycle fact, avoiding a stale first-route announcement if the
+  app is mounted again.
 - Known release-evidence gaps from prior work: WebKit could not launch in the
   current environment; actual physical WebGPU/TSL compilation and visual
   output have not been demonstrated on a real GPU. Recheck environment and
@@ -222,7 +227,8 @@ are explicit.
 ## Current status
 
 Phase 1 is active. Startup cancellation now has a guard; its focused
-regression case and runtime ownership trace remain. Phase 2 is active: unit
+regression case and runtime ownership trace remain. A duplicate route-mount
+flag has been removed. Phase 2 is active: unit
 tests have been relocated and redundant per-frame config lookups removed; next
 continue the ownership audit before selecting a broader collapse.
 Phases 3–4 are pending audit evidence; no production-ready claim is made.

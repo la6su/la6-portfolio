@@ -224,12 +224,7 @@ export async function mountVueApp(): Promise<void> {
     if (appMounted) app.unmount()
     appMounted = false
     destroyAppShell = null
-    if (
-      (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady
-    ) {
-      delete (window as unknown as { __jlzRouterReady?: boolean })
-        .__jlzRouterReady
-    }
+    delete window.__jlzRouterReady
     mounted = false
     unmountMountedVueApp = null
   }
@@ -248,8 +243,7 @@ export async function mountVueApp(): Promise<void> {
     }
     destroyAppShell = () => shell.destroyExperience()
     appMounted = true
-    ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady =
-      true
+    window.__jlzRouterReady = true
   } catch (error) {
     await unmountMountedVueApp()
     throw error

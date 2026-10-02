@@ -18,9 +18,6 @@ import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
 
-  // Announce only subsequent page mounts, not the initial route render.
-let mountedOnce = false
-
 export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
   let idleHandle: number | null = null
   let announcerRafHandle: number | null = null
@@ -52,7 +49,10 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     }
     applyTranslations()
     applyMetaTags(page)
-    if (mountedOnce) {
+    // The app owner publishes this only after its initial route has mounted.
+    // Reading that lifecycle state avoids a second module-global flag that
+    // survives app teardown and mislabels the first route after remount.
+    if (window.__jlzRouterReady) {
       const announcer = document.getElementById('jlz-route-announcer')
       if (announcer) {
         announcer.textContent = ''
@@ -82,6 +82,5 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   onMounted(() => {
     mounted = true
     postRender()
-    mountedOnce = true
   })
 }
