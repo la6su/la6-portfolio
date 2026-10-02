@@ -609,6 +609,16 @@ background and body scroll state. After selecting RU with the dialog closed,
 the close and playback labels rendered in Russian. No page errors appeared.
 This closes the showreel keyboard/focus and locale gate; other menu/route
 keyboard paths and screen-reader behavior remain open.
+Production Chromium at 390×844 with reduced motion enabled reported splash
+spiral animation `none`, final opacity `1`, SVG transition `0s`, and
+`loader-exit` duration `0.001s`; an actual DOM click removed the splash in
+205 ms. The `/services` in-app navigation completed with the transition overlay
+idle and scroll behavior `auto`, with no page errors. On `/lab` with a fine
+pointer, `data-lab-camera` stayed absent under reduce, appeared when the
+preference changed to no-preference, then disappeared when reduce was restored;
+canvas pointer input followed that policy. This verifies the shell and Lab
+control gates in the production browser path; visual reduced-motion parity of
+the scene animation owners on supported GPU hardware remains open.
 The persistent console's aria labels use its reactive locale state directly:
 its full renderer chrome can mount after `useJlzPage`'s initial document
 translation pass, so relying on static translation markers there could leave a
@@ -629,11 +639,11 @@ The default sandbox cannot bind `127.0.0.1:4173`; an approved loopback-only
 preview session enabled the HTTP checks above and was stopped afterward. The
 CUA browser kernel could not start (`bwrap` bad descriptor for `.aws`); manual
 Chromium was used for inverse-theme interaction instead. Showreel keyboard/
-focus and EN/RU labels are confirmed on production preview; reduced-motion,
-client takeover, remaining route keyboard/focus, and route transitions still
-need focused browser review. WebGPU/TSL and WebGL2 backend/recovery need a
-supported browser and GPU runtime; source/build success does not close those
-gates.
+focus and EN/RU labels, shell reduced-motion transitions, and the Lab camera
+preference gate are confirmed on production preview. Client takeover, remaining
+route keyboard/focus, and other route transitions still need focused browser
+review. WebGPU/TSL and WebGL2 backend/recovery need a supported browser and GPU
+runtime; source/build success does not close those gates.
 On 2026-10-02, the cached headless Firefox process launched but returned
 `NS_ERROR_OUT_OF_MEMORY` while navigating to the production preview, so the
 current no-scene/manual interaction check could not run. The loopback preview
@@ -868,6 +878,11 @@ home links then pointed to `/ru/works` and `/ru/`. Opening Works kept the RU
 title and content, with no page errors. Build, lint, and `git diff --check`
 pass. The actual reverse-proxy route rewrites and deployed responses still
 require validation through the ingress.
+On 2026-10-02, the current local `dist/` was checked against every URL in its
+generated sitemap: all 30 entries resolved to a generated HTML file with the
+expected language, non-empty localized title/description, self-canonical,
+`og:locale`, and `en`/`ru`/`x-default` alternates. No RU SEO implementation gap
+was found; deployed responses remain an ingress acceptance gate.
 Manual production Chromium with SwiftShader produced Three's
 `WebGPU is not available, running under WebGL2 backend` fallback warning, then
 created a WebGL2 context on `.jlz-scene-canvas`. Across Home → Works →
