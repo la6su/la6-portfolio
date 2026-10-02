@@ -59,6 +59,12 @@ Current known facts:
 - Cold Vite startup previously loaded two Three cores after late dependencies
   entered optimization. `BloomNode` and `tweakpane` are included up front; a
   Firefox cold-start check observed one Three core and no duplicate warning.
+- Current direct runtime pins match the latest releases checked on
+  2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
+  Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
+  `vue-tsc` path is not established; keep the verified TypeScript 6 toolchain
+  until upstream support is confirmed. `bun outdated` could not reach npm due
+  to DNS, so transitive dependency freshness is still unverified.
 
 ## Work queue
 
@@ -116,6 +122,11 @@ styles, docs, and shims once their consumers are verified. Re-scan the complete
 tree for parallel old/new implementations, dead code, stale claims, and
 unnecessary abstractions. Update this plan from findings and stop when each
 remaining complexity has a concrete product or platform reason.
+
+The existing Prettier scripts have no repository config or generated-file
+ignore list; the default project-wide check flags authored files and generated
+artifacts. Define a safe formatting contract after architecture changes so a
+format command cannot rewrite build output or impose Prettier defaults.
 
 Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
