@@ -11,7 +11,7 @@
  *                              surfaces).
  */
 
-@import '../console-theme/mixins.less';
+@import "../console-theme/mixins.less";
 
 // ── Trigger: [ ▶ SHOWREEL ]_ ──
 .jlz-showreel-btn {
@@ -71,7 +71,7 @@
   bottom: 0;
   left: -40%;
   width: 40%;
-  content: '';
+  content: "";
   background: linear-gradient(
     100deg,
     transparent,
@@ -118,7 +118,7 @@
   background: transparent;
 }
 
-.jlz-showreel-console[data-state='open'] {
+.jlz-showreel-console[data-state="open"] {
   display: block;
 }
 
@@ -136,12 +136,32 @@
   .jlz-meta-text(0.62rem; 0.18em; 600);
 }
 
+.jlz-showreel-console__close {
+  position: absolute;
+  top: 0.85rem;
+  right: clamp(1rem, 2vw, 2rem);
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
+  cursor: pointer;
+  pointer-events: auto;
+  .jlz-meta-text(0.62rem; 0.14em; 600);
+}
+
+.jlz-showreel-console__close:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-phosphor);
+  outline-offset: 3px;
+}
+
 // Phosphor signal dot — breathes while the console is open.
 .jlz-showreel-console__signal {
   width: 0.34rem;
   height: 0.34rem;
   background: var(--jlz-color-signal-phosphor);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--jlz-color-signal-phosphor) 80%, transparent);
+  box-shadow: 0 0 8px
+    color-mix(in srgb, var(--jlz-color-signal-phosphor) 80%, transparent);
   animation: jlz-showreel-signal 2.2s var(--jlz-ease-state) infinite;
 }
 

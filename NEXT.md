@@ -320,8 +320,12 @@ routes to the emitted `.html` files.
 
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s
-while the authored visible sections remain unchanged. Continue checking focus
-and landmark behavior in a browser.
+while the authored visible sections remain unchanged. Showreel was also missing
+dialog semantics and sent focus to its now-inert launcher while leaving the page
+content available behind the modal. It now has a labelled modal dialog, a
+localized close button, a one-control focus trap, inert/hidden background
+content with prior-state restoration, and focus return. Lint and the production
+build pass; browser keyboard/screen-reader verification remains open.
 
 Chromium visual QA reproduced the inverse-theme contrast issue on `/works` and
 `/manifesto`: polarity classes and foreground tokens changed, but the HTML

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { t } from "../core/i18n";
 import type { ShowreelState } from "../Experience/World/ShowreelTheater";
 import { eventBus } from "../core/EventBus";
 import { noSceneRequested } from "../core/sceneMode";
@@ -10,7 +11,13 @@ const state = ref<ShowreelState>({
   time: 0,
   duration: 0,
 });
+const closeButton = ref<HTMLButtonElement | null>(null);
 let restoreFocus: HTMLElement | null = null;
+let backgroundState: {
+  node: HTMLElement;
+  inert: boolean;
+  ariaHidden: string | null;
+} | null = null;
 const enabled = !noSceneRequested;
 const announcement = ref("");
 const unsubs: Array<() => void> = [];
@@ -55,7 +62,16 @@ function onKeydown(event: KeyboardEvent): void {
     event.preventDefault();
     event.stopImmediatePropagation();
     eventBus.emit("jlz:showreel-close");
-  } else if (event.key === " ") {
+  } else if (event.key === "Tab") {
+    event.preventDefault();
+    closeButton.value?.focus({ preventScroll: true });
+  } else if (
+    event.key === " " &&
+    !(
+      event.target instanceof HTMLElement &&
+      event.target.closest("button, a, input, select, textarea")
+    )
+  ) {
     event.preventDefault();
     event.stopImmediatePropagation();
     eventBus.emit("jlz:showreel-toggle-play");
@@ -81,16 +97,41 @@ function onCloseMediaLayer(): void {
   if (state.value.phase !== "closed") eventBus.emit("jlz:showreel-close");
 }
 
+function setPageContentInert(inert: boolean): void {
+  if (inert) {
+    if (backgroundState) return;
+    const node = document.getElementById("spa-content");
+    if (!node) return;
+    backgroundState = {
+      node,
+      inert: node.inert,
+      ariaHidden: node.getAttribute("aria-hidden"),
+    };
+    node.inert = true;
+    node.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  if (!backgroundState) return;
+  const { node, inert: wasInert, ariaHidden } = backgroundState;
+  node.inert = wasInert;
+  if (ariaHidden === null) node.removeAttribute("aria-hidden");
+  else node.setAttribute("aria-hidden", ariaHidden);
+  backgroundState = null;
+}
+
 function showChrome(): void {
   eventBus.emit("jlz:close-nav");
   eventBus.emit("jlz:fullscreen-change", { open: true });
   document.body.classList.add("jlz-media-layer-open");
-  document.getElementById("jlz-menu-launcher")?.focus({ preventScroll: true });
+  setPageContentInert(true);
+  void nextTick(() => closeButton.value?.focus({ preventScroll: true }));
 }
 
 function hideChrome(): void {
   eventBus.emit("jlz:fullscreen-change", { open: false });
   document.body.classList.remove("jlz-media-layer-open");
+  setPageContentInert(false);
   restoreFocus?.focus({ preventScroll: true });
   restoreFocus = null;
 }
@@ -116,6 +157,7 @@ onBeforeUnmount(() => {
   if (state.value.phase !== "closed") {
     eventBus.emit("jlz:fullscreen-change", { open: false });
     document.body.classList.remove("jlz-media-layer-open");
+    setPageContentInert(false);
   }
 });
 </script>
@@ -126,6 +168,10 @@ onBeforeUnmount(() => {
     id="jlz-showreel-console"
     class="jlz-showreel-console"
     :data-state="state.phase === 'closed' ? 'closed' : 'open'"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="jlz-showreel-title"
+    tabindex="-1"
     data-no-magnetic
     @click.self="onBackdropClick"
     @wheel.prevent.stop
@@ -133,13 +179,24 @@ onBeforeUnmount(() => {
   >
     <header class="jlz-showreel-console__meta">
       <span class="jlz-showreel-console__signal" aria-hidden="true"></span>
-      <span class="jlz-showreel-console__name">SHOWREEL.MP4</span>
+      <span id="jlz-showreel-title" class="jlz-showreel-console__name"
+        >SHOWREEL.MP4</span
+      >
       <span class="jlz-showreel-console__phase" aria-hidden="true">{{
         phaseLabel
       }}</span>
       <span class="jlz-showreel-console__sr" aria-live="polite">{{
         announcement
       }}</span>
+      <button
+        ref="closeButton"
+        class="jlz-showreel-console__close"
+        type="button"
+        :aria-label="t('common.close')"
+        @click="eventBus.emit('jlz:showreel-close')"
+      >
+        {{ t("common.close") }}
+      </button>
     </header>
     <footer class="jlz-showreel-console__status" aria-hidden="true">
       <span class="jlz-showreel-console__state">{{ playLabel }}</span>
