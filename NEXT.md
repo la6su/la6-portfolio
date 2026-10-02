@@ -125,6 +125,12 @@ preserve custom policy only when code or measurements prove the difference.
   `Experience.init()` repeated the same query/class mutation later. Removed
   Experience's DOM lookup and `contentRoot` dependency; the initial typed
   `jlz:section-change` remains for ContentReveal and scene consumers.
+- `Experience.init()` also wrote a hard-coded camera position, target and
+  projection matrix after constructing the `Camera` owner. No draw can occur
+  before scheduler wake; the first `Camera.update()` writes its own smooth
+  pose back over all three values, making the Experience writes ineffective.
+  Removed the dead imperative camera initialization; the Camera controller
+  remains the single pose owner around the Tres-declared node.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an
@@ -772,7 +778,7 @@ identified.
 **Latest verified:** 104 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
-310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.98 kB / 32.79 kB
+310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.77 kB / 32.70 kB
 gzip Experience chunk. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined
