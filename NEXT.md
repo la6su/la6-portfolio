@@ -497,6 +497,9 @@ Execution order:
 6. Source review/fix now covers startup cancellation, scene-init failure
    unmount order, and the DOM-only Enter/mount race. Continue with route exit,
    renderer loss, and concurrent teardown, then verify these paths in browser.
+   Recovery replacement initialization now races host abort and a 30-second
+   timeout because installed Three awaits non-abortable adapter/device requests;
+   a late-settling replacement is disposed after its init Promise settles.
 7. Recheck the dev optimizer and lazy Cientos/Three chunks after renderer-boundary
    edits. A Vite optimizer restart is not evidence of duplicate runtimes; count
    evaluated Three core URLs and inspect the actual backend when browser access

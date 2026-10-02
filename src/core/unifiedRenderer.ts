@@ -4,6 +4,9 @@
 import * as THREE from "three";
 import { WebGPURenderer } from "three/webgpu";
 import { traceDevLifecycle } from "./devLifecycleTrace";
+import { devDiagnostic } from "./devDiagnostic";
+
+const RENDERER_INIT_TIMEOUT_MS = 30_000;
 
 /** The renderer class constructed and adopted by SceneHost. */
 export type UnifiedRenderSurface = WebGPURenderer;
@@ -118,9 +121,45 @@ export async function initUnifiedWebGPUInstance(
     await disposeUnifiedRendererNow(renderer);
     return false;
   }
-  try {
-    await renderer.init();
-  } catch (initializationError) {
+  const initialization = renderer.init().then(
+    () => ({ kind: "ready" as const }),
+    (error: unknown) => ({ kind: "failed" as const, error }),
+  );
+  let timeout: number | null = null;
+  let onAbort: (() => void) | null = null;
+  const interruption = new Promise<{ kind: "aborted" | "timeout" }>((resolve) => {
+    timeout = window.setTimeout(
+      () => resolve({ kind: "timeout" }),
+      RENDERER_INIT_TIMEOUT_MS,
+    );
+    if (signal?.aborted) {
+      resolve({ kind: "aborted" });
+    } else if (signal) {
+      onAbort = () => resolve({ kind: "aborted" });
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+  const result = await Promise.race([initialization, interruption]);
+  if (timeout !== null) window.clearTimeout(timeout);
+  if (onAbort) signal?.removeEventListener("abort", onAbort);
+
+  if (result.kind === "aborted" || result.kind === "timeout") {
+    // Three awaits non-abortable WebGPU adapter/device requests during init.
+    // Do not hold host teardown open; release a late-settling renderer once
+    // Three finishes its init path.
+    void initialization
+      .then(() => disposeUnifiedRendererNow(renderer))
+      .catch((error: unknown) => {
+        devDiagnostic("log", "[Renderer] late init cleanup failed:", error);
+      });
+    if (result.kind === "aborted") return false;
+    throw new Error(
+      `WebGPU renderer initialization exceeded ${RENDERER_INIT_TIMEOUT_MS} ms.`,
+    );
+  }
+
+  if (result.kind === "failed") {
+    const initializationError = result.error;
     // Recovery creates the renderer inside this async boundary, so the caller
     // cannot own it until this function resolves. Release it here on failure;
     // SceneHost's initial Tres path has a separate created-renderer owner.
