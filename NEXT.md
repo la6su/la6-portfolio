@@ -755,8 +755,10 @@ Vue patching `ground.rotation` and Services ring `scale` with newly allocated
 but value-identical arrays on each canvas update. Those transforms now reuse
 stable arrays. After the splash and scene settle, Chromium reports
 `loopActive=false`, `needsRender=false`, and `cursorSettled=true`; frame count
-stayed fixed for one second, then advanced by a single ambient-breath frame and
-stopped again. The page had no errors. This confirms idle demand behavior on
+stayed fixed for one second, then advanced by one frame over the next 2.5
+seconds and another over the following 0.5 seconds. The scheduler remained
+stopped in every sample; the two isolated wake frames were not individually
+attributed. The page had no errors. This rules out the recurring idle loop on
 the software WebGL2 backend; physical GPU/browser coverage remains open.
 
 The 21 declared owners under `src/app/scene` have now been inventoried. Stable
