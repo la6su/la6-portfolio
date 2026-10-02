@@ -10,6 +10,7 @@
 //   the event synchronizes that result with the scene.
 
 import { eventBus } from '../core/EventBus'
+import { contentRoot } from '../core/contentRoot'
 import type { PageId } from '../core/routeManifest'
 import { themeManager } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
@@ -54,14 +55,8 @@ export class ContentReveal {
     return this.cachedConfigs
   }
 
-  private contentRoot(): ParentNode {
-    // The active Vue route owns the semantic story root. Keep a document
-    // fallback only for the short pre-mount bootstrap window.
-    return document.getElementById('spa-content') ?? document
-  }
-
   private activeSectionId(): string {
-    const active = this.contentRoot().querySelector<HTMLElement>(
+    const active = contentRoot().querySelector<HTMLElement>(
       '[data-section].section-active, [data-page-section].section-active',
     )
     return (

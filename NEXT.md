@@ -114,6 +114,9 @@ Current known facts:
   must also drive the 3D story. Removed duplicate `scrollIntoView()` logic.
 - Removed stale migration comments that described old route composition and a
   synchronous ready-slot path that no longer exists.
+- Theme synchronization now uses the same `contentRoot()` lookup as Vue shell
+  reveal handling instead of keeping a second DOM-root fallback in
+  `ContentReveal`.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
