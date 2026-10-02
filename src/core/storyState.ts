@@ -57,7 +57,7 @@ export function storyProgressFromScroll(
   sectionCount: number,
 ): number {
   const height = Math.max(1, trackHeight)
-  const storyPosition = Math.max(0, Math.min(mainCount - 1, scrollTop / height))
+  const storyPosition = clampStoryPosition(scrollTop / height, mainCount)
   return (firstMain + storyPosition) / (sectionCount - 1)
 }
 

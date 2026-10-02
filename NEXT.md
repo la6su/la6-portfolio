@@ -62,6 +62,8 @@ Current known facts:
 - Package metadata and TSL article now describe Three's automatic backend
   selection and one app-authored TSL graph. Removed claims of bit-identical
   output and a future percentage-based fallback removal; neither had evidence.
+- Story scroll normalization now shares the canonical main-position clamp;
+  DOM navigation and frame-driven scene arrival keep their separate clocks.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
