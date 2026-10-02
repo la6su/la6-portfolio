@@ -20,7 +20,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
       {
         label: 'Project material',
         value: 'Selected material is being prepared',
-        source: 'studio review',
       },
     ],
     media: [
@@ -48,7 +47,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
       {
         label: 'Project material',
         value: 'Selected material is being prepared',
-        source: 'studio review',
       },
     ],
     media: [
@@ -79,7 +77,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
       {
         label: 'Project material',
         value: 'Selected material is being prepared',
-        source: 'studio review',
       },
     ],
     media: [
@@ -109,7 +106,6 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
       {
         label: 'Project material',
         value: 'Selected material is being prepared',
-        source: 'studio review',
       },
     ],
     media: [

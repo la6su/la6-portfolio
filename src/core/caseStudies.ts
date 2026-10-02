@@ -4,7 +4,6 @@ type CaseStudyDisclosure = 'client' | 'self-initiated' | 'experimental' | 'ai-as
 interface CaseStudyProof {
   label: string
   value: string
-  source: string
 }
 
 interface CaseStudyMedia {
