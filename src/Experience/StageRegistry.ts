@@ -86,7 +86,7 @@ export class StageRegistry {
         () => import('./World/WorksPlaneStage'),
         ({ WorksPlaneStage }) => WorksPlaneStage,
       ),
-      attach: (stage) => this._ctx.host.works.mountStage(stage),
+      attach: (stage, isCurrent) => this._ctx.host.works.mountStage(stage, isCurrent),
       load: async (stage, isCurrent) => {
         await stage.init()
         if (!isCurrent()) return

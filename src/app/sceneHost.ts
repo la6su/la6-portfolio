@@ -58,7 +58,7 @@ export interface StagePort<T> {
  * and owns its installation child, which never outlives its stage.
  */
 interface WorksStagePort {
-  mountStage(stage: WorksPlaneStage): Promise<void>
+  mountStage(stage: WorksPlaneStage, isCurrent: () => boolean): Promise<void>
   unmountStage(stage: WorksPlaneStage): Promise<void>
   mountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>
   unmountInstallation(stage: WorksPlaneStage, installation: WorksInstallation): Promise<void>

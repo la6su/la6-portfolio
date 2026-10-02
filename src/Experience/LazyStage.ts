@@ -71,8 +71,11 @@ export interface LazyStageContract<T extends object> {
    * avoid constructing GPU resources after its owner was retired.
    */
   create: (isCurrent: () => boolean) => T | null | Promise<T | null>
-  /** Attach the instance to the scene; Tres-backed mounts may be awaitable. */
-  attach: (stage: T) => void | Promise<void>
+  /**
+   * Attach the instance to the scene. Async hosts must check `isCurrent` after
+   * each await and before publishing the object into a Vue-owned slot.
+   */
+  attach: (stage: T, isCurrent: () => boolean) => void | Promise<void>
   /** Optional awaitable init/load after the instance is attached. */
   load?: (stage: T, isCurrent: () => boolean) => Promise<unknown>
   /** Route wiring after the stale guard passes. */
@@ -155,7 +158,7 @@ export function ensureLazyStage<T extends object>(contract: LazyStageContract<T>
   const attachAndLoad = (stage: T): Promise<T> => {
     owner.stage = stage
     try {
-      const attached = contract.attach(stage)
+      const attached = contract.attach(stage, () => request === owner.request && owner.stage === stage)
       const loadIfCurrent = (): Promise<unknown> | undefined => {
         if (request === owner.request && owner.stage === stage) {
           return contract.load?.(

@@ -16,12 +16,17 @@ describe('lazy stage teardown', () => {
     const slot = createLazyStageOwner<{ dispose(): void }>()
     const mounted = deferred<void>()
     const dispose = vi.fn()
+    const attach = vi.fn(async (_stage: { dispose(): void }, isCurrent: () => boolean) => {
+      await mounted.promise
+      if (isCurrent()) attachStage()
+    })
+    const attachStage = vi.fn()
     const stage: { dispose(): void } = { dispose }
     const contract = {
       label: 'pending mount',
       owner: slot,
       create: () => stage,
-      attach: () => mounted.promise,
+      attach,
       configure: vi.fn(),
       release: (value: typeof stage) => value.dispose(),
     }
@@ -32,6 +37,7 @@ describe('lazy stage teardown', () => {
     await initialization
 
     expect(dispose).toHaveBeenCalledTimes(1)
+    expect(attachStage).not.toHaveBeenCalled()
     expect(contract.configure).not.toHaveBeenCalled()
   })
 

@@ -1,6 +1,6 @@
 import { isProxy } from 'vue'
 import { Group } from 'three'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
 import type { WorksInstallation } from '../Experience/World/WorksInstallation'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
@@ -19,7 +19,7 @@ describe('scene stage ports', () => {
     const staleStage = {} as WorksPlaneStage
     const installation = {} as WorksInstallation
 
-    await slots.stages.works.mountStage(stage)
+    await slots.stages.works.mountStage(stage, () => true)
     await slots.stages.works.mountInstallation(stage, installation)
     expect(adoptedRoot).toBe(root)
     expect(slots.declarativeWorksInstallation.value).toBe(installation)
@@ -61,12 +61,31 @@ describe('scene stage ports', () => {
       },
     } as unknown as WorksPlaneStage
 
-    const mounting = slots.stages.works.mountStage(stage)
+    const mounting = slots.stages.works.mountStage(stage, () => true)
     alive = false
     resolveRoot(new Group())
     await mounting
 
     expect(mounted).toBe(false)
+    expect(slots.declarativeWorksStage.value).toBeNull()
+  })
+
+  it('does not attach Works when its route request retires during root lookup', async () => {
+    let current = true
+    let resolveRoot!: (root: Group) => void
+    const root = new Promise<Group>((resolve) => {
+      resolveRoot = resolve
+    })
+    const slots = useSceneStages(() => true, () => root)
+    const mount = vi.fn()
+    const stage = { mount } as unknown as WorksPlaneStage
+
+    const mounting = slots.stages.works.mountStage(stage, () => current)
+    current = false
+    resolveRoot(new Group())
+    await mounting
+
+    expect(mount).not.toHaveBeenCalled()
     expect(slots.declarativeWorksStage.value).toBeNull()
   })
 

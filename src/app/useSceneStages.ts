@@ -26,10 +26,10 @@ export function useSceneStages(isAlive: () => boolean, getWorksRoot: () => Group
 
   const stages: SceneStagePorts = {
     works: {
-      mountStage: async (stage) => {
-        if (!isAlive()) return
+      mountStage: async (stage, isCurrent) => {
+        if (!isAlive() || !isCurrent()) return
         const root = await getWorksRoot()
-        if (!isAlive()) return
+        if (!isAlive() || !isCurrent()) return
         stage.mount(root)
         await worksStageSlot.mount(stage)
       },

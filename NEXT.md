@@ -115,6 +115,12 @@ preserve custom policy only when code or measurements prove the difference.
   `ReadinessGate`, which now owns the sole readiness promise, timeout, and
   cancellation. Experience creates it before waking the scheduler; frame
   errors still do not mark the scene ready. Chromium startup/teardown passes.
+- Works route disposal could race the stage port while it awaited the Vue
+  Works root: teardown saw an empty slot and disposed the controller, after
+  which the still-live host could attach it. The lazy-stage attach contract
+  now carries its request guard; Works rechecks it after root lookup and
+  before adopting the controller. Regression coverage proves a retired route
+  request cannot attach after that await.
 - SceneHost's SwiftShader-to-WebGL fallback awaited renderer initialization
   without cancelling on host unmount, and explicit teardown could dispose that
   candidate while `init()` was still pending. The host now aborts the helper
@@ -232,7 +238,7 @@ comment that still claimed ACES was applied by this graph. `vue-tsc`, ESLint,
 and the production build pass (352 modules; experience chunk 120.80 kB / 34.22
 kB gzip). Build/type evidence does not compile the runtime TSL graph on a
 physical WebGPU device; visual and generated shader validation remain open.
-| Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (358 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (232 lines). Vue's `shallowRef` slots drive `<primitive>` mount/unmount, with `nextTick` before GPU controller disposal. The two owners cover distinct async boundaries; `LazyStage` guards import/init/route races, Vue slots own scene-tree timing. Cleanup errors are now reported in production as well as development while teardown continues. Found and fixed a Works race where the host could dispose while its root was awaited: recheck host liveness after `getWorksRoot()` before adopting it. `StageRegistry.reconcileRoute(page)` now owns route-to-stage ensure/dispose policy and serves both startup prewarm and UI navigation; removed the duplicated page selection from Experience and ExperienceUI. Chromium production preview passes Works and Contact repeated mount/release cycles and Lab lazy mount (3/3). | Continue mapping per-stage variation to determine whether route contracts can be shortened without losing cleanup order. Retain async stale guards and Vue flush ordering where their call paths need them; compare Vue async component behavior only at the wrapper-load boundary. |
+| Route stage lifecycle | Six controller contracts live in `StageRegistry.ts` (358 lines); generic stale-create/attach/release flow plus owner state is in `LazyStage.ts` (232 lines). Vue's `shallowRef` slots drive `<primitive>` mount/unmount, with `nextTick` before GPU controller disposal. The two owners cover distinct async boundaries; `LazyStage` guards import/init/route races, Vue slots own scene-tree timing. Cleanup errors are reported in production as well as development while teardown continues. `StageRegistry.reconcileRoute(page)` owns route-to-stage ensure/dispose policy for startup prewarm and UI navigation; removed duplicate page selection from Experience and ExperienceUI. A route request guard now crosses async Works root lookup, preventing a retired controller from attaching after route leave. Chromium production preview passes Works and Contact repeated mount/release cycles and Lab lazy mount (3/3). | Continue mapping per-stage variation to determine whether route contracts can be shortened without losing cleanup order. Retain async stale guards and Vue flush ordering where their call paths need them; compare Vue async component behavior only at the wrapper-load boundary. |
 | Content model | Project cards live in `Data/Projects.ts`; case page prose/media/proof live in `Data/CaseStudies.ts`; `core/caseStudies.ts` defines the case contract; route, sitemap and blog metadata have separate registries. Removed unused project camera coordinates and `slug`; case media now reuses each project's `detailTextureUrl`, removing four repeated paths. `Project` now lives beside `PROJECTS` instead of in Three-dependent `core/types.ts`, and the catalogue is readonly because callers only read it. | Decide whether project/card/case records should share one authored record only where fields really overlap. Preserve separate case prose and sitemap/blog sources with distinct meaning. Add closed-set checks only at real content boundaries. |
 | Performance and DX | `SceneHost.vue` and `Experience.ts` remain large mixed-responsibility modules. DOM reveals now live under `UI/`, and `Experience` no longer owns their events or cleanup. The source-mapped entry graph showed broad `chunk-core` pulled WebGPU/TSL code into static bootstrap imports, while `chunk-camera` pulled in the shared motion policy. A focused `chunk-bootstrap-core` group now isolates the shell's shared ports: recursive static imports fell from 398.86 KiB gzip across 8 files to 12.29 KiB across 4 files; neither `vendor-three` nor `chunk-experience` is statically reachable. The reveal utility also no longer imports Three for a scalar clamp. Production-preview Chromium/Firefox reveal and direct-hash checks pass 4/4. | Continue the remaining renderer and app lifecycle audit, then validate browser startup/network behavior and the full cross-browser/GPU acceptance. Do not expand manual chunk rules without source-map and transitive-graph evidence. |
 
@@ -715,7 +721,7 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Latest verified:** 101 unit tests, Vue type-check, ESLint, production build and
+**Latest verified:** 102 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (one fewer after removing the Lab camera policy singleton),
 310.95 kB shared Three gzip and 53.84 kB UIkit gzip. An override-origin build
@@ -736,6 +742,8 @@ rendering and do not establish physical-GPU WebGPU, recovery or performance.
 After centralizing route-stage reconciliation, production-preview Chromium
 passes Works and Contact repeated route mount/release cycles and lazy Lab mount
 (3/3).
+After adding the Works async attach guard, the production-preview Works and
+Contact route-cycle tests pass again (2/2).
 
 The route-hash cancellation change and Experience stale-init guards pass build,
 type, lint and unit gates; focused cancellation tests plus the teardown browser
