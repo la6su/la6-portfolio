@@ -156,6 +156,12 @@ preserve custom policy only when code or measurements prove the difference.
   width/height snapshot when configuring either lazy stage. This removes the
   parallel viewport source and avoids creating a stage with stale dimensions
   if the viewport changes while its async import/load is pending.
+- `ExperienceUI` owned both overlay dismissal and the scene's route policy
+  (coordinator reconfiguration, lazy stage reconciliation, section reset and
+  render demand). Moved the scene work to Experience, which owns the
+  coordinator, StageRegistry and scheduler; ExperienceUI now only dismisses
+  its overlay at that UI event boundary. Experience owns the stale-route
+  generation guard and unsubscribes it during teardown.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -912,6 +918,13 @@ global a second time. Vue type-check, ESLint, 105/105 unit tests, production
 build and bundle budgets pass; Vite emits 351 modules, Three is 310.95 kB gzip,
 and the Experience chunk is 32.68 kB gzip. Physical WebGPU/WebGL hardware
 acceptance remains open.
+
+**Route-policy ownership:** Scene route reconfiguration now lives in
+Experience, alongside the scene coordinator, lazy-stage registry and render
+scheduler. ExperienceUI's route listener only closes the fullscreen overlay.
+Vue type-check, ESLint, 105/105 unit tests and production build/budgets pass;
+Firefox production-preview Works and Contact repeated route mount/release
+scenarios pass (2/2). Chromium/WebKit and physical GPU acceptance remain open.
 
 ## Follow-on goal policy
 

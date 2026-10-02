@@ -28,6 +28,7 @@ import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
 import type { SceneHostReady } from '../app/sceneHost'
 import { eventBus } from '../core/EventBus'
+import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
@@ -110,6 +111,8 @@ export class Experience {
   private _prevSectionIndex = -1
   private _stopSizeWatch: WatchStopHandle | null = null
   private _rendererRecoveredUnsub: (() => void) | null = null
+  private _routeChangeUnsub: (() => void) | null = null
+  private _routeGeneration = 0
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
   private get _storyNav() {
@@ -274,6 +277,53 @@ export class Experience {
       this._environment.apply()
       if (this._destroyed) return
       this._raiseRenderDemand('recovery')
+    })
+  }
+
+  /** Reconcile route-owned scene state at the semantic route boundary. */
+  private installRouteReconciliation(): void {
+    if (this._routeChangeUnsub) return
+    this._routeChangeUnsub = eventBus.on('jlz:route-change', () => {
+      const routeGeneration = ++this._routeGeneration
+      const page = this._host.page()
+      const isCurrent = () =>
+        isCurrentRouteContinuation(routeGeneration, this._routeGeneration, page, this._host.page())
+      try {
+        // Rebuild page-specific fog/post/section ranges before route owners
+        // reconcile visibility; otherwise SPA navigation keeps boot config.
+        this.coordinator.init()
+        const routeStagesReady = this._stages.reconcileRoute(page)
+        if (page === 'home') {
+          void this.ensureCarouselInitialized().then(() => {
+            if (isCurrent()) this._raiseRenderDemand('nav')
+          })
+        }
+        if (page === 'works') {
+          void routeStagesReady.then(() => {
+            if (!isCurrent()) return
+            this.coordinator.setWorksPlaneStageSection(0)
+            this._raiseRenderDemand('nav')
+          })
+        }
+        if (page === 'contact') {
+          this._stages.setContactCyprusStageSection(0)
+          this.coordinator.setContactSceneSection(0)
+          void routeStagesReady.then(() => {
+            if (isCurrent()) this._raiseRenderDemand('nav')
+          })
+        } else {
+          this.coordinator.setContactSceneSection(0)
+        }
+        if (page === 'manifesto') {
+          void routeStagesReady.then(() => {
+            if (isCurrent()) this._raiseRenderDemand('nav')
+          })
+        }
+        this._raiseRenderDemand('nav')
+      } catch (error: unknown) {
+        if (!isCurrent()) return
+        console.error('[Experience] route reconciliation failed:', error)
+      }
     })
   }
 
@@ -448,7 +498,6 @@ export class Experience {
       sfx: this.sfx,
       raise: (reason) => this._raiseRenderDemand(reason),
       reducedMotion: () => this._reducedMotion,
-      ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
       stages: this._stages,
     })
     this.features = features
@@ -503,6 +552,7 @@ export class Experience {
 
     // Initialize navigation, menus, overlays and project controls after the
     // scene and environment are ready.
+    this.installRouteReconciliation()
     features.init()
 
     // DevPanel — created AFTER nav so it can read current section
@@ -921,6 +971,9 @@ export class Experience {
     this._unsubExternalInvalidate = null
     this._webglFailedUnsub?.()
     this._webglFailedUnsub = null
+    this._routeChangeUnsub?.()
+    this._routeChangeUnsub = null
+    this._routeGeneration++
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null
     this._cancelBreath()

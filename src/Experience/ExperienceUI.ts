@@ -15,7 +15,6 @@ import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { WORLD_SLOT_COUNT } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
-import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 import { PROJECTS } from '../Data/Projects'
@@ -39,8 +38,6 @@ export interface ExperienceUIHost {
   /** Raise render demand + wake the single loop driver (typed reason). */
   raise: (reason?: FrameReason) => void
   reducedMotion: () => boolean
-  /** Initialize the Experience-owned carousel once before its first use. */
-  ensureCarouselInitialized: () => Promise<void>
   /** The one owner of route stages, read only after Experience initializes. */
   stages: StageRegistry
 }
@@ -58,19 +55,7 @@ export class ExperienceUI {
   private readonly _unsubs: Array<() => void> = []
   private _overlayHostUnsub: (() => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
-  private _routeGeneration = 0
   private _projectOverlayPreloaded = false
-
-  /** Route-continuation guard over this host's live generation + page — the
-   *  shared idiom behind every async continuation in this file. */
-  private _routeContinuationIsCurrent(capturedGeneration: number, capturedPage: PageId): boolean {
-    return isCurrentRouteContinuation(
-      capturedGeneration,
-      this._routeGeneration,
-      capturedPage,
-      this.host.page(),
-    )
-  }
   private _destroyed = false
 
   constructor(private host: ExperienceUIHost) {}
@@ -157,60 +142,12 @@ export class ExperienceUI {
     )
 
     // ── Close overlay on route change ──
-    // When SPA navigates (Menu subnav click, browser back, etc.),
-    // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
-    // class — no custom flag to get out of sync.
+    // Scene route reconciliation belongs to Experience; this UI owner only
+    // closes its Vue-owned overlay when navigation changes.
     this._unsubs.push(
       eventBus.on('jlz:route-change', () => {
-        const routeGeneration = ++this._routeGeneration
         if (this.overlay?.isOpen) {
           this.overlay.close()
-        }
-        const newPage = this.host.page()
-        const continuationIsCurrent = () =>
-          this._routeContinuationIsCurrent(routeGeneration, newPage)
-        const coordinator = this.host.coordinator
-        try {
-          // Rebuild page-specific fog/post/section ranges before route owners
-          // reconcile visibility; otherwise SPA navigation keeps boot config.
-          coordinator.init()
-          const stages = this.host.stages
-          const routeStagesReady = stages.reconcileRoute(newPage)
-          if (newPage === 'home') {
-            void this.host.ensureCarouselInitialized().then(() => {
-              if (continuationIsCurrent()) this.host.raise('nav')
-            })
-          }
-          if (newPage === 'works') {
-            void routeStagesReady.then(() => {
-              if (!continuationIsCurrent()) return
-              this.host.coordinator.setWorksPlaneStageSection(0)
-              this.host.raise('nav')
-            })
-          }
-          if (newPage === 'contact') {
-            stages.setContactCyprusStageSection(0)
-            coordinator.setContactSceneSection(0)
-            void routeStagesReady.then(() => {
-              if (!continuationIsCurrent()) return
-              this.host.raise('nav')
-            })
-          } else {
-            coordinator.setContactSceneSection(0)
-          }
-          if (newPage === 'manifesto') {
-            void routeStagesReady.then(() => {
-              if (!continuationIsCurrent()) return
-              this.host.raise('nav')
-            })
-          }
-          this.host.raise('nav')
-        } catch (error: unknown) {
-          // Ignore synchronous failures from routes superseded during a
-          // re-entrant event callback; lazy stage promises contain their own
-          // construction and teardown failures.
-          if (!continuationIsCurrent()) return
-          console.error('[ExperienceUI] route reconciliation failed:', error)
         }
       }),
     )
@@ -392,7 +329,6 @@ export class ExperienceUI {
   destroy(): void {
     if (this._destroyed) return
     this._destroyed = true
-    this._routeGeneration++
     for (const unsub of this._unsubs) unsub()
     this._unsubs.length = 0
     if (this._worksPlaneTapHandler) {
