@@ -209,6 +209,8 @@ Current known facts:
   checked-in `_headers` files therefore remain hosting-platform inputs; route
   rewrites, MIME types, cache policy translation, and production artifact
   delivery still need verification against the actual ingress configuration.
+  The available web inspector could not open `justlovejazz.dev` and returned no
+  indexed pages, so this attempt provides no evidence about live route health.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
