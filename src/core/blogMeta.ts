@@ -12,7 +12,7 @@
 //
 // Pure by design — no DOM, no window — unit-testable without a browser.
 
-import { BLOG_ARTICLES, BLOG_INDEX, BLOG_INDEX_PATH, blogArticlePath } from './blogPages'
+import { BLOG_ARTICLES, BLOG_INDEX_PATH, blogArticlePath } from './blogPages'
 import { SITE_ORIGIN } from './siteConfig'
 
 /** The site origin used for canonical/OG URLs (override for staging). */
@@ -23,15 +23,14 @@ const OG_IMAGE = `${BLOG_SITE_ORIGIN}/preview.jpg`
 const TWITTER_HANDLE = '@justlovejazz'
 
 /** The structured fields of one blog page's head. */
-interface BlogPageMeta {
+interface BlogPageMetaBase {
   /** `<title>` content. */
   title: string
   /** `<meta name="description">` content. */
   description: string
-  /** `<meta name="robots">` content (index only; articles omit the tag). */
+  /** Index-only robots directives or article-only keywords. */
   robots?: string
-  /** og:type — `website` for the index, `article` for posts. */
-  ogType: 'website' | 'article'
+  keywords?: string
   /** og:title / twitter:title content. */
   ogTitle: string
   /** og:description content. */
@@ -40,22 +39,24 @@ interface BlogPageMeta {
   twitterDescription?: string
   /** og:image:alt / twitter:image:alt content. */
   imageAlt: string
-  /** Articles only: meta keywords. */
-  keywords?: string
-  /** Articles only: the Open Graph / JSON-LD article fields. */
-  article?: {
-    /** article:section / JSON-LD articleSection. */
-    section: string
-    /** article:tag values. */
-    tags: string[]
-  }
 }
 
-/**
- * The closed-set head metadata for every static blog page: the index plus
- * one entry per published article (the same slugs the sitemap consumes).
- */
-export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
+interface BlogIndexMeta extends BlogPageMetaBase {
+  ogType: 'website'
+  robots: string
+}
+
+interface BlogArticleMeta extends BlogPageMetaBase {
+  ogType: 'article'
+  keywords: string
+  article: { section: string; tags: string[] }
+}
+
+type BlogArticleSlug = (typeof BLOG_ARTICLES)[number]['slug']
+type BlogPageKey = 'index' | BlogArticleSlug
+
+/** Metadata for the index and every article in the canonical blog list. */
+export const BLOG_PAGE_META: { index: BlogIndexMeta } & Record<BlogArticleSlug, BlogArticleMeta> = {
   index: {
     title: 'Blog — Case Studies & Process Notes | JUSTLOVEJAZZ',
     description:
@@ -136,7 +137,7 @@ export const BLOG_PAGE_META: Record<string, BlogPageMeta> = {
 }
 
 /** The static path of a page key (`index` → the list page). */
-export function blogMetaPath(key: string): string {
+export function blogMetaPath(key: BlogPageKey): string {
   return key === 'index' ? BLOG_INDEX_PATH : blogArticlePath(key)
 }
 
@@ -168,9 +169,13 @@ const propertyTag = (property: string, content: string): string =>
   `    <meta property="${esc(property)}" content="${esc(content)}" />`
 
 /** The JSON-LD payload of one page (Blog for the index, BlogPosting per post). */
-function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string, unknown> {
+function jsonLd(
+  key: BlogPageKey,
+  meta: BlogIndexMeta | BlogArticleMeta,
+  origin: string,
+): Record<string, unknown> {
   const url = `${origin}${blogMetaPath(key)}`
-  if (meta.ogType === 'article' && meta.article) {
+  if (meta.ogType === 'article') {
     const publishedTime = BLOG_ARTICLES.find((article) => article.slug === key)!.publishedTime
     return {
       '@context': 'https://schema.org',
@@ -203,13 +208,13 @@ function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string,
       logo: { '@type': 'ImageObject', url: `${origin}/logo.svg` },
     },
     blogPost: BLOG_ARTICLES.map((article) => {
-      const articleMeta = BLOG_PAGE_META[article.slug]!
+      const articleMeta = BLOG_PAGE_META[article.slug]
       return {
         '@type': 'BlogPosting',
         headline: articleMeta.ogTitle,
         url: `${origin}${blogArticlePath(article.slug)}`,
         datePublished: article.publishedTime,
-        articleSection: articleMeta.article?.section ?? 'Case Studies',
+      articleSection: articleMeta.article.section,
       }
     }),
   }
@@ -222,8 +227,8 @@ function jsonLd(key: string, meta: BlogPageMeta, origin: string): Record<string,
  * is the trusted source); every meta value is attribute-escaped.
  */
 export function renderBlogDocument(
-  key: string,
-  meta: BlogPageMeta,
+  key: BlogPageKey,
+  meta: BlogIndexMeta | BlogArticleMeta,
   body: string,
   origin: string = BLOG_SITE_ORIGIN,
 ): string {
@@ -266,7 +271,7 @@ export function renderBlogDocument(
     propertyTag('og:image:height', '630'),
     propertyTag('og:image:alt', meta.imageAlt),
   )
-  if (meta.article) {
+  if (meta.ogType === 'article') {
     head.push(
       propertyTag(
         'article:published_time',
@@ -329,32 +334,4 @@ export function renderBlogDocument(
     '</html>',
     '',
   ].join('\n')
-}
-
-/**
- * The closed-set invariant: the meta table must cover exactly the index plus
- * every published article (the same set the sitemap consumes). Used by the
- * prerender build step and the unit tests.
- */
-export function assertBlogMetaClosedSet(): string[] {
-  const errors: string[] = []
-  const expected = new Set<string>(['index', ...BLOG_ARTICLES.map((article) => article.slug)])
-  for (const key of Object.keys(BLOG_PAGE_META)) {
-    if (!expected.has(key)) errors.push(`BLOG_PAGE_META has an unknown page key "${key}"`)
-  }
-  for (const article of BLOG_ARTICLES) {
-    const meta = BLOG_PAGE_META[article.slug]
-    if (!meta) {
-      errors.push(`BLOG_PAGE_META is missing the article "${article.slug}"`)
-      continue
-    }
-    if (meta.ogType !== 'article' || !meta.article)
-      errors.push(`article "${article.slug}" must have ogType "article" and article fields`)
-  }
-  const indexMeta = BLOG_PAGE_META.index
-  if (!indexMeta || indexMeta.ogType !== 'website')
-    errors.push('BLOG_PAGE_META.index must have ogType "website"')
-  if (BLOG_INDEX.path !== BLOG_INDEX_PATH)
-    errors.push('BLOG_INDEX path drifted from BLOG_INDEX_PATH')
-  return errors
 }

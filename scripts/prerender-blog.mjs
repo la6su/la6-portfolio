@@ -47,14 +47,10 @@ const server = await createServer({
 try {
   const { default: BlogPage } = await server.ssrLoadModule('/src/app/views/blog/BlogPage.vue')
   const { BLOG_CONTENT } = await server.ssrLoadModule('/src/core/blogContent.ts')
-  const { BLOG_PAGE_META, renderBlogDocument, assertBlogMetaClosedSet } =
-    await server.ssrLoadModule('/src/core/blogMeta.ts')
+  const { BLOG_PAGE_META, renderBlogDocument } = await server.ssrLoadModule('/src/core/blogMeta.ts')
   const { BLOG_ARTICLES, blogArticlePath } = await server.ssrLoadModule('/src/core/blogPages.ts')
   const { createSSRApp, h } = await import('vue')
   const { renderToString } = await import('@vue/server-renderer')
-
-  const metaErrors = assertBlogMetaClosedSet()
-  if (metaErrors.length > 0) throw new Error(`blog meta closed-set: ${metaErrors.join('; ')}`)
 
   // The closed set: the index plus every published article — same slugs the
   // sitemap consumes. Missing content or meta fails the build.

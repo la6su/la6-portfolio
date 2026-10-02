@@ -30,12 +30,12 @@ export const BLOG_INDEX = {
 }
 
 /** The published articles, newest first. */
-export const BLOG_ARTICLES: readonly BlogArticle[] = [
+export const BLOG_ARTICLES = [
   { slug: 'undercurrent-webgpu-fluid', publishedTime: '2026-07-15T10:00:00Z', priority: 0.7 },
   { slug: 'glassmorphism-webgpu', publishedTime: '2026-06-20T10:00:00Z', priority: 0.7 },
   { slug: 'on-demand-rendering', publishedTime: '2026-05-10T10:00:00Z', priority: 0.7 },
   { slug: 'tsl-changes-everything', publishedTime: '2026-04-05T10:00:00Z', priority: 0.7 },
-] as const
+] as const satisfies readonly BlogArticle[]
 
 /** The static path of an article. */
 export function blogArticlePath(slug: string): string {
