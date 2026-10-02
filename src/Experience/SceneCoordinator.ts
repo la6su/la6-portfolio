@@ -7,7 +7,6 @@ import type { WebGPURenderer } from 'three/webgpu'
 import type { Section } from '../core/Section'
 import { devDiagnostic } from '../core/devDiagnostic'
 import type { PageId } from '../core/routeManifest'
-import { type PhaseConfig } from '../core/WorldConfig'
 import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { SectionStateMachine } from './SectionStateMachine'
 import { SceneTransformPass, type WorldTransformResult } from './SceneTransformPass'
@@ -331,10 +330,5 @@ export class SceneCoordinator {
     this.owners.stages.setReducedMotion(reduced)
     this.owners.drawTrail.setReducedMotion(reduced)
     this._transform.invalidate()
-  }
-
-  /** Get PhaseConfig for a given phase ID. Cached Map lookup on the story. */
-  public getConfig(phase: string): PhaseConfig | undefined {
-    return this._story.getConfig(phase)
   }
 }

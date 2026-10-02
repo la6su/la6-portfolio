@@ -808,13 +808,13 @@ export class Experience {
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._storyNav?.getOverallProgress() ?? 0
     const sceneStart = frameTiming ? performance.now() : 0
-    const { cameraTarget, worldState } = this.coordinator.updateTransform(ns)
+    const { cameraTarget, worldState, phaseConfig: cfg, sectionIndex: idx } =
+      this.coordinator.updateTransform(ns)
     this.coordinator.update(dt, this._needsRender)
     const sceneDuration = frameTiming ? performance.now() - sceneStart : 0
     // Drive the baku material blend — from→to slot colors + phaseProgress
     // (scroll t) through SplashCube.updateWorldBlend.
     const sections = this.coordinator.sections
-    const idx = this.coordinator.currentSectionIndex
     if (this.baku) {
       const fromCfg = sections[idx]?.phaseConfig
       // Blend toward the next slot (clamped to the last of the six).
@@ -833,7 +833,6 @@ export class Experience {
 
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
-    const cfg = this.coordinator.getConfig(worldState.currentPhase)
     // Dispatch section-change on EVERY section index change (not just context).
     // The app shell reveals the matching DOM content; Experience handles the
     // scene-specific light and cube response to this same section event.

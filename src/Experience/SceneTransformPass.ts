@@ -10,7 +10,7 @@
 import * as THREE from 'three'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
-import { type SceneTransitionEasing } from '../core/WorldConfig'
+import { type PhaseConfig, type SceneTransitionEasing } from '../core/WorldConfig'
 import { CONTACT_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import { easeOutCubic } from '../Utils/easing'
@@ -20,6 +20,9 @@ import type { SectionStateMachine } from './SectionStateMachine'
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
   worldState: WorldState
+  /** Active route config and index already resolved by this transform pass. */
+  phaseConfig: PhaseConfig | undefined
+  sectionIndex: number
 }
 
 /** The facts the pass reads per call. Getters, not values: the route, the
@@ -59,8 +62,9 @@ export class SceneTransformPass {
   // sat inside a fresh object graph on every demand-driven frame.
   private _poolResult: WorldTransformResult = {
     cameraTarget: { position: this._poolPos, lookAt: this._poolLookAt, fov: 0 },
+    phaseConfig: undefined,
+    sectionIndex: 0,
     worldState: {
-      currentPhase: '',
       phaseProgress: 0,
       bakuMaterial: {
         role: BakuRole.NORMAL,
@@ -326,7 +330,8 @@ export class SceneTransformPass {
     cameraTarget.fov = THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t)
     // Arrival metadata drives discrete systems (theme, post, cube) while the
     // transform/material values remain a continuous from→to blend.
-    worldState.currentPhase = configs[activeIndex]!.id
+    result.phaseConfig = configs[activeIndex]
+    result.sectionIndex = activeIndex
     worldState.phaseProgress = t
     bakuMaterial.role = toBaku.role
     bakuMaterial.color = this._poolBakuColor.lerpColors(

@@ -1,12 +1,11 @@
 // src/Experience/SectionStateMachine.ts — the scroll story state.
 //
-// This owner holds the Section instances built from the page's PhaseConfig
-// list, the derived config map, the active-section index and the
+// This owner holds page sections, the active-section index, and the
 // scroll-driven state policy (READY -> VIEWING -> PASSED thresholds plus
 // the pure sectionIndexAt arrival rule). SceneCoordinator keeps the
 // frame-facing delegates and the scene-side writes (fog, group fades,
 // transforms). SceneCoordinator orchestrates beginRoute/buildSections and
-// delegates section deadline updates and config lookups here.
+// delegates section deadline updates here.
 
 import { Section, SectionState } from '../core/Section'
 import type { PageId } from '../core/routeManifest'
@@ -15,7 +14,6 @@ import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 export class SectionStateMachine {
   public sections: Section[] = []
   private _configs: readonly PhaseConfig[] = []
-  private _configMap: Map<string, PhaseConfig> | null = null
   private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
 
   public get currentSectionIndex(): number {
@@ -35,10 +33,6 @@ export class SectionStateMachine {
    */
   public beginRoute(page: PageId): readonly PhaseConfig[] {
     this._configs = getWorldConfigForPage(page)
-    // Route re-entry can reuse the machine instance. Invalidate the derived
-    // map before rebuilding so lookups do not retain the previous route's
-    // scene contract.
-    this._configMap = null
     this.disposeSections()
     return this._configs
   }
@@ -89,14 +83,6 @@ export class SectionStateMachine {
     this.sections.forEach((s) => {
       s.update(dt)
     })
-  }
-
-  /** Get PhaseConfig for a given phase ID. Uses a cached Map for O(1) lookup. */
-  public getConfig(phase: string): PhaseConfig | undefined {
-    if (!this._configMap) {
-      this._configMap = new Map(this._configs.map((c) => [c.id, c]))
-    }
-    return this._configMap.get(phase)
   }
 
   public disposeSections(): void {
