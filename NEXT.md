@@ -117,6 +117,8 @@ Current known facts:
 - Theme synchronization now uses the same `contentRoot()` lookup as Vue shell
   reveal handling instead of keeping a second DOM-root fallback in
   `ContentReveal`.
+- Source comments no longer depend on missing sprint/ticket ids, commit hashes,
+  `SPEC.md`, or ADRs; retained notes describe the current runtime behavior.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

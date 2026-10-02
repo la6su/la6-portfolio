@@ -135,8 +135,7 @@ export class FullscreenOverlay {
         if (generation !== this._mediaGeneration || !this.container.isConnected) return
         this.container.classList.add('is-entered')
       })
-      // Move focus into the modal so keyboard users are not stranded on the
-      // trigger button behind the overlay (B-2 a11y fix).
+      // Move focus into the modal so keyboard users are not stranded behind it.
       this.container.querySelector<HTMLElement>('.jlz-fs-close')?.focus({ preventScroll: true })
     })
     UIkit.util.on(this.container, 'hide', this._onModalHide)

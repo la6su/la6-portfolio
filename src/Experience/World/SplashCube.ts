@@ -183,8 +183,7 @@ export class SplashCube {
   )
   private _targetFaceRotY = 0
   private _faceLerp = 0 // 0→1, animated on section change
-  // D-16 fix: store start rotation + delta at rotateToFace time for
-  // absolute positioning (was incremental with wrong formula → undershoot+snap).
+  // Capture the start rotation and shortest delta for absolute interpolation.
   private _startFaceRotY = 0
   private _startFaceDelta = 0
 
@@ -241,9 +240,8 @@ export class SplashCube {
 
   triggerOpener(): void {
     if (this._disposed) return
-    // Under reduced-motion the opener never animates (baku.update() is skipped
-    // by World), so snap immediately to 'done' — otherwise openerPhase stays
-    // 'opening' forever and forces continuous rendering (B-1).
+    // Under reduced motion the opener never animates, so snap to 'done' and
+    // avoid leaving the render scheduler active indefinitely.
     if (this._reducedMotion) {
       this.openerPhase = 'done'
       this.openerProgress = 0
@@ -303,7 +301,7 @@ export class SplashCube {
     }
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     this._targetFaceRotY = SplashCube.FACE_ROTATIONS[idx] ?? 0
-    // D-16 fix: capture start rotation + shortest-path delta for absolute lerp.
+    // Capture the start rotation and shortest-path delta for interpolation.
     this._startFaceRotY = this._idleRotY
     let delta = this._targetFaceRotY - this._startFaceRotY
     while (delta > Math.PI) delta -= Math.PI * 2

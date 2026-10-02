@@ -240,7 +240,7 @@ export class SceneTransformPass {
 
       if (shouldShow) {
         g.visible = fade > 0.001
-        // A-006: Use cached mesh list instead of traverse every frame.
+        // Cache meshes instead of traversing the group each frame.
         let meshCache = this._meshCache.get(g)
         if (!meshCache) {
           meshCache = []

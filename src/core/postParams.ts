@@ -34,9 +34,8 @@ export interface PostParams {
 export const NEUTRAL_GRADE: PostGradeTuple = [1, 1, 1]
 
 /**
- * In-place handoff (PERF-11): copies every channel from `from` into `target`
- * without allocating. Tuple elements are copied individually — replacing the
- * tuple reference would break owners that hold a stable target object.
+ * Copy every channel from `from` into `target` without allocating. Tuple
+ * elements are copied individually because owners hold a stable target.
  */
 export function copyPostParams(target: PostParams, from: Readonly<PostParams>): void {
   target.bloom = from.bloom

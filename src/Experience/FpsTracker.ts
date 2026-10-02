@@ -12,10 +12,7 @@ const LOW_FPS_WINDOW = 60
 const LOW_FPS_THRESHOLD = 30
 
 export class FpsTracker {
-  // PERF-7 fix: circular buffer index + running sum for O(1) FPS tracking
-  // (was array.shift() O(N) + reduce() O(N) every frame → ~7200 element-
-  // touches/sec). Now O(1) per frame: subtract outgoing, add incoming,
-  // advance ring index.
+  // A running sum and circular index keep each observation constant-time.
   private readonly _frameTimes: number[] = []
   private _idx = 0
   private _sum = 0

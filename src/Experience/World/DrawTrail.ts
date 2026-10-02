@@ -166,7 +166,7 @@ export class DrawTrail {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       fog: false,
-      // R-11 fix: toneMapped=false keeps additive glow energy predictable.
+      // Keep additive glow energy predictable.
       toneMapped: false,
     })
     material.colorNode = createTrailColorNode(this._uniforms)

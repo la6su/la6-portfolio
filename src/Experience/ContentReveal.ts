@@ -104,12 +104,8 @@ export class ContentReveal {
   }
 
   private setupThemeSync() {
-    // route-change: invalidate cache on page switch + re-apply the active
-    // section's theme on the NEW page. (H13 fix: without this, uk-light from
-    // the last active section on the PREVIOUS page persists on <body> until
-    // the first section nav on the new page → wrong-theme flash + EnvSphere
-    // desync. Find the active section in the freshly-rendered DOM and apply
-    // its theme immediately.)
+    // Invalidate route-specific configs and apply the new active section's
+    // theme as soon as its DOM is available.
     this.routeChangeUnsub = eventBus.on('jlz:route-change', () => {
       this.cachedConfigs = null
       this.applyTheme(this.activeSectionId())

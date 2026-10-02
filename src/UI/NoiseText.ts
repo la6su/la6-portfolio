@@ -34,9 +34,7 @@ export class NoiseText extends TextReveal {
     super(el)
   }
 
-  /** Frame 0 = correct text → no flash of empty state.
-   *  (Critical fix from 39eda64 — starting with '' causes a visible
-   *  empty flash before the first tick.) */
+  /** Keep the authored text visible until the first animation frame. */
   protected begin(): void {
     this.el.textContent = this.cleanText
   }
@@ -47,8 +45,7 @@ export class NoiseText extends TextReveal {
     // Noise tail: 1-3 random characters after the fixed portion
     const noiseLength = Math.min(3, this.cleanText.length - fixedLength)
 
-    // PERF-15 fix: build via array + join (was `text +=` in a loop = O(N²)
-    // string allocation). For a 20-char title: ~23 string allocs/frame → 1.
+    // Reuse the character buffer and join once per frame.
     const chars = this.chars
     chars.length = fixedLength + noiseLength
 

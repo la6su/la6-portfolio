@@ -144,7 +144,7 @@ export class BakuCarousel {
   /** Activate the slider — start morphing from cube faces to case planes. */
   setActive(active: boolean): void {
     if (this._disposed) return
-    if (active === this._active) return // no-op on repeated calls (fixes A-1)
+    if (active === this._active) return
     this._active = active
     this._morphTarget = active ? 1 : 0
   }
@@ -273,9 +273,8 @@ export class BakuCarousel {
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (this.storySide() === 'menu' || isUiChromeEvent(e)) return
-      // D-15 fix: only intercept on home page (carousel is home-only; on
-      // content pages the window listener would block WorkCard clicks if
-      // the carousel's _active flag were stuck true from a prior home visit).
+      // The carousel is home-only; don't block content-page card clicks if a
+      // route change left its active state set.
       if (this.page() !== 'home') return
       this.isDown = true
       this.onActivity?.()

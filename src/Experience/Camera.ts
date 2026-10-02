@@ -44,11 +44,10 @@ export class Camera {
   private fovTransitionT = 1
   private fovStartOffset = 0
   private fovDuration = 1.0
-  // C12 fix: pulse phase-2 timer stored so destroy() can clear it.
-  // Previously untracked → fired on destroyed Camera after HMR.
+  // Stored so destroy() can clear phase 2 before it fires on a disposed camera.
   private _pulseTimer: ReturnType<typeof setTimeout> | null = null
 
-  // A-015: Per-section cursor follow strength
+  // Per-section cursor follow strength.
   private _cursorFollowStrength: number | null = null
 
   // Lab exploration: true while the previous update() found the
@@ -56,7 +55,7 @@ export class Camera {
   // adopts the orbit pose as the smoothing origin (no authored-framing snap).
   private _yielded = false
 
-  /** Set cursor follow strength for current section (A-015) */
+  /** Set cursor follow strength for current section. */
   setCursorFollow(strength: number): void {
     if (this._disposed) return
     this._cursorFollowStrength = strength
@@ -79,7 +78,7 @@ export class Camera {
   destroy(): void {
     if (this._disposed) return
     this._disposed = true
-    // C12 fix: clear pending pulse timer so it doesn't fire on a destroyed Camera.
+    // Clear the pending pulse timer before teardown completes.
     if (this._pulseTimer) {
       clearTimeout(this._pulseTimer)
       this._pulseTimer = null
@@ -106,8 +105,7 @@ export class Camera {
     if (this._disposed) return
     this.shakePower = power
     this.shakeDuration = duration
-    // D-27 fix: reset shakeTime so the new shake starts at phase 0 (was
-    // continuing from the previous shake's phase → phase discontinuity).
+    // Start each shake at phase 0 for a consistent onset.
     this.shakeTime = 0
   }
 
@@ -244,8 +242,8 @@ export class Camera {
 
     // ── 2. Build position ──
     const isHome = this.isHomePage()
-    // Respect prefers-reduced-motion: disable cursor follow + organic shake
-    // + FOV breath (SPEC.md motion rules).
+    // Respect prefers-reduced-motion: disable cursor follow, organic shake,
+    // and FOV breathing.
     const reduced = this._reducedMotion
     const pos = this.instance.position
 
@@ -253,7 +251,7 @@ export class Camera {
     const cursorX = this._isMobile || reduced ? 0 : this.springX.pos
     const cursorY = this._isMobile || reduced ? 0 : this.springY.pos
 
-    // A-015: Per-section cursor follow strength (junni cameraRange pattern).
+    // Per-section cursor follow strength follows the Works interaction.
     // Works section (idx=3) gets stronger follow for interactive feel.
     // Uses _currentSectionIndex set by Experience.update via setCursorFollow.
     const cursorFollow = isHome ? 0.19 : (this._cursorFollowStrength ?? 0.15)
@@ -298,17 +296,16 @@ export class Camera {
     // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
     const fovBreath =
       isHome && !this._isMobile && !reduced ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
-    // A-002: Portrait FOV adaptation — widen FOV on portrait so objects fit
+    // Widen the FOV on portrait so objects fit.
     const aspect = this.instance.aspect
     const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))
     const portraitBoost = portraitWeight * 20 // up to +20° on narrow portrait
     const targetFov = this.smoothFov + this.fovOffset + fovBreath + portraitBoost
-    // D-13 fix: delta-time-aware FOV lerp (was fixed 0.25/frame → frame-rate
-    // dependent: slower on low-FPS, faster on high-FPS). Now converges at the
-    // same rate regardless of FPS. 10 = convergence rate (≈0.25 at 60fps).
+    // Delta-time-aware interpolation keeps convergence independent of frame
+    // rate. A rate of 10 converges by about 0.25 at 60 fps.
     const fovLerp = 1 - Math.exp(-10 * deltaT)
     this.instance.fov += (targetFov - this.instance.fov) * fovLerp
-    // PERF-13: only recompute projection matrix when fov actually changed
+    // Recompute the projection matrix only when FOV changes.
     // (sub-threshold float drift would cause needless matrix recompute).
     if (Math.abs(targetFov - this.instance.fov) > 0.001) {
       this.instance.updateProjectionMatrix()

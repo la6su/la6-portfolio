@@ -119,9 +119,8 @@ export class CinematicNav {
   private _bindTrack(): void {
     this._cancelPendingFrames()
     this._removeTrackListeners()
-    // Clear stale state from the previous page — _restoreFocus points to a
-    // detached node after innerHTML replacement, and a pending _inactiveTimer
-    // can falsely signal "user stopped interacting" on the new page (B-4).
+    // The focus target may be detached after route replacement, and an old
+    // inactivity timer must not affect the new page.
     this._restoreFocus = null
     if (this._inactiveTimer) {
       clearTimeout(this._inactiveTimer)

@@ -28,7 +28,7 @@
 @base-heading-text-transform: none;
 @base-heading-letter-spacing: -0.02em;
 
-// ── Status colors — owned by the brand status tokens (ADR 0007) ──
+// Status colors use the brand tokens.
 @global-success-background: @jlz-color-status-success;
 @global-warning-background: @jlz-color-status-warning;
 @global-danger-background: @jlz-color-status-danger;
@@ -40,8 +40,8 @@
 @global-xlarge-box-shadow: none;
 
 // ── Heading font-sizes (rem-based, mobile-first) ──
-// Golden-ratio (φ = 1.618) modular chain, owned by the @jlz-type-step-*
-// tokens (ADR 0007). html font-size is 0.85rem on mobile and 1rem on
+// Modular type scale from the @jlz-type-step-* tokens. html font-size is
+// 0.85rem on mobile and 1rem on
 // desktop, so the whole chain scales down mobile-first. Display sizes beyond
 // h1 use clamp(step, fluid middle, step) compositions in the content layer.
 @global-2xlarge-font-size: @jlz-type-step-5;

@@ -22,9 +22,7 @@ const CURSOR_ACCENT = '#ffd60a'
 const CURSOR_ACCENT_GLOW = 'rgba(255, 214, 10, 0.35)'
 const CURSOR_TEAL = '#58e6a9'
 
-/** Elements the cursor snaps/fills on. Shared by the mouseover and mouseout
- *  handlers — the intra-element transition guard (D-14) must consult the
- *  exact same selector on both sides. */
+/** Elements the cursor snaps to. Both pointer handlers use the same selector. */
 const INTERACTIVE_SEL =
   '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
 
@@ -123,8 +121,7 @@ export class Cursor {
   private _lastDrawBump = 1
   private _lastDrawStuck = false
   private _lastDrawState: string | null = null
-  // PERF-3 fix: track last-written DOM values to skip redundant style writes.
-  // Was writing style.transform + classList.toggle every frame even when idle.
+  // Track last-written values to skip redundant DOM style writes.
   private _lastInnerX = -Infinity
   private _lastInnerY = -Infinity
   private _lastCanvasX = -Infinity
@@ -209,9 +206,7 @@ export class Cursor {
       this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      // D-14 fix: skip intra-element transitions (mouseout→mouseover between
-      // child elements of the same interactive). Checks relatedTarget — if the
-      // mouse is moving TO another element within the same interactive, skip.
+      // Ignore transitions between descendants of interactive elements.
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         // Moving to another interactive (or child of same) — let that mouseover
@@ -247,8 +242,7 @@ export class Cursor {
           this.stuckX = rect.left + rect.width / 2
           this.stuckY = rect.top + rect.height / 2
         }
-        // D-14 fix: only play hover SFX on false→true transition (was playing
-        // on every mouseover, including intra-element moves — SFX spam).
+        // Play hover sound only when entering an interactive element.
         const wasStuck = this.isStuck
         this.isStuck = true
         this.fillTarget = 1
@@ -262,8 +256,7 @@ export class Cursor {
       this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      // D-14 fix: skip if moving to a related element that's also interactive
-      // (intra-element transition). Prevents the isStuck flicker.
+      // Ignore transitions between interactive elements to prevent flicker.
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         return
@@ -296,8 +289,7 @@ export class Cursor {
     // Inner dot stays visible (no opacity fade) — just changes color.
     this.innerX = this.targetX
     this.innerY = this.targetY
-    // PERF-3 fix: only write DOM when values actually changed (was writing
-    // style.transform + classList.toggle every frame even when mouse idle).
+    // Write DOM only when these values change.
     if (this.isStuck !== this._lastIsStuck) {
       this.innerEl.classList.toggle('is-hover', this.isStuck)
       this._lastIsStuck = this.isStuck
@@ -320,8 +312,7 @@ export class Cursor {
     this.velY = (this.velY + dy * this.springStiffness) * this.springDamping
     this.posX += this.velX
     this.posY += this.velY
-    // PERF-3 fix: only write canvas transform when position changed (sub-pixel
-    // spring jitter still updates, but idle mouse = no writes).
+    // Avoid transform writes while the cursor is idle.
     if (this.posX !== this._lastCanvasX || this.posY !== this._lastCanvasY) {
       this.canvas.style.transform = `translate(${this.posX}px, ${this.posY}px) translate(-50%, -50%)`
       this._lastCanvasX = this.posX

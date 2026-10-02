@@ -276,7 +276,6 @@ export class SceneCoordinator {
   }
 
   public resize(width: number, height: number): void {
-    // A-001: Propagate resize to scene groups + ground plane.
     // Scene groups: adjust scale for narrow screens (keep aspect ratio).
     const aspect = width / height
     const scale = aspect < 1 ? 0.7 : 1.0 // shrink on portrait

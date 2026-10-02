@@ -30,11 +30,8 @@ export abstract class TextReveal {
   protected abstract clearShowAttributes(): void
 
   show(dur: number = 0.6, sourceText?: string): void {
-    // D-3/D-9: read the source text BEFORE cancel(). cancel() restores the
-    // PREVIOUS cleanText into textContent — if translations were applied
-    // between shows, the old-language text would be read back as the new
-    // source. Reading first captures the current (possibly just-translated)
-    // textContent correctly.
+    // Read the source before cancel(), which restores the previous text. This
+    // preserves a translation applied between consecutive reveals.
     const text = sourceText ?? (this.el.textContent || '')
     this.cancel()
     this.cleanText = text

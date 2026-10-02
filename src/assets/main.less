@@ -61,8 +61,7 @@
   pointer-events: none;
 }
 
-// Lab camera exploration (ADR 0005's first Cientos adoption). SceneHost
-// publishes `body[data-lab-camera='on']` only on the Lab route with a fine
+// SceneHost enables Lab camera exploration only on that route with a fine
 // pointer and no reduced-motion preference. The wrapper + canvas then take
 // pointer input, and the experiment frames pass their empty middle through
 // to the canvas: drag-to-orbit around the gamepad, while interactive
