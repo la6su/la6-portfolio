@@ -214,6 +214,11 @@ preserve custom policy only when code or measurements prove the difference.
   those names already live in the SFC templates. Their root bindings remain
   only for transform updates and behavior. Controller tests now assert that
   visibility state changes without mutating Vue-owned scene nodes.
+- WorksPlaneStage also assigned route visibility to its mounted root while
+  `WorksStageOwner` declared a static false prop. Added a reactive visibility
+  snapshot to the stage contract and bound the existing Tres prop to it;
+  removed mount/dispose root visibility writes. The root binding remains for
+  card transforms and render ordering.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -1018,8 +1023,13 @@ pass (2/2).
 root visibility writes where the Tres SFC already binds `:visible`; controller
 state is now shallow-reactive. Removed duplicated static name writes from
 Baku/Lab node binding. Vue type-check, ESLint, 105/105 unit tests, compat guard,
-production build and bundle budgets pass. Firefox production route-cycle
-coverage for these changed stages remains to be run.
+production build and bundle budgets pass. Firefox production Lab scene mount
+and direct entry to all public routes pass.
+
+**Works stage visibility ownership:** Works route activation now flows through
+the existing Tres `visible` prop; removed controller writes that bypassed it.
+Vue type-check, ESLint, 105/105 unit tests, production build/budgets and
+Firefox Works repeated mount/release (1/1) pass.
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

@@ -29,7 +29,7 @@ beforeEach(() => {
 })
 
 describe('WorksPlaneStage scene ownership', () => {
-  it('controls a Vue-owned root without being a Three.js scene node', () => {
+  it('exposes route visibility without mutating the Vue-owned root', () => {
     const stage = new WorksPlaneStage()
     const root = new Group()
     const scene = new Scene()
@@ -37,13 +37,16 @@ describe('WorksPlaneStage scene ownership', () => {
 
     expect(stage).not.toBeInstanceOf(Group)
     stage.mount(root)
-    expect(root.visible).toBe(false)
+    expect(stage.visible).toBe(false)
+    expect(root.visible).toBe(true)
 
     stage.setActive(true, 0)
+    expect(stage.visible).toBe(true)
     expect(root.visible).toBe(true)
 
     stage.dispose()
-    expect(root.visible).toBe(false)
+    expect(stage.visible).toBe(false)
+    expect(root.visible).toBe(true)
     expect(root.parent).toBe(scene)
   })
 

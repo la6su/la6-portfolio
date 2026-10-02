@@ -6,6 +6,7 @@
 // handoff. Textures load only when /works is actually reached.
 
 import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
@@ -36,6 +37,7 @@ export interface WorksCaseCard {
 }
 
 export class WorksPlaneStage {
+  private readonly _visible = shallowRef(false)
   private cards: CasePlane[] = []
   private cardAssets: WorksCaseCard[] = []
   private readonly cardListeners = new Set<(cards: readonly WorksCaseCard[]) => void>()
@@ -92,8 +94,11 @@ export class WorksPlaneStage {
       throw new Error('WorksPlaneStage is already mounted to another scene root.')
     }
     this._root = root
-    root.visible = false
     root.renderOrder = 3
+  }
+
+  get visible(): boolean {
+    return this._visible.value
   }
 
   /** Subscribe the Vue owner to route-local leaves produced after texture load. */
@@ -263,7 +268,7 @@ export class WorksPlaneStage {
     const changed = active !== this._active || nextSection !== this._sectionIndex
     this._active = active
     this._sectionIndex = nextSection
-    if (this._root) this._root.visible = active
+    this._visible.value = active
     if (changed) {
       this._layoutDirty = true
       this.installation?.setProject(this.activeProject)
@@ -422,7 +427,7 @@ export class WorksPlaneStage {
     this._disposed = true
     this._active = false
     this._camera = null
-    if (this._root) this._root.visible = false
+    this._visible.value = false
     this.cardsMounted = null
     this.resolveCardsMounted?.()
     this.resolveCardsMounted = null
