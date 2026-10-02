@@ -205,8 +205,8 @@ Current known facts:
   reducing their implementation.
 - Resource disposal waits for Vue/Tres to detach declared nodes before GPU
   release. Host renderer disposal is deferred until scene owners unmount.
-- Generated `dist/`, blog HTML, home prerender, and sitemap are tracked release
-  inputs; CI rebuilds them and verifies they match their sources.
+- Generated `dist/`, blog HTML, home prerender, sitemap, and robots.txt are
+  tracked release inputs; CI rebuilds them and verifies they match sources.
 - CI previously repeated Vue type-check and stdlib compatibility checks after
   `bun run build`, which already runs both; the duplicate workflow steps are
   removed.
@@ -391,6 +391,10 @@ origin, keeping staging builds internally consistent. The static root document
 also held a hard-coded production canonical and social image URLs: route
 prerendering now applies the home metadata table to `/` and uses the configured
 origin for Open Graph and Twitter preview images on every SPA entry.
+The generated-artifact CI check previously omitted `public/robots.txt`, even
+though sitemap generation rewrites it with the configured origin. The workflow
+now checks robots.txt alongside sitemap.xml, preventing a stale crawler sitemap
+reference from passing the release artifact check.
 The same route parity check found four published Works case-study URLs missing
 from the sitemap despite having prerendered HTML and canonical metadata. The
 sitemap now includes those case-study records from `CASE_STUDIES`.

@@ -24,7 +24,7 @@ jobs:
       - run: bun run build
       - name: Verify generated outputs match their sources
         run: >-
-          git diff --exit-code -- dist blog.html blog/ prerender/home.html public/sitemap.xml
+          git diff --exit-code -- dist blog.html blog/ prerender/home.html public/robots.txt public/sitemap.xml
       - run: bun run test:unit
       - run: bun run lint
 
