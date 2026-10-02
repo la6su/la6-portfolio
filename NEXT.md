@@ -719,6 +719,21 @@ available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
 selection where WebGPU is unavailable, and no unexplained compatibility seam.
 State any engine or hardware coverage that could not be verified.
 
+Current production-output scan checked the 15 emitted SPA, case-study, and blog
+documents: each has English default `html[lang]`, a title, canonical URL, one
+`main`, and one `h1`; all images have `alt`, and no unnamed standard links or
+buttons, duplicate IDs, or broken `aria-labelledby` / `aria-describedby`
+references were found. The standalone blog has no locale switch and its
+interface and article sources are English-only, so the bilingual public-route
+criterion still needs an explicit locale-path policy before implementation.
+Reduced-motion source review found that the splash still ran 720 ms spiral
+scale entrances, a 420 ms SVG settle transition, and a 780 ms scaling exit;
+only the central pulse had been disabled. The reduce rule now holds the spirals
+at their final transforms/opacities, disables the SVG transition, and completes
+the existing `loader-exit` event contract in 1 ms. Chromium emulation confirms
+computed spiral animation `none`, SVG transition `0s`, exit duration `0.001s`,
+and prompt loader removal. Lint and the production build pass.
+
 Execution order:
 
 1. Walk `ROUTE_MANIFEST` plus case-study/blog entries for direct URL load,

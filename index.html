@@ -803,7 +803,19 @@
         #jlz-app-loader.is-exiting {
           pointer-events: none;
 
-          animation: loader-exit 780ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+          animation-duration: 1ms;
+          animation-timing-function: linear;
+        }
+
+        .jlz-splash-svg {
+          transition: none;
+        }
+
+        .jlz-splash-svg .spiral {
+          will-change: auto;
+          animation: none;
+          opacity: var(--portal-final-opacity);
+          transform: translate(0, 0) rotate(var(--portal-base-rotation)) scale(1);
         }
 
         .portal-core {
