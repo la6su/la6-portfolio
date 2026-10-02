@@ -575,10 +575,17 @@ Execution order:
 Dependency scan: every direct runtime package participates in the application
 graph, and the development packages have explicit consumers in config, build
 scripts, bundle analysis, lint or the existing quality suite. No dependency was
-removed from name matching alone. The Contact GLTF path still emits both
-standard and glTF Draco decoder asset families; retain this as a measured
-optimization candidate until the configured WASM path and unsupported-browser
-fallback can be checked over a browser network trace.
+removed from name matching alone. The Contact GLTF `DRACOLoader` path emits
+both standard and glTF decoder asset sets because the Three addon declares
+both URL families. Source trace confirms `ContactCyprusStage` selects
+`DRACO_GLTF_CONFIG`; Three's `setDecoderPath(config)` assigns the glTF WASM
+wrapper and binary and clears `dep_js`, so this route does not use the
+standalone JS decoder path. The additional standard files are emitted from
+the shared loader module's default URL constants, not from an observed network
+request. Keep them until a production network trace or a supported build-time
+elimination proves they are unrequested across the required browser set;
+deleting outputs alone could leave runtime URLs broken. The active glTF path
+remains route-lazy.
 Source-map bundle profiling at `e7bc5bf` attributed the shared Three vendor
 chunk primarily to Three's WebGPU/core modules; the WebGPU compatibility entry
 maps to about 0.2 kB. The lazy Lab-controls output was 80.7 kB raw / 21.9 kB
@@ -604,9 +611,13 @@ The existing Prettier scripts have no repository config. `.prettierignore`
 protects build output, generated prerenders, generated blog route documents,
 and the generated sitemap from broad write commands. The blog prerender step
 uses its explicit output list and an empty allowlist file to retain its
-formatting pass. A source-only baseline check still flags 169 authored files
-under Prettier's default style; a blanket rewrite would obscure the ongoing
-architecture diff, so agreeing and applying a source style remains open.
+formatting pass. On 2026-10-02, `bun run format:check` flagged 226 files under
+Prettier defaults. A probe using the prevailing TypeScript style (single
+quotes, no semicolons, 100-column width, trailing commas) reduced that to 81;
+the remaining differences include large Vue/Three files, generated/editorial
+HTML and vendored minified assets. Do not run a whole-tree rewrite until a
+repository style contract and ownership exclusions are agreed; format touched
+files with the existing dominant style meanwhile.
 
 Exit with a clean production build, browser/lifecycle evidence in the engines
 available, WebGPU/TSL evidence on supported hardware, automatic WebGL2 backend
