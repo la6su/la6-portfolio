@@ -69,6 +69,14 @@ or preserve a wrapper solely because a test currently encodes it.
   callback keeps Tres's frame counter in sync. Do not remove this scheduler
   just because the canvas also says `render-mode="on-demand"`; reassess only
   if rendering is returned to Tres's normal render callback.
+- Two scene-host adapters were checked directly against the installed Tres
+  5.9.2 implementation: its performance sampler reads
+  `geometry.attributes.position.count` without a guard, so the cursor trail's
+  empty position attribute prevents a crash before its generated ribbon is
+  attached; its camera manager exposes `setActiveCamera()` and has no
+  declarative `makeDefault` prop, so `CinematicCamera` must promote the camera
+  after mount. Keep these narrowly scoped seams unless the library contract
+  changes; do not replace them with a broader adapter abstraction.
 - Removed a frame-path config round trip in `Experience.update()`: section
   objects already reference their canonical `PhaseConfig`, so the current and
   next section configs now come directly from one sections/index snapshot.
@@ -137,6 +145,56 @@ Three owns GPU objects; every async load and GPU resource has one disposal
 owner. TSL stays as direct Three TSL graphs unless repeated product behavior
 proves a compact shared helper is simpler.
 
+### Current runtime ownership (source-traced)
+
+```mermaid
+flowchart TD
+  Entry[entry-app] --> Router[app/index.ts: Vue Router + AppShell]
+  Router --> Shell[AppShell: persistent shell + RouterView]
+  Shell --> Runtime[ExperienceRuntime: startup and teardown]
+  Shell --> Pages[Route views: semantic DOM + Vue section state]
+  Runtime --> Host[SceneHost: TresCanvas + declared scene nodes]
+  Host --> Tres[Tres renderer, size manager, camera manager, loop]
+  Host --> Ports[ready slots + route stage ports]
+  Runtime --> Experience[Experience: renderer pipeline + scheduler + app coordination]
+  Ports --> Experience
+  Experience --> Coordinator[SceneCoordinator: section/story policy + frame fan-out]
+  Coordinator --> Transform[SceneTransformPass: world transform calculation]
+  Experience --> Registry[StageRegistry: lazy route-stage lifecycle]
+  Registry --> Lazy[LazyStage: async create/attach/release mechanics]
+  Registry --> Ports
+  Experience --> UI[ExperienceUI: scene navigation and project controls]
+  Pages --> Bus[typed EventBus integration]
+  UI --> Bus
+  Bus --> Experience
+```
+
+This is the implementation path, not the desired end state. Source trace:
+`entry-app.ts` dynamically loads `app/index.ts`; `AppShell` keeps
+`ExperienceRuntime` and `SceneHost` mounted beside the route view;
+`ExperienceRuntime` creates `Experience` only after SceneHost emits its ready
+host. SceneHost owns Tres integration and renderer setup/recovery/late disposal;
+Experience adopts the scene objects and owns the custom render pipeline and
+its scheduler. StageRegistry builds route-specific lazy-stage contracts and
+uses Vue host ports to mount/unmount their declarative owners. The coordinator
+owns story/frame policy while `SceneTransformPass` contains the transform
+calculation. This source trace does not prove browser lifecycle behavior.
+
+The reduction audit must inspect these concrete boundaries:
+
+- `SceneHost` ↔ Tres: custom renderer, notify-only render callback, invalidate
+  bridge, DPR synchronization, and deferred disposal each need a distinct
+  current Tres limitation/use case before they remain.
+- `Experience` ↔ `SceneCoordinator`: record every call and state owner before
+  moving frame fan-out or route policy; preserve the independent render-demand
+  decision and transition calculations only if their consumers need them.
+- `StageRegistry` ↔ `LazyStage` ↔ `useSceneStages`: compare the six route
+  contracts with their actual lifecycle differences. Keep common race-safe
+  async mechanics once; do not generalize stage-specific ports merely to
+  shrink this file.
+- `ExperienceUI` ↔ Vue route views: identify whether any page, section, or
+  navigation fact is still held by both layers before changing the event API.
+
 ## Ordered work
 
 ### 1. Correct runtime ownership and startup races — active
@@ -145,9 +203,10 @@ proves a compact shared helper is simpler.
    for cancellation before readiness, during mount, after runtime creation,
    and on HMR; avoid a generic lifecycle state machine if a disposed guard and
    awaited teardown suffice.
-2. Trace `app/index.ts` → `AppShell` → `ExperienceRuntime` → `SceneHost` on
-   success, renderer/init failure, no-scene mode, route change, and teardown.
-   Draw the actual owner sequence before moving code.
+2. **Source trace complete:** `app/index.ts` → `AppShell` → `ExperienceRuntime`
+   → `SceneHost` and the coordinator/registry path are drawn above. Runtime
+   evidence for init failure, no-scene, route changes, and teardown remains
+   outstanding before this item can exit.
 3. Audit SceneHost's jobs against Tres 5.9.2's installed public APIs. Remove
    duplicated loop/size/lifecycle work when Tres owns the same contract.
    Retain WebGPU adoption/recovery seams only if Tres cannot express the
