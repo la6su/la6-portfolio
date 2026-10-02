@@ -95,6 +95,11 @@ preserve custom policy only when code or measurements prove the difference.
   though `init()` already performs that sync. Removed the alias and duplicate
   call. `StageRegistry` still syncs after lazy stage creation/disposal changes
   route visibility, where the state has actually changed.
+- `Experience.update()` re-sent the same persistent camera to the Works and
+  Contact lazy stages on every frame. `StageRegistry.configure()` already
+  assigns that camera when each stage is created, and both setters reject the
+  identical object. Removed the two hot-path calls; Tres-owned resize remains
+  the only changing viewport input.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an

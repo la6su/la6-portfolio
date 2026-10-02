@@ -817,11 +817,6 @@ export class Experience {
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
     const idx = this.coordinator.currentSectionIndex
-    // Update the lazy Works camera controller when that route has been loaded.
-    this._stages.worksPlaneStage?.setCamera(this.camera.instance)
-    // Update the lazy Contact camera controller when it has been loaded.
-    this._stages.contactCyprusStage?.setCamera(this.camera.instance)
-
     // Dispatch section-change on EVERY section index change (not just context).
     // The app shell reveals the matching DOM content; Experience handles the
     // scene-specific light and cube response to this same section event.
