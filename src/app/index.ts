@@ -3,13 +3,18 @@
 // Route navigation updates the semantic page and typed scene ports while the
 // persistent Experience and SceneHost remain mounted.
 
-import { createApp } from 'vue'
+import { createApp, nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { eventBus } from '../core/EventBus'
 import { applyTranslations, setLang } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
-import { langFromPath, localizedPath, resolvePagePath } from '../core/routeManifest'
+import {
+  langFromPath,
+  localizedPath,
+  resolvePagePath,
+  unlocalizedPath,
+} from '../core/routeManifest'
 import { RouteTransition } from '../UI/RouteTransition'
 import AppShell from './AppShell.vue'
 import { jlzRouteRecords } from './routes'
@@ -89,6 +94,7 @@ export async function mountVueApp(): Promise<void> {
   // no-ops; AppShell keeps the statically declared overlay hidden.
   const routeTransition = new RouteTransition()
   let appMounted = false
+  let routeFocusGeneration = 0
   let destroyAppShell: (() => Promise<void>) | null = null
   let unmountPromise: Promise<void> | null = null
   const initialHashGate = createDeferredInitialHashGate()
@@ -112,6 +118,21 @@ export async function mountVueApp(): Promise<void> {
     if (disposed) return false
   })
   router.afterEach((to, from) => {
+    const focusGeneration = ++routeFocusGeneration
+    if (
+      !disposed &&
+      appMounted &&
+      unlocalizedPath(to.path) !== unlocalizedPath(from.path)
+    ) {
+      // RouterLink focus can be lost when its route view is removed. Move
+      // keyboard and screen-reader users to the new semantic page after Vue
+      // has committed the RouterView swap. Locale-only changes keep focus on
+      // the language control because their unlocalized paths are identical.
+      void nextTick(() => {
+        if (disposed || focusGeneration !== routeFocusGeneration) return
+        document.getElementById('spa-content')?.focus({ preventScroll: true })
+      })
+    }
     if (!disposed && appMounted && to.path !== from.path) routeTransition.reveal()
   })
   router.onError(() => {

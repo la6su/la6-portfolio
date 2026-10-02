@@ -997,6 +997,16 @@ Execution order:
    section overflow, advanced the story track, and began scrolling the next
    section without page errors. Other route transitions and the full
    pointer-device matrix remain open.
+   Source review found SPA route links could be removed while focused, leaving
+   keyboard focus on the document body; the polite title announcer did not
+   restore focus. Named route changes now focus the incoming `#spa-content`
+   after Vue's next DOM update. A generation guard cancels stale focus if
+   another navigation commits first, and language-only URL changes preserve
+   focus on the language control. `bun run lint` and the full production build
+   pass, including updated tracked prerenders and asset hashes. Browser
+   confirmation remains open: the local dev server could not bind its port in
+   this sandbox (`listen EPERM`), and the CUA runtime failed during
+   initialization.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
