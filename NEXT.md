@@ -177,6 +177,16 @@ preserve custom policy only when code or measurements prove the difference.
   symbols are live for the pinned dependency graph. Since drift can break the
   production module graph or leave dead shim exports after a dependency bump,
   wired this existing checker into `build` before prerendering and bundling.
+- Inspected the installed Tres 5.9.2 renderer manager and Three r186 source.
+  Tres's RAF invokes before-loop hooks on each tick, then its default render
+  callback renders the scene only while an invalidated frame is pending. The
+  app must keep Tres as the RAF/invalidation host but replace that callback so
+  Experience performs the only actual draw and successful-frame accounting.
+  Tres also calls renderer `dispose()` before unmounting its Vue scene tree;
+  SceneHost's deferred dispose is required to release declarative owners first.
+  Keep these bridges unless Tres exposes a lifecycle contract that removes
+  those ordering requirements. Replaced stale `constructor.name` comments with
+  the explicit backend-marker contract the code uses.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled

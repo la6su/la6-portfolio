@@ -113,7 +113,8 @@ export class DeviceCapability {
 
   // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
   // of dead code (never called anywhere; Renderer.ts does its own post-hoc
-  // WebGPU adapter check after wg.init() via backend name + isFallback).
+  // WebGPU adapter check after wg.init() via explicit backend marker and
+  // isFallbackAdapter).
 
   private detectRenderMode(): RendererMode {
     // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).

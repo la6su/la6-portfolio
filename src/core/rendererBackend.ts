@@ -5,7 +5,7 @@
 export type FinalMode = 'webgpu' | 'webgl'
 
 export interface BackendFacts {
-  /** `backend.constructor.name` on the initialized renderer. */
+  /** Backend class identified through Three's explicit backend marker. */
   backendName: string | null
   /**
    * Tri-state classification for the WebGPU adapter:
