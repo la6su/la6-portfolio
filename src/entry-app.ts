@@ -281,9 +281,8 @@ async function startAppOnce(): Promise<void> {
   // Keep this deliberately simple: Vue owns #spa-content, so we wait until
   // the DOM actually contains the route content, then start the first reveal.
   //
-  // Do NOT make the first animation depend on section-change, page-section-change,
-  // IntersectionObserver or a second bootstrap event. Those are for subsequent
-  // navigation/scroll transitions.
+  // Do NOT make the first animation depend on section-change or
+  // page-section-change. Those events are for later navigation.
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
   // (greyed, non-clickable) the entire time — it never activates until 3D

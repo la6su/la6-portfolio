@@ -48,7 +48,7 @@ export abstract class TextReveal {
     this.begin()
 
     // Safety timeout → guarantees finalize() fires even if RAF is throttled
-    // (background tab, heavy GPU, IntersectionObserver during scroll).
+    // (background tab or a suspended rendering loop).
     this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200)
     this.rafId = requestAnimationFrame(this.tick)
   }
