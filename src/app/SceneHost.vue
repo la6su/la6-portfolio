@@ -95,7 +95,6 @@ const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface =>
 }
 
 const tresRef = ref<{ $el: Element } | null>(null)
-let resolved = false
 let disposed = false
 let lifecycleGeneration = 0
 let ownedRenderer: UnifiedRenderSurface | null = null
@@ -255,7 +254,7 @@ async function disposeHostRenderer(renderer: UnifiedRenderSurface | null): Promi
 }
 
 async function onReady(context: TresContext): Promise<void> {
-  if (noScene || resolved) return
+  if (noScene || sceneHost.isSettled) return
   // Tres owns the persistent RAF host. Install the
   // bridges BEFORE any async work can yield so the first scheduler tick (and
   // any ecosystem invalidate) always lands on the final wiring.
@@ -352,7 +351,6 @@ async function onReady(context: TresContext): Promise<void> {
   // Publish the selected backend's DPR cap so Tres and the renderer agree.
   // writers (Tres's size manager and the Renderer owner) agree from now on.
   dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
-  resolved = true
   ownedRenderer = renderer
   ownedRendererDisposal ??= deferRendererDisposal(renderer)
   unbindRendererOwner = sceneHost.bindRendererOwner((replacement, mode) => {
@@ -388,8 +386,7 @@ async function onReady(context: TresContext): Promise<void> {
 }
 
 function onError(error: Error): void {
-  if (resolved || disposed) return
-  resolved = true
+  if (sceneHost.isSettled || disposed) return
   void disposeHostRenderer(ownedRenderer).catch((disposeError: unknown) => {
     console.error('[SceneHost] renderer cleanup failed after initialization error:', disposeError)
   })

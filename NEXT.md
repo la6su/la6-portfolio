@@ -272,6 +272,10 @@ preserve custom policy only when code or measurements prove the difference.
   reveal call sites repeated the same unchecked cast. Added one type-only
   integration seam that exposes the runtime method as callable and routed those
   consumers through it; no helper function or runtime behavior was added.
+- `SceneHost` kept a local `resolved` flag alongside the one-shot
+  `sceneHost.isSettled` state. Both writes happened synchronously at the same
+  ready/error boundaries, so the local mirror provided no race protection.
+  Removed it and retained the bridge as the sole settle-state owner.
 - Lab camera control ownership was mirrored from SceneHost's computed
   `labCameraActive` into a module-level boolean for `Camera`. Removed that
   singleton; `SceneHostReady` now passes the live read-only policy to the
@@ -1116,6 +1120,11 @@ for `UIkit.update()`, removing repeated unchecked casts from route mounting,
 console refresh, content reveal, and overlay mount. Vue type-check, ESLint,
 compatibility checks, and production build/budgets pass; bundle sizes remain
 unchanged.
+
+**SceneHost settle state:** Removed its local `resolved` boolean; duplicate
+ready/error callbacks now consult the existing one-shot sceneHost state. Vue
+type-check, ESLint, compatibility checks and production build/budgets pass
+(352 modules; splash 2.85 kB gzip, Three chunk 310.95 kB gzip).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the
