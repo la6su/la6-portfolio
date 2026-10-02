@@ -1,5 +1,5 @@
 // src/Experience/ContentReveal.ts
-// Section sync: toggles .section-active + applies per-section theme.
+// Section sync: applies the per-section theme; Vue owns the active class.
 //
 // PER-SECTION THEME (KISS):
 //   Each section's PhaseConfig has theme: 'light' | 'dark' in WorldConfig.
@@ -22,8 +22,6 @@ export class ContentReveal {
   private pageSectionUnsub: (() => void) | null = null
   private themeChangeUnsub: (() => void) | null = null
   private routeChangeUnsub: (() => void) | null = null
-  private currentSectionId: string | null = null
-  private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
   private page: () => PageId
   private _destroyed = false
@@ -51,7 +49,6 @@ export class ContentReveal {
     )
     const sectionId =
       active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
-    this.currentSectionId = sectionId
     this.applyTheme(sectionId)
   }
 
@@ -73,38 +70,21 @@ export class ContentReveal {
     // Home: jlz:section-change (data-section)
     this.sectionUnsub = eventBus.on('jlz:section-change', (payload) => {
       if (!payload?.sectionId) return
-      this.currentSectionId = payload.sectionId
-      // Derive the 6-section index from the sectionId so EnvSphere can show
-      // the active section's own colour on every scroll step.
-      const configs = this.getConfigs()
-      const idx = configs.findIndex(
-        (c) => c.domSection === payload.sectionId || c.id === payload.sectionId,
-      )
-      this.currentSectionIndex = idx >= 0 ? idx : -1
       this.applyTheme(payload.sectionId)
     })
 
     // Content pages: jlz:page-section-change (data-page-section)
     this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index, sectionId }) => {
-      this.currentSectionId = sectionId
-      this.currentSectionIndex = index
-      this.applyTheme(sectionId)
+      this.applyTheme(sectionId, false, index)
     })
   }
 
-  private applyTheme(sectionId: string, snap = false): void {
+  private applyTheme(sectionId: string, snap = false, sectionIndexHint = -1): void {
     const configs = this.getConfigs()
-    let cfg = configs.find((c) => c.domSection === sectionId || c.id === sectionId)
-    if (!cfg && this.currentSectionIndex >= 0) {
-      cfg = configs[this.currentSectionIndex]
-    }
-    // Resolve the section index from the config so EnvSphere/3D sync gets
-    // the correct per-section colour even on route-change (where
-    // currentSectionIndex was just reset to -1).
-    if (cfg) {
-      const idx = configs.indexOf(cfg)
-      if (idx >= 0) this.currentSectionIndex = idx
-    }
+    const cfg = configs.find((c) => c.domSection === sectionId || c.id === sectionId)
+    // Config identity is canonical when present. Keep the nav index only for
+    // a semantic fallback section without a world-config entry.
+    const sectionIndex = cfg ? configs.indexOf(cfg) : sectionIndexHint
     const sectionIsLight = cfg?.theme === 'light'
     const isInverse = themeManager.isInverse
     // Effective-theme port: the auto/inverse decision is the pure
@@ -126,7 +106,7 @@ export class ContentReveal {
     // and it prevents desync on route-change where currentIsLight matches.
     const detail: ThemeAppliedPort = {
       isLight: shouldUseLight,
-      sectionIndex: this.currentSectionIndex,
+      sectionIndex,
       sectionId,
       themeChanged: true,
       mode,
@@ -144,34 +124,24 @@ export class ContentReveal {
     // its theme immediately.)
     this.routeChangeUnsub = eventBus.on('jlz:route-change', () => {
       this.cachedConfigs = null
-      this.currentSectionId = null
-      this.currentSectionIndex = -1
       const active = this.contentRoot().querySelector<HTMLElement>(
         '[data-section].section-active, [data-page-section].section-active',
       )
       const sectionId =
         active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
-      this.currentSectionId = sectionId
       this.applyTheme(sectionId)
     })
 
-    // theme-change: re-apply the current section theme. Fallback chain if
-    // currentSectionId was cleared (e.g. by a prior route-change):
-    // 1) active DOM section (.section-active), 2) 'intro'. Without this,
-    // toggling theme right after page load (before any section navigation)
-    // would no-op — currentSectionId was null.
+    // Vue's active class is the source for the section under the current
+    // theme. The DOM fallback covers the instant before the first route render.
     this.themeChangeUnsub = eventBus.on('jlz:theme-change', () => {
-      let sectionId = this.currentSectionId
-      if (!sectionId) {
-        const active = this.contentRoot().querySelector<HTMLElement>(
-          '[data-section].section-active, [data-page-section].section-active',
-        )
-        sectionId =
-          active?.getAttribute('data-section') ??
-          active?.getAttribute('data-page-section') ??
-          'intro'
-        this.currentSectionId = sectionId
-      }
+      const active = this.contentRoot().querySelector<HTMLElement>(
+        '[data-section].section-active, [data-page-section].section-active',
+      )
+      const sectionId =
+        active?.getAttribute('data-section') ??
+        active?.getAttribute('data-page-section') ??
+        'intro'
       // snap=true: theme toggle → EnvSphere must change instantly (no lerp)
       // to match the instant CSS uk-light flip.
       this.applyTheme(sectionId, true)

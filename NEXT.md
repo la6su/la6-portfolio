@@ -97,9 +97,11 @@ or preserve a wrapper solely because a test currently encodes it.
   contact/menu sheets. `CinematicNav` includes the selected `sectionId` in its
   page event; `ContentReveal` now applies theme policy without mutating
   `.section-active` or scheduling its own UIKit update frame. The route
-  composable calls UIKit after Vue's post-flush update. Production build and
-  home prerender succeed with exactly one initial active section; browser
-  navigation behavior still needs runtime verification.
+  composable calls UIKit after Vue's post-flush update. `ContentReveal` no
+  longer mirrors the active section id/index; it reads the Vue-rendered active
+  element and derives the config index from the matched config. Production
+  build and home prerender succeed with exactly one initial active section;
+  browser navigation behavior still needs runtime verification.
 - Known release-evidence gaps from prior work: WebKit could not launch in the
   current environment; actual physical WebGPU/TSL compilation and visual
   output have not been demonstrated on a real GPU. Recheck environment and
