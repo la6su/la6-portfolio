@@ -580,6 +580,10 @@ maps to about 0.2 kB. The lazy Lab-controls output was 80.7 kB raw / 21.9 kB
 gzip across Cientos, OrbitControls, stats-gl and required helpers. The release
 build remains within the recorded 310.95/350 kB Three and 21.85 kB lazy Lab
 gzip sizes; this profile does not justify replacing the installed control API.
+The post-recovery-timeout `bun run analyze:bundle` profile at `88291e8` reports
+the Three vendor at 310.98 kB gzip and lazy Lab controls at 21.90 kB. The
+shared core chunk is 7.73 kB gzip (up from the prior 7.50 kB); the recovery
+timeout is a small addition and all configured release budgets still pass.
 
 ### 3. Production and whole-tree audit — pending
 
