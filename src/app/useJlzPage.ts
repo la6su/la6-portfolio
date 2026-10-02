@@ -108,9 +108,14 @@ export function useJlzPage(
     // Typed EventBus emission — app-lifetime listeners subscribe to this port.
     eventBus.emit('jlz:route-change')
     if (noSceneRequested) {
-      noSceneScroller = el.querySelector<HTMLElement>('.jlz-page')
-      const mainSections = [...(noSceneScroller?.querySelectorAll<HTMLElement>('[data-page-section]') ?? [])]
-        .filter((section) => !['page-lab', 'page-menu'].includes(section.dataset.pageSection ?? ''))
+      const pageMode = page !== 'home'
+      noSceneScroller = pageMode ? el.querySelector<HTMLElement>('.jlz-page') : el
+      const sectionKey = pageMode ? 'pageSection' : 'section'
+      const selector = pageMode ? ':scope > [data-page-section]' : ':scope > [data-section]'
+      const excludedSections = new Set(['lab', 'menu', 'page-lab', 'page-menu'])
+      const mainSections = [...(noSceneScroller?.querySelectorAll<HTMLElement>(selector) ?? [])].filter(
+        (section) => !excludedSections.has(section.dataset[sectionKey] ?? ''),
+      )
       let lastSectionId = ''
       noSceneScrollHandler = () => {
         if (noSceneScrollFrame !== null) return
@@ -121,10 +126,15 @@ export function useJlzPage(
           const position = clampStoryPosition(noSceneScroller.scrollTop / height, mainSections.length)
           const index = mainSectionFromPosition(position, 0, mainSections.length)
           const section = mainSections[index]
-          const sectionId = section?.dataset.pageSection
+          const sectionId = section?.dataset[sectionKey]
           if (!sectionId || sectionId === lastSectionId) return
           lastSectionId = sectionId
-          eventBus.emit('jlz:page-section-change', { worldIndex: FIRST_MAIN + index, sectionId })
+          const worldIndex = FIRST_MAIN + index
+          if (pageMode) {
+            eventBus.emit('jlz:page-section-change', { worldIndex, sectionId })
+          } else {
+            eventBus.emit('jlz:section-change', { index: worldIndex, sectionId })
+          }
         })
       }
       noSceneScroller?.addEventListener('scroll', noSceneScrollHandler, { passive: true })

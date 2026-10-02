@@ -189,17 +189,17 @@ Current known facts:
   `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
   outrun AppShell's `splash-entered` listener. Renderer startup remains
   asynchronous and reports its own mount failures through `webgl-failed`.
-  A follow-up 320×640 production-preview check found that native scrolling on
-  renderer-free content routes left the active section stuck on the first
-  chapter because `CinematicNav` is not mounted in this mode. `useJlzPage` now
-  observes the `.jlz-page` scroll track only for `?no-scene`, applies the same
-  clamped midpoint section mapping, and emits the normal page-section event so
-  active styling, reveal, and theme consumers stay in sync. Route replacement
-  and unmount cancel its listener and pending animation frame. Chromium verified
-  Works advances through Porsche 911 Spider → Alise → 19 Lab → Pro193 at
-  320×640, with no horizontal overflow or page errors. The existing
-  `bun run lint` and full production build pass; GPU-backed runtime behavior is
-  still an open acceptance gate.
+  Production-preview checks found that native scrolling in `?no-scene` left
+  content-route and home active sections stuck because `CinematicNav` is not
+  mounted. `useJlzPage` now observes each route's native scroll track, applies
+  the shared clamped midpoint mapping, and emits the matching section event
+  (`jlz:section-change` on home and `jlz:page-section-change` on content
+  routes). Route replacement and unmount cancel listeners and pending animation
+  frames. Chromium verified Works advances Porsche 911 Spider → Alise → 19 Lab
+  → Pro193 at 320×640. Home advances intro → Services → Works → Manifesto at
+  320×640, 390×844, and 640×360. No horizontal overflow or page errors appeared.
+  `bun run lint` and the full production build pass; GPU-backed runtime behavior
+  is still an open acceptance gate.
   `bun run lint` and the full `bun run build` pass, including prerender,
   generated sitemap/robots, and configured bundle/media budgets. The rebuild
   regenerated tracked `dist` assets and prerendered route documents.
