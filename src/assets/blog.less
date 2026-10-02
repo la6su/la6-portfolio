@@ -257,8 +257,8 @@ code[class*='language-'] {
   font-size: 1.3rem;
   text-decoration: none;
   transition:
-    transform 260ms var(--jlz-ease-out-quint, ease-out),
-    background-color 260ms ease;
+    transform var(--jlz-duration-normal) var(--jlz-ease-out-quint, ease-out),
+    background-color var(--jlz-duration-normal) ease;
 }
 
 .jlz-journal-feature:hover .jlz-journal-arrow,
@@ -290,8 +290,8 @@ code[class*='language-'] {
   min-height: 5rem;
   border-top: 1px solid var(--jlz-color-border);
   transition:
-    padding 260ms var(--jlz-ease-out-quint, ease-out),
-    color 260ms ease;
+    padding var(--jlz-duration-normal) var(--jlz-ease-out-quint, ease-out),
+    color var(--jlz-duration-normal) ease;
 }
 
 .jlz-journal-note:last-child {
@@ -309,7 +309,7 @@ code[class*='language-'] {
 
 .jlz-journal-note__arrow {
   justify-self: end;
-  transition: transform 260ms var(--jlz-ease-out-quint, ease-out);
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-out-quint, ease-out);
 }
 
 .jlz-journal-note:hover,
@@ -348,6 +348,10 @@ code[class*='language-'] {
   .jlz-journal-note__arrow {
     transition: none;
   }
+
+  .jlz-blog-footer a {
+    transition: none;
+  }
 }
 
 // ── Footer — minimal ──
@@ -370,7 +374,7 @@ code[class*='language-'] {
   display: inline-flex;
   padding: 0.5rem;
   color: var(--jlz-color-text-muted);
-  transition: color 260ms var(--jlz-ease-out-quint, ease-out);
+  transition: color var(--jlz-duration-normal) var(--jlz-ease-out-quint, ease-out);
 }
 
 .jlz-blog-social a:hover {

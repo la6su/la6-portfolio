@@ -251,6 +251,10 @@ Current known facts:
   initial splash reveal also respects reduced motion.
 - Section reveal targets now resolve from the event's canonical `sectionId`;
   the previous global-list index could target the preceding ContactFooter.
+- Reduced-motion CSS now covers navigation controls, blog footer links,
+  fullscreen poster fading, and persistent-shell fullscreen opacity. The blog's
+  interactive journal and footer color transitions use the shared duration
+  tokens, which collapse to zero under the system preference.
 - Splash sound changes now publish the existing sound event after persisting,
   keeping the mounted Vue control and Experience SFX state synchronized.
 - Startup and device-loss error messages no longer claim a WebGL2 adapter
