@@ -179,6 +179,11 @@ preserve custom policy only when code or measurements prove the difference.
   Removed `setScene`, `_needsBuild`, and the unreachable old-graph teardown
   before-build path. The TSL graph now builds lazily once per renderer and is
   released with that renderer's pipeline.
+- Both renderer post classes also exposed static `create()` methods that only
+  forwarded constructor arguments; the renderer factory assigned fields after
+  constructing an empty instance. Removed these redundant factories, made
+  lifetime-stable renderer/scene/camera references readonly, and construct the
+  pipeline directly at the renderer owner.
 - The compat seams for Tres/Cientos are required: `bun run check:stdlib`
   confirms all 28 three-stdlib symbols and five curated WebGPU compatibility
   symbols are live for the pinned dependency graph. Since drift can break the
@@ -1054,7 +1059,9 @@ home reveal and Works repeated mount/release checks pass (2/2).
 **WebGPU post graph lifetime:** Removed the unused scene/camera swap and
 rebuild path from `WebGPUPostPipeline`; the persistent Tres scene/camera remain
 stable, and renderer recovery already constructs a fresh pipeline. The TSL
-graph now builds once on first WebGPU render per renderer. Vue type-check,
+graph now builds once on first WebGPU render per renderer. Removed two
+pass-through static factories; `Renderer` directly constructs the pipeline.
+Vue type-check,
 lint, compatibility guards, unit suite and production build/budgets pass;
 physical WebGPU shader compilation and visual parity remain unverified because
 this environment cannot access the NVIDIA driver.

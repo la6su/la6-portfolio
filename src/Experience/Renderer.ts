@@ -137,10 +137,7 @@ export class Renderer {
     );
 
     // Build the post pipeline around the adopted WebGPURenderer.
-    this.pipeline = RenderPipeline.create(
-      this.instance,
-      this.capabilities.postProcessing,
-    );
+    this.pipeline = new RenderPipeline(this.instance, this.capabilities.postProcessing);
 
     // Bounded WebGPU device-loss recovery: a lost device (driver/GPU reset,
     // system memory pressure) re-creates the renderer on the same canvas and
@@ -320,10 +317,7 @@ export class Renderer {
       this.instance.setPixelRatio(Math.min(viewport.dpr, this.capabilities.maxDpr))
       this.instance.setSize(viewport.width, viewport.height)
       this.postManager.refreshPreset();
-      this.pipeline = RenderPipeline.create(
-        this.instance,
-        this.capabilities.postProcessing,
-      );
+      this.pipeline = new RenderPipeline(this.instance, this.capabilities.postProcessing);
       this.attachDeviceLossRecovery(this.instance);
       // Keep Tres context aligned with the live replacement. The loop needs
       // no re-attachment because the pipeline reads the adopted instance.

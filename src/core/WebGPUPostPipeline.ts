@@ -38,9 +38,9 @@ import type { PostParams } from './postParams'
  */
 export class WebGPUPostPipeline {
   private _pipeline: TSLRenderPipeline | null = null
-  private _renderer: WebGPURenderer
-  private _scene: Scene
-  private _camera: Camera
+  private readonly _renderer: WebGPURenderer
+  private readonly _scene: Scene
+  private readonly _camera: Camera
   private _scenePass: PassNode | null = null
   private _bloomNode: BloomNode | null = null
 
@@ -54,14 +54,10 @@ export class WebGPUPostPipeline {
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
   private _gradeHighlights = uniform(new THREE.Vector3(1, 1, 1))
 
-  private constructor(renderer: WebGPURenderer, scene: Scene, camera: Camera) {
+  constructor(renderer: WebGPURenderer, scene: Scene, camera: Camera) {
     this._renderer = renderer
     this._scene = scene
     this._camera = camera
-  }
-
-  static create(renderer: WebGPURenderer, scene: Scene, camera: Camera): WebGPUPostPipeline {
-    return new WebGPUPostPipeline(renderer, scene, camera)
   }
 
   updateParams(params: Readonly<PostParams>): void {

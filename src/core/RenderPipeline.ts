@@ -16,16 +16,18 @@ import { copyPostParams, postParamsMatch, type PostParams } from './postParams'
  * reclaimed when the pipeline (or the renderer) is disposed.
  */
 export class RenderPipeline {
-  private _params!: PostParams
+  private readonly _params: PostParams
 
-  private _renderer!: WebGPURenderer
+  private readonly _renderer: WebGPURenderer
   private _webgpuPipeline: WebGPUPostPipeline | null = null
-  private _postProcessingEnabled = true
+  private readonly _postProcessingEnabled: boolean
   /** Terminal for this pipeline instance: avoid retrying a broken TSL graph every frame. */
   private _webgpuPostFailed = false
   private _webgpuParamsDirty = true
 
-  private constructor() {
+  constructor(renderer: WebGPURenderer, postProcessingEnabled = true) {
+    this._renderer = renderer
+    this._postProcessingEnabled = postProcessingEnabled
     this._params = {
       bloom: 0.4,
       vignette: 0.5,
@@ -37,22 +39,6 @@ export class RenderPipeline {
       gradeShadows: [1, 1, 1],
       gradeHighlights: [1, 1, 1],
     }
-  }
-
-  /** Factory: create pipeline for the unified WebGPURenderer.
-   *  `postProcessingEnabled` is the capability decision (real WebGPU backend
-   *  AND tier above low — see supportsPostProcessing); when false the pipeline
-   *  renders directly and never builds the TSL graph. */
-  public static create(renderer: WebGPURenderer, postProcessingEnabled = true): RenderPipeline {
-    const pipeline = new RenderPipeline()
-
-    pipeline._renderer = renderer
-    pipeline._postProcessingEnabled = postProcessingEnabled
-
-    // WebGPU TSL pipeline is built lazily on first render() — it needs the
-    // live scene + camera references to bind into the PassNode.
-
-    return pipeline
   }
 
   // ─── Public API ────────────────────────────────────────────────
@@ -81,7 +67,7 @@ export class RenderPipeline {
       if (!this._webgpuPostFailed) {
         try {
           if (!this._webgpuPipeline) {
-            this._webgpuPipeline = WebGPUPostPipeline.create(this._renderer, scene, camera)
+            this._webgpuPipeline = new WebGPUPostPipeline(this._renderer, scene, camera)
             this._webgpuParamsDirty = true
           }
           if (this._webgpuParamsDirty) {
