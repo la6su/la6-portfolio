@@ -28,7 +28,7 @@ export interface LabExperimentObject {
 interface LabExperiment {
   id: string
   page: 'lab'
-  load: () => Promise<LabExperimentObject>
+  load: (isCurrent: () => boolean) => Promise<LabExperimentObject | null>
 }
 
 /**
@@ -40,9 +40,9 @@ export const labExperiments: readonly LabExperiment[] = [
   {
     id: 'gamepad',
     page: 'lab',
-    async load() {
+    async load(isCurrent) {
       const { LabGamepad } = await import('../World/LabGamepad')
-      return new LabGamepad()
+      return isCurrent() ? new LabGamepad() : null
     },
   },
 ]

@@ -305,13 +305,9 @@ export class StageRegistry {
     return {
       label: 'LabGamepad',
       owner: this.owners.labGamepad,
-      create: () => {
+      create: (isCurrent) => {
         const experiment = getLabExperiment('lab')
-        // No isCurrent guard on the resolved object: the manifest load may
-        // have already constructed it, so a retired request must fall through
-        // to the LazyStage stale check, which releases the late result
-        // (dispose) instead of silently dropping it.
-        return experiment ? experiment.load() : Promise.resolve(null)
+        return experiment ? experiment.load(isCurrent) : Promise.resolve(null)
       },
       attach: (stage) => this._ctx.host.labGamepad.mount(stage),
       configure: (stage) => {
