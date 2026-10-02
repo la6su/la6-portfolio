@@ -68,9 +68,12 @@ Current known facts:
   TSL post-processing. Firefox's compatibility feature-level notice comes
   from Three/browser support. Playwright Firefox exercised WebGL2; WebKit
   remains unverified.
-- Cold Vite startup previously loaded two Three cores after late dependencies
-  entered optimization. `BloomNode` and `tweakpane` are included up front; a
-  Firefox cold-start check observed one Three core and no duplicate warning.
+- Three's WebGPU entry and the app's Three imports are aliased to one dev core.
+  A previous Firefox cold-start check observed one core, but the user now
+  reports `Multiple instances of Three.js` again. Treat duplicate-core
+  elimination as unverified until a fresh Firefox startup and lazy Cientos
+  route activation both stay on one optimized core; inspect optimizer cache
+  invalidation before adding more compatibility code.
 - Current direct runtime pins match the latest releases checked on
   2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
   Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
@@ -93,6 +96,9 @@ Audit these seams specifically:
 
 - SceneHost readiness slots, renderer sizing/DPR, loop/invalidate bridge, and
   deferred renderer disposal against Tres's public API.
+- Vite dev dependency optimization and every lazy Three/Cientos entry against
+  the reported Firefox duplicate-core warning; distinguish optimizer restarts
+  from simultaneously loaded core modules.
 - Experience versus SceneCoordinator ownership of route policy, frame fan-out,
   and render demand.
 - StageRegistry versus LazyStage versus `useSceneStages`; retain only shared
