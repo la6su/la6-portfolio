@@ -26,7 +26,6 @@ onBeforeUnmount(() => {
       :position="[glyph.x, 0, 0]"
       :scale="[0, 0, 0]"
       :frustum-culled="false"
-      :dispose="null"
     />
   </TresGroup>
 </template>

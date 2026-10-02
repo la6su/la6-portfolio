@@ -40,7 +40,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.shell"
       cast-shadow
       receive-shadow
-      :dispose="null"
     />
     <TresMesh
       name="screen-frame"
@@ -48,7 +47,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.dark"
       :position="[0, 11, 7.2]"
       cast-shadow
-      :dispose="null"
     />
     <TresMesh
       name="screen"
@@ -56,7 +54,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.metal"
       :position="[0, 11, 9.15]"
       cast-shadow
-      :dispose="null"
     />
     <TresMesh
       name="gamepad-dpad"
@@ -64,7 +61,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.accent"
       :position="[-35, -25, 8.5]"
       cast-shadow
-      :dispose="null"
     />
     <TresMesh
       name="button-a"
@@ -72,7 +68,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.accent"
       :position="[25, -25, 8.5]"
       cast-shadow
-      :dispose="null"
     />
     <TresMesh
       name="button-b"
@@ -80,7 +75,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.accent"
       :position="[45, -25, 8.5]"
       cast-shadow
-      :dispose="null"
     />
     <TresMesh
       v-for="position in screwPositions"
@@ -90,7 +84,6 @@ onBeforeUnmount(() => {
       :material="stage.resources.material.metal"
       :position="position"
       cast-shadow
-      :dispose="null"
     />
     <TresGroup ref="crankPivot" name="gamepad-crank" :position="LAB_GAMEPAD_POSE.crankPosition">
       <TresMesh
@@ -98,7 +91,6 @@ onBeforeUnmount(() => {
         :geometry="stage.resources.geometry.crankArm"
         :material="stage.resources.material.metal"
         cast-shadow
-        :dispose="null"
       />
       <TresMesh
         name="gamepad-crank-knob"
@@ -106,7 +98,6 @@ onBeforeUnmount(() => {
         :material="stage.resources.material.accent"
         :position="[0, 17, 0]"
         cast-shadow
-        :dispose="null"
       />
     </TresGroup>
   </TresGroup>

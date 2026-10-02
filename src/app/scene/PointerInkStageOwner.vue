@@ -29,7 +29,6 @@ onBeforeUnmount(() => {
       :scale="[0.001, 0.001, 0.001]"
       :frustum-culled="false"
       :render-order="1"
-      :dispose="null"
     />
   </TresGroup>
 </template>

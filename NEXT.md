@@ -51,6 +51,9 @@ Current known facts:
 - `SceneTransformPass` returns its active/from/to configs and section index;
   Experience no longer re-reads route sections or looks phase ids up in a
   duplicate config Map.
+- Tres 5.9.2 propagates a parent's disposal policy during subtree removal.
+  Resource-owned static subtrees now set `dispose: null` once at their root;
+  per-node overrides remain where a child is removed independently.
 - Production build and bundle budgets passed after the latest renderer
   simplification (`fd13967`). The user confirmed physical Firefox WebGPU and
   TSL post-processing. Firefox's compatibility feature-level notice comes

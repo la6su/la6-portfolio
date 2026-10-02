@@ -66,14 +66,13 @@ onBeforeUnmount(disposeGeometry)
 </script>
 
 <template>
-  <TresGroup ref="assembly" name="works-installation-assembly">
+  <TresGroup ref="assembly" name="works-installation-assembly" :dispose="null">
     <TresMesh
       v-for="(args, index) in arcArgs"
       :key="index"
       ref="arcs"
       :material="props.installation.metalMaterial"
       :rotation="arcRotations[index]"
-      :dispose="null"
     >
       <TresTorusGeometry :args="args" />
     </TresMesh>
@@ -81,7 +80,6 @@ onBeforeUnmount(disposeGeometry)
       ref="trace"
       :material="props.installation.signalMaterial"
       :position="[0, 0, 0.055]"
-      :dispose="null"
     >
       <TresTorusGeometry :args="[1.03, 0.006, 5, 100, Math.PI * 1.45]" />
     </TresMesh>
@@ -89,7 +87,6 @@ onBeforeUnmount(disposeGeometry)
       ref="ticks"
       :args="[undefined, undefined, 48]"
       :material="props.installation.signalMaterial"
-      :dispose="null"
     >
       <TresBoxGeometry :args="[0.006, 0.055, 0.008]" />
     </TresInstancedMesh>

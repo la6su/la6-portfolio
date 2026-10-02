@@ -31,7 +31,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <TresGroup name="env-pavilion">
+  <TresGroup name="env-pavilion" :dispose="null">
     <TresMesh
       v-for="surface in surfaces"
       :key="surface.name"
@@ -41,7 +41,6 @@ onBeforeUnmount(() => {
       :position="surface.position"
       :render-order="-1000"
       :frustum-culled="false"
-      :dispose="null"
     />
   </TresGroup>
 </template>
