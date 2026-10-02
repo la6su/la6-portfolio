@@ -74,6 +74,10 @@ Current known facts:
   elimination as unverified until a fresh Firefox startup and lazy Cientos
   route activation both stay on one optimized core; inspect optimizer cache
   invalidation before adding more compatibility code.
+- This workspace had 738 abandoned `.vite/deps_temp_*` directories (14 GB)
+  and no running Vite process. The temporary optimizer caches were removed.
+  This cleans local disk and stale cache state; it does not prove the browser
+  warning is fixed, so repeat the duplicate-core check on the next dev run.
 - Current direct runtime pins match the latest releases checked on
   2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
   Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
