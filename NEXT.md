@@ -464,8 +464,11 @@ The cached Playwright WebKit binary also cannot launch on this host because
 system browser dependencies were not installed.
 
 Latest production build and lint both pass. Bundle gates report Three at
-310.94/350 kB gzip, UIkit at 53.84/56 kB, and 6.50 MB of public media (the
-5.27 MB `coming-soon.mp4` is the largest file). The Contact-only Three
+310.94/350 kB gzip and UIkit at 53.84/56 kB. The 1080p 30 fps showreel
+`coming-soon.mp4` was re-encoded with H.264 CRF 26 after a full-clip SSIM
+comparison (0.9929) and frame inspection; its size fell from 5.27 MB to
+4.16 MB with the AAC audio stream copied unchanged. Recheck the complete media
+budget in the build below. The Contact-only Three
 `DRACOLoader` path emits both standard and glTF decoder asset sets because
 the addon declares both URL families; this is a possible deploy-size
 optimization, but changing decoder path ownership needs its own compatibility
