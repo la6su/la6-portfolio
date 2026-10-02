@@ -509,6 +509,12 @@ removed from name matching alone. The Contact GLTF path still emits both
 standard and glTF Draco decoder asset families; retain this as a measured
 optimization candidate until the configured WASM path and unsupported-browser
 fallback can be checked over a browser network trace.
+Source-map bundle profiling at `e7bc5bf` attributed the shared Three vendor
+chunk primarily to Three's WebGPU/core modules; the WebGPU compatibility entry
+maps to about 0.2 kB. The lazy Lab-controls output was 80.7 kB raw / 21.9 kB
+gzip across Cientos, OrbitControls, stats-gl and required helpers. The release
+build remains within the recorded 310.95/350 kB Three and 21.85 kB lazy Lab
+gzip sizes; this profile does not justify replacing the installed control API.
 
 ### 3. Production and whole-tree audit — pending
 
