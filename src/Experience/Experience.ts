@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { watch, type WatchStopHandle } from 'vue'
 import { Camera } from './Camera'
-import { Renderer, type RenderSurface, type Viewport } from './Renderer'
+import { Renderer, type RenderSurface } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -110,7 +110,6 @@ export class Experience {
   private currentSectionContext: string | null = null
   private _prevSectionIndex = -1
   private _stopSizeWatch: WatchStopHandle | null = null
-  private readonly viewport: Viewport
   private _rendererRecoveredUnsub: (() => void) | null = null
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
@@ -169,11 +168,6 @@ export class Experience {
   // the low-FPS condition.
   private _particleReductionApplied = false
   constructor(host: ExperienceHost) {
-    this.viewport = {
-      width: host.sizes.width.value,
-      height: host.sizes.height.value,
-      dpr: host.sizes.pixelRatio.value,
-    }
     // SceneHost is the single scene + camera owner. Experience adopts those
     // instances for cinematic state and never creates a fallback world.
     this._host = host
@@ -184,7 +178,11 @@ export class Experience {
       () => this._host.page() === 'home',
       host.isLabCameraActive,
     )
-    this.renderer = new Renderer(this.viewport)
+    this.renderer = new Renderer(() => ({
+      width: host.sizes.width.value,
+      height: host.sizes.height.value,
+      dpr: host.sizes.pixelRatio.value,
+    }))
     // The env owner reads the renderer + glass cube lazily: it is applied
     // after renderer.init() and again after a device-loss recovery.
     this._environment = new SceneEnvironment({
@@ -241,27 +239,21 @@ export class Experience {
     // Tres owns viewport observation, renderer sizing/DPR and camera aspect.
     // Project stages still need the same reactive dimensions for their own
     // viewport-dependent transforms.
-    this._stopSizeWatch = watch(
-      [host.sizes.width, host.sizes.height, host.sizes.pixelRatio],
-      ([width, height, dpr]) => {
-        this.viewport.width = width
-        this.viewport.height = height
-        this.viewport.dpr = dpr
-        this.resizeSceneOwners()
-        this._raiseRenderDemand('resize')
-      },
-    )
+    this._stopSizeWatch = watch([host.sizes.width, host.sizes.height], ([width, height]) => {
+      this.resizeSceneOwners(width, height)
+      this._raiseRenderDemand('resize')
+    })
   }
 
-  private resizeSceneOwners(): void {
+  private resizeSceneOwners(width: number, height: number): void {
     // Tres already sizes the renderer and updates registered camera aspect.
-    // Fan its same viewport snapshot only to project-owned transforms.
-    this.coordinator?.resize(this.viewport.width, this.viewport.height)
+    // Fan its current dimensions only to project-owned transforms.
+    this.coordinator?.resize(width, height)
     // Route stages are lazy and may not exist until their route is reached.
-    this._stages.worksPlaneStage?.resize(this.viewport.width, this.viewport.height)
+    this._stages.worksPlaneStage?.resize(width, height)
     // Cyprus owns a viewport-dependent map scale and follows orientation and
     // address-bar viewport changes too.
-    this._stages.contactCyprusStage?.resize(this.viewport.width, this.viewport.height)
+    this._stages.contactCyprusStage?.resize(width, height)
   }
 
   private lifecycleToken(): number {

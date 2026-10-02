@@ -100,6 +100,11 @@ preserve custom policy only when code or measurements prove the difference.
   assigns that camera when each stage is created, and both setters reject the
   identical object. Removed the two hot-path calls; Tres-owned resize remains
   the only changing viewport input.
+- Experience mirrored Tres's reactive viewport refs in a mutable `{ width,
+  height, dpr }` object solely so `Renderer` could size a replacement after
+  device recovery. Removed that duplicate state: project transforms receive
+  width/height directly from the size watcher, and recovery reads a current
+  snapshot from Tres's canonical refs when needed.
 - DevPanel's force-render toggle only assigned Experience's private demand
   flag. It neither invalidated a settled Tres loop nor kept that loop alive,
   so the control could not force continuous rendering. It now calls an
@@ -241,6 +246,8 @@ verifies recovery on the persistent canvas. Local Chromium still fails before
 recreation because it does not restore the induced context, even with SwiftShader
 forced; physical-GPU recovery evidence remains open. Run it with
 `JLZ_CROSS_BROWSER_MATRIX=1 JLZ_WEBGL_RECOVERY_FIREFOX=1 bunx playwright test --project=firefox tests/portfolio.spec.ts --grep "Renderer recovers from WebGL context loss"`.
+It was rerun after removing the viewport mirror; Firefox production-preview
+recovery passed (1/1) with replacement dimensions sourced from live Tres refs.
 
 | Surface | Current evidence | Refactor direction |
 | --- | --- | --- |

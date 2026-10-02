@@ -56,7 +56,7 @@ export interface AdoptedRenderer {
 export class Renderer {
   instance!: RenderSurface;
   private capabilities = DeviceCapability.getInstance();
-  private viewport: Viewport;
+  private readonly viewport: () => Viewport;
 
   // Post-processing manager (section-aware crossfade)
   public postManager = new PostProcessingManager();
@@ -84,7 +84,7 @@ export class Renderer {
   // terminal teardown so repeated device-loss failures cannot accumulate UI.
   private _unsupportedOverlay: HTMLElement | null = null;
 
-  constructor(viewport: Viewport) {
+  constructor(viewport: () => Viewport) {
     this.viewport = viewport;
     if (this.capabilities.mode === "unsupported") {
       this.showUnsupportedMessage();
@@ -316,10 +316,9 @@ export class Renderer {
       this.instance = replacement;
       this.capabilities.setFinalRendererMode(plan.mode);
 
-      this.instance.setPixelRatio(
-        Math.min(this.viewport.dpr, this.capabilities.maxDpr),
-      );
-      this.instance.setSize(this.viewport.width, this.viewport.height);
+      const viewport = this.viewport()
+      this.instance.setPixelRatio(Math.min(viewport.dpr, this.capabilities.maxDpr))
+      this.instance.setSize(viewport.width, viewport.height)
       this.postManager.refreshPreset();
       this.pipeline = RenderPipeline.create(
         this.instance,
