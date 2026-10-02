@@ -107,6 +107,8 @@ Current known facts:
   and listener cleanup; a stale mount failure cannot tear down its successor.
 - Router guards now cancel navigation when teardown starts; post-navigation
   callbacks cannot reveal an exiting route or dispatch a stale section hash.
+- Removed an ineffective `window.scrollTo()` after route pushes. CinematicNav
+  owns and resets the actual scroll container when the new route mounts.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

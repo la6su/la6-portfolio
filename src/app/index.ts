@@ -176,8 +176,6 @@ export async function mountVueApp(): Promise<void> {
     await routerReady
     if (disposed) return
     await router.push(path)
-    if (disposed) return
-    window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   // jlz:navigate — strict in-app navigation request from UI controls/tests.
