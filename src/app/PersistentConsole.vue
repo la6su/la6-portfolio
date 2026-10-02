@@ -101,8 +101,7 @@ function toggleSound(): void {
       <RouterLink
         class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none"
         :to="{ name: 'home' }"
-        aria-label="JUSTLOVEJAZZ — Studio"
-        data-i18n-aria-label="nav.brand"
+        :aria-label="t('nav.brand')"
         :aria-hidden="fullscreenOpen"
         :inert="fullscreenOpen"
       >
@@ -117,8 +116,7 @@ function toggleSound(): void {
           class="uk-icon-button jlz-lang-toggle"
           type="button"
           id="jlz-lang-toggle"
-          aria-label="Switch language"
-          data-i18n-aria-label="common.switchLanguage"
+          :aria-label="t('common.switchLanguage')"
           :aria-pressed="language === 'RU'"
           :aria-hidden="fullscreenOpen"
           :inert="fullscreenOpen"
@@ -133,8 +131,7 @@ function toggleSound(): void {
           :class="{ 'is-inverse': themeIsInverse }"
           type="button"
           id="jlz-theme-toggle"
-          aria-label="Toggle inverse theme"
-          data-i18n-aria-label="common.toggleInverseTheme"
+          :aria-label="t('common.toggleInverseTheme')"
           :aria-pressed="themeIsInverse"
           :aria-hidden="fullscreenOpen"
           :inert="fullscreenOpen"
@@ -150,8 +147,7 @@ function toggleSound(): void {
           :class="{ 'is-muted': soundMuted }"
           type="button"
           id="jlz-sound-toggle"
-          aria-label="Toggle sound"
-          data-i18n-aria-label="common.toggleSound"
+          :aria-label="t('common.toggleSound')"
           :aria-pressed="!soundMuted"
           :aria-hidden="fullscreenOpen"
           :inert="fullscreenOpen"
@@ -200,7 +196,7 @@ function toggleSound(): void {
           <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
         </button>
       </div>
-      <nav id="cinematic-nav" class="jlz-storyline" aria-label="Narrative sections" data-i18n-aria-label="nav.storyline" data-sheet="center">
+      <nav id="cinematic-nav" class="jlz-storyline" :aria-label="t('nav.storyline')" data-sheet="center">
         <div class="jlz-storyline__items uk-flex uk-flex-middle">
           <button
             v-for="index in storylineSections"
@@ -226,22 +222,21 @@ function toggleSound(): void {
       >Skip to content</a
     >
     <header class="jlz-route-fallback__header">
-      <RouterLink class="jlz-topbar__brand" :to="{ name: 'home' }" aria-label="JUSTLOVEJAZZ — Studio" data-i18n-aria-label="nav.brand">
+      <RouterLink class="jlz-topbar__brand" :to="{ name: 'home' }" :aria-label="t('nav.brand')">
         <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true" />
         <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
       </RouterLink>
       <button
         class="uk-icon-button jlz-lang-toggle"
         type="button"
-        aria-label="Switch language"
-        data-i18n-aria-label="common.switchLanguage"
+        :aria-label="t('common.switchLanguage')"
         :aria-pressed="language === 'RU'"
         @click="toggleLang"
       >
         <span class="jlz-lang-label uk-text-uppercase uk-text-bold">{{ language }}</span>
       </button>
     </header>
-    <nav aria-label="Portfolio routes" data-i18n-aria-label="nav.routes" class="jlz-route-fallback__nav">
+    <nav :aria-label="t('nav.routes')" class="jlz-route-fallback__nav">
       <template v-for="item in NAV_ITEMS" :key="item.num">
         <RouterLink v-if="item.page" :to="{ name: item.page }">
           <span class="jlz-route-fallback__number">{{ item.num }}</span>
