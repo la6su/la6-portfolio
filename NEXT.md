@@ -493,6 +493,14 @@ Execution order:
    deliberate user interaction. Do not claim FPS, memory, startup, or bundle
    improvement without a reproducible measurement or the configured budgets.
 
+Dependency scan: every direct runtime package participates in the application
+graph, and the development packages have explicit consumers in config, build
+scripts, bundle analysis, lint or the existing quality suite. No dependency was
+removed from name matching alone. The Contact GLTF path still emits both
+standard and glTF Draco decoder asset families; retain this as a measured
+optimization candidate until the configured WASM path and unsupported-browser
+fallback can be checked over a browser network trace.
+
 ### 3. Production and whole-tree audit — pending
 
 Review direct route entry, accessibility, reduced motion, locale switching,
