@@ -36,6 +36,11 @@ const STORAGE_KEY = 'jlz:lang'
 export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   EN: {
     // Splash
+    'splash.signalLost': 'Signal lost',
+    'splash.sceneFailed': 'The interactive scene could not start. Continue to the portfolio without 3D, or reload the page to try again.',
+    'splash.sceneErrorCode': 'ERR:SCENE — INITIALIZATION FAILED',
+    'splash.continueWithout3d': 'Continue without 3D',
+    'splash.retry': 'Retry',
 
     // Navigation
     'nav.studio': 'Studio',
@@ -237,6 +242,11 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
   RU: {
     // Splash
+    'splash.signalLost': 'Сигнал потерян',
+    'splash.sceneFailed': 'Интерактивная сцена не запустилась. Продолжите просмотр портфолио без 3D или перезагрузите страницу и попробуйте снова.',
+    'splash.sceneErrorCode': 'ОШИБКА: СЦЕНА — НЕ УДАЛОСЬ ЗАПУСТИТЬ',
+    'splash.continueWithout3d': 'Продолжить без 3D',
+    'splash.retry': 'Повторить',
 
     // Navigation
     'nav.studio': 'Студия',

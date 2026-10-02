@@ -403,6 +403,10 @@ content available behind the modal. It now has a labelled modal dialog, a
 localized close button, a one-control focus trap, inert/hidden background
 content with prior-state restoration, and focus return. Lint and the production
 build pass; browser keyboard/screen-reader verification remains open.
+The renderer-failure boot gate was created after the initial document
+translation pass and kept English copy in saved-RU sessions. It now carries
+normal i18n markers and applies the active locale immediately after insertion;
+the splash status uses the same translated signal-loss label.
 The persistent full-screen project dialog also had hard-coded English labels
 for its dialog name and close/previous/next controls. Those labels now have EN
 and RU entries. The shared translator applies marked `aria-label` attributes

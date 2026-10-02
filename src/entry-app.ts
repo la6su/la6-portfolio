@@ -33,7 +33,7 @@ function initSoundToggle(): void {
 }
 
 // ── Config: language toggle EN/RU ──
-import { initI18n, toggleLang, getLang } from './core/i18n'
+import { initI18n, toggleLang, getLang, t, applyTranslations } from './core/i18n'
 
 // Typed event facade for the classic splash script and browser automation,
 // which cannot import the application module graph.
@@ -97,7 +97,7 @@ function showLoadError(): void {
   const loader = document.getElementById('jlz-app-loader')
   if (!loader) return
   const status = document.querySelector(SPLASH_STATUS_SELECTOR)
-  if (status) status.textContent = 'SIGNAL LOST'
+  if (status) status.textContent = t('splash.signalLost').toUpperCase()
   // Replace the Enter button area with the console boot gate (styles live in
   // _console-language.less — the persistent chrome owner).
   if (enterBtn) {
@@ -105,18 +105,18 @@ function showLoadError(): void {
     if (parent) {
       parent.innerHTML = `
         <div class="jlz-boot-gate" role="alert">
-          <p class="jlz-boot-gate__head">Signal lost</p>
-          <p class="jlz-boot-gate__text">
-            The interactive scene could not start. Continue to the portfolio without 3D,
-            or reload the page to try again.
+          <p class="jlz-boot-gate__head" data-i18n="splash.signalLost">Signal lost</p>
+          <p class="jlz-boot-gate__text" data-i18n="splash.sceneFailed">
+            The interactive scene could not start. Continue to the portfolio without 3D, or reload the page to try again.
           </p>
-          <span class="jlz-boot-gate__code">ERR:SCENE — INITIALIZATION FAILED</span>
-          <button class="jlz-boot-gate__action" type="button" data-jlz-continue-without-scene>
+          <span class="jlz-boot-gate__code" data-i18n="splash.sceneErrorCode">ERR:SCENE — INITIALIZATION FAILED</span>
+          <button class="jlz-boot-gate__action" type="button" data-jlz-continue-without-scene data-i18n="splash.continueWithout3d">
             Continue without 3D
           </button>
-          <a class="jlz-boot-gate__action" href="/">Retry</a>
+          <a class="jlz-boot-gate__action" href="/" data-i18n="splash.retry">Retry</a>
         </div>
       `
+      applyTranslations()
       parent.querySelector<HTMLButtonElement>('[data-jlz-continue-without-scene]')?.addEventListener(
         'click',
         () => {
