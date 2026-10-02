@@ -73,6 +73,7 @@ const PRINCIPLES: readonly Principle[] = [
 <template>
   <main
     id="spa-content"
+    tabindex="-1"
     ref="rootEl"
     role="main"
     class="uk-position-relative"

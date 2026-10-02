@@ -738,7 +738,11 @@ only the central pulse had been disabled. The reduce rule now holds the spirals
 at their final transforms/opacities, disables the SVG transition, and completes
 the existing `loader-exit` event contract in 1 ms. Chromium emulation confirms
 computed spiral animation `none`, SVG transition `0s`, exit duration `0.001s`,
-and prompt loader removal. Lint and the production build pass.
+and prompt loader removal. The splash skip link now uses the `main` target,
+exits the overlay, and moves focus to that landmark; all SPA mains and the
+standalone blog main accept programmatic focus, so their route skip links land
+correctly too. Keyboard Chromium verified focus transfer for splash, no-scene
+fallback, and blog, with no page errors. Lint and the production build pass.
 
 Execution order:
 

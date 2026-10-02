@@ -14,6 +14,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
 <template>
   <main
     id="spa-content"
+    tabindex="-1"
     ref="rootEl"
     role="main"
     class="uk-position-relative"

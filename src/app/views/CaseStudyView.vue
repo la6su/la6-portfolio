@@ -117,7 +117,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" class="uk-position-relative" data-page-view="content">
+  <main id="spa-content" ref="rootEl" tabindex="-1" class="uk-position-relative" data-page-view="content">
     <article class="jlz-page jlz-case-study-page" data-page-view="case-study" :data-case-project="projectId">
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <template v-if="study && project && localizedStudy">

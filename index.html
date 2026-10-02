@@ -859,7 +859,7 @@
   </head>
 
   <body>
-    <a class="skip-link" href="#app"> Skip to content </a>
+    <a id="jlz-splash-skip" class="skip-link" href="#spa-content"> Skip to content </a>
 
     <div id="jlz-app-loader" aria-hidden="false" aria-busy="true">
       <!-- =======================================================
@@ -1301,18 +1301,16 @@
         const loader = document.getElementById('jlz-app-loader')
 
         const enter = document.getElementById('jlz-splash-enter')
+        const skip = document.getElementById('jlz-splash-skip')
 
         if (!loader || !enter) return
 
         let exiting = false
+        let focusMainAfterExit = false
 
-        enter.addEventListener('click', () => {
+        const exitSplash = (focusMain = false) => {
+          focusMainAfterExit ||= focusMain
           if (exiting) return
-
-          if (!enter.classList.contains('is-ready')) {
-            return
-          }
-
           exiting = true
 
           enter.setAttribute('aria-disabled', 'true')
@@ -1329,9 +1327,22 @@
             window.clearTimeout(fallbackTimer)
             loader.removeEventListener('animationend', removeLoader)
             loader.remove()
+            if (focusMainAfterExit) {
+              document.getElementById('spa-content')?.focus({ preventScroll: true })
+            }
           }
           loader.addEventListener('animationend', removeLoader)
           fallbackTimer = window.setTimeout(() => removeLoader(), 1300)
+        }
+
+        enter.addEventListener('click', () => {
+          if (!enter.classList.contains('is-ready')) return
+          exitSplash()
+        })
+
+        skip?.addEventListener('click', (event) => {
+          event.preventDefault()
+          exitSplash(true)
         })
       })()
     </script>
