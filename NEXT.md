@@ -85,9 +85,12 @@ or preserve a wrapper solely because a test currently encodes it.
   deduplicated async release cover those races. Existing focused unit cases
   document these edges, but they were not run for this audit. Do not collapse
   the registry into a uniform route switch without preserving those distinct
-  contracts. One remaining question is whether `LazyStageOwner.stage` and the
-  mirrored Vue slot ref can share a single source without coupling the generic
-  async lifecycle to Vue; verify callers before changing either owner.
+  contracts. The runtime stage ref and mirrored Vue slot ref have distinct
+  teardown timing: the registry clears runtime visibility before release,
+  while the Vue ref stays populated until its `nextTick` unmount completes so
+  Tres detaches the node before GPU disposal. Treat these as separate lifecycle
+  state unless a replacement preserves detach-before-dispose without coupling
+  the generic async lifecycle to Vue.
 - Removed a frame-path config round trip in `Experience.update()`: section
   objects already reference their canonical `PhaseConfig`, so the current and
   next section configs now come directly from one sections/index snapshot.
@@ -95,6 +98,14 @@ or preserve a wrapper solely because a test currently encodes it.
   shared by section arrival and context-change handling. Phase lookup still
   uses `getConfig()` because its key is a transform result, not a section
   array index.
+- `SceneTransformPass` no longer builds a second, hard-coded `PhaseConfig`
+  when there are no sections or a section lookup fails. Its production caller
+  is `Experience.update()`; the coordinator initializes all route sections
+  synchronously before the first possible frame, and teardown stops the
+  scheduler before disposing those sections. The fallback allocated and
+  cloned camera/material/fog/post data already owned by `WorldConfig`; an
+  empty section list now reports a broken lifecycle invariant. `bun run build`
+  passed after removal; unit tests were not run.
 - TSL effects are bespoke product visuals; keep them where they express
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before

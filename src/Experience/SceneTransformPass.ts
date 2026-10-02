@@ -10,7 +10,7 @@
 import * as THREE from 'three'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
 import type { PageId } from '../core/routeManifest'
-import { type PhaseConfig, type SceneTransitionEasing } from '../core/WorldConfig'
+import { type SceneTransitionEasing } from '../core/WorldConfig'
 import { CONTACT_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import { easeOutCubic } from '../Utils/easing'
@@ -94,7 +94,9 @@ export class SceneTransformPass {
     // Story progress contract: non-finite settles to 0, clamp to [0, 1].
     scrollValue = clampStoryProgress(scrollValue)
     const sections = this._ctx.story.sections
-    if (sections.length === 0) return this.defaultResult()
+    if (sections.length === 0) {
+      throw new Error('SceneTransformPass.updateTransform() requires an initialized route.')
+    }
     // Route and carousel ownership are stable for this synchronous transform
     // pass. Snapshot them once so the six-group visibility loop cannot repeat
     // owner lookups on every group while preserving the live getter boundary
@@ -283,10 +285,8 @@ export class SceneTransformPass {
       }
     }
 
-    const fromSec = sections[fromIndex]
-    const toSec = sections[toIndex] ?? sections[fromIndex]
-    if (!fromSec) return this.defaultResult()
-    if (!toSec) return this.defaultResult()
+    const fromSec = sections[fromIndex]!
+    const toSec = sections[toIndex]!
 
     // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
     this._ctx.story.applyScrollStates(fromSec, toSec, t, this._ctx.isReducedMotion())
@@ -366,71 +366,4 @@ export class SceneTransformPass {
     return easing === 'ease-out' ? easeOutCubic(t) : THREE.MathUtils.smoothstep(t, 0, 1)
   }
 
-  private defaultResult(): WorldTransformResult {
-    const cfg: PhaseConfig = {
-      id: 'step01',
-      context: 'phase_step01',
-      domSection: 'hero',
-      range: [0, 1],
-      camera: { position: new THREE.Vector3(0, 0, 8), target: new THREE.Vector3(0, 0, 0), fov: 55 },
-      baku: {
-        position: new THREE.Vector3(),
-        rotation: new THREE.Quaternion(),
-        scale: new THREE.Vector3(0.4),
-        opacity: 1,
-        role: BakuRole.NORMAL,
-        material: {
-          color: new THREE.Color(),
-          emissive: new THREE.Color(),
-          roughness: 0.2,
-          metalness: 0.8,
-        },
-      },
-      lighting: { ambientColor: new THREE.Color(), intensity: 1 },
-      fog: { color: new THREE.Color(), density: 0.03 },
-      // This fallback must preserve cross-backend visual parity too.
-      post: {
-        bloom: 0.2,
-        vignette: 0.5,
-        grain: 0.03,
-        chromatic: 0,
-        refract: 0,
-        gradeShadows: [1, 1, 1],
-        gradeHighlights: [1, 1, 1],
-      },
-      ui: { showGallery: false },
-      ground: { color: new THREE.Color(0x000000), opacity: 0 },
-      camFovOffset: 0.3,
-      camFovDuration: 0.8,
-      camSmoothing: 5,
-      theme: 'dark',
-    }
-    return this.buildResultFromConfig(cfg)
-  }
-
-  private buildResultFromConfig(cfg: PhaseConfig): WorldTransformResult {
-    const cam = cfg.camera
-    const baku = cfg.baku
-    const light = cfg.lighting
-
-    return {
-      cameraTarget: {
-        position: cam.position.clone(),
-        lookAt: cam.target.clone(),
-        fov: cam.fov,
-      },
-      worldState: {
-        currentPhase: cfg.id,
-        phaseProgress: 0,
-        bakuMaterial: {
-          role: baku.role,
-          color: baku.material.color.clone(),
-          emissive: baku.material.emissive.clone(),
-          roughness: baku.material.roughness,
-          metalness: baku.material.metalness,
-        },
-        envColor: light.ambientColor.clone(),
-      },
-    }
-  }
 }
