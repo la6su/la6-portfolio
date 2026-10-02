@@ -14,7 +14,7 @@ describe('SceneCoordinator reduced-motion ownership', () => {
     const invalidate = vi.fn()
     const coordinator = Object.assign(
       Object.create(SceneCoordinator.prototype) as object,
-      { owners, _transform: { invalidate }, _reducedMotion: false },
+      { owners, _transform: { invalidate }, isReducedMotion: () => false },
     ) as unknown as SceneCoordinator
 
     coordinator.setReducedMotion(true)
@@ -43,7 +43,7 @@ describe('SceneCoordinator reduced-motion ownership', () => {
           carousel: null,
         },
         _transform: { invalidate },
-        _reducedMotion: false,
+        isReducedMotion: () => false,
       },
     ) as unknown as SceneCoordinator
 
@@ -53,5 +53,20 @@ describe('SceneCoordinator reduced-motion ownership', () => {
       expect(owner.setReducedMotion).toHaveBeenCalledWith(false)
     }
     expect(invalidate).toHaveBeenCalledOnce()
+  })
+
+  it('reads reduced-motion policy from its owning runtime', () => {
+    let reduced = false
+    const coordinator = Object.assign(
+      Object.create(SceneCoordinator.prototype) as object,
+      {
+        isReducedMotion: () => reduced,
+        owners: { envSphere: { isAnimating: true } },
+      },
+    ) as unknown as SceneCoordinator
+
+    expect(coordinator.hasVisibleAmbientMotion()).toBe(true)
+    reduced = true
+    expect(coordinator.hasVisibleAmbientMotion()).toBe(false)
   })
 })

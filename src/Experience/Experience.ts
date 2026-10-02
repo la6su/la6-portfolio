@@ -402,6 +402,7 @@ export class Experience {
         servicesStage: this.servicesStage,
       },
       this._host.page,
+      () => this._reducedMotion,
     )
     this.coordinator.init()
     // Scene owners may have been constructed while the preference changed

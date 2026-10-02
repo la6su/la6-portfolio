@@ -257,6 +257,11 @@ preserve custom policy only when code or measurements prove the difference.
 - The coordinator's camera setter only forwarded a stable camera object each
   frame. The coordinator now retains the persistent Tres camera for its own
   frame updates; the per-frame setter and its forwarding API are removed.
+- Reduced-motion state was stored independently in Experience and
+  SceneCoordinator, synchronized through a setter, and could diverge while
+  asynchronous scene startup was in flight. Experience is now the sole value
+  owner; SceneCoordinator and SceneTransformPass read its live callback while
+  SceneCoordinator still forwards preference changes to the scene owners.
 - Lab camera control ownership was mirrored from SceneHost's computed
   `labCameraActive` into a module-level boolean for `Camera`. Removed that
   singleton; `SceneHostReady` now passes the live read-only policy to the
@@ -439,7 +444,7 @@ Tres release (2026-09-29); Three 0.186.1 and Vue 3.5.43 also match current npm
 stable tags. Vue 3.6 is still release-candidate tagged, so the stable line is
 retained pending a compatibility audit. Sources: [Tres releases](https://github.com/Tresjs/tres/releases),
 [Three on npm](https://www.npmjs.com/package/three), [Vue versions on npm](https://www.npmjs.com/package/vue?activeTab=versions).
-Latest local quality pass: `vue-tsc` build gate, ESLint, 105/105 unit tests,
+Latest local quality pass: `vue-tsc` build gate, ESLint, 106/106 unit tests,
 Three-stdlib compatibility check and production bundle budgets all pass. This
 does not replace the remaining Chromium/Firefox/WebKit and physical WebGPU
 acceptance rows below.
@@ -892,7 +897,7 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Latest verified:** 105 unit tests, Vue type-check, ESLint, production build and
+**Latest verified:** 106 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
 310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.64 kB / 32.66 kB
@@ -1078,6 +1083,14 @@ controller import/load cancellation or GPU-resource release ordering. Removed
 the one-use Cyprus `onDispose` hook from `LazyStageContract` and moved its
 activation reset to `StageRegistry`. Lint, type-check, 105/105 unit tests,
 compatibility guard and production build/budgets pass.
+
+**Reduced-motion policy ownership:** Removed SceneCoordinator's duplicate
+preference snapshot. It and SceneTransformPass now read the Experience-owned
+live policy; coordinator still fans changes to scene owners. Added a regression
+test proving activity policy updates immediately from the canonical owner.
+Vue type-check, ESLint, 106/106 unit tests, compatibility checks,
+production build/budgets and the Firefox production reduced-motion route walk
+pass (1/1).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

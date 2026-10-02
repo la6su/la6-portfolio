@@ -6,7 +6,6 @@ import * as THREE from 'three'
 import type { WebGPURenderer } from 'three/webgpu'
 import type { Section } from '../core/Section'
 import { devDiagnostic } from '../core/devDiagnostic'
-import { prefersReducedMotion } from '../core/motionPolicy'
 import type { PageId } from '../core/routeManifest'
 import { type PhaseConfig } from '../core/WorldConfig'
 import { INTRO_SLOT_INDEX, WORKS_SLOT_INDEX } from '../core/worldSlots'
@@ -22,7 +21,7 @@ export class SceneCoordinator {
   private _story = new SectionStateMachine()
   private _transform: SceneTransformPass
   private _worksPlaneStageSection = 0
-  private _reducedMotion = prefersReducedMotion()
+  private isReducedMotion: () => boolean
   private sceneRef: THREE.Scene
   private camera: THREE.Camera
   private owners: SceneCoordinatorOwners
@@ -51,17 +50,19 @@ export class SceneCoordinator {
     camera: THREE.Camera,
     owners: SceneCoordinatorOwners,
     page: () => PageId,
+    isReducedMotion: () => boolean,
   ) {
     this.sceneRef = scene
     this.camera = camera
     this.owners = owners
     this.page = page
+    this.isReducedMotion = isReducedMotion
     this._transform = new SceneTransformPass({
       scene,
       story: this._story,
       owners,
       page,
-      isReducedMotion: () => this._reducedMotion,
+      isReducedMotion,
     })
   }
 
@@ -172,7 +173,7 @@ export class SceneCoordinator {
    * explicit signal to keep their CPU animation alive under on-demand render.
    */
   public hasVisibleAmbientMotion(): boolean {
-    if (this.isReducedMotion) return false
+    if (this.isReducedMotion()) return false
     if (this.owners.envSphere.isAnimating) return true
     if (this.owners.baku.isAmbientlyAnimated) return true
     const contactTypographyStage = this.owners.stages.contactTypographyStage
@@ -231,7 +232,7 @@ export class SceneCoordinator {
           this.camera,
           THREE.MathUtils.clamp(this._story.currentSectionIndex - 1, 0, 3),
           deltaTime,
-          this._reducedMotion,
+          this.isReducedMotion(),
         )
       }
     }
@@ -243,7 +244,7 @@ export class SceneCoordinator {
     this.owners.stages.labGamepad?.update?.(deltaTime)
     const baku = this.owners.baku
 
-    if (!this._reducedMotion) {
+    if (!this.isReducedMotion()) {
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = page === 'works'
       const isWorksStoryFrame = this._story.currentSectionIndex === WORKS_SLOT_INDEX
@@ -262,7 +263,7 @@ export class SceneCoordinator {
         bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
         (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
     }
-    if (!this._reducedMotion) {
+    if (!this.isReducedMotion()) {
       const particles = this.owners.sectionGroups.works.particles
       if (carouselGroup?.visible && particles?.visible !== false) particles?.update(deltaTime)
     }
@@ -322,13 +323,8 @@ export class SceneCoordinator {
   }
 
   /** Reduced-motion policy for the scene update loop and its owners. */
-  private get isReducedMotion(): boolean {
-    return this._reducedMotion
-  }
-
-  /** Keep frame-path policy synchronized by the Experience owner. */
+  /** Forward a policy change; frame predicates read the canonical runtime value. */
   public setReducedMotion(reduced: boolean): void {
-    this._reducedMotion = reduced
     this.owners.envSphere.setReducedMotion(reduced)
     this.owners.baku.setReducedMotion(reduced)
     this.owners.carousel?.setReducedMotion(reduced)
