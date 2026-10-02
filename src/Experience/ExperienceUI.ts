@@ -8,7 +8,6 @@
 
 import { CinematicNav } from '../UI/CinematicNav'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
-import type { SceneCoordinator } from './SceneCoordinator'
 import type { StageRegistry } from './StageRegistry'
 import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
@@ -29,7 +28,6 @@ import type { BakuCarousel } from './World/BakuCarousel'
  */
 export interface ExperienceUIHost {
   page: () => PageId
-  coordinator: SceneCoordinator
   baku: SplashCube
   particleBurst: ParticleBurst
   carousel: BakuCarousel | null
@@ -161,26 +159,6 @@ export class ExperienceUI {
       }),
     )
 
-    // Route-owned 3D layers follow the shared content-page navigation contract.
-    this._unsubs.push(
-      eventBus.on('jlz:page-section-change', ({ index }) => {
-        const domIndex = index ?? 0
-        const stageIndex = Math.max(0, domIndex - 1)
-        const page = this.host.page()
-        const coordinator = this.host.coordinator
-        if (page === 'works') {
-          // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
-          coordinator.setWorksPlaneStageSection(stageIndex)
-        } else if (page === 'contact') {
-          this.host.stages.setContactCyprusStageSection(stageIndex)
-          coordinator.setContactSceneSection(stageIndex)
-        } else {
-          return
-        }
-        this.host.raise('nav')
-      }),
-    )
-
     this._worksPlaneTapHandler = (e: PointerEvent) => {
       if (this.host.page() !== 'works' || this.overlay?.isOpen) return
       // The Enter pointerup is dispatched while the splash curtains are still
@@ -251,7 +229,7 @@ export class ExperienceUI {
   private initializeProjectControls(): void {
     if (this.projectUiReady || this._destroyed) return
     // Always prepare project controls — single-page experience.
-    // Experience calls this after buildScene() and coordinator initialization, before
+    // Experience calls this after buildScene(), before
     // any user controls can emit project-selection events.
     // Project navigation uses one controller for Vue-owned overlay markup.
     const element = document.getElementById('jlz-fs-overlay')

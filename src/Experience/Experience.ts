@@ -112,6 +112,7 @@ export class Experience {
   private _stopSizeWatch: WatchStopHandle | null = null
   private _rendererRecoveredUnsub: (() => void) | null = null
   private _routeChangeUnsub: (() => void) | null = null
+  private _pageSectionChangeUnsub: (() => void) | null = null
   private _routeGeneration = 0
   public sfx: SfxSystem = new SfxSystem()
   /** Cinematic story track owned by ExperienceUI. */
@@ -281,8 +282,8 @@ export class Experience {
   }
 
   /** Reconcile route-owned scene state at the semantic route boundary. */
-  private installRouteReconciliation(): void {
-    if (this._routeChangeUnsub) return
+  private installSceneEventHandlers(): void {
+    if (this._routeChangeUnsub || this._pageSectionChangeUnsub) return
     this._routeChangeUnsub = eventBus.on('jlz:route-change', () => {
       const routeGeneration = ++this._routeGeneration
       const page = this._host.page()
@@ -324,6 +325,19 @@ export class Experience {
         if (!isCurrent()) return
         console.error('[Experience] route reconciliation failed:', error)
       }
+    })
+    this._pageSectionChangeUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
+      const stageIndex = Math.max(0, index - 1)
+      const page = this._host.page()
+      if (page === 'works') {
+        this.coordinator.setWorksPlaneStageSection(stageIndex)
+      } else if (page === 'contact') {
+        this._stages.setContactCyprusStageSection(stageIndex)
+        this.coordinator.setContactSceneSection(stageIndex)
+      } else {
+        return
+      }
+      this._raiseRenderDemand('nav')
     })
   }
 
@@ -490,7 +504,6 @@ export class Experience {
     }
     const features = new ExperienceUI({
       page: this._host.page,
-      coordinator: this.coordinator,
       baku: this.baku,
       particleBurst: this.particleBurst,
       carousel: this.carousel,
@@ -552,7 +565,7 @@ export class Experience {
 
     // Initialize navigation, menus, overlays and project controls after the
     // scene and environment are ready.
-    this.installRouteReconciliation()
+    this.installSceneEventHandlers()
     features.init()
 
     // DevPanel — created AFTER nav so it can read current section
@@ -973,6 +986,8 @@ export class Experience {
     this._webglFailedUnsub = null
     this._routeChangeUnsub?.()
     this._routeChangeUnsub = null
+    this._pageSectionChangeUnsub?.()
+    this._pageSectionChangeUnsub = null
     this._routeGeneration++
     this._reducedMotionUnsub?.()
     this._reducedMotionUnsub = null

@@ -162,6 +162,10 @@ preserve custom policy only when code or measurements prove the difference.
   coordinator, StageRegistry and scheduler; ExperienceUI now only dismisses
   its overlay at that UI event boundary. Experience owns the stale-route
   generation guard and unsubscribes it during teardown.
+- `ExperienceUI` also translated the page-section navigation event directly
+  into coordinator and Cyprus stage mutations. Moved that mapping to
+  Experience with the route handler; ExperienceUI no longer depends on
+  SceneCoordinator and only publishes/handles UI-facing interactions.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -921,10 +925,13 @@ acceptance remains open.
 
 **Route-policy ownership:** Scene route reconfiguration now lives in
 Experience, alongside the scene coordinator, lazy-stage registry and render
-scheduler. ExperienceUI's route listener only closes the fullscreen overlay.
+scheduler. Page-section navigation now reaches the scene through Experience
+as well. ExperienceUI no longer imports or exposes SceneCoordinator; its route
+listener only closes the fullscreen overlay.
 Vue type-check, ESLint, 105/105 unit tests and production build/budgets pass;
 Firefox production-preview Works and Contact repeated route mount/release
-scenarios pass (2/2). Chromium/WebKit and physical GPU acceptance remain open.
+scenarios still pass (2/2). Chromium/WebKit and physical GPU acceptance remain
+open.
 
 ## Follow-on goal policy
 
