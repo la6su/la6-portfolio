@@ -37,9 +37,23 @@ const origin = SITE_ORIGIN
 
 const sections = buildDefaultSitemapSections()
 const xml = buildSitemapXml(origin, sections)
-const out = resolve(root, 'public', 'sitemap.xml')
-writeFileSync(out, xml, 'utf8')
+const publicDir = resolve(root, 'public')
+const sitemapPath = resolve(publicDir, 'sitemap.xml')
+writeFileSync(sitemapPath, xml, 'utf8')
+const robotsPath = resolve(publicDir, 'robots.txt')
+writeFileSync(
+  robotsPath,
+  [
+    'User-agent: *',
+    '# Main page (/) and blog (/blog + articles) are crawlable.',
+    'Allow: /',
+    '',
+    `Sitemap: ${origin}/sitemap.xml`,
+    '',
+  ].join('\n'),
+  'utf8',
+)
 const entryCount = sections.reduce((sum, s) => sum + s.entries.length, 0)
 console.log(
-  `[generate-sitemap] wrote ${out} (${xml.length} bytes, ${entryCount} urls, origin ${origin})`,
+  `[generate-sitemap] wrote ${sitemapPath} (${xml.length} bytes, ${entryCount} urls) and ${robotsPath} (origin ${origin})`,
 )

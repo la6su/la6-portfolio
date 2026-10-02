@@ -375,6 +375,10 @@ index/article and an unknown path; returned title/canonical values matched
 their route (unknown path used home metadata). This verifies the local Vite
 static resolver, not the production host, which still must map extensionless
 routes to the emitted `.html` files.
+SEO configuration audit found that `JLZ_SITE_ORIGIN` was consumed by route
+metadata and sitemap generation but `public/robots.txt` retained the production
+origin. Sitemap generation now writes robots.txt from the same normalized
+origin, keeping staging builds internally consistent.
 
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s
