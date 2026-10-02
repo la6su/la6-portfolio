@@ -139,11 +139,16 @@ or preserve a wrapper solely because a test currently encodes it.
   `isFallbackAdapter=false`). Firefox also reports that Three requests
   `featureLevel: "compatibility"`, which Firefox currently ignores and
   defaults to core; this is an upstream Three/browser notice, not a reason to
-  add an app-authored adapter fallback. The user's native Firefox still reports
-  multiple Three instances. A clean Playwright Firefox reload currently has
-  one optimized Three core URL and no duplicate warning, so the cause remains
-  unresolved and must be traced against the user's exact dev startup before
-  changing aliases or adding dedupe configuration.
+  add an app-authored adapter fallback. The user's native Firefox reported
+  multiple Three instances. This was reproduced on a cold Vite optimizer run:
+  async scene loading discovered `three/addons/tsl/display/BloomNode.js`, and
+  the dev-only panel later discovered `tweakpane`; these late discoveries
+  changed the optimizer hash and caused successive reloads while the page was
+  open. During that sequence, two Three core URLs loaded and triggered Three's
+  duplicate-instance guard. Both late dependencies are now included in the
+  initial Vite optimization. A forced cold start followed by Firefox navigation
+  produced one Three core URL, no duplicate warning, and no post-navigation
+  optimizer reload. This is a dev startup fix; production chunking is unchanged.
   Lab now uses Cientos `OrbitControls` with rotation only; the direct
   `camera-controls` dependency and its deprecated `verticalDragToForward`
   warning were removed. A capture-phase stop on the scene host preserves the
@@ -195,8 +200,7 @@ or preserve a wrapper solely because a test currently encodes it.
   section; browser navigation behavior still needs runtime verification.
 - Known release-evidence gaps: WebKit could not launch in the current
   environment. The user confirmed real Firefox WebGPU and TSL post-processing;
-  retain the exact browser log as external evidence and investigate the
-  multiple-Three warning using their startup conditions.
+  Playwright Firefox remains a separate WebGL2-only environment here.
 - Fixed a Showreel render-mode bug found during source tracing: the shared TSL
   graph cached the initial world scene/camera, so its theater video rendered
   in the DOM while the canvas kept drawing the portfolio world. `PassNode`
@@ -394,10 +398,12 @@ are explicit.
 Phase 1 is active. Startup cancellation now has a guard; its focused
 regression case and runtime ownership trace remain. A duplicate route-mount
 flag and imperative section-class owner have been removed. Phase 2 is active:
-unit tests have been relocated and redundant per-frame config lookups removed;
-continue the ownership audit before selecting a broader collapse. Phase 3 is
-active: the TSL post graph is shared across backends and static transforms are
-declarative in reviewed scene owners; the rest of the scene ownership and
-allocation audit remains. Phase 4 is pending. No production-ready claim is
-made.
+unit tests have been relocated, redundant per-frame config lookups removed,
+and Vite's late Three dependency optimization fixed to avoid loading multiple
+Three cores during dev startup; continue the ownership audit before selecting
+a broader collapse. Phase 3 is active: the TSL post graph is shared across
+backends, Showreel scene switching uses the shared graph correctly, and static
+transforms are declarative in reviewed scene owners; the rest of the scene
+ownership and allocation audit remains. Phase 4 is pending. No production-ready
+claim is made.
 Keep this status current after each completed slice.
