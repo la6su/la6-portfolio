@@ -2,7 +2,7 @@
 // The implementation import is intentionally kept behind Experience's route
 // dynamic import so FontLoader/TextGeometry do not enter the shared scene graph.
 
-import * as THREE from 'three'
+import { shallowRef } from 'vue'
 import { WireframeTypography } from './WireframeTypography'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
@@ -13,30 +13,25 @@ export type ContactTypographyPublisher = (
 /** Route behavior controller for the Vue-owned Contact greeting root. */
 export class ContactTypographyStage {
   private readonly typography = new WireframeTypography('HELLO', 0.34)
-  private root: THREE.Group | null = null
   private publishTypography: ContactTypographyPublisher | null = null
   private active = false
   private disposed = false
   private reducedMotion = prefersReducedMotion()
+  private readonly _visible = shallowRef(false)
 
   get visible(): boolean {
-    return this.root?.visible ?? false
+    return this._visible.value
   }
 
-  bindRoot(root: THREE.Group, publishTypography: ContactTypographyPublisher): void {
+  bind(publishTypography: ContactTypographyPublisher): void {
     if (this.disposed) return
-    this.root = root
     this.publishTypography = publishTypography
-    root.name = 'contact-typography-stage'
-    root.visible = this.active
     void publishTypography(this.typography)
   }
 
-  unbindRoot(root: THREE.Group): void {
-    if (this.root !== root) return
+  unbind(): void {
     this.publishTypography?.(null)
     this.publishTypography = null
-    this.root = null
   }
 
   get isAnimating(): boolean {
@@ -48,7 +43,7 @@ export class ContactTypographyStage {
   setActive(active: boolean): void {
     if (this.disposed) return
     this.active = active
-    if (this.root) this.root.visible = active
+    this._visible.value = active
     this.typography.setReducedMotion(this.reducedMotion)
     this.typography.setActive(active)
   }
@@ -73,10 +68,9 @@ export class ContactTypographyStage {
     if (this.disposed) return
     this.disposed = true
     this.active = false
+    this._visible.value = false
     this.publishTypography?.(null)
     this.publishTypography = null
-    if (this.root) this.root.visible = false
     this.typography.dispose()
-    this.root = null
   }
 }

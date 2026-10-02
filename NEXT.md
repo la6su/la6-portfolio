@@ -187,6 +187,12 @@ preserve custom policy only when code or measurements prove the difference.
   Keep these bridges unless Tres exposes a lifecycle contract that removes
   those ordering requirements. Replaced stale `constructor.name` comments with
   the explicit backend-marker contract the code uses.
+- Contact typography's Vue owner declared `visible=false` while its behavior
+  controller retained the root and mutated `root.visible`. Removed that root
+  reference and bind/unbind parameter; the controller exposes a shallow
+  reactive visibility value and the SFC binds it to Tres's `visible` prop.
+  The controller still owns glyph behavior/resources, while Vue owns the
+  hierarchy and route visibility.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -960,6 +966,12 @@ snapshot now reports only whether the app-owned WebGPU graph is allocated;
 Three owns and disposes the internal Bloom targets. Vue type-check, ESLint,
 105/105 unit tests, production build and bundle budgets pass. Renderer visual
 parity and soak acceptance remain open on physical GPUs.
+
+**Contact typography scene ownership:** Replaced direct root visibility writes
+with a controller-owned reactive value bound through the SFC prop; removed the
+unneeded root reference handoff. Vue type-check, ESLint, 105/105 unit tests,
+production build/budgets and Firefox production Contact mount/release cycles
+pass (1/1).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the
