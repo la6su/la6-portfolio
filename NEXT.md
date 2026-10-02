@@ -513,6 +513,9 @@ materials/geometry leases. No safe cross-owner consolidation emerged from this
 pass. The previous `Window.UIkit: any` declaration now uses the existing typed
 `src/core/uikit` export (which includes the project's `update` typing); lint
 and the production build pass.
+The symmetric cubic easing formula is no longer private to ShowreelTheater;
+it now sits beside the shared project easing curves and clamps normalized
+progress at the helper boundary.
 
 Exit when every scene node and GPU resource has an explicit owner, no helper
 duplicates a library feature, and continuous frames are requested only by

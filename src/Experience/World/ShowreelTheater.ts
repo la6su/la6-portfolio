@@ -19,6 +19,7 @@
 // texture stands in until the first real video frame is decodable.
 
 import * as THREE from 'three'
+import { easeInOutCubic } from '../../Utils/easing'
 import { MeshBasicNodeMaterial, type UniformNode } from 'three/webgpu'
 import {
   Fn,
@@ -55,11 +56,6 @@ export interface ShowreelState {
   playing: boolean
   time: number
   duration: number
-}
-
-/** Smooth symmetric ease for the transition progress. */
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
 export class ShowreelTheater {
