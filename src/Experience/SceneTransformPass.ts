@@ -196,8 +196,9 @@ export class SceneTransformPass {
     const trail = this._ctx.owners.drawTrail
     if (trail) {
       const isStandaloneWorks = page === 'works'
-      trail.object.visible =
-        isStandaloneWorks || (activeIndex === WORKS_SLOT_INDEX && !carouselOwner?.isActive)
+      trail.setVisible(
+        isStandaloneWorks || (activeIndex === WORKS_SLOT_INDEX && !carouselOwner?.isActive),
+      )
     }
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)

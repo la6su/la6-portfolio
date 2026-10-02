@@ -219,6 +219,12 @@ preserve custom policy only when code or measurements prove the difference.
   snapshot to the stage contract and bound the existing Tres prop to it;
   removed mount/dispose root visibility writes. The root binding remains for
   card transforms and render ordering.
+- Two false visibility bindings still duplicated explicit Three-owner state.
+  Moved DrawTrail visibility through its existing `setVisible` API (and removed
+  an unused raw-object getter); it initializes hidden when adopted. ParticleBurst
+  already initializes and updates its own InstancedMesh visibility, so removed
+  the static false prop from its Tres node. These behavior-owned transient
+  leaves have one visibility authority without introducing a Vue ref bridge.
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
@@ -1030,6 +1036,13 @@ and direct entry to all public routes pass.
 the existing Tres `visible` prop; removed controller writes that bypassed it.
 Vue type-check, ESLint, 105/105 unit tests, production build/budgets and
 Firefox Works repeated mount/release (1/1) pass.
+
+**Transient effect visibility ownership:** DrawTrail now uses its existing
+`setVisible` behavior API from the transform pass and initializes hidden on
+adoption; removed the unused raw root getter. ParticleBurst's false prop was
+removed because its constructor and trigger lifecycle already own visibility.
+Vue type-check, ESLint, 105/105 unit tests, production build/budgets, Firefox
+home reveal and Works repeated mount/release checks pass (2/2).
 
 **Compat seam release guard:** Wired the existing Cientos/Three compatibility
 checker into the production `build` script, so upgrades fail early when the

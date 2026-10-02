@@ -35,7 +35,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- The hand-built ribbon geometry + TSL signal material are behavior — the
        controller assigns them onto this leaf when Experience adopts the node. -->
-  <TresGroup ref="root" name="draw-trail" :visible="false">
+  <TresGroup ref="root" name="draw-trail">
     <TresMesh
       ref="ribbon"
       name="trail-ribbon"

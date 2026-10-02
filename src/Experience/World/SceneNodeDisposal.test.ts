@@ -31,6 +31,11 @@ describe('Tres-declared boot node disposal', () => {
     const root = new THREE.Group()
     root.add(mesh)
     const trail = new DrawTrail({ root, ribbon: mesh })
+    expect(root.visible).toBe(false)
+    trail.setVisible(true)
+    expect(root.visible).toBe(true)
+    trail.setVisible(false)
+    expect(root.visible).toBe(false)
     const geometry = mesh.geometry
     const material = mesh.material as THREE.Material
     const disposePlaceholder = vi.spyOn(placeholder, 'dispose')

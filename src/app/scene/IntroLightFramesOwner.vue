@@ -19,7 +19,6 @@ onMounted(() => {
     ref="burst"
     name="intro-light-frames"
     :args="[undefined, undefined, INTRO_TRACE_COUNT]"
-    :visible="false"
     :frustum-culled="false"
   >
     <TresPlaneGeometry :args="[1, 1]" />
