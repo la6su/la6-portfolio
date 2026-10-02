@@ -91,6 +91,8 @@ Current known facts:
 - Blog metadata keys and index/article shapes are now constrained by the
   article slug literals and discriminated TypeScript types; the duplicate
   runtime closed-set validator was removed from the prerender script.
+- Text reveal teardown now belongs to the shared `TextReveal` owner; the two
+  concrete classes no longer expose redundant type-filtering dispose methods.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

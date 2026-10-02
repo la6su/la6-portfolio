@@ -1,22 +1,4 @@
-// NoiseText — junni-style typewriter reveal with noise tail.
-//
-// Proven stable pattern: combines 64002f9 (typewriter algorithm) +
-// 39eda64 stability fixes (Frame 0 = clean text, cancel restores cleanText).
-//
-// Critical guarantees (from 39eda64):
-// 1. Frame 0 = correct text → no flash of empty/noisy state.
-// 2. Final frame = ALWAYS clean text (finalize restores cleanText).
-// 3. cancel() restores cleanText BEFORE new show() reads DOM → no stale
-//    noise captured as cleanText on rapid re-trigger (IntersectionObserver).
-// 4. Safety timeout guarantees finalize() fires even if RAF is throttled.
-//
-// Guarantees 3–4 live in the shared TextReveal base (TextReveal.ts); the
-// typewriter algorithm lives here.
-//
-// Algorithm (from 64002f9): typewriter with noise tail
-// - Characters appear left-to-right (already-revealed = clean)
-// - 1-3 random noise chars flicker ahead of the reveal position
-// - At t=1.0: full clean text displayed
+// Typewriter reveal with a short noise tail for section eyebrows.
 
 import { TextReveal } from './TextReveal'
 
@@ -33,11 +15,6 @@ export class NoiseText extends TextReveal {
       NoiseText.instances.set(el, inst)
     }
     return inst
-  }
-
-  /** Stop every active text animation when the app bootstrap is reset. */
-  static disposeAll(): void {
-    TextReveal.disposeAllWhere((instance) => instance instanceof NoiseText)
   }
 
   /** Reveal an eyebrow label. The text resolves from

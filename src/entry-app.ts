@@ -1,5 +1,6 @@
 import { BlurFade } from './UI/BlurFade'
 import { NoiseText } from './UI/NoiseText'
+import { TextReveal } from './UI/TextReveal'
 import { eventBus } from './core/EventBus'
 import { noSceneRequested } from './core/sceneMode'
 import { contentRoot } from './core/contentRoot'
@@ -184,8 +185,7 @@ function resetBootstrapBindings(): void {
   // stay plain (see initSoundToggle).
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
-  BlurFade.disposeAll()
-  NoiseText.disposeAll()
+  TextReveal.disposeAll()
   clearReadyWatchdog()
   clearReadyEventTimer()
   clearBootstrapStyle()

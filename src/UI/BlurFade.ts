@@ -1,17 +1,4 @@
-// BlurFade — cinematic blur+stagger reveal for section titles.
-//
-// Effect: characters appear with random X/Y offset + blur, then settle
-// into their final position with a stagger. More cinematic than typewriter.
-//
-// Each character: starts offset (translateY + rotate) + blurred, animates
-// to clean position. Staggered timing = wave-like reveal.
-//
-// Used by: entry-app.ts (IntersectionObserver reveal on .studio-title), FullscreenOverlay title.
-// For console-style typewriter (eyebrow numbers), see NoiseText.ts.
-//
-// Lifecycle machinery (RAF + safety timeout, cleanText contract, finalize/
-// cancel/hide, teardown registry) is shared in TextReveal.ts; only the
-// per-character DOM rendering lives here.
+// Per-character blur and stagger reveal for section titles.
 
 import { TextReveal } from './TextReveal'
 import { easeOutCubic } from '../Utils/easing'
@@ -27,11 +14,6 @@ export class BlurFade extends TextReveal {
       BlurFade.instances.set(el, inst)
     }
     return inst
-  }
-
-  /** Stop every active blur animation when the app bootstrap is reset. */
-  static disposeAll(): void {
-    TextReveal.disposeAllWhere((instance) => instance instanceof BlurFade)
   }
 
   /** Reveal a section title. Honors the `data-blur-fade="off"`
