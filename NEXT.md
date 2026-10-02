@@ -145,7 +145,18 @@ Current known facts:
   owners remained mounted, and Experience startup failure left the host mounted
   after tearing down its controllers. Startup failure now unmounts SceneHost,
   so Vue/Tres owners release before deferred renderer disposal. Lint/build
-  validation is pending; failure-order runtime evidence remains unavailable.
+  pass; failure-order runtime evidence remains unavailable.
+- The SceneHost sizing review confirms there are no direct `setSize` or
+  `setPixelRatio` calls in the host path. Installed Tres source applies both
+  values to its captured renderer during initialization and tracks the live
+  `dpr` prop. The app's direct writes remain limited to the recovered
+  replacement, because Tres's captured instance cannot follow that swap.
+  Event subscription review found the `onBeforeLoop` subscription already has
+  an `{ off }` owner; the renderer-manager `invalidate` wrapper now also
+  restores the original method before reconfiguration or teardown, preventing
+  nested wrappers and duplicate scheduler demand. `bun run build`, lint, and
+  `git diff --check` pass. Recovery/resize behavior still requires runtime
+  evidence on a supported GPU/browser.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -374,12 +385,13 @@ Execution order:
 1. Source lifecycle trace is recorded above. Still verify first-frame and
    teardown ordering in browser, and trace device-recovery replacement and
    abort behavior on WebGPU/WebGL2 hardware.
-2. Compare every `SceneHost` size/DPR write with Tres 5.9.2's installed code;
-   retain Tres as size owner and remove only app writes that do not express a
-   distinct stage transform or backend-specific policy.
-3. Check every loop hook, invalidate wrapper, route callback, and recovery
-   subscription for a stored unsubscribe and an owner with matching lifetime.
-   Preserve one RAF and the TSL pipeline's render ownership.
+2. SceneHost size/DPR ownership was compared against installed Tres source;
+   only replacement-renderer synchronization stays app-owned. Verify it after
+   device recovery and viewport changes on supported hardware.
+3. Source ownership pass found stored disposers for the inspected loop hooks,
+   route callbacks, and recovery subscriptions. The SceneHost invalidate
+   wrapper now restores its predecessor on reconfiguration/teardown. Continue
+   with loop quiescence and recovery evidence on an actual browser.
 4. Trace route IDs, local chapter indices, and canonical world-slot indices
    across `CinematicNav`, `EventBus`, `ContentReveal`, `Experience`, and stage
    owners. Keep those domains explicit in names/types and remove literal

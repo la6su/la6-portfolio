@@ -119,6 +119,7 @@ type RendererManager = TresContext['renderer']
 let liveManager: RendererManager | null = null
 let frameCallback: ((time: number) => void) | null = null
 let externalInvalidateHandler: (() => void) | null = null
+let restoreManagerInvalidate: (() => void) | null = null
 
 const loopPort: SceneLoopPort = {
   onFrame(callback) {
@@ -265,6 +266,10 @@ async function onReady(context: TresContext): Promise<void> {
   // bridges BEFORE any async work can yield so the first scheduler tick (and
   // any ecosystem invalidate) always lands on the final wiring.
   const manager = context.renderer
+  // `onReady` can run again after a Tres context reconfiguration. Restore the
+  // prior wrapper first so one external invalidation never gets nested twice.
+  restoreManagerInvalidate?.()
+  restoreManagerInvalidate = null
   liveManager = manager
   // The render STEP stays on the Experience pipeline (Renderer.update →
   // RenderPipeline). Tres's default render function would double-render
@@ -281,9 +286,13 @@ async function onReady(context: TresContext): Promise<void> {
   // change events; the wrap translates each call into a typed scheduler
   // demand so external activity opens a render window.
   const baseInvalidate = manager.invalidate.bind(manager)
-  manager.invalidate = (...args: Parameters<typeof baseInvalidate>) => {
+  const wrappedInvalidate = (...args: Parameters<typeof baseInvalidate>) => {
     baseInvalidate(...args)
     externalInvalidateHandler?.()
+  }
+  manager.invalidate = wrappedInvalidate
+  restoreManagerInvalidate = () => {
+    if (manager.invalidate === wrappedInvalidate) manager.invalidate = baseInvalidate
   }
   // Tres auto-starts its loop when ready. The RenderScheduler owns
   // start/stop: pause the loop until Experience's first invalidation opens
@@ -398,6 +407,8 @@ onBeforeUnmount(() => {
   stopTresLoop = null
   tresFrameSubscription?.off()
   tresFrameSubscription = null
+  restoreManagerInvalidate?.()
+  restoreManagerInvalidate = null
   liveManager = null
   frameCallback = null
   externalInvalidateHandler = null
