@@ -164,6 +164,21 @@ Current known facts:
   canonical Lab/footer slot 0 and Menu slot 5; normal story sections continue
   to map from local section index to canonical slots 1–4. Verify sheet theme
   changes visually in browser when that environment is available.
+- Route-stage contract trace: Works dynamically imports the controller, mounts
+  its root, loads textures, waits for Vue cards, mounts the nested installation,
+  then configures visibility/camera; teardown detaches child then root before
+  disposing controller resources. Contact typography, halo, and Manifesto ink
+  import and attach their Vue-declared nodes before configuration, and detach
+  before disposing generated geometry/TSL resources. Cyprus attaches a hidden
+  root, loads the Draco GLTF, configures camera/visibility and prewarms, then
+  detaches and disposes. Lab checks request currency after import before it
+  constructs the experiment, then mounts, toggles visibility and releases it.
+  `LazyStage` memoizes requests, checks generations after awaits, releases late
+  results, and contains failed creation/load/configuration. Cyprus now owns a
+  dedicated Three `LoadingManager` and aborts its fetches on disposal; if the
+  browser lacks `AbortSignal.any()`, the loaded/failed late result still follows
+  the disposed-stage cleanup path. Stage order is source-reviewed; route-churn
+  runtime evidence remains open.
 
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
@@ -403,10 +418,10 @@ Execution order:
    traced across `CinematicNav`, `EventBus`, `ContentReveal`, `Experience`,
    and stage owners; a footer/menu polarity bridge defect was fixed. Review
    case-study and unavailable-route states next, then confirm visual parity.
-5. For each `StageRegistry` contract, note creation, attach, optional load,
-   visibility/configuration, detach, resource release, and late-result cleanup.
-   Keep a generic helper only where at least two distinct contracts use its
-   async guarantee.
+5. StageRegistry contracts and late-result cleanup are traced above; Cyprus
+   GLTF network requests now abort on stage release where the platform supports
+   Three's LoadingManager contract. Verify repeated route churn and resource
+   plateau in browser before closing the stage lifecycle gate.
 6. Review startup cancellation, no-scene mode, route exit, renderer loss,
    init error, host unmount, and concurrent teardown against actual callers.
    Fix a state duplication only when the replacement preserves those paths.

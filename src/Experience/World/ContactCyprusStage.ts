@@ -46,6 +46,7 @@ export class ContactCyprusStage {
   private _prewarmFramePending = false
   private _active = false
   private _disposed = false
+  private _loadingManager: THREE.LoadingManager | null = null
   private readonly _visible = shallowRef(false)
   private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
@@ -86,14 +87,17 @@ export class ContactCyprusStage {
     // The model is Draco-compressed. Use Three's glTF-specific WASM pair;
     // Vite emits these assets from the loader module and no public decoder
     // copy is needed on the route or startup path.
-    const dracoLoader = new DRACOLoader()
+    const loadingManager = new THREE.LoadingManager()
+    this._loadingManager = loadingManager
+    const dracoLoader = new DRACOLoader(loadingManager)
     dracoLoader.setDecoderPath(DRACO_GLTF_CONFIG)
-    const loader = new GLTFLoader().setDRACOLoader(dracoLoader)
+    const loader = new GLTFLoader(loadingManager).setDRACOLoader(dracoLoader)
     let gltf: Awaited<ReturnType<GLTFLoader['loadAsync']>>
     try {
       gltf = await loader.loadAsync('/assets/gltf/cyprus_3d.glb')
     } finally {
       dracoLoader.dispose()
+      if (this._loadingManager === loadingManager) this._loadingManager = null
     }
     if (this._disposed) {
       this.disposeModel(gltf.scene)
@@ -328,6 +332,8 @@ export class ContactCyprusStage {
     this._active = false
     this._visible.value = false
     this._prewarmFramePending = false
+    this._loadingManager?.abort()
+    this._loadingManager = null
     this._camera = null
     this._publishModel?.(null)
     this._publishModel = null
