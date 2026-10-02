@@ -1,17 +1,33 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import UIkit from "../core/uikit";
 import { eventBus } from "../core/EventBus";
+import { getLang, t } from "../core/i18n";
 
 const container = ref<HTMLDivElement | null>(null);
+const language = ref(getLang());
+const labels = computed(() => {
+  return {
+    language: language.value.toLowerCase(),
+    viewer: t("common.fullscreenViewer"),
+    close: t("common.close"),
+    previous: t("common.previous"),
+    next: t("common.next"),
+  };
+});
+let unsubscribeLanguage: (() => void) | undefined;
 
 onMounted(() => {
   if (container.value) {
     UIkit.update(container.value);
   }
+  unsubscribeLanguage = eventBus.on("jlz:lang-change", () => {
+    language.value = getLang();
+  });
 });
 
 onBeforeUnmount(() => {
+  unsubscribeLanguage?.();
   eventBus.emit("jlz:fullscreen-overlay-unmounted");
 });
 </script>
@@ -25,13 +41,14 @@ onBeforeUnmount(() => {
     class="jlz-fs-overlay uk-modal uk-modal-full uk-light"
     role="dialog"
     aria-modal="true"
-    aria-label="Fullscreen project viewer"
+    :lang="labels.language"
+    :aria-label="labels.viewer"
   >
     <div class="uk-modal-dialog jlz-fs-dialog">
       <button
         class="uk-modal-close-full uk-close-large jlz-fs-close"
         type="button"
-        aria-label="Close"
+        :aria-label="labels.close"
       >
         <span uk-icon="icon: close; ratio: 1.25" aria-hidden="true"></span>
       </button>
@@ -56,14 +73,14 @@ onBeforeUnmount(() => {
       <button
         class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center"
         type="button"
-        aria-label="Previous"
+        :aria-label="labels.previous"
       >
         <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
       </button>
       <button
         class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center"
         type="button"
-        aria-label="Next"
+        :aria-label="labels.next"
       >
         <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
       </button>

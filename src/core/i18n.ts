@@ -60,6 +60,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Common CTAs
     'common.explore': 'Explore',
     'common.close': 'Close',
+    'common.fullscreenViewer': 'Fullscreen project viewer',
+    'common.previous': 'Previous',
+    'common.next': 'Next',
 
     // Home — intro (Studio)
     'home.studio.title': 'Studio',
@@ -244,6 +247,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Common CTAs
     'common.explore': 'Исследовать',
     'common.close': 'Закрыть',
+    'common.fullscreenViewer': 'Полноэкранный просмотр проекта',
+    'common.previous': 'Предыдущий проект',
+    'common.next': 'Следующий проект',
 
     // Home — intro (Studio)
     'home.studio.title': 'Студия',
