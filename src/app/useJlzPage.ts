@@ -24,14 +24,7 @@ export function useJlzPage(
   initialSectionId: string,
 ) {
   const activeSectionId = ref(initialSectionId)
-  const sectionUnsubs = [
-    eventBus.on('jlz:section-change', ({ sectionId }) => {
-      if (page === 'home') activeSectionId.value = sectionId
-    }),
-    eventBus.on('jlz:page-section-change', ({ sectionId }) => {
-      if (page !== 'home') activeSectionId.value = sectionId
-    }),
-  ]
+  const sectionUnsubs: Array<() => void> = []
   watch(
     activeSectionId,
     (sectionId) => {
@@ -50,7 +43,7 @@ export function useJlzPage(
 
   onBeforeUnmount(() => {
     mounted = false
-    sectionUnsubs.forEach((unsubscribe) => unsubscribe())
+    sectionUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = null
     if (announcerRafHandle !== null) {
@@ -101,6 +94,16 @@ export function useJlzPage(
 
   onMounted(() => {
     mounted = true
+    // These subscribe to a module singleton shared by every SSR route render.
+    // Register on the client only: onBeforeUnmount does not run during SSR.
+    sectionUnsubs.push(
+      eventBus.on('jlz:section-change', ({ sectionId }) => {
+        if (page === 'home') activeSectionId.value = sectionId
+      }),
+      eventBus.on('jlz:page-section-change', ({ sectionId }) => {
+        if (page !== 'home') activeSectionId.value = sectionId
+      }),
+    )
     postRender()
   })
 

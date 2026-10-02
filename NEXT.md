@@ -404,6 +404,14 @@ image, and a proof source string with no presentation or processing consumer.
 These unused fields were removed from the records and type; new content fields
 will be added with their actual view or data use.
 
+The production prerenderer renders several fresh SSR apps through one Vite SSR
+module graph. `useJlzPage` previously subscribed to the module-singleton
+`eventBus` during `setup()`, while Vue does not call `onBeforeUnmount` during
+SSR; those handlers therefore survived later route renders in the same build
+process. The subscriptions now start on client `onMounted`, before that hook's
+`postRender()` route announcement, and are released on client unmount. Lint and
+the full production build pass; no test suite was run.
+
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s
 while the authored visible sections remain unchanged. Showreel was also missing
