@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   checks:
-    name: Type, unit, lint, and repository checks
+    name: Build, unit, and lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -25,10 +25,8 @@ jobs:
       - name: Verify generated outputs match their sources
         run: >-
           git diff --exit-code -- dist blog.html blog/ prerender/home.html public/sitemap.xml
-      - run: bun run type-check:vue
       - run: bun run test:unit
       - run: bun run lint
-      - run: bun run check:stdlib
 
   browsers:
     name: Production browser matrix

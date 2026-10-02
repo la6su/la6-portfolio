@@ -47,6 +47,11 @@ Current known facts:
   reducing their implementation.
 - Resource disposal waits for Vue/Tres to detach declared nodes before GPU
   release. Host renderer disposal is deferred until scene owners unmount.
+- Generated `dist/`, blog HTML, home prerender, and sitemap are tracked release
+  inputs; CI rebuilds them and verifies they match their sources.
+- CI previously repeated Vue type-check and stdlib compatibility checks after
+  `bun run build`, which already runs both; the duplicate workflow steps are
+  removed.
 - The unit suite was moved out of `src`; no test run is claimed by this plan.
 - `SceneTransformPass` returns its active/from/to configs and section index;
   Experience no longer re-reads route sections or looks phase ids up in a
