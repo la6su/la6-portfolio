@@ -552,6 +552,11 @@ Execution order:
    overflow locks, theme sync, and route transitions. Resolve layout or
    behavior defects found in the source; use browser inspection if the runtime
    is reachable.
+   Source viewport scan confirms both the cinematic shell and content sections
+   use fixed `100dvh` stages with hidden overflow; case-study copy and mobile
+   menu provide their own scroll regions. Verify short landscape, small-height
+   and enlarged-text layouts before changing this contract, since scene progress
+   and DOM section visibility share the route's story position.
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
