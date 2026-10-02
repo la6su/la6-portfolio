@@ -406,7 +406,8 @@ carousel controls follow the active locale without per-component listeners.
 The Works archive and Services' two SVG illustrations use the same localized
 attribute path; Works project apertures expose their visually hidden project
 title directly as the button name instead of overriding it with an English
-prefix.
+prefix. A source scan of all 40 Vue SFCs confirmed that every marked
+`data-i18n-aria-label` key resolves in the EN/RU dictionaries.
 
 Chromium visual QA reproduced the inverse-theme contrast issue on `/works` and
 `/manifesto`: polarity classes and foreground tokens changed, but the HTML
