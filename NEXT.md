@@ -464,9 +464,15 @@ then awaits prewarm and all async owner releases before the final texture sweep.
 navigation owner independently too. Failures are reported after sibling
 cleanup; an unexpected failure in the top-level coordinator still rejects the
 shared promise. `bun run lint` and the full production build pass, and tracked
-prerender/build assets were regenerated. No failure-injection or browser
-teardown run was performed for this source change; that runtime gate remains
-open.
+prerender/build assets were regenerated. Manual Chromium on the dev
+`?force-webgl-backend` path observed `WebGLBackend`, one scene canvas, and a
+resource snapshot of 22 scene geometries / 28 materials / 5 textures and 12
+renderer geometries / 24 textures. Calling the exposed runtime destroy hook
+settled `experience:async-scene-teardown-complete` and removed its diagnostics;
+reloading recreated one canvas with the same resource counts and no page
+errors. This confirms the ordinary destroy/restart path only. Fault-injection
+of a throwing disposer and HMR during active prewarm remain open lifecycle
+gates.
 
 SceneHost bridge audit: `loopPort` is the sole adapter from RenderScheduler to
 Tres's RAF (`onBeforeLoop` supplies delta; start/stop control the Tres loop).
