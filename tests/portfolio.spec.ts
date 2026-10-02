@@ -90,6 +90,30 @@ test("language toggle updates translated content and document metadata", async (
   await toggle.click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page).toHaveTitle(englishTitle);
+
+  await page.goto("/works/porsche-911-spider", {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(page.locator('[data-page-view="case-study"]')).toHaveCount(1);
+  const caseCanonical = page.locator('link[rel="canonical"]');
+  await expect(caseCanonical).toHaveAttribute(
+    "href",
+    /\/works\/porsche-911-spider$/,
+  );
+  await expect(page.locator('meta[property="og:type"]')).toHaveAttribute(
+    "content",
+    "article",
+  );
+  await page.locator("#cfg-lang").click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+  await expect(caseCanonical).toHaveAttribute(
+    "href",
+    /\/works\/porsche-911-spider$/,
+  );
+  await expect(page.locator('meta[property="og:type"]')).toHaveAttribute(
+    "content",
+    "article",
+  );
 });
 
 test("unknown direct path falls back to home and browser history restores routes", async ({

@@ -18,6 +18,13 @@ import type { PageId } from './routeManifest'
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 
+export interface PageMetaOverrides {
+  title?: string
+  description?: string
+  canonicalPath?: string
+  type?: 'website' | 'article'
+}
+
 /** Ensure a <meta> tag exists in <head>, creating it if missing. */
 function ensureMeta(attr: 'name' | 'property', key: string): HTMLMetaElement {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
@@ -45,14 +52,14 @@ function ensureCanonical(): HTMLLinkElement {
  * title/description and the route manifest for the canonical path.
  * Call on every route change and on language change.
  */
-export function applyMetaTags(page: PageId): void {
+export function applyMetaTags(page: PageId, overrides: PageMetaOverrides = {}): void {
   const cfg: PageMetaData = PAGE_META_DATA[page]
   if (!cfg) return
 
-  const title = t(cfg.titleKey)
-  const description = t(cfg.descKey)
+  const title = overrides.title ?? t(cfg.titleKey)
+  const description = overrides.description ?? t(cfg.descKey)
   const origin = window.location.origin
-  const url = `${origin}${pathForPage(page)}`
+  const url = `${origin}${overrides.canonicalPath ?? pathForPage(page)}`
 
   // <title>
   document.title = title
@@ -68,7 +75,7 @@ export function applyMetaTags(page: PageId): void {
   ensureMeta('property', 'og:description').content = description
   ensureMeta('property', 'og:url').content = url
   ensureMeta('property', 'og:site_name').content = SITE_NAME
-  ensureMeta('property', 'og:type').content = 'website'
+  ensureMeta('property', 'og:type').content = overrides.type ?? 'website'
 
   // Twitter Card (basic)
   ensureMeta('name', 'twitter:card').content = 'summary_large_image'

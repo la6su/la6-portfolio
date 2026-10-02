@@ -6,6 +6,7 @@ import { PROJECTS } from '../../Data/Projects'
 import { setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
 import { getLang } from '../../core/i18n'
+import { applyMetaTags } from '../../core/pageMeta'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
@@ -22,23 +23,15 @@ const language = ref(getLang())
 const applyCaseStudyMeta = (): void => {
   const title = project.value ? `${project.value.title} — JUSTLOVEJAZZ` : 'Works — JUSTLOVEJAZZ'
   const description = study.value?.outcome ?? 'Independent creative technology studies.'
-  document.title = title
-  document.documentElement.lang = getLang() === 'RU' ? 'ru' : 'en'
-  for (const [selector, value] of [
-    ['meta[name="description"]', description],
-    ['meta[property="og:title"]', title],
-    ['meta[property="og:description"]', description],
-    ['meta[property="og:type"]', 'article'],
-  ]) {
-    const node = document.head.querySelector<HTMLMetaElement>(selector!)
-    if (node) node.content = value!
-  }
-  const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-  if (canonical) canonical.href = `${window.location.origin}/works/${projectId.value}`
+  applyMetaTags('works', {
+    title,
+    description,
+    canonicalPath: `/works/${projectId.value}`,
+    type: 'article',
+  })
 }
 const unsubscribe = eventBus.on('jlz:lang-change', () => {
   language.value = getLang()
-  queueMicrotask(applyCaseStudyMeta)
 })
 onBeforeUnmount(() => {
   unsubscribe()
@@ -96,6 +89,7 @@ watch(
   { flush: 'post' },
 )
 watch([project, study], applyCaseStudyMeta, { flush: 'post' })
+watch(language, applyCaseStudyMeta, { flush: 'post' })
 </script>
 
 <template>

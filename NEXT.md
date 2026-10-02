@@ -143,6 +143,13 @@ preserve custom policy only when code or measurements prove the difference.
   watcher for subsequent case changes. Firefox production direct-entry checks
   now pass for every public route including both case studies (1 test), and
   home reveal/startup passes (1 test).
+- CaseStudyView still duplicated `pageMeta.ts`'s DOM writes for title, lang,
+  description, Open Graph and canonical tags. Extended the existing helper
+  with optional route metadata overrides; the view now supplies only its
+  title/description/path/type values. Replaced its hand-managed microtask with
+  a Vue post-flush language watcher. Firefox production checks pass for direct
+  route canonical metadata and for preserving the case canonical + article
+  type after an EN/RU toggle (2/2).
 - A live switch to reduced motion snapped scene owners, then called
   `RenderScheduler.settleNow()` before a frame could display the snapped state.
   Changed this to request one `motion-preference` draw; the normal settled
