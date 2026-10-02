@@ -84,9 +84,7 @@ export class ExperienceUI {
       }),
     )
 
-    // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
-    // D-7 fix: default to MUTED (matches the console's getSoundMuted default:
-    // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
+    // Apply the persisted sound preference before handling live toggle events.
     this.host.sfx.setMuted(getSoundMuted())
 
     // Runtime sound toggle from the persistent console or other in-app controls.

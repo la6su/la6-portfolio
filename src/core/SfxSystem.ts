@@ -1,15 +1,9 @@
-// SfxSystem.ts — Procedural sound effects via Web Audio API (no samples).
-//
-// Generates short UI sounds (hover tick, click tap, open/close whoosh) by
-// scheduling oscillator + gain envelopes on a shared AudioContext. Zero
-// network payload — everything is synthesized at runtime.
+// Short UI sounds synthesized at runtime with Web Audio oscillators.
 //
 // Lazy-init: AudioContext is created on the first play() call (after a user
 // gesture, per browser autoplay policy). If AudioContext is unavailable or
 // muted, play() is a silent no-op.
 //
-// Integrated with jlz:sound-toggle: Experience.ts calls setMuted() alongside
-// AudioSystem.setMuted() so one toggle mutes both ambient audio + SFX.
 
 type SfxName = 'hover' | 'click' | 'open' | 'close'
 
@@ -37,11 +31,8 @@ export class SfxSystem {
     if (this._muted || this._disposed) return
     if (!this._started) this.init()
     if (!this.ctx || !this.master) return
-    // D-4 fix: resume AudioContext if suspended. Browsers suspend AudioContext
-    // when the tab is backgrounded (visibilitychange). Without resume(), SFX
-    // are silent after returning to the tab until the next user gesture that
-    // happens to call play(). ctx.resume() is async but scheduling still works
-    // (the sound plays once the context resumes, ~1 frame later).
+    // Browsers suspend AudioContext when a tab is backgrounded. Resume it on
+    // the next interaction so scheduled effects work after returning.
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume().catch(() => {
         /* ignore — will retry next play() */
