@@ -6,9 +6,13 @@ import type { ThemeAppliedPort } from './sectionTheme'
 import type { ThemeMode } from './ThemeManager'
 
 export interface AppEvents {
-  /** Fired by entry-app.ts when the shared runtime is ready. */
+  /** ExperienceRuntime begins scene preparation after SceneHost readiness. */
+  'jlz:experience-starting': void
+  /** Fired by the Vue runtime owner after Experience's first successful draw. */
+  'jlz:experience-ready': void
+  /** Fired by entry-app.ts after ExperienceRuntime completes the first draw. */
   'jlz:webgl-ready': void
-  /** Fired by entry-app.ts when Experience.init() fails; keeps Enter unavailable. */
+  /** Fired by ExperienceRuntime when scene or runtime initialization fails. */
   'jlz:webgl-failed': void
   /** Fired by Experience.update() on section index change — drives ContentReveal + NoiseText. */
   'jlz:section-change': {

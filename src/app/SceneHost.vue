@@ -15,7 +15,7 @@ import { useRoute } from 'vue-router'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import type { Group, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry } from 'three'
-import { planUnifiedBackend } from '../core/rendererBackend'
+import { planUnifiedBackend, type FinalMode } from '../core/rendererBackend'
 import { DeviceCapability, maxDprForMode } from '../core/DeviceCapability'
 import { prefersReducedMotion, observeReducedMotion } from '../core/motionPolicy'
 import { noSceneRequested } from '../core/sceneMode'
@@ -29,7 +29,7 @@ import {
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import { sceneHost, type SceneLoopPort } from './sceneHost'
+import type { SceneHostReady, SceneLoopPort } from './sceneHost'
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 import { createReadySlot, readyNode } from './readySlot'
 import { useSceneStages } from './useSceneStages'
@@ -56,6 +56,10 @@ import type { IntroLightFramesNodes } from '../Experience/World/ParticleBurst'
 import type { CursorTrailNodes } from '../Experience/World/DrawTrail'
 
 const noScene = noSceneRequested
+const emit = defineEmits<{
+  ready: [host: SceneHostReady]
+  error: [error: Error]
+}>()
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
 // topology (`WebGPURenderer` with its WebGLBackend), but lets the browser gate
 // exercise a real WebGL context loss on hardware even when Chrome exposes
@@ -95,6 +99,7 @@ const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface =>
 }
 
 const tresRef = ref<{ $el: Element } | null>(null)
+let settled = false
 let disposed = false
 let lifecycleGeneration = 0
 let ownedRenderer: UnifiedRenderSurface | null = null
@@ -102,7 +107,6 @@ let ownedRendererDisposal: (() => Promise<void>) | null = null
 let rendererDisposal: Promise<void> | null = null
 let fallbackRendererInitController: AbortController | null = null
 let fallbackRendererInit: Promise<boolean> | null = null
-let unbindRendererOwner: (() => void) | null = null
 let stopTresLoop: (() => void) | null = null
 
 // Tres loop bridge state.
@@ -254,7 +258,7 @@ async function disposeHostRenderer(renderer: UnifiedRenderSurface | null): Promi
 }
 
 async function onReady(context: TresContext): Promise<void> {
-  if (noScene || sceneHost.isSettled) return
+  if (noScene || settled) return
   // Tres owns the persistent RAF host. Install the
   // bridges BEFORE any async work can yield so the first scheduler tick (and
   // any ecosystem invalidate) always lands on the final wiring.
@@ -353,7 +357,8 @@ async function onReady(context: TresContext): Promise<void> {
   dprCap.value = maxDprForMode(plan.mode, DeviceCapability.getInstance().isMobile)
   ownedRenderer = renderer
   ownedRendererDisposal ??= deferRendererDisposal(renderer)
-  unbindRendererOwner = sceneHost.bindRendererOwner((replacement, mode) => {
+  const replaceRenderer = (replacement: UnifiedRenderSurface, mode: FinalMode): void => {
+    context.renderer.instance = replacement
     ownedRenderer = replacement
     // Recovery replaces the renderer Tres will dispose on unmount.
     ownedRendererDisposal = deferRendererDisposal(replacement)
@@ -361,13 +366,14 @@ async function onReady(context: TresContext): Promise<void> {
     // re-publish the cap so the Tres size manager keeps agreeing with the
     // Renderer owner after the swap.
     dprCap.value = maxDprForMode(mode, DeviceCapability.getInstance().isMobile)
-  })
-  sceneHost.resolve({
+  }
+  const host: SceneHostReady = {
     page: currentPage,
     isLabCameraActive: () => labCameraActive.value,
     scene: context.scene.value,
     context,
     renderer,
+    replaceRenderer,
     canvas,
     camera,
     mode: plan.mode,
@@ -382,26 +388,28 @@ async function onReady(context: TresContext): Promise<void> {
     cursorTrail,
     loop: loopPort,
     stages,
-  })
+  }
+  settled = true
+  emit('ready', host)
 }
 
 function onError(error: Error): void {
-  if (sceneHost.isSettled || disposed) return
+  if (settled || disposed) return
+  settled = true
   void disposeHostRenderer(ownedRenderer).catch((disposeError: unknown) => {
     console.error('[SceneHost] renderer cleanup failed after initialization error:', disposeError)
   })
-  sceneHost.reject(error)
+  emit('error', error)
 }
 
 onBeforeUnmount(() => {
+  settled = true
   disposed = true
   lifecycleGeneration += 1
   fallbackRendererInitController?.abort()
   fallbackRendererInitController = null
   stopTresLoop?.()
   stopTresLoop = null
-  unbindRendererOwner?.()
-  unbindRendererOwner = null
   liveManager = null
   frameCallback = null
   externalInvalidateHandler = null

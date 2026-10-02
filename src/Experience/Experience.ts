@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { watch, type WatchStopHandle } from 'vue'
 import { Camera } from './Camera'
-import { Renderer, type RenderSurface } from './Renderer'
+import { Renderer } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -48,14 +48,12 @@ import { traceDevLifecycle } from '../core/devLifecycleTrace'
  * adopts them without constructing a parallel scene or camera. `replaceRenderer`
  * keeps Tres context aligned after device-loss recovery.
  *
- * Derived from the bridge's own `SceneHostReady` so a host capability is
- * declared once (sceneHost.ts): Experience drops the Tres context/backend
- * facts it never reads and widens the renderer to its surface contract.
+ * Derived from the Vue host event so host capabilities stay declared once:
+ * Experience drops Tres context/backend facts it never reads and receives
+ * the size manager it needs for route-owned transforms.
  */
-type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend' | 'renderer'> & {
-  renderer: RenderSurface
+type ExperienceHost = Omit<SceneHostReady, 'context' | 'backend'> & {
   sizes: SceneHostReady['context']['sizes']
-  replaceRenderer(renderer: RenderSurface, mode: SceneHostReady['mode']): void
 }
 
 export class Experience {

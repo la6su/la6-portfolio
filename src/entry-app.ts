@@ -3,7 +3,6 @@ import { NoiseText } from './UI/NoiseText'
 import { eventBus } from './core/EventBus'
 import { noSceneRequested } from './core/sceneMode'
 import { contentRoot } from './core/contentRoot'
-import { devDiagnostic } from './core/devDiagnostic'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 // LANG_KEY handled by i18n.ts
@@ -81,9 +80,7 @@ export function initSplashToggles(): void {
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
   if (!enterBtn) return
-  // Pin the meta row at READY, then show Enter. Flip aria-disabled so
-  // AT users (and Playwright actionability) see the button as activatable.
-  updateLoaderStatus('READY')
+  // Flip aria-disabled so assistive technology sees Enter as activatable.
   enterBtn.classList.add('is-ready')
   enterBtn.setAttribute('aria-disabled', 'false')
 }
@@ -168,6 +165,7 @@ let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
 let _readyEventTimer: ReturnType<typeof setTimeout> | null = null
 let _bootstrapUnsubs: Array<() => void> = []
 let bootstrapStyle: HTMLStyleElement | null = null
+let bootStartedAt = 0
 
 function clearBootstrapStyle(): void {
   bootstrapStyle?.remove()
@@ -219,121 +217,6 @@ function scheduleReadyEvent(delayMs: number): void {
   }, delayMs)
 }
 
-async function boot(): Promise<void> {
-  // DOM-only mode keeps routes and navigation available without creating a
-  // scene renderer or canvas.
-  if (noSceneRequested) {
-    try {
-      updateLoaderStatus('READY')
-      eventBus.emit('jlz:webgl-ready')
-      return
-    } catch (e) {
-      console.error('[entry-app] no-scene bootstrap failed:', e)
-      eventBus.emit('jlz:webgl-failed')
-      throw new Error('DOM-only application bootstrap failed', { cause: e })
-    }
-  }
-
-  // Failures before the one-shot SceneHost settles are surfaced to the shell;
-  // after it settles, its mounted Vue owner presents the failure state.
-  let experience: import('./Experience/Experience').Experience | null = null
-  let sceneHostSettled = false
-  try {
-    const bootStart = performance.now()
-    updateLoaderStatus('INITIALIZING')
-
-    // SceneHost owns renderer readiness and the first successful scene frame.
-    // AppShell mounts SceneHost (startApp above); it owns the one canvas, the
-    // custom renderer factory and the camera. `sceneHost.ready` settles only
-    // AFTER renderer init + actual-backend inspection + the software-adapter
-    // policy decision + the Tres context mount. Experience adopts those
-    // instances and awaits the scene's first successful render
-    // (Experience.init → firstRender), so `jlz:webgl-ready` below can only
-    // fire after that — the renderer factory return alone never satisfies
-    // readiness. The `?no-scene` DOM-only rollback above returns earlier and
-    // never reaches this handshake.
-    const { sceneHost } = await import('./app/sceneHost')
-    sceneHostSettled = true
-    const host = await sceneHost.ready
-    updateLoaderStatus('PREPARING SCENE')
-    const { Experience } = await import('./Experience/Experience')
-
-    const runtime = new Experience(
-      {
-        scene: host.scene,
-        page: host.page,
-        isLabCameraActive: host.isLabCameraActive,
-        camera: host.camera,
-        renderer: host.renderer,
-        sizes: host.context.sizes,
-        canvas: host.canvas,
-        mode: host.mode,
-        lights: host.lights,
-        ground: host.ground,
-        sectionRoots: host.sectionRoots,
-        servicesStage: host.servicesStage,
-        envSphere: host.envSphere,
-        baku: host.baku,
-        introFrames: host.introFrames,
-        cursorTrail: host.cursorTrail,
-        replaceRenderer: (renderer, mode) => sceneHost.replaceRenderer(renderer, mode),
-        loop: host.loop,
-        stages: host.stages,
-      },
-    )
-    experience = runtime
-    if (import.meta.env.DEV) {
-      // Publish teardown before init() reaches async scene/media prewarm so
-      // HMR/app unmount can await GPU-safe owner release during boot too.
-      const devRuntime = window as unknown as {
-        __jlzRuntimeDestroy?: () => Promise<void>
-      }
-      devRuntime.__jlzRuntimeDestroy = () => runtime.destroy()
-    }
-    const hostProbe: JlzHostProbe = {
-      mode: host.mode,
-      backend: host.backend.backendName,
-      isFallbackAdapter: host.backend.isFallbackAdapter,
-      recovered: false,
-    }
-    window.__jlzHost = hostProbe
-    _bootstrapUnsubs.push(
-      eventBus.on('jlz:renderer-recovered', () => {
-        if (window.__jlzHost === hostProbe) hostProbe.recovered = true
-      }),
-    )
-    await runtime.init()
-    // TSL post-processing is enabled only on WebGPUBackend; Three's WebGL
-    // fallback renders the scene directly.
-    devDiagnostic(
-      'info',
-      `[entry-app] SceneHost ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
-    )
-    updateLoaderStatus('READY')
-
-    // ── Fire jlz:webgl-ready → fades out #jlz-app-loader + animates titles ──
-    const INTRO_MS = 600
-    const elapsed = performance.now() - bootStart
-    const readyAt = Math.max(0, INTRO_MS - elapsed)
-
-    scheduleReadyEvent(prefersReducedMotion() ? 0 : readyAt)
-  } catch (e) {
-    console.error('[entry-app] bootstrap failed:', e)
-    try {
-      await experience?.destroy()
-    } catch (error) {
-      console.error('[entry-app] Experience cleanup failed:', error)
-    }
-    clearHostProbe()
-    clearReadyWatchdog()
-    clearReadyEventTimer()
-    eventBus.emit('jlz:webgl-failed')
-    // Before SceneHost settles, the shell entry has no mounted app owner to
-    // present recovery UI, so let its independent module-load fallback run.
-    if (!sceneHostSettled) throw new Error('Application bootstrap failed', { cause: e })
-  }
-}
-
 async function startAppOnce(): Promise<void> {
   resetBootstrapBindings()
   // Init splash config toggles FIRST — instant, no dependencies.
@@ -368,17 +251,19 @@ async function startAppOnce(): Promise<void> {
     .catch((error) => {
       console.error('[entry-app] Vue mount failed:', error)
       eventBus.emit('jlz:webgl-failed')
-      void import('./app/sceneHost')
-        .then(({ sceneHost }) => sceneHost.reject(error))
-        .catch(() => {
-          /* sceneHost rejection is best-effort; the visible failure state remains */
-        })
     })
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   _bootstrapUnsubs.push(
+    eventBus.on('jlz:experience-starting', () => updateLoaderStatus('PREPARING SCENE')),
+    eventBus.on('jlz:experience-ready', () => {
+      updateLoaderStatus('READY')
+      const introMs = 600
+      const remaining = Math.max(0, introMs - (performance.now() - bootStartedAt))
+      scheduleReadyEvent(prefersReducedMotion() ? 0 : remaining)
+    }),
     eventBus.on('jlz:webgl-ready', () => {
       clearReadyWatchdog()
       showEnterButton()
@@ -492,12 +377,26 @@ async function startAppOnce(): Promise<void> {
     }),
   )
 
-  await boot()
+  // DOM-only mode keeps routes and navigation available without creating a
+  // scene renderer or canvas. Otherwise Vue's ExperienceRuntime starts after
+  // SceneHost has selected and published its renderer.
+  if (noSceneRequested) {
+    try {
+      updateLoaderStatus('READY')
+      eventBus.emit('jlz:webgl-ready')
+    } catch (error) {
+      console.error('[entry-app] no-scene bootstrap failed:', error)
+      eventBus.emit('jlz:webgl-failed')
+      throw new Error('DOM-only application bootstrap failed', { cause: error })
+    }
+  } else {
+    bootStartedAt = performance.now()
+    updateLoaderStatus('INITIALIZING')
+  }
 }
 
-// The shell entry calls startApp() exactly once; boot() itself is idempotent
-// through the bootstrap state machine, and the only retry is a full page
-// reload handled by the shell's fallback.
+// The shell entry calls startApp() exactly once; retry is a full page reload
+// handled by the shell's fallback.
 export function startApp(): Promise<void> {
   return startAppOnce()
 }

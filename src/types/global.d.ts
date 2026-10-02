@@ -9,7 +9,7 @@ declare global {
 
   interface Window {
     UIkit: any
-    /** Read-only runtime evidence seam; written only by entry-app bootstrap. */
+    /** Read-only runtime evidence seam; written by the Vue runtime owner. */
     __jlzHost?: JlzHostProbe
     /** Development-only hooks used to observe real SceneHost teardown. */
     __jlzTestLifecycleTrace?: string[]

@@ -16,6 +16,7 @@ import { jlzRouteRecords } from './routes'
 
 let mounted = false
 let unmountMountedVueApp: (() => Promise<void>) | null = null
+let destroyAppShell: (() => Promise<void>) | null = null
 
 /** Own the direct-entry hash handoff until the renderer is ready. */
 export function createDeferredInitialHashGate(): {
@@ -219,9 +220,10 @@ export async function mountVueApp(): Promise<void> {
     appUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     document.removeEventListener('click', onClick, true)
     routeTransition.dispose()
-    await window.__jlzRuntimeDestroy?.()
+    await destroyAppShell?.()
     if (appMounted) app.unmount()
     appMounted = false
+    destroyAppShell = null
     if (
       (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady
     ) {
@@ -237,7 +239,10 @@ export async function mountVueApp(): Promise<void> {
     // A fresh client render (createApp) replaces `#app`'s content on mount:
     // the build-time prerender keeps the home route shell available before JS
     // boots, and the SFC re-renders identical DOM rather than hydrating it.
-    app.mount(root)
+    const shell = app.mount(root) as unknown as {
+      destroyExperience: () => Promise<void>
+    }
+    destroyAppShell = () => shell.destroyExperience()
     appMounted = true
     ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady =
       true

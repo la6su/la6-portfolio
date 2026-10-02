@@ -91,6 +91,8 @@ export interface SceneHostReady {
   context: TresContext
   /** The actual renderer instance after init + backend inspection. */
   renderer: UnifiedRenderSurface
+  /** Keep Tres's manager and the Vue teardown owner aligned after recovery. */
+  replaceRenderer(renderer: UnifiedRenderSurface, mode: FinalMode): void
   /** The persistent canvas element (Vue-owned DOM, e2e `canvas.canvas`). */
   canvas: HTMLCanvasElement
   /** The one camera instance (owned by SceneHost, wrapped by Experience). */
@@ -117,80 +119,4 @@ export interface SceneHostReady {
   loop: SceneLoopPort
   /** Declarative stage mount/unmount boundaries (one port per stage family). */
   stages: SceneStagePorts
-}
-
-interface SceneHostState {
-  settled: boolean
-  resolve?: (value: SceneHostReady) => void
-  reject?: (error: unknown) => void
-  context: TresContext | null
-  rendererOwner?: (renderer: UnifiedRenderSurface, mode: FinalMode) => void
-}
-
-const state: SceneHostState = { settled: false, context: null }
-
-/** One-shot signal for the persistent Tres root. */
-export const sceneHost = {
-  ready: new Promise<SceneHostReady>((resolve, reject) => {
-    state.resolve = resolve
-    state.reject = reject
-  }),
-  get isSettled(): boolean {
-    return state.settled
-  },
-  resolve(value: SceneHostReady): void {
-    if (state.settled) return
-    state.settled = true
-    state.context = value.context
-    state.resolve?.(value)
-  },
-  reject(error: unknown): void {
-    if (state.settled) return
-    state.settled = true
-    state.reject?.(error)
-  },
-  /**
-   * Swap the live renderer after a device-loss recovery (or a software
-   * adapter re-creation outside SceneHost). Tres 5.9 keeps the renderer as
-   * a plain value on the manager, so the swap is a plain assignment; the
-   * RenderScheduler keeps driving the replacement through the Renderer
-   * owner boundary.
-   */
-  replaceRenderer(renderer: UnifiedRenderSurface, mode: FinalMode): void {
-    if (state.context) state.context.renderer.instance = renderer
-    state.rendererOwner?.(renderer, mode)
-  },
-  /**
-   * Register the Vue host's live-renderer slot. Renderer recovery happens
-   * behind the Experience owner boundary, so the host must follow the
-   * replacement before a later Vue unmount disposes its resources.
-   */
-  bindRendererOwner(owner: (renderer: UnifiedRenderSurface, mode: FinalMode) => void): () => void {
-    state.rendererOwner = owner
-    return () => {
-      if (state.rendererOwner === owner) state.rendererOwner = undefined
-    }
-  },
-}
-
-/**
- * Test-only: restore the pristine one-shot state so a fresh module-scoped
- * bridge can be exercised again (the production bridge settles exactly once
- * per page).
- */
-export function __resetSceneHostForTests(): void {
-  state.settled = false
-  state.context = null
-  state.resolve = undefined
-  state.reject = undefined
-  state.rendererOwner = undefined
-  // A new one-shot promise with fresh settle hooks.
-  ;(
-    sceneHost as {
-      ready: Promise<SceneHostReady>
-    }
-  ).ready = new Promise<SceneHostReady>((resolve, reject) => {
-    state.resolve = resolve
-    state.reject = reject
-  })
 }
