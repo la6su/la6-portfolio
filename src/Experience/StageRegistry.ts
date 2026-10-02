@@ -11,7 +11,7 @@
 
 import type { Camera } from 'three'
 import type { PageId } from '../core/routeManifest'
-import type { SceneStagePorts } from '../app/sceneHost'
+import type { SceneStagePorts } from './SceneHostContract'
 import {
   createLazyStageOwner,
   createImportedLazyStage,

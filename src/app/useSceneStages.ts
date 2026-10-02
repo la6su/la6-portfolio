@@ -1,6 +1,6 @@
 import { createStageSlot } from './stageSlot'
 import type { Group } from 'three'
-import type { SceneStagePorts } from './sceneHost'
+import type { SceneStagePorts } from '../Experience/SceneHostContract'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import type { ContactHaloStage } from '../Experience/World/ContactHaloStage'
 import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'

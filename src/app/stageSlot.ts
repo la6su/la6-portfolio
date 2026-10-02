@@ -2,7 +2,7 @@
 // It guards host teardown, ignores stale detach requests, and waits for Vue
 // to apply each scene-tree change. shallowRef keeps Three objects raw.
 import { nextTick, shallowRef, type ShallowRef } from 'vue'
-import type { StagePort } from './sceneHost'
+import type { StagePort } from '../Experience/SceneHostContract'
 
 /** One declarative stage slot: the `StagePort` boundary plus the live object
  *  store the template's `<primitive>` reads. */

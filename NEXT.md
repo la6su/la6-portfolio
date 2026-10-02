@@ -182,6 +182,12 @@ or preserve a wrapper solely because a test currently encodes it.
   while `mountVueApp()` awaited `router.isReady()`, after which the continuation
   mounted the app anyway. A disposed guard now prevents that remount. A focused
   regression case remains needed; no automated result is claimed yet.
+- The Experience runtime and `StageRegistry` imported their host and stage-port
+  contracts from `app/sceneHost.ts`, reversing the intended dependency
+  direction. The contracts now live in `Experience/SceneHostContract.ts`,
+  where the consuming runtime defines its input boundary; the Vue/Tres host
+  supplies that contract. This removes the app-owned type module and both
+  runtime-to-app type dependencies. Vue type-check and production build pass.
 - Removed a second route-mount flag from `useJlzPage`: its module-level
   `mountedOnce` survived Vue app teardown, while `app/index.ts` already owns
   and clears `window.__jlzRouterReady`. The route composable now reads that
@@ -396,8 +402,10 @@ are explicit.
 ## Current status
 
 Phase 1 is active. Startup cancellation now has a guard; its focused
-regression case and runtime ownership trace remain. A duplicate route-mount
-flag and imperative section-class owner have been removed. Phase 2 is active:
+regression case and runtime ownership trace remain. The SceneHost input and
+stage-port contracts now belong to the Experience consumer instead of app;
+a duplicate route-mount flag and imperative section-class owner have also
+been removed. Phase 2 is active:
 unit tests have been relocated, redundant per-frame config lookups removed,
 and Vite's late Three dependency optimization fixed to avoid loading multiple
 Three cores during dev startup; continue the ownership audit before selecting

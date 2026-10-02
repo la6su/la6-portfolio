@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount } from 'vue'
-import type { SceneHostReady } from './sceneHost'
+import type { SceneHostReady } from '../Experience/SceneHostContract'
 import SceneHost from './SceneHost.vue'
 import { eventBus } from '../core/EventBus'
 import { devDiagnostic } from '../core/devDiagnostic'

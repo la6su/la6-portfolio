@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { SceneStagePorts } from '../../../src/app/sceneHost'
+import type { SceneStagePorts } from '../../../src/Experience/SceneHostContract'
 import { ContactCyprusStage } from '../../../src/Experience/World/ContactCyprusStage'
 import { StageRegistry } from '../../../src/Experience/StageRegistry'
 

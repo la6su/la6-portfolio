@@ -30,7 +30,7 @@ import {
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import type { SceneHostReady, SceneLoopPort } from './sceneHost'
+import type { SceneHostReady, SceneLoopPort } from '../Experience/SceneHostContract'
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 import { createReadySlot, readyNode } from './readySlot'
 import { useSceneStages } from './useSceneStages'

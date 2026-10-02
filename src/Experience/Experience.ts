@@ -26,7 +26,7 @@ import {
 } from '../core/renderDemand'
 import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 import { createReadinessGate, type ReadinessGate } from '../core/readinessGate'
-import type { SceneHostReady } from '../app/sceneHost'
+import type { SceneHostReady } from './SceneHostContract'
 import { eventBus } from '../core/EventBus'
 import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import { CinematicLights } from './World/Lights'
