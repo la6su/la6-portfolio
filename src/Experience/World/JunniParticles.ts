@@ -52,13 +52,10 @@ interface JunniParticlesOptions {
   size?: number
   /** Drift speed multiplier (affects Y-rise + rotation frequency). */
   speed?: number
-  /** Particle color tint (default white — additive blending makes it luminous).
-   *  When a texture is provided, this tints the texture samples. */
+  /** Particle color tint (default white). */
   color?: number
-  /** Sprite sheet texture (Section3-style). When provided, particles sample
-   *  this texture with per-instance frame selection + HSV hue cycling.
-   *  When null, particles are procedural white circles (Section6-style). */
-  texture?: THREE.Texture | null
+  /** Sprite sheet texture sampled with per-instance frame selection and hue cycling. */
+  texture: THREE.Texture
   /** Sprite sheet tile count [x, y] (e.g. [6, 1] for a 6-frame horizontal strip). */
   textureTiles?: [number, number]
 }
@@ -95,14 +92,13 @@ export class JunniParticles {
   // .d.ts are incomplete; we access .value through UniformVal cast.
   private readonly _uTime: unknown
 
-  constructor(opts: JunniParticlesOptions = {}) {
+  constructor(opts: JunniParticlesOptions) {
     const count = opts.count ?? 300
     const range = new THREE.Vector3(...(opts.range ?? [14, 8, 8]))
     const size = opts.size ?? 0.1
     const speed = opts.speed ?? 1
     const color = opts.color ?? 0xffffff
     const colorObj = new THREE.Color(color)
-    const useTexture = !!opts.texture
     const tiles = opts.textureTiles ?? [6, 1]
 
     // Base geometry — unit plane. SpriteNodeMaterial billboards it.
@@ -136,7 +132,7 @@ export class JunniParticles {
     // TSL texture() expects a raw THREE.Texture — NOT wrapped in uniform().
     // TSL creates the TextureNode internally. Wrapping in uniform() causes
     // "texture(value) function expects a valid instance of THREE.Texture".
-    const uTex = opts.texture ?? null
+    const uTex = opts.texture
     const uTiles = uniform(new THREE.Vector2(tiles[0], tiles[1]))
 
     // ── positionNode: Section3 vertex logic ──
@@ -193,7 +189,7 @@ export class JunniParticles {
       return num.y.mul(float(1.0).add(pulse)).mul(uSize as unknown as TSLNode)
     })
 
-    // ── colorNode + opacityNode: texture or procedural circle ──
+    // ── colorNode + opacityNode: textured sprite sheet ──
     // Cast helpers for TSL node typing (three 0.184 .d.ts is incomplete here)
     // texSampler is the raw Texture — texture() TSL node accepts it directly.
     const texSampler = uTex
@@ -209,52 +205,26 @@ export class JunniParticles {
       return vec2(sx, sy).div(tilesVec)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let colorNode: any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let opacityNode: any
+    // Section3 fragment: sprite sheet UV + HSV hue cycling + tint
+    const colorNode = Fn(() => {
+      const num = attribute('num') as unknown as TSLVec2
+      const sheetUv = buildSheetUv() as unknown as TSLVec2
+      const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+      const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
+      const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
+      const shifted = vec3(hsv.x.add(hueShift).mod(1.0), hsv.y, hsv.z)
+      const cycled = mx_hsvtorgb(shifted) as unknown as TSLVec3
+      return cycled.mul(uColor as unknown as TSLVec3)
+    })
 
-    if (useTexture && uTex) {
-      // Section3 fragment: sprite sheet UV + HSV hue cycling + tint
-      colorNode = Fn(() => {
-        const num = attribute('num') as unknown as TSLVec2
-        const sheetUv = buildSheetUv() as unknown as TSLVec2
-        const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
-        // HSV hue cycling
-        const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
-        const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
-        const shifted = vec3(hsv.x.add(hueShift).mod(1.0), hsv.y, hsv.z)
-        const cycled = mx_hsvtorgb(shifted) as unknown as TSLVec3
-        // Multiply by tint color so particles take the section accent color
-        // (without this, pure white texture + AdditiveBlending = invisible
-        // on light backgrounds).
-        return cycled.mul(uColor as unknown as TSLVec3)
-      })
-
-      opacityNode = Fn(() => {
-        const sheetUv = buildSheetUv() as unknown as TSLVec2
-        const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
-        // pattern.jpg is JPEG (no alpha). Use brightness threshold to mask
-        // out the black background: particles with luminance < 0.1 are
-        // discarded. This makes the black bg transparent on light themes.
-        const lum = texColor.r.mul(0.299).add(texColor.g.mul(0.587)).add(texColor.b.mul(0.114))
-        const masked = smoothstep(float(0.1), float(0.3), lum)
-        return masked.mul(uVisibility as unknown as TSLNode)
-      })
-    } else {
-      // Section6 fallback: procedural circle tinted with uColor
-      colorNode = Fn(() => {
-        const c = uColor as unknown as TSLVec3
-        return vec3(c.x, c.y, c.z)
-      })
-      opacityNode = Fn(() => {
-        const vUv = uv()
-        const cuv = vUv.mul(2.0).sub(1.0)
-        const dist = cuv.length()
-        const circle = smoothstep(float(0.5), float(0.35), dist)
-        return circle.mul(uVisibility as unknown as TSLNode)
-      })
-    }
+    const opacityNode = Fn(() => {
+      const sheetUv = buildSheetUv() as unknown as TSLVec2
+      const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+      // The JPEG sprite sheet has no alpha channel; mask its black background.
+      const lum = texColor.r.mul(0.299).add(texColor.g.mul(0.587)).add(texColor.b.mul(0.114))
+      const masked = smoothstep(float(0.1), float(0.3), lum)
+      return masked.mul(uVisibility as unknown as TSLNode)
+    })
     // SpriteNodeMaterial — purpose-built for billboarded particles.
     const mat = new SpriteNodeMaterial({
       color,

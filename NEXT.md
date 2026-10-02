@@ -120,6 +120,14 @@ or preserve a wrapper solely because a test currently encodes it.
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
   building shared abstractions.
+- Renderer degradation is product policy and must be distinguished from
+  duplicate feature implementations: WebGPU to WebGL2 is currently retained
+  for the stated cross-browser goal, while WebGPU-only post effects degrade to
+  direct scene rendering. Audit whether each WebGL2 visual limitation is real
+  in the current Three version before keeping workarounds. The procedural
+  circle branch in `JunniParticles` had no caller (the only owner always passes
+  the Section3 sprite sheet) and was removed; this effect now has one authored
+  implementation.
 - Scene-owner review has started with static transform ownership: `ServicesStageOwner`
   now declares orbit scale/rotation/position as Tres props instead of mutating
   mounted meshes, and `CinematicLights`, `GroundPlane`, and `EnvSky` use the

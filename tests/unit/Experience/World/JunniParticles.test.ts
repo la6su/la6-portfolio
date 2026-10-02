@@ -4,7 +4,7 @@ import { JunniParticles } from '../../../../src/Experience/World/JunniParticles'
 
 describe('declarative Junni particle owner', () => {
   it('adopts a declared instanced mesh and keeps resource disposal singular', () => {
-    const controller = new JunniParticles({ count: 3, texture: null })
+    const controller = new JunniParticles({ count: 3, texture: new THREE.Texture() })
     const parent = new THREE.Group()
     const mesh = new THREE.InstancedMesh(controller.geometry, controller.material, controller.count)
     parent.add(mesh)
