@@ -38,8 +38,6 @@ import type { PostParams } from './postParams'
 export class TSLPostPipeline {
   private _pipeline: TSLRenderPipeline | null = null
   private readonly _renderer: WebGPURenderer
-  private readonly _scene: Scene
-  private readonly _camera: Camera
   private _scenePass: PassNode | null = null
   private _bloomNode: BloomNode | null = null
 
@@ -53,10 +51,8 @@ export class TSLPostPipeline {
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
   private _gradeHighlights = uniform(new THREE.Vector3(1, 1, 1))
 
-  constructor(renderer: WebGPURenderer, scene: Scene, camera: Camera) {
+  constructor(renderer: WebGPURenderer) {
     this._renderer = renderer
-    this._scene = scene
-    this._camera = camera
   }
 
   updateParams(params: Readonly<PostParams>): void {
@@ -79,9 +75,16 @@ export class TSLPostPipeline {
     )
   }
 
-  render(): void {
+  render(scene: Scene, camera: Camera): void {
     if (!this._pipeline) {
-      this._buildPipeline()
+      this._buildPipeline(scene, camera)
+    }
+    // The Showreel temporarily supplies its own scene and orthographic
+    // camera through this shared renderer. PassNode reads these references on
+    // every render, so update them without rebuilding the TSL graph.
+    if (this._scenePass) {
+      this._scenePass.scene = scene
+      this._scenePass.camera = camera
     }
     // IMPORTANT: TSL RenderPipeline has its own render() — it renders the
     // scene+post graph via its outputNode. Do NOT call renderer.render()
@@ -93,10 +96,10 @@ export class TSLPostPipeline {
     }
   }
 
-  private _buildPipeline(): void {
+  private _buildPipeline(scene: Scene, camera: Camera): void {
     // Scene pass: render scene to texture. PassNode clears with
     // scene.background automatically (Background.js handles this).
-    const scenePass = tslPass(this._scene, this._camera)
+    const scenePass = tslPass(scene, camera)
     this._scenePass = scenePass
     try {
       const sceneColor = scenePass.getTextureNode()

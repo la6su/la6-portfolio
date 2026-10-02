@@ -59,7 +59,7 @@ export class RenderPipeline {
       try {
         let pipeline = this._postPipeline
         if (!pipeline) {
-          pipeline = new TSLPostPipeline(this._renderer, scene, camera)
+          pipeline = new TSLPostPipeline(this._renderer)
           this._postPipeline = pipeline
           this._paramsDirty = true
         }
@@ -69,7 +69,7 @@ export class RenderPipeline {
         }
         // The graph handles output conversion; disable renderer tone mapping
         // for this draw and restore the renderer setting afterward.
-        withNoToneMapping(this._renderer, () => pipeline.render())
+        withNoToneMapping(this._renderer, () => pipeline.render(scene, camera))
         return
       } catch (error) {
         this._disablePostProcessing(error)

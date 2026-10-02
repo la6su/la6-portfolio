@@ -134,9 +134,16 @@ or preserve a wrapper solely because a test currently encodes it.
   whether that visual degradation policy is needed. Forced-WebGL Chromium
   smoke confirmed the graph allocated and rendered without console errors.
   Firefox smoke reached `/lab` with the WebGL2 backend, one scene canvas, one
-  active section, and no app errors. A duplicate-Three warning appeared during
-  Vite's stale dependency optimizer reload and did not recur after a clean
-  reload; do not add a runtime dedupe layer for this transient dev condition.
+  active section, and no app errors. The user has since confirmed physical
+  Firefox WebGPU at runtime (`WebGPUBackend`, `TSL post=true`,
+  `isFallbackAdapter=false`). Firefox also reports that Three requests
+  `featureLevel: "compatibility"`, which Firefox currently ignores and
+  defaults to core; this is an upstream Three/browser notice, not a reason to
+  add an app-authored adapter fallback. The user's native Firefox still reports
+  multiple Three instances. A clean Playwright Firefox reload currently has
+  one optimized Three core URL and no duplicate warning, so the cause remains
+  unresolved and must be traced against the user's exact dev startup before
+  changing aliases or adding dedupe configuration.
   Lab now uses Cientos `OrbitControls` with rotation only; the direct
   `camera-controls` dependency and its deprecated `verticalDragToForward`
   warning were removed. A capture-phase stop on the scene host preserves the
@@ -145,7 +152,9 @@ or preserve a wrapper solely because a test currently encodes it.
   host now selects `PCFShadowMap` through the public `shadowMapType` prop, so a
   clean Firefox Lab run logs only the expected WebGPU-unavailable/WebGL2
   backend notice. Type-check, compatibility checks, production build and bundle
-  budgets pass for this slice. WebKit and physical WebGPU remain unverified.
+  budgets pass for this slice. Physical WebGPU is user-confirmed in Firefox;
+  the browser warning and duplicate-instance source remain under review.
+  WebKit remains unverified.
   The procedural
   circle branch in `JunniParticles` had no caller (the only owner always passes
   the Section3 sprite sheet) and was removed; this effect now has one authored
@@ -184,10 +193,16 @@ or preserve a wrapper solely because a test currently encodes it.
   theme toggles, and derives the config index from the matched config.
   Production build and home prerender succeed with exactly one initial active
   section; browser navigation behavior still needs runtime verification.
-- Known release-evidence gaps from prior work: WebKit could not launch in the
-  current environment; actual physical WebGPU/TSL compilation and visual
-  output have not been demonstrated on a real GPU. Recheck environment and
-  record these as external acceptance items if still unavailable.
+- Known release-evidence gaps: WebKit could not launch in the current
+  environment. The user confirmed real Firefox WebGPU and TSL post-processing;
+  retain the exact browser log as external evidence and investigate the
+  multiple-Three warning using their startup conditions.
+- Fixed a Showreel render-mode bug found during source tracing: the shared TSL
+  graph cached the initial world scene/camera, so its theater video rendered
+  in the DOM while the canvas kept drawing the portfolio world. `PassNode`
+  now receives the current scene/camera references on each render, preserving
+  one compiled graph. Firefox smoke confirmed home → playing Showreel video →
+  Escape back to home, with a 1920px video frame and no browser errors.
 
 ## Architecture direction
 
