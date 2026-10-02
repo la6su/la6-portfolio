@@ -32,6 +32,27 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Works case studies -->
+  <url>
+    <loc>https://justlovejazz.dev/works/porsche-911-spider</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://justlovejazz.dev/works/alise</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://justlovejazz.dev/works/19-lab</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://justlovejazz.dev/works/pro193</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
   <!-- Blog — list page -->
   <url>
     <loc>https://justlovejazz.dev/blog</loc>

@@ -4,7 +4,7 @@
 // — no DOM, no window, no fs — so the build-time generator
 // (`scripts/generate-sitemap.ts`) and the unit tests share one implementation.
 // The output mirrors the hand-maintained sitemap the generator replaces:
-// the same entry ordering (home first, then SPA routes, blog index,
+// the same entry ordering (home, SPA routes, Works case studies, blog index,
 // articles) and the same section comments.
 
 import type { Changefreq } from './pageMetaData'

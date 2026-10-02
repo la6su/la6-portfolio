@@ -382,6 +382,9 @@ origin, keeping staging builds internally consistent. The static root document
 also held a hard-coded production canonical and social image URLs: route
 prerendering now applies the home metadata table to `/` and uses the configured
 origin for Open Graph and Twitter preview images on every SPA entry.
+The same route parity check found four published Works case-study URLs missing
+from the sitemap despite having prerendered HTML and canonical metadata. The
+sitemap now includes those case-study records from `CASE_STUDIES`.
 
 Accessibility source review found `/contact`, `/services`, `/manifesto`, and
 `/lab` had no level-one heading; they now have visually hidden localized H1s

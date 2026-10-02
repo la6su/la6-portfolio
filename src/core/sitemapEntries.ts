@@ -1,13 +1,14 @@
 // Default sitemap section assembly.
 //
 // Builds the document's default sitemap sections from the manifest-driven
-// sources only: the route manifest (paths) + the page metadata table
-// (changefreq/priority) + the canonical blog index (paths + content dates).
+// sources only: the route manifest, published Works case studies, the page
+// metadata table, and the canonical blog index (paths + content dates).
 // Pure — no DOM, no fs — so the build-time generator and the unit tests share
 // one assembly. Section ordering + comments mirror the hand-maintained
 // sitemap the generator replaces.
 
 import { BLOG_ARTICLES, BLOG_INDEX, blogArticlePath } from './blogPages'
+import { CASE_STUDIES } from '../Data/CaseStudies'
 import { PAGE_META_DATA } from './pageMetaData'
 import { ROUTE_MANIFEST } from './routeManifest'
 import type { SitemapEntry } from './sitemap'
@@ -64,7 +65,25 @@ function buildBlogSitemapSections(): SitemapSection[] {
   ]
 }
 
+/** Published Works case studies are statically emitted as their own routes. */
+function buildCaseStudySitemapSections(): SitemapSection[] {
+  return [
+    {
+      comment: 'Works case studies',
+      entries: CASE_STUDIES.map((study): SitemapEntry => ({
+        path: `/works/${study.projectId}`,
+        changefreq: 'monthly',
+        priority: 0.8,
+      })),
+    },
+  ]
+}
+
 /** The document's default sitemap sections, in emission order. */
 export function buildDefaultSitemapSections(): SitemapSection[] {
-  return [...buildAppSitemapSections(), ...buildBlogSitemapSections()]
+  return [
+    ...buildAppSitemapSections(),
+    ...buildCaseStudySitemapSections(),
+    ...buildBlogSitemapSections(),
+  ]
 }
