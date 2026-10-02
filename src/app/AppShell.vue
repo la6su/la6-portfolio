@@ -48,9 +48,8 @@ onMounted(() => {
       if (!sectionId) return
       revealSection(contentRoot().querySelector(`[data-section="${sectionId}"]`))
     }),
-    eventBus.on('jlz:page-section-change', ({ index }) => {
-      const section = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')[index]
-      revealSection(section ?? null)
+    eventBus.on('jlz:page-section-change', ({ sectionId }) => {
+      revealSection(contentRoot().querySelector(`[data-page-section="${sectionId}"]`))
     }),
   )
 })

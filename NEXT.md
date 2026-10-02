@@ -96,6 +96,8 @@ Current known facts:
 - Section title reveals now follow Vue shell lifetime and existing section
   events. Removed the one-time observer tied to the initial route DOM; the
   initial splash reveal also respects reduced motion.
+- Section reveal targets now resolve from the event's canonical `sectionId`;
+  the previous global-list index could target the preceding ContactFooter.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier
