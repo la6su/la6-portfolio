@@ -11,7 +11,6 @@ interface CaseStudyMedia {
   alt: string
   width: number
   height: number
-  kind: 'image' | 'video'
   caption?: string
 }
 
@@ -28,5 +27,4 @@ export interface CaseStudy {
   result: string
   proof: CaseStudyProof[]
   media: CaseStudyMedia[]
-  ctaLabel: string
 }

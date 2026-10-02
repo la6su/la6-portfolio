@@ -28,11 +28,9 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
         alt: 'Temporary abstract project material for Porsche 911 Spider',
         width: 1600,
         height: 900,
-        kind: 'image',
         caption: 'Temporary presentation material',
       },
     ],
-    ctaLabel: 'Discuss a similar project',
   },
   {
     projectId: 'alise',
@@ -58,11 +56,9 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
         alt: 'Temporary abstract project material for Alise',
         width: 1600,
         height: 900,
-        kind: 'image',
         caption: 'Temporary presentation material',
       },
     ],
-    ctaLabel: 'Discuss a similar project',
   },
   {
     projectId: '19-lab',
@@ -91,11 +87,9 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
         alt: 'Temporary abstract project material for 19 Lab',
         width: 1600,
         height: 900,
-        kind: 'image',
         caption: 'Temporary presentation material',
       },
     ],
-    ctaLabel: 'Discuss a similar project',
   },
   {
     projectId: 'pro193',
@@ -123,11 +117,9 @@ export const CASE_STUDIES: readonly CaseStudy[] = [
         alt: 'Temporary abstract project material for Pro193',
         width: 1600,
         height: 900,
-        kind: 'image',
         caption: 'Temporary presentation material',
       },
     ],
-    ctaLabel: 'Discuss a similar project',
   },
 ]
 
