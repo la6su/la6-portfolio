@@ -601,6 +601,14 @@ The splash sound/language controls previously wrote English `title` text at
 runtime and exposed unlocalized static aria labels. The translator now handles
 `data-i18n-title`, and both controls use existing EN/RU names and localized
 sound-state hints.
+Production Chromium at 390×844 confirmed the showreel dialog in EN and RU:
+`role=dialog`, `aria-modal=true`, its named heading, and inert background;
+opening focuses Close, Tab and Shift+Tab cycle only the playback and close
+controls, Escape closes and returns focus to the trigger, then restores the
+background and body scroll state. After selecting RU with the dialog closed,
+the close and playback labels rendered in Russian. No page errors appeared.
+This closes the showreel keyboard/focus and locale gate; other menu/route
+keyboard paths and screen-reader behavior remain open.
 The persistent console's aria labels use its reactive locale state directly:
 its full renderer chrome can mount after `useJlzPage`'s initial document
 translation pass, so relying on static translation markers there could leave a
@@ -620,10 +628,12 @@ parity and the WebGPU render path remain unverified on supported hardware.
 The default sandbox cannot bind `127.0.0.1:4173`; an approved loopback-only
 preview session enabled the HTTP checks above and was stopped afterward. The
 CUA browser kernel could not start (`bwrap` bad descriptor for `.aws`); manual
-Chromium was used for inverse-theme interaction instead. Keyboard/focus,
-reduced-motion, client takeover, and route transitions still need focused
-browser review. WebGPU/TSL and WebGL2 backend/recovery need a supported browser
-and GPU runtime; source/build success does not close those gates.
+Chromium was used for inverse-theme interaction instead. Showreel keyboard/
+focus and EN/RU labels are confirmed on production preview; reduced-motion,
+client takeover, remaining route keyboard/focus, and route transitions still
+need focused browser review. WebGPU/TSL and WebGL2 backend/recovery need a
+supported browser and GPU runtime; source/build success does not close those
+gates.
 On 2026-10-02, the cached headless Firefox process launched but returned
 `NS_ERROR_OUT_OF_MEMORY` while navigating to the production preview, so the
 current no-scene/manual interaction check could not run. The loopback preview
