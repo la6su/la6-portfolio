@@ -8,16 +8,8 @@
 // Adding or renaming a route is a change here plus one line in the router;
 // the mapping must never be duplicated.
 
-/** The closed page vocabulary the manifest maps every public path to. */
-export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
-
-interface RouteEntry {
-  readonly path: string
-  readonly page: PageId
-}
-
 /** Every public route, in the order the navigation menu presents them. */
-export const ROUTE_MANIFEST: readonly RouteEntry[] = [
+export const ROUTE_MANIFEST = [
   { path: '/', page: 'home' },
   { path: '/services', page: 'services' },
   { path: '/works', page: 'works' },
@@ -25,6 +17,9 @@ export const ROUTE_MANIFEST: readonly RouteEntry[] = [
   { path: '/lab', page: 'lab' },
   { path: '/contact', page: 'contact' },
 ] as const
+
+/** The closed page vocabulary is derived from the route table itself. */
+export type PageId = (typeof ROUTE_MANIFEST)[number]['page']
 
 const PAGE_BY_PATH = new Map<string, PageId>(
   ROUTE_MANIFEST.map((entry) => [entry.path, entry.page]),

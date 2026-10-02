@@ -112,6 +112,10 @@ or preserve a wrapper solely because a test currently encodes it.
   is the explicit `PageId === 'home'` branch; all other valid route ids must
   have a palette. Vue type-check, prerendering, production build, and bundle
   budgets passed; this also keeps route additions compiler-visible.
+- `routeManifest.ts` now derives `PageId` from its route entries instead of
+  maintaining the same six identifiers in both the type union and table. This
+  makes the manifest the actual source for route ids consumed by Vue Router,
+  world configuration, metadata and scene policy; full production build passed.
 - TSL effects are bespoke product visuals; keep them where they express
   unique appearance. Audit repeated material/uniform setup, disposal, easing,
   shader helpers, and animation scheduling against Three/Tres/Vue APIs before
