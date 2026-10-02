@@ -136,10 +136,10 @@
   .jlz-meta-text(0.62rem; 0.18em; 600);
 }
 
-.jlz-showreel-console__close {
+.jlz-showreel-console__close,
+.jlz-showreel-console__playback {
   position: absolute;
   top: 0.85rem;
-  right: clamp(1rem, 2vw, 2rem);
   min-height: 2.5rem;
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--jlz-color-border);
@@ -150,7 +150,16 @@
   .jlz-meta-text(0.62rem; 0.14em; 600);
 }
 
-.jlz-showreel-console__close:focus-visible {
+.jlz-showreel-console__close {
+  right: clamp(1rem, 2vw, 2rem);
+}
+
+.jlz-showreel-console__playback {
+  right: clamp(5.5rem, 7vw, 8rem);
+}
+
+.jlz-showreel-console__close:focus-visible,
+.jlz-showreel-console__playback:focus-visible {
   outline: 2px solid var(--jlz-color-signal-phosphor);
   outline-offset: 3px;
 }

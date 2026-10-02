@@ -43,6 +43,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.retry': 'Retry',
     'splash.soundOnTooltip': 'Sound: On (click to mute)',
     'splash.soundOffTooltip': 'Sound: Off (click to enable)',
+    'showreel.togglePlayback': 'Toggle showreel playback',
+    'showreel.playShort': 'Play',
+    'showreel.pauseShort': 'Pause',
     'renderer.failureTitle': '3D rendering unavailable',
     'renderer.failureDescription': 'The graphics device could not be restored. Reload the page to try again.',
 
@@ -254,6 +257,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'splash.retry': 'Повторить',
     'splash.soundOnTooltip': 'Звук включён (нажмите, чтобы выключить)',
     'splash.soundOffTooltip': 'Звук выключен (нажмите, чтобы включить)',
+    'showreel.togglePlayback': 'Переключить воспроизведение шоурила',
+    'showreel.playShort': 'Пуск',
+    'showreel.pauseShort': 'Пауза',
     'renderer.failureTitle': '3D-графика недоступна',
     'renderer.failureDescription': 'Не удалось восстановить графическое устройство. Перезагрузите страницу и попробуйте снова.',
 

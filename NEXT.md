@@ -194,6 +194,14 @@ Current known facts:
   produced no tracked output changes. No-scene browser interaction remains an
   open check.
 
+- Accessibility source review found that the fullscreen showreel exposed a
+  modal with only a Close button; playback toggling depended on clicking the
+  backdrop, while Tab was forced back to Close. It now provides a localized
+  Play/Pause button with pressed state and cycles keyboard focus between both
+  controls. Lint and the full production build pass, and tracked `dist` output
+  was regenerated. Keyboard/screen-reader interaction still needs browser
+  verification.
+
 - Tres 5.9.2's on-demand mode still runs loop ticks. The app's custom scheduler
   opens and closes Tres's loop because its WebGPU/TSL pipeline and scene
   animations require it. Keep this seam until render ownership moves back to

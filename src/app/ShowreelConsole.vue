@@ -12,6 +12,7 @@ const state = ref<ShowreelState>({
   duration: 0,
 });
 const closeButton = ref<HTMLButtonElement | null>(null);
+const playbackButton = ref<HTMLButtonElement | null>(null);
 let restoreFocus: HTMLElement | null = null;
 let backgroundState: {
   node: HTMLElement;
@@ -28,6 +29,10 @@ const phaseLabel = computed(() => {
   return state.value.phase === "exit" ? "CLOSING" : "ACQUIRING";
 });
 const playLabel = computed(() => (state.value.playing ? "PLAY" : "PAUSE"));
+const playbackButtonLabel = computed(() => t("showreel.togglePlayback"));
+const playbackButtonText = computed(() =>
+  state.value.playing ? t("showreel.pauseShort") : t("showreel.playShort"),
+);
 const progress = computed(() => {
   const { time, duration } = state.value;
   return duration > 0 ? Math.min(100, (time / duration) * 100) : 0;
@@ -63,8 +68,18 @@ function onKeydown(event: KeyboardEvent): void {
     event.stopImmediatePropagation();
     eventBus.emit("jlz:showreel-close");
   } else if (event.key === "Tab") {
+    const close = closeButton.value;
+    const playback = playbackButton.value;
+    if (!close || !playback) return;
     event.preventDefault();
-    closeButton.value?.focus({ preventScroll: true });
+    const next = event.shiftKey
+      ? document.activeElement === close
+        ? playback
+        : close
+      : document.activeElement === playback
+        ? close
+        : playback;
+    next.focus({ preventScroll: true });
   } else if (
     event.key === " " &&
     !(
@@ -188,6 +203,16 @@ onBeforeUnmount(() => {
       <span class="jlz-showreel-console__sr" aria-live="polite">{{
         announcement
       }}</span>
+      <button
+        ref="playbackButton"
+        class="jlz-showreel-console__playback"
+        type="button"
+        :aria-label="playbackButtonLabel"
+        :aria-pressed="state.playing"
+        @click="eventBus.emit('jlz:showreel-toggle-play')"
+      >
+        {{ playbackButtonText }}
+      </button>
       <button
         ref="closeButton"
         class="jlz-showreel-console__close"
