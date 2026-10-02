@@ -52,9 +52,8 @@
   }
 }
 
-// Phase 7: the persistent Tres scene host — the single canvas, below the
-// semantic route DOM (#spa-content z-index 2) exactly like the legacy
-// fixed-position canvas (z-index 1). Tres sizes the canvas to the wrapper.
+// The persistent Tres scene host sits below the semantic route DOM
+// (#spa-content z-index 2). Tres sizes the canvas to this wrapper.
 .jlz-scene-host {
   position: fixed;
   inset: 0;
@@ -366,6 +365,5 @@ body[data-cinematic-sheet]
   }
 }
 
-// The shared shell and Menu visual language is intentionally last: legacy
-// route composition remains above while this owner resolves the persistent UI.
+// Load shared shell and menu styles after their component styles.
 @import './components/_console-language.less';

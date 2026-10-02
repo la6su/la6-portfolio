@@ -194,23 +194,18 @@ export async function mountVueApp(): Promise<void> {
     }),
   )
 
-  // Keep hash-only controls local; Vue Router owns application route links.
+  // Story hashes must reach the 3D navigation owner. Ordinary fragment links
+  // use browser scrolling; UIkit controls keep their own click behavior.
   const onClick = (event: MouseEvent): void => {
     const anchorEl = (event.target as HTMLElement)?.closest(
       'a[href]',
     ) as HTMLAnchorElement | null
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
-    if (!href) return
-    // A bare hash is a UIkit toggle / local control, not a route.
-    if (href.startsWith('#')) {
-      event.preventDefault()
-      if (href === '#') return
-      const current = router.currentRoute.value
-      void router.push({ path: current.path, query: current.query, hash: href })
-      if (!href.startsWith('#section-')) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' })
-      return
-    }
+    if (!href?.startsWith('#section-')) return
+    event.preventDefault()
+    const current = router.currentRoute.value
+    void router.push({ path: current.path, query: current.query, hash: href })
   }
   document.addEventListener('click', onClick, true)
 

@@ -134,8 +134,7 @@ const loopPort: SceneLoopPort = {
 }
 // ── Declarative node ready slots ──
 // Each scene node reports itself through a slot: the template binds
-// `@ready="slot.resolve"`, and `onReady` awaits the nodes it needs (sync
-// fast path when the node already mounted).
+// `@ready="slot.resolve"`, and `onReady` awaits the nodes it needs.
 const cameraSlot = createReadySlot<PerspectiveCamera>()
 const worksRootSlot = createReadySlot<Group>()
 const lightsSlot = createReadySlot<CinematicLightsNodes>()
