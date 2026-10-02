@@ -278,16 +278,8 @@ export class Experience {
     if (reduced === this._reducedMotion || this._destroyed) return
     this._reducedMotion = reduced
     this.renderer?.postManager?.setReducedMotion(reduced)
-    this.envSphere?.setReducedMotion(reduced)
     this.coordinator?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
-    this.baku?.setReducedMotion(reduced)
-    this.carousel?.setReducedMotion(reduced)
-    this.particleBurst?.setReducedMotion(reduced)
-    // The six route stages fan out through their registry owner (the Lab
-    // object's optional setReducedMotion contract included).
-    this._stages?.setReducedMotion(reduced)
-    this.drawTrail?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
     this._showreel.setReducedMotion(reduced)
     this._storyNav?.setReducedMotion(reduced)
@@ -345,6 +337,9 @@ export class Experience {
       this._host.page,
     )
     this.coordinator.init()
+    // Scene owners may have been constructed while the preference changed
+    // during async startup. Apply Experience's current policy as one fan-out.
+    this.coordinator.setReducedMotion(this._reducedMotion)
     // The home carousel finishes texture
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup

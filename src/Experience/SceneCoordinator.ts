@@ -321,7 +321,7 @@ export class SceneCoordinator {
     this._transform.invalidate()
   }
 
-  /** Reduced-motion policy read for the coordinator's own visibility gates. */
+  /** Reduced-motion policy for the scene update loop and its owners. */
   private get isReducedMotion(): boolean {
     return this._reducedMotion
   }
@@ -329,6 +329,12 @@ export class SceneCoordinator {
   /** Keep frame-path policy synchronized by the Experience owner. */
   public setReducedMotion(reduced: boolean): void {
     this._reducedMotion = reduced
+    this.owners.envSphere.setReducedMotion(reduced)
+    this.owners.baku.setReducedMotion(reduced)
+    this.owners.carousel?.setReducedMotion(reduced)
+    this.owners.particleBurst.setReducedMotion(reduced)
+    this.owners.stages.setReducedMotion(reduced)
+    this.owners.drawTrail.setReducedMotion(reduced)
     this._transform.invalidate()
   }
 

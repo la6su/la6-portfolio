@@ -110,6 +110,16 @@ preserve custom policy only when code or measurements prove the difference.
   already owned all those scene references. Moved this scene-only fan-out to
   `SceneCoordinator.syncTheme()` and removed the Experience helper; the
   section-indexed EnvSphere snap/transition remains at the theme-event boundary.
+- Reduced-motion changes were also fanned out individually by `Experience`
+  even though scene owners are already assembled under `SceneCoordinator`.
+  Moved EnvSphere, SplashCube, carousel, particle burst, route stages and trail
+  updates into the coordinator; renderer/post, lights, camera, showreel and
+  story navigation remain with their separate owners. Startup applies the
+  current preference after async scene construction so a mid-boot preference
+  change reaches owners created during that interval. Unit coverage asserts
+  the fan-out and missing lazy carousel behavior. Firefox production preview
+  reduced-motion interaction passes (1/1); Chromium could not launch because
+  its Playwright headless executable is absent in this environment.
 - Theme polarity was fanned out from `Experience` to GroundPlane, SplashCube,
   route typography/ink stages and Works particles, while SceneCoordinator
   already owned all those scene references. Moved this scene-only fan-out to
@@ -759,10 +769,10 @@ consumer is unknown. `quality.yml` runs checks and browser tests but does not
 deploy. Do not change release artifact policy until the actual host contract is
 identified.
 
-**Latest verified:** 102 unit tests, Vue type-check, ESLint, production build and
+**Latest verified:** 104 unit tests, Vue type-check, ESLint, production build and
 bundle budgets pass. The latest build reports 2.85 kB startup gzip and builds
 351 modules (the current demand-path simplification changes no module count),
-310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.89 kB / 32.77 kB
+310.95 kB shared Three gzip, 53.84 kB UIkit gzip, and a 115.98 kB / 32.79 kB
 gzip Experience chunk. An override-origin build
 confirmed the generated blog and sitemap use the staging
 origin; the normal build restored production outputs. The latest combined

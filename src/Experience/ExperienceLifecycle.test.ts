@@ -5,6 +5,7 @@ const lifecycle = vi.hoisted(() => ({
   mountParticles: vi.fn(),
   carouselInit: vi.fn(),
   coordinatorInit: vi.fn(),
+  coordinatorReducedMotion: vi.fn(),
   prewarmHomeMedia: vi.fn(),
   reconcileRoute: vi.fn(),
   createdOwners: [] as string[],
@@ -14,6 +15,7 @@ const lifecycle = vi.hoisted(() => ({
         lifecycle.createdOwners.push(name)
       }
       dispose = vi.fn()
+      setReducedMotion = vi.fn()
     },
 }))
 
@@ -24,6 +26,7 @@ vi.mock('./SceneCoordinator', () => ({
     sections = []
     currentSectionIndex = 1
     init = lifecycle.coordinatorInit
+    setReducedMotion = lifecycle.coordinatorReducedMotion
     prewarmHomeMedia = lifecycle.prewarmHomeMedia
     getConfig = vi.fn(() => undefined)
     dispose = vi.fn()
@@ -33,7 +36,11 @@ vi.mock('./SceneCoordinator', () => ({
 vi.mock('./Scene/SectionGroups', () => ({
   SectionGroups: class {
     works = {
-      carousel: { onActivity: null, init: lifecycle.carouselInit },
+      carousel: {
+        onActivity: null,
+        init: lifecycle.carouselInit,
+        setReducedMotion: vi.fn(),
+      },
       particles: { setBlending: vi.fn() },
     }
     dispose = vi.fn()
@@ -66,12 +73,13 @@ function createExperienceHarness(page = 'home'): {
     Object.create(Experience.prototype) as object,
     {
       _destroyed: false,
+      _reducedMotion: false,
       _lifecycleGeneration: 0,
       _host: {
         page: () => page,
         sectionRoots: [],
         servicesStage: {},
-        envSphere: {},
+        envSphere: { setReducedMotion: vi.fn() },
         baku: {},
         introFrames: {},
         cursorTrail: {},
@@ -86,6 +94,7 @@ function createExperienceHarness(page = 'home'): {
       _stages: {
         dispose: vi.fn(async () => undefined),
         reconcileRoute: lifecycle.reconcileRoute,
+        setReducedMotion: vi.fn(),
       },
       renderer: { instance: {}, dispose: vi.fn() },
       camera: { instance: {}, destroy: vi.fn() },
@@ -112,6 +121,7 @@ describe('Experience scene construction cancellation', () => {
     lifecycle.mountParticles.mockReset().mockResolvedValue(undefined)
     lifecycle.carouselInit.mockReset().mockResolvedValue(undefined)
     lifecycle.coordinatorInit.mockReset().mockResolvedValue(undefined)
+    lifecycle.coordinatorReducedMotion.mockReset()
     lifecycle.prewarmHomeMedia.mockReset().mockResolvedValue(undefined)
     lifecycle.reconcileRoute.mockReset().mockResolvedValue(undefined)
     lifecycle.createdOwners.length = 0
@@ -193,6 +203,7 @@ describe('Experience scene construction cancellation', () => {
     await vi.waitFor(() =>
       expect(lifecycle.prewarmHomeMedia).toHaveBeenCalledOnce(),
     )
+    expect(lifecycle.coordinatorReducedMotion).toHaveBeenCalledWith(false)
     expect(lifecycle.reconcileRoute).toHaveBeenCalledOnce()
     expect(lifecycle.reconcileRoute).toHaveBeenCalledWith('home')
 
