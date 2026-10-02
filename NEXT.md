@@ -93,6 +93,9 @@ Current known facts:
   runtime closed-set validator was removed from the prerender script.
 - Text reveal teardown now belongs to the shared `TextReveal` owner; the two
   concrete classes no longer expose redundant type-filtering dispose methods.
+- Section title reveals now follow Vue shell lifetime and existing section
+  events. Removed the one-time observer tied to the initial route DOM; the
+  initial splash reveal also respects reduced motion.
 - Renderer update no longer hides a missing render pipeline by drawing directly
   through WebGPURenderer. Recovery already closes the frame window while the
   pipeline is absent; normal frames now require the owned pipeline. Low-tier

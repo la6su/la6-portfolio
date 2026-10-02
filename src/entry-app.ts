@@ -1,9 +1,6 @@
-import { BlurFade } from './UI/BlurFade'
-import { NoiseText } from './UI/NoiseText'
 import { TextReveal } from './UI/TextReveal'
 import { eventBus } from './core/EventBus'
 import { noSceneRequested } from './core/sceneMode'
-import { contentRoot } from './core/contentRoot'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 // LANG_KEY handled by i18n.ts
@@ -190,8 +187,6 @@ function resetBootstrapBindings(): void {
   clearReadyEventTimer()
   clearBootstrapStyle()
   clearHostProbe()
-  _titleObserver?.disconnect()
-  _titleObserver = null
 }
 
 function clearReadyWatchdog(): void {
@@ -254,7 +249,7 @@ async function startAppOnce(): Promise<void> {
     })
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
-  // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
+  // Vue shell text reveals are delayed until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   _bootstrapUnsubs.push(
     eventBus.on('jlz:experience-starting', () => updateLoaderStatus('PREPARING SCENE')),
@@ -289,42 +284,6 @@ async function startAppOnce(): Promise<void> {
   // Do NOT make the first animation depend on section-change, page-section-change,
   // IntersectionObserver or a second bootstrap event. Those are for subsequent
   // navigation/scroll transitions.
-  let splashEntered = false
-
-  _bootstrapUnsubs.push(
-    eventBus.on('jlz:splash-entered', () => {
-      splashEntered = true
-      const reveal = () => {
-        const root = contentRoot()
-
-        const title = root.querySelector<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
-
-        const eyebrow = root.querySelector<HTMLElement>('[data-eyebrow]')
-
-        // First title
-        if (title) {
-          const text = title.textContent?.trim() ?? ''
-          if (text) {
-            splashRevealedTitles.add(title)
-            BlurFade.reveal(title, 0.55, text)
-          }
-        }
-
-        // First eyebrow
-        if (eyebrow) NoiseText.revealEyebrow(eyebrow)
-
-        // Start normal viewport-based title animation after the first reveal.
-        setupTitleObserver()
-      }
-
-      // Vue may still be finishing the route DOM when splash-entered fires.
-      // Two animation frames are enough and avoid another arbitrary 90ms timer.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(reveal)
-      })
-    }),
-  )
-
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
   // (greyed, non-clickable) the entire time — it never activates until 3D
@@ -339,43 +298,6 @@ async function startAppOnce(): Promise<void> {
       showLoadError()
     }
   }, 60000)
-
-  // The post-splash section title reveal contract, shared by both section
-  // events: one `.studio-title` per section container, 1.5 s BlurFade. (The
-  // splash first-reveal above is intentionally different: 0.55 s, the title
-  // text, and the splashRevealedTitles registry.)
-  function revealStudioTitle(container: ParentNode | null): void {
-    const title = container?.querySelector<HTMLElement>('.studio-title')
-    if (title) BlurFade.reveal(title, 1.5)
-  }
-
-  // ── Animate titles on section change (home: data-section) ──
-  _bootstrapUnsubs.push(
-    eventBus.on('jlz:section-change', (payload) => {
-      if (!payload?.sectionId) return
-      if (!splashEntered) return
-      if (prefersReducedMotion()) return
-      const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
-      if (!section) return
-      revealStudioTitle(section)
-      const eyebrow = section.querySelector<HTMLElement>('[data-eyebrow]')
-      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
-    }),
-  )
-
-  // ── Animate titles on page section change (content: data-page-section) ──
-  _bootstrapUnsubs.push(
-    eventBus.on('jlz:page-section-change', ({ index }) => {
-      if (!splashEntered) return
-      if (prefersReducedMotion()) return
-      const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
-      const el = sections[index]
-      if (!el) return
-      revealStudioTitle(el)
-      const eyebrow = el.querySelector<HTMLElement>('[data-eyebrow]')
-      if (eyebrow) NoiseText.revealEyebrow(eyebrow)
-    }),
-  )
 
   // DOM-only mode keeps routes and navigation available without creating a
   // scene renderer or canvas. Otherwise Vue's ExperienceRuntime starts after
@@ -399,37 +321,4 @@ async function startAppOnce(): Promise<void> {
 // handled by the shell's fallback.
 export function startApp(): Promise<void> {
   return startAppOnce()
-}
-
-/**
- * IntersectionObserver that fires BlurFade when a .studio-title enters the
- * viewport — synchronized with UIkit scrollspy's viewport entry.
- */
-let _titleObserver: IntersectionObserver | null = null
-const splashRevealedTitles = new WeakSet<HTMLElement>()
-
-function setupTitleObserver(): void {
-  // Disconnect previous observer if any (HMR re-init guard)
-  _titleObserver?.disconnect()
-  if (prefersReducedMotion()) return
-
-  const titles = contentRoot().querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
-  if (titles.length === 0) return
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const el = entry.target as HTMLElement
-          // The splash owns the first reveal of the visible title. Skipping
-          // this one observer entry prevents its slower default reveal from
-          // restarting over the splash-specific animation.
-          if (splashRevealedTitles.delete(el)) continue
-          BlurFade.reveal(el, 1.2)
-        }
-      }
-    },
-    { threshold: 0.15 },
-  )
-  titles.forEach((t) => observer.observe(t))
-  _titleObserver = observer
 }
