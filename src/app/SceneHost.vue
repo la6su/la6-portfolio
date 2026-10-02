@@ -60,6 +60,10 @@ const emit = defineEmits<{
   ready: [host: SceneHostReady]
   error: [error: Error]
 }>()
+const props = defineProps<{
+  /** Complete Experience teardown before flushing deferred renderer disposal. */
+  beforeRendererDispose: () => Promise<void>
+}>()
 // Dev-only physical recovery seam. It preserves the shipped single-renderer
 // topology (`WebGPURenderer` with its WebGLBackend), but lets the browser gate
 // exercise a real WebGL context loss on hardware even when Chrome exposes
@@ -420,6 +424,16 @@ onBeforeUnmount(() => {
 // otherwise the backend is torn down while its declarative resource owners are
 // still running their before-unmount cleanup.
 onUnmounted(async () => {
+  // Vue does not await async unmount hooks. Ask the parent runtime to finish
+  // releasing route stages, media, and its pipeline before this host flushes
+  // the deferred backend disposal. This also makes a SceneHost HMR replacement
+  // restart the runtime against the new Tres renderer instead of leaving the
+  // previous Experience adopted to a disposed instance.
+  try {
+    await props.beforeRendererDispose()
+  } catch (error) {
+    console.error('[SceneHost] runtime cleanup failed during unmount:', error)
+  }
   await rendererDisposal?.catch(() => undefined)
   try {
     await disposeHostRenderer(ownedRenderer)

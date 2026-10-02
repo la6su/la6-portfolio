@@ -55,10 +55,18 @@ export default defineConfig(({ mode }) => {
     ),
   },
   optimizeDeps: {
-    // These are reached after the app's async scene import (and DevPanel is
-    // dev-only). Pin them in the initial scan so Vite does not replace the
-    // optimizer hash while Three's core is already live in the browser.
-    include: ['three/addons/tsl/display/BloomNode.js', 'tweakpane'],
+    // Lazy scene stages and the dev-only panel import these after Three's core
+    // is already live. Pin their dependency graph in the initial scan so Vite
+    // does not replace the optimizer hash mid-session (which invalidates active
+    // browser imports and can briefly serve 504s during a deep-link startup).
+    include: [
+      'three/addons/geometries/TextGeometry.js',
+      'three/addons/loaders/DRACOLoader.js',
+      'three/addons/loaders/FontLoader.js',
+      'three/addons/loaders/GLTFLoader.js',
+      'three/addons/tsl/display/BloomNode.js',
+      'tweakpane',
+    ],
     rolldownOptions: {
       transform: {
         define: VUE_FEATURE_FLAGS,

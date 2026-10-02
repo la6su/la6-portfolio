@@ -357,6 +357,14 @@ Current known facts:
   optimizer; a full production build leaves zero `deps_temp_*` directories.
   The fresh browser run above is the evidence for the duplicate-core check;
   the cache cleanup alone did not establish that result.
+- A cold `dev:hmr` load of `/contact` discovered TextGeometry, DRACO,
+  FontLoader, and GLTFLoader only after Three was live. Vite changed its
+  optimizer hash mid-session; Chromium observed 504 outdated-dependency
+  responses and ContactCyprusStage failed to import until reload. Those lazy
+  addon entry points are now included in the initial `optimizeDeps` scan. A
+  forced fresh scan followed by a direct `/contact` load initialized all three
+  Contact stages on `WebGLBackend`, kept one scene canvas, reported no page
+  errors, and did not trigger a second optimizer-change reload.
 - Current direct runtime pins match the latest releases checked on
   2026-10-02: Vue 3.5.43, Tres/Cientos 5.9.2, Three 0.186.1, Vue Router 5.3.1,
   Vite 8.3.2 and UIkit 3.25.25. TypeScript 7 support through the current
@@ -433,9 +441,20 @@ async teardown without awaiting it; it is safe for cleanup initiation, not a
 barrier to child unmount. Vite documents `import.meta.hot.dispose` with a
 synchronous callback signature, so it cannot directly provide an async wait
 ([HMR API](https://vite.dev/guide/api-hmr.html)). HMR replacement while GPU
-prewarm is active remains an open lifecycle gate; preserve the explicit
-app-unmount ordering and investigate a real HMR runtime reproduction before
-changing teardown contracts.
+prewarm is active remains an open lifecycle gate. A manual HMR replacement of
+`SceneHost.vue` on a ready `/contact` route reproduced a dead-runtime defect:
+the backend disposed while one canvas remained, with no new route stages and
+no console error. `SceneHost` now awaits a parent runtime teardown barrier
+before deferred backend disposal; `ExperienceRuntime` retires the old runtime
+and starts a new one for the replacement host, with a generation guard against
+stale startup. Repeating the same HMR edit released the old owners/backend and
+reinitialized all three Contact stages; the scene canvas stayed at one, the
+resource snapshot returned to 28 scene geometries / 19 materials / 1 texture
+and 15 renderer geometries / 17 textures, and no page errors appeared. This is
+software WebGL2 evidence with a settled runtime, not HMR during active prewarm
+or physical-GPU lifecycle evidence. The dedicated host-teardown spec encodes
+additional release-before-backend assertions but remains unrun under the
+repository no-test-suite rule.
 
 SceneHost bridge audit: `loopPort` is the sole adapter from RenderScheduler to
 Tres's RAF (`onBeforeLoop` supplies delta; start/stop control the Tres loop).
