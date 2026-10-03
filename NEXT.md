@@ -844,12 +844,14 @@ The cached Playwright WebKit binary also cannot launch on this host because
 `libicu74`, `libxml2`, and `libflite1` are missing. The preview was stopped;
 system browser dependencies were not installed.
 
-On 2026-10-03, the workstation OMP configuration was inspected read-only and
-confirmed to register Firefox DevTools MCP with automatic profile selection.
-That MCP server is not exposed in this Codex session's tool surface, so the
-existing Firefox connection cannot be driven from here; do not launch another
-Firefox against its active profile. This establishes OMP configuration only,
-not current browser connectivity or app behavior. The source lifecycle pass
+On 2026-10-03, the global OMP and `web` profile were confirmed to configure
+Firefox DevTools MCP with different launch modes; the `jlj-worker` profile had
+no per-profile MCP registry. A worker-local registry was added for its
+dedicated automation profile, but resetting the worker session did not expose
+Firefox-specific tools. A fresh CUA session exited with
+`trusted Node process exited unexpectedly` before browser inventory. No browser
+was launched or profile touched, so this provides no current Firefox app or
+physical-GPU evidence; those gates remain open. The source lifecycle pass
 found no redundant ownership seam in `ExperienceRuntime`/`SceneHost` teardown
 or the `StageRegistry`/`LazyStage`/Vue stage-slot boundary. On the same date,
 `bun run format:check`, `bun run lint`, and the full `bun run build` all passed;
