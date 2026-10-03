@@ -18,13 +18,18 @@
 //
 // When adopting another Cientos component, add the modules its import needs
 // here (scripts/check-stdlib-modules.mjs computes the list).
+//
+// `DRACOLoader` and `GLTFLoader` re-export from three's own addons instead of
+// the three-stdlib copies: ContactCyprusStage already imports the same addons
+// modules, so the graph keeps exactly one loader implementation (and one DRACO
+// decoder delivery) instead of two divergent copies.
 
-export { DRACOLoader } from '../node_modules/three-stdlib/loaders/DRACOLoader.js'
+export { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 export { DecalGeometry } from '../node_modules/three-stdlib/geometries/DecalGeometry.js'
 export { FBXLoader } from '../node_modules/three-stdlib/loaders/FBXLoader.js'
 export { FontLoader } from '../node_modules/three-stdlib/loaders/FontLoader.js'
 export { GLTFExporter } from '../node_modules/three-stdlib/exporters/GLTFExporter.js'
-export { GLTFLoader } from '../node_modules/three-stdlib/loaders/GLTFLoader.js'
+export { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 export { HorizontalBlurShader } from '../node_modules/three-stdlib/shaders/HorizontalBlurShader.js'
 export { Line2 } from '../node_modules/three-stdlib/lines/Line2.js'
 export { LineGeometry } from '../node_modules/three-stdlib/lines/LineGeometry.js'

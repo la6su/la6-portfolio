@@ -29,6 +29,7 @@
 // bundle rather than a Vitest stub).
 
 import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -39,6 +40,7 @@ const stdlibShim = join(root, 'src/three-stdlib-compat.ts')
 const webgpuCompat = join(root, 'src/three-webgpu-compat.ts')
 
 const failures = []
+const requireResolve = createRequire(import.meta.url)
 
 const cientosSource = readFileSync(cientosBundle, 'utf8')
 const shimSource = readFileSync(stdlibShim, 'utf8')
@@ -58,11 +60,23 @@ while ((match = importRe.exec(cientosSource)) !== null) {
   if (match[2]) needed.add(`three-stdlib/${match[2]}`)
 }
 
-// The shim's contract: `export { SYMBOL } from '<relative path>'`.
+// The shim's contract: `export { SYMBOL } from '<specifier>'` — either a
+// relative path into three-stdlib (or, for symbols three ships itself, a
+// `three/addons/...` package specifier deduplicated with the app's imports).
 const shimEntries = []
 const exportRe = /export\s*\{\s*([A-Za-z0-9_$]+)\s*\}\s*from\s*['"]([^'"]+)['"]/g
 while ((match = exportRe.exec(shimSource)) !== null) {
   shimEntries.push({ symbol: match[1], from: match[2] })
+}
+
+// Relative specifiers resolve against src/; package specifiers resolve
+// through the installed packages' exports maps (from this repo's root).
+function resolveShimTarget(from) {
+  try {
+    return from.startsWith('.') ? resolve(join(root, 'src', from)) : requireResolve.resolve(from)
+  } catch {
+    return null
+  }
 }
 
 const shimSymbols = new Set(shimEntries.map((entry) => entry.symbol))
@@ -70,7 +84,7 @@ const missing = [...needed].filter((symbol) => !shimSymbols.has(symbol)).sort()
 const stale = [...shimSymbols].filter((symbol) => !needed.has(symbol)).sort()
 
 const brokenPaths = shimEntries
-  .filter((entry) => !existsSync(join(root, 'src', entry.from)))
+  .filter((entry) => resolveShimTarget(entry.from) === null)
   .map((entry) => `${entry.symbol} -> ${entry.from} (file not found)`)
   .sort()
 
@@ -100,8 +114,8 @@ const consumerSources = []
 if (existsSync(tresBundle)) consumerSources.push(readFileSync(tresBundle, 'utf8'))
 consumerSources.push(cientosSource)
 for (const entry of shimEntries) {
-  const file = join(root, 'src', entry.from)
-  if (existsSync(file)) consumerSources.push(readFileSync(file, 'utf8'))
+  const file = resolveShimTarget(entry.from)
+  if (file && existsSync(file)) consumerSources.push(readFileSync(file, 'utf8'))
 }
 const consumerHaystack = consumerSources.join('\n')
 
