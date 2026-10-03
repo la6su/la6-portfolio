@@ -30,7 +30,12 @@ onBeforeUnmount(() => {
 
 <template>
   <TresPortal v-if="theater" :to="theater.scene">
-    <TresMesh ref="quad" name="showreel-theater-quad" :material="theater.quadMaterial" :frustum-culled="false">
+    <TresMesh
+      ref="quad"
+      name="showreel-theater-quad"
+      :material="theater.quadMaterial"
+      :frustum-culled="false"
+    >
       <TresPlaneGeometry :args="[2, 2]" />
     </TresMesh>
   </TresPortal>
