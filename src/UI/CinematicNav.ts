@@ -14,6 +14,7 @@ import {
   storyProgressFromScroll,
   type StorySide,
 } from '../core/storyState'
+import { observeStoryScroll, resolveStoryTrack } from '../core/storyTrack'
 import { eventBus } from '../core/EventBus'
 import { t } from '../core/i18n'
 
@@ -46,12 +47,11 @@ export class CinematicNav {
   private _isInteracting = false
   private _lastNotified = -1
   private _inactiveTimer: ReturnType<typeof setTimeout> | null = null
-  private _scrollFrame: number | null = null
+  private _scrollObserver: { dispose: () => void; sync: () => void } | null = null
   private _focusFrame: number | null = null
   private _restoreFocus: HTMLElement | null = null
   private readonly _unsubs: Array<() => void> = []
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
-  private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
   private _reducedMotion = prefersReducedMotion()
@@ -128,20 +128,14 @@ export class CinematicNav {
       this._inactiveTimer = null
     }
 
-    const pageMode = this._page() !== 'home'
-    this._track = pageMode
-      ? document.querySelector<HTMLElement>('#spa-content .jlz-page')
-      : document.getElementById('spa-content')
-
-    if (!this._track) return
-
-    const selector = pageMode ? ':scope > [data-page-section]' : ':scope > [data-section]'
-    this._mainSections = [...this._track.querySelectorAll<HTMLElement>(selector)].filter(
-      (section) => {
-        const id = section.dataset.section ?? section.dataset.pageSection ?? ''
-        return id !== 'lab' && id !== 'menu' && id !== 'page-lab' && id !== 'page-menu'
-      },
-    )
+    // Shared track discovery (scroller + main sections + sheet exclusion)
+    // lives in core/storyTrack; this owner adds side-state, labels, focus,
+    // and activity behavior on top of it.
+    const root = document.getElementById('spa-content')
+    const track = root ? resolveStoryTrack(root, this._page()) : null
+    if (!track) return
+    this._track = track.scroller
+    this._mainSections = track.mainSections
 
     this._mainSection = FIRST_MAIN
     this._side = 'center'
@@ -149,18 +143,12 @@ export class CinematicNav {
     this._track.scrollTop = 0
     this._applySideState()
 
-    this._scrollHandler = () => {
-      if (this._scrollFrame !== null) return
-      this._scrollFrame = requestAnimationFrame(() => {
-        this._scrollFrame = null
-        this._syncFromScroll()
-        // Native scroll reports activity so a
-        // settled single-driver loop can start advancing the scene.
-        this.onActivity?.()
-      })
-    }
-
-    this._track.addEventListener('scroll', this._scrollHandler, { passive: true })
+    this._scrollObserver = observeStoryScroll(this._track, () => {
+      this._syncFromScroll()
+      // Native scroll reports activity so a
+      // settled single-driver loop can start advancing the scene.
+      this.onActivity?.()
+    })
 
     this._refreshLabels()
     this._updateStoryState(0)
@@ -168,15 +156,11 @@ export class CinematicNav {
   }
 
   private _removeTrackListeners(): void {
-    if (!this._track) return
-    if (this._scrollHandler) this._track.removeEventListener('scroll', this._scrollHandler)
+    this._scrollObserver?.dispose()
+    this._scrollObserver = null
   }
 
   private _cancelPendingFrames(): void {
-    if (this._scrollFrame !== null) {
-      cancelAnimationFrame(this._scrollFrame)
-      this._scrollFrame = null
-    }
     if (this._focusFrame !== null) {
       cancelAnimationFrame(this._focusFrame)
       this._focusFrame = null

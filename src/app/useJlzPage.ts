@@ -18,7 +18,7 @@ import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../core/routeManifest'
 import { initMenuLifecycle } from './menuLifecycle'
 import { noSceneRequested } from '../core/sceneMode'
-import { clampStoryPosition, mainSectionFromPosition } from '../core/storyState'
+import { observeStoryScroll, resolveStoryTrack, storyPositionFromScroll } from '../core/storyTrack'
 import { worldSlotIndex } from '../core/worldSlots'
 
 const FIRST_MAIN = worldSlotIndex('intro')!
@@ -45,24 +45,15 @@ export function useJlzPage(
   let announcerRafHandle: number | null = null
   let mounted = false
   let disposeMenuLifecycle: (() => void) | null = null
-  let noSceneScroller: HTMLElement | null = null
-  let noSceneScrollHandler: (() => void) | null = null
-  let noSceneScrollFrame: number | null = null
+  let noSceneScrollObserver: { dispose: () => void; sync: () => void } | null = null
 
   onBeforeUnmount(() => {
     mounted = false
     sectionUnsubs.splice(0).forEach((unsubscribe) => unsubscribe())
     disposeMenuLifecycle?.()
     disposeMenuLifecycle = null
-    if (noSceneScroller && noSceneScrollHandler) {
-      noSceneScroller.removeEventListener('scroll', noSceneScrollHandler)
-    }
-    noSceneScroller = null
-    noSceneScrollHandler = null
-    if (noSceneScrollFrame !== null) {
-      cancelAnimationFrame(noSceneScrollFrame)
-      noSceneScrollFrame = null
-    }
+    noSceneScrollObserver?.dispose()
+    noSceneScrollObserver = null
     if (announcerRafHandle !== null) {
       cancelAnimationFrame(announcerRafHandle)
       announcerRafHandle = null
@@ -77,15 +68,8 @@ export function useJlzPage(
   function postRender(): void {
     const el = rootEl()
     if (!el) return
-    if (noSceneScroller && noSceneScrollHandler) {
-      noSceneScroller.removeEventListener('scroll', noSceneScrollHandler)
-    }
-    noSceneScroller = null
-    noSceneScrollHandler = null
-    if (noSceneScrollFrame !== null) {
-      cancelAnimationFrame(noSceneScrollFrame)
-      noSceneScrollFrame = null
-    }
+    noSceneScrollObserver?.dispose()
+    noSceneScrollObserver = null
     applyTranslations()
     applyMetaTags(page)
     // The app owner publishes this only after its initial route has mounted.
@@ -108,40 +92,27 @@ export function useJlzPage(
     // Typed EventBus emission — app-lifetime listeners subscribe to this port.
     eventBus.emit('jlz:route-change')
     if (noSceneRequested) {
-      const pageMode = page !== 'home'
-      noSceneScroller = pageMode ? el.querySelector<HTMLElement>('.jlz-page') : el
-      const sectionKey = pageMode ? 'pageSection' : 'section'
-      const selector = pageMode ? ':scope > [data-page-section]' : ':scope > [data-section]'
-      const excludedSections = new Set(['lab', 'menu', 'page-lab', 'page-menu'])
-      const mainSections = [
-        ...(noSceneScroller?.querySelectorAll<HTMLElement>(selector) ?? []),
-      ].filter((section) => !excludedSections.has(section.dataset[sectionKey] ?? ''))
-      let lastSectionId = ''
-      noSceneScrollHandler = () => {
-        if (noSceneScrollFrame !== null) return
-        noSceneScrollFrame = requestAnimationFrame(() => {
-          noSceneScrollFrame = null
-          if (!noSceneScroller || mainSections.length === 0) return
-          const height = Math.max(1, noSceneScroller.clientHeight || window.innerHeight)
-          const position = clampStoryPosition(
-            noSceneScroller.scrollTop / height,
-            mainSections.length,
-          )
-          const index = mainSectionFromPosition(position, 0, mainSections.length)
-          const section = mainSections[index]
-          const sectionId = section?.dataset[sectionKey]
+      // Shared track discovery + scroll mapping (core/storyTrack): the same
+      // contract CinematicNav uses in scene mode, publishing the active
+      // section for the no-scene DOM-only experience.
+      const track = resolveStoryTrack(el, page)
+      if (track) {
+        let lastSectionId = ''
+        noSceneScrollObserver = observeStoryScroll(track.scroller, () => {
+          if (track.mainSections.length === 0) return
+          const { index } = storyPositionFromScroll(track)
+          const sectionId = track.mainSections[index]?.dataset[track.sectionKey]
           if (!sectionId || sectionId === lastSectionId) return
           lastSectionId = sectionId
           const worldIndex = FIRST_MAIN + index
-          if (pageMode) {
+          if (page !== 'home') {
             eventBus.emit('jlz:page-section-change', { worldIndex, sectionId })
           } else {
             eventBus.emit('jlz:section-change', { index: worldIndex, sectionId })
           }
         })
+        noSceneScrollObserver.sync()
       }
-      noSceneScroller?.addEventListener('scroll', noSceneScrollHandler, { passive: true })
-      noSceneScrollHandler()
     }
     if ('requestIdleCallback' in window) {
       idleHandle = requestIdleCallback(

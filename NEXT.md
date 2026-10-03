@@ -661,7 +661,17 @@ renders. Four slices, smallest first:
    discovery (page-mode selector plus excluded sheet sections) and the
    rAF-throttled scroll-to-section mapping; `CinematicNav` (scene mode) and
    the `useJlzPage` no-scene branch both consume it while keeping their own
-   side-state, labels, and activity behavior.
+   side-state, labels, and activity behavior. [Completed below:
+   `core/storyTrack.ts` now owns `resolveStoryTrack` (scroller + main-section
+   discovery + sheet exclusion), `storyPositionFromScroll` (the clamped
+   position and 0-based section index), and `observeStoryScroll` (one
+   rAF-throttled frame per scroll burst, passive listener, dispose/sync).
+   `CinematicNav._bindTrack` resolves the shared track and keeps only its
+   side-state/label/focus/activity behavior; the no-scene branch of
+   `useJlzPage` publishes sections through the same contract. Both owners'
+   notify payloads and timing are unchanged; lint, type-check, the full
+   production build, and `git diff --check` pass with regenerated tracked
+   dist assets.]
 
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
