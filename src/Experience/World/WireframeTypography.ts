@@ -72,11 +72,6 @@ export class WireframeTypography {
       throw new Error('Wireframe typography must bind one Vue mesh per glyph.')
     }
     this.meshes = [...meshes]
-    this.meshes.forEach((mesh, index) => {
-      mesh.frustumCulled = false
-      mesh.position.set(this.glyphs[index]!.x, 0, 0)
-      mesh.scale.setScalar(0)
-    })
     if (this.active && this.reducedMotion) this.settleReducedMotion()
   }
 

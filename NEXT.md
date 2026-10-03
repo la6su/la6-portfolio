@@ -903,6 +903,50 @@ and the controller's visibility ref remains the live source for the SFC's
 are patched before the element is inserted into the portal scene, so no frame
 can render the quad with the default `frustumCulled`), and no runtime path
 mutates either. Behavior is unchanged.
+`WireframeTypography.bindMeshes` no longer re-sets `frustumCulled`,
+`position`, and `scale` on each glyph mesh: `WireframeTypographyOwner.vue`
+already declares `:position="[glyph.x, 0, 0]"` (the same `x` served by the
+`renderGlyphs` getter), `:scale="[0, 0, 0]"`, and `:frustum-culled="false"`
+per mesh, and Tres 5.9.2's `patchProp` applies them at element creation.
+`update()` and `settleReducedMotion()` remain the live owners of the reveal
+motion and reduced-motion settle; the `setActive(false)` reset already
+returns scale to the declared zero. The stage is disposed on every route
+exit and recreated on the next visit, so a re-bind can never run against a
+mid-reveal owner state. Behavior is unchanged.
+
+Remaining controller-vs-SFC inventory (fixed facts already moved; the rest
+triaged):
+
+- `WorksPlaneStage.mount` sets `root.renderOrder = 3` on the SFC-declared
+  stage root. This is meaningful: Three 0.186.1's WebGLRenderer and common
+  Renderer both pass a Group's `renderOrder` as `groupOrder` to descendant
+  render items. The child case planes' own `render-order="2"` is a separate
+  sort key and does not make the parent group order redundant. Retain this
+  assignment unless a dedicated render-order review establishes a replacement.
+- Before-mount visibility defaults (set in the controller constructor or
+  bind, not declared in the SFC): `DrawTrail` sets
+  `nodes.root.visible = false` (`CursorTrailOwner.vue` declares the
+  `draw-trail` group without `:visible`) and `ParticleBurst` sets
+  `nodes.mesh.visible = false` (`IntroLightFramesOwner.vue` declares the
+  instanced mesh without `:visible`). Both run when Experience adopts the
+  host-ready nodes, after SceneHost stops Tres's loop and before the first
+  Experience frame, so no rendered frame currently sees the Three default
+  `visible = true`. Declaring `:visible="false"` in the two SFCs and
+  deleting the constructor writes is safe for their initial visibility;
+  `DrawTrail`'s `setVisible` and `ParticleBurst`'s burst-lifecycle visibility
+  remain dynamic controller state.
+- Dynamic values (route, scroll, or per-frame) stay in their controllers:
+  `SceneCoordinator` section-slot and route visibility fan-out
+  (intro slot, prewarm toggles, Agros particles, Services, Baku, Lab),
+  `SceneTransformPass` scroll-fade group/carousel visibility,
+  `StageRegistry` Lab `visible = page === 'lab'`, `LabGamepad` pointer-tilt
+  rotation plus `resetMotion` on route entry (the Lab stage stays mounted
+  after `/lab`, so SFC props are not re-applied by a remount),
+  `WorksInstallation` mode-dependent trace/ticks/assembly transforms,
+  `CinematicCamera` and `Lights` smoothing, `BakuCarousel` per-frame card
+  layout, `CasePlane` reveal visibility, `ContactCyprusStage` camera-follow
+  root transform and loaded-GLTF mesh culling/shadow, `ServicesStage`
+  camera-follow root and ring spin, and `SplashCube` reaction rotation.
 
 ### 3. Production and whole-tree audit — pending
 
