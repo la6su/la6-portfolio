@@ -918,10 +918,40 @@ error isolation. `tests/unit/Utils/dispose.test.ts` pins the exactly-once
 contract. `cyprus_3d.glb` uses only `KHR_draco_mesh_compression` with one
 untextured material, so the installed loader's KHR clearcoat/anisotropy
 texture slots stay unreachable for the current consumer; the slot table
-remains scoped to what callers use. Keep both helpers. Item-3 comparison
-surface still open: `webglContextRestore` vs Three's WebGLBackend
-context-loss handling; then item 4's per-node and GPU-resource traces
-where recorded evidence leaves gaps.
+remains scoped to what callers use. Keep both helpers.
+Item-3 `webglContextRestore` audit against installed Three 0.186.1:
+`WebGLBackend.init` registers the only canvas `webglcontextlost` listener
+(`preventDefault()` + `onDeviceLost({api:'WebGL'})`) and removes it in
+`dispose()`; the installed webgl-fallback and webgpu trees contain no
+`webglcontextrestored` listener, and the only `restoreContext()` call in
+`three/src` is the legacy `WebGLRenderer.forceContextRestore()` test
+helper, which the app does not use. `WebGLBackend.dispose()` intentionally
+calls `WEBGL_lose_context.loseContext()` and never restores, so after
+`disposeUnifiedRendererNow` neither the library nor the browser guarantees
+a usable context on that canvas. The WebGPU path reports loss through the
+`device.lost` promise (`onDeviceLost({api:'WebGPU'})`) with no DOM event
+and no browser restore, so the two `waitForWebGLContextRestore` call sites
+in `Renderer.recoverFromDeviceLost` stay guarded by `info?.api ===
+'WebGL'`: the first waits for the browser's automatic restore before
+disposal; the second is constructed with the extension before the old
+backend's dispose, catches the dispose-triggered loss event, re-marks the
+context restorable, and restores it explicitly through the deferred
+`restoreContext()` (Chromium ignores the call while the loss event is
+still dispatching). The helper therefore fills the missing library
+obligation of the same-canvas replacement policy rather than duplicating
+an installed API. The pre-dispose wait is the only removable-seam
+candidate: the post-dispose wait plus `isWebGLContextUsable` already gate
+the replacement init, so removal converges on the same terminal state,
+but it would run `WebGLBackend.dispose()` — including its
+`gl.getExtension('WEBGL_lose_context')` cache miss, since `init()` does
+not pre-fetch that extension — on a still-lost context in Chromium, which
+is the class of behavior the device-loss runtime evidence gate already
+covers; the forced-loss Playwright spec drives its own
+`restoreContext()` and so cannot disambiguate the pre-dispose wait either.
+Keep both call sites; open gate: confirm or falsify the pre-dispose
+wait's necessity with forced- and natural-loss runtime evidence on a
+supported GPU/browser before removal. Then item 4's per-node and
+GPU-resource traces where recorded evidence leaves gaps.
 The `CasePlane` constructor no longer re-sets `name`, `frustumCulled`, and
 `renderOrder` on the mesh: `CasePlaneNode.vue` already declares all three as
 Tres props, and no runtime path mutates them. Both `BakuCarousel` and
