@@ -19,9 +19,9 @@ const lifecycle = vi.hoisted(() => ({
     },
 }))
 
-vi.mock('./Input', () => ({ input: { destroy: vi.fn(), start: vi.fn() } }))
+vi.mock('../../../src/Experience/Input', () => ({ input: { destroy: vi.fn(), start: vi.fn() } }))
 
-vi.mock('./SceneCoordinator', () => ({
+vi.mock('../../../src/Experience/SceneCoordinator', () => ({
   SceneCoordinator: class {
     sections = []
     currentSectionIndex = 1
@@ -33,7 +33,7 @@ vi.mock('./SceneCoordinator', () => ({
   },
 }))
 
-vi.mock('./Scene/SectionGroups', () => ({
+vi.mock('../../../src/Experience/Scene/SectionGroups', () => ({
   SectionGroups: class {
     works = {
       carousel: {
@@ -47,19 +47,19 @@ vi.mock('./Scene/SectionGroups', () => ({
   },
 }))
 
-vi.mock('./World/SplashCube', () => ({
+vi.mock('../../../src/Experience/World/SplashCube', () => ({
   SplashCube: lifecycle.makeOwner('baku'),
 }))
-vi.mock('./World/ParticleBurst', () => ({
+vi.mock('../../../src/Experience/World/ParticleBurst', () => ({
   ParticleBurst: lifecycle.makeOwner('particle-burst'),
 }))
-vi.mock('./World/DrawTrail', () => ({
+vi.mock('../../../src/Experience/World/DrawTrail', () => ({
   DrawTrail: lifecycle.makeOwner('draw-trail'),
 }))
-vi.mock('./World/Lights', () => ({
+vi.mock('../../../src/Experience/World/Lights', () => ({
   CinematicLights: lifecycle.makeOwner('lights'),
 }))
-vi.mock('./Scene/GroundPlane', () => ({
+vi.mock('../../../src/Experience/Scene/GroundPlane', () => ({
   GroundPlane: lifecycle.makeOwner('ground'),
 }))
 
