@@ -631,6 +631,13 @@ renders. Four slices, smallest first:
 2. Fold `UI/RouteTransition` into the app layer: the class only sequences
    `data-state` on the AppShell-declared overlay; an app-owned function pair
    keeps the same cover/reveal/cancel contract for the router guards.
+   [Completed below: `src/UI/RouteTransition.ts` is deleted and the sequence
+   (cover/reveal/cancel/dispose, COVER_MS/REVEAL_MS timings, reduced-motion
+   no-ops, and the missing-overlay error) now lives in
+   `createRouteTransitionCover()` inside `src/app/index.ts`, beside the other
+   router-owned local factories; the `_shell.less` comment names the new
+   owner. Behavior is unchanged; lint, type-check, the full production build,
+   and `git diff --check` pass with regenerated tracked dist assets.]
 3. Move fullscreen overlay content into Vue: `FullscreenOverlayView.vue`
    binds title, category, description, tags, counter, poster, and arrow
    visibility from a small reactive store; the UIkit modal, keyboard, and

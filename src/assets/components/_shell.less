@@ -36,9 +36,9 @@ canvas {
   z-index: 2;
 }
 
-// RouteTransition owns this short SPA handoff. It mirrors neither the splash
-// nor the navigator: two quiet planes close over the old frame, then release
-// the new one along a single accent signal.
+// The app layer (src/app/index.ts) owns this short SPA handoff. It mirrors
+// neither the splash nor the navigator: two quiet planes close over the old
+// frame, then release the new one along a single accent signal.
 .jlz-route-transition {
   position: fixed;
   z-index: 30005;
