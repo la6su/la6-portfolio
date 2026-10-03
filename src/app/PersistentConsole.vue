@@ -20,6 +20,9 @@ const blogHref = (path: string): string => localizedPath(langFromPath(route.path
 const soundMuted = ref(getSoundMuted())
 const fullscreenOpen = ref(false)
 const activeIndex = ref(0)
+// Storyline labels published by the CinematicNav behavior controller from the
+// track's section headings; this view is the single aria-label writer.
+const storyLabels = ref<string[]>([])
 const themeIsInverse = ref(themeManager.isInverse)
 const soundIcon = ref<HTMLElement | null>(null)
 const menuLabel = computed(() => t(fullscreenOpen.value ? 'common.close' : 'menu.navigate'))
@@ -60,6 +63,9 @@ onMounted(() => {
     eventBus.on('jlz:story-index-change', ({ index }) => {
       activeIndex.value = index
     }),
+    eventBus.on('jlz:story-labels', ({ labels }) => {
+      storyLabels.value = labels
+    }),
     eventBus.on('jlz:webgl-ready', () => {
       setRendererAvailable(!noSceneRequested)
     }),
@@ -79,6 +85,11 @@ function requestStoryNavigation(index: number): void {
     return
   }
   eventBus.emit('jlz:story-navigate', { index })
+}
+
+/** The storyline button label: the track heading when published, else the slot. */
+function storyLabel(index: number): string {
+  return storyLabels.value[index - firstStorySection] ?? String(index)
 }
 
 function toggleSound(): void {
@@ -213,7 +224,7 @@ function toggleSound(): void {
         id="cinematic-nav"
         class="jlz-storyline"
         :aria-label="t('nav.storyline')"
-        data-sheet="center"
+        :inert="activeIndex === 0 || activeIndex === 5"
       >
         <div class="jlz-storyline__items uk-flex uk-flex-middle">
           <button
@@ -223,14 +234,13 @@ function toggleSound(): void {
             :class="{ 'is-active': activeIndex === index }"
             type="button"
             :data-story-index="index"
-            :aria-label="`${t('nav.goToSection')} ${index}`"
+            :aria-label="`${t('nav.goToSection')} ${storyLabel(index)}`"
             :aria-current="activeIndex === index ? 'step' : undefined"
             @click="requestStoryNavigation(index)"
           >
             <span class="jlz-storyline__number uk-text-meta uk-text-uppercase">{{
               String(index).padStart(2, '0')
             }}</span>
-            <span class="jlz-storyline__label uk-hidden" data-story-label>Section {{ index }}</span>
           </button>
         </div>
         <span

@@ -55,6 +55,12 @@ export interface AppEvents {
   'jlz:story-navigate': { index: number }
   /** CinematicNav updates the persistent shell's active section state. */
   'jlz:story-index-change': { index: number }
+  /**
+   * CinematicNav publishes the storyline labels it resolved from the track's
+   * section headings (on track bind and language change); the Vue-owned nav
+   * rail binds them into its aria-labels.
+   */
+  'jlz:story-labels': { labels: string[] }
   /** Fired by FullscreenOverlay on prev/next project navigation. */
   'jlz:project-navigate': { direction: -1 | 1 }
   /** Fullscreen media becomes the active interaction layer. */

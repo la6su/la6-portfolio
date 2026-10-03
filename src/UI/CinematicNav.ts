@@ -4,6 +4,12 @@
 // and touch input retain their platform-native behavior. The canonical section-0 runtime slot now presents a
 // Contact finale, while Menu remains section 5. Both open as bottom/top sheets
 // without occupying a story frame.
+//
+// Ownership: the nav rail itself (structure, active step, aria-labels, inert)
+// is Vue-owned in PersistentConsole and reacts to the `jlz:story-*` events this
+// controller publishes. This class owns behavior only: scroll sync, side
+// sheets, keyboard navigation, focus handling, and the per-section story CSS
+// variables (a scroll-rate DOM write that stays out of Vue reactivity).
 
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { PageId } from '../core/routeManifest'
@@ -35,8 +41,6 @@ const INTERACTION_SETTLE_MS = 220
 type SideState = StorySide
 
 export class CinematicNav {
-  public el: HTMLElement
-
   private _page: () => PageId
   private _track: HTMLElement | null = null
   private _mainSections: HTMLElement[] = []
@@ -53,7 +57,6 @@ export class CinematicNav {
   private readonly _unsubs: Array<() => void> = []
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
-  private _navButtons: HTMLButtonElement[] = []
   private _reducedMotion = prefersReducedMotion()
 
   /**
@@ -65,10 +68,6 @@ export class CinematicNav {
 
   constructor(page: () => PageId) {
     this._page = page
-    const nav = document.getElementById('cinematic-nav')
-    if (!nav) throw new Error('Cinematic navigation must be declared by PersistentConsole.')
-    this.el = nav
-    this._navButtons = [...nav.querySelectorAll<HTMLButtonElement>('[data-story-index]')]
     this._addGlobalListeners()
     this._bindTrack()
   }
@@ -76,7 +75,7 @@ export class CinematicNav {
   private _addGlobalListeners(): void {
     this._unsubs.push(eventBus.on('jlz:route-change', () => this._bindTrack()))
 
-    this._unsubs.push(eventBus.on('jlz:lang-change', () => this._refreshLabels()))
+    this._unsubs.push(eventBus.on('jlz:lang-change', () => this._publishLabels()))
 
     this._unsubs.push(eventBus.on('jlz:close-nav', () => this._closeSide()))
 
@@ -129,8 +128,8 @@ export class CinematicNav {
     }
 
     // Shared track discovery (scroller + main sections + sheet exclusion)
-    // lives in core/storyTrack; this owner adds side-state, labels, focus,
-    // and activity behavior on top of it.
+    // lives in core/storyTrack; this owner adds side-state, focus, and
+    // activity behavior on top of it.
     const root = document.getElementById('spa-content')
     const track = root ? resolveStoryTrack(root, this._page()) : null
     if (!track) return
@@ -150,7 +149,7 @@ export class CinematicNav {
       this.onActivity?.()
     })
 
-    this._refreshLabels()
+    this._publishLabels()
     this._updateStoryState(0)
     this._notifySection(FIRST_MAIN)
   }
@@ -215,14 +214,17 @@ export class CinematicNav {
     this._updateStoryState(this._mainSection - FIRST_MAIN)
   }
 
-  private _refreshLabels(): void {
-    this._navButtons.forEach((button, index) => {
-      const heading = this._mainSections[index]?.querySelector('h1, h2')?.textContent?.trim()
-      const label = heading || `${t('nav.section')} ${index + 1}`
-      const labelEl = button.querySelector<HTMLElement>('[data-story-label]')
-      if (labelEl) labelEl.textContent = label
-      button.setAttribute('aria-label', `${t('nav.goToSection')} ${label}`)
+  /**
+   * Resolve the storyline labels from the track's section headings (headings
+   * are patched synchronously by i18n before `jlz:lang-change` fires) and
+   * publish them for the Vue-owned rail — the single aria-label writer.
+   */
+  private _publishLabels(): void {
+    const labels = this._mainSections.map((section, index) => {
+      const heading = section.querySelector('h1, h2')?.textContent?.trim()
+      return heading || `${t('nav.section')} ${index + 1}`
     })
+    eventBus.emit('jlz:story-labels', { labels })
   }
 
   private _notifySection(index: number): void {
@@ -400,9 +402,10 @@ export class CinematicNav {
   }
 
   private _applySideState(): void {
-    this.el.dataset.sheet = this._side
+    // The rail's own inert state is Vue-owned (PersistentConsole binds it from
+    // the published active index); this owner still inerts the story sections
+    // it rebound and the sheet visibility state.
     const sheetOpen = this._side !== 'center'
-    this.el.inert = sheetOpen
     this._mainSections.forEach((section) => {
       section.inert = sheetOpen
     })
@@ -424,7 +427,6 @@ export class CinematicNav {
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)
-    this._navButtons = []
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
     this._side = 'center'
     this._applySideState()
