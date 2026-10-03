@@ -94,6 +94,32 @@ disposing its textures.
 
 Current known facts:
 
+- TvT v5 architecture audit on 2026-10-03 compared every custom subsystem
+  with the installed library APIs (`@tresjs/core` 5.9.2, `@tresjs/cientos`
+  5.9.2, `three` 0.186.1) and the TvT v5 reference. Ownership is single-owner
+  per resource: Tres owns the canvas, the one RAF host, and the renderer
+  manager; `RenderScheduler` owns frame demand through the SceneHost loop
+  port; Vue/Tres declares the scene graph and the 22 `src/app/scene` owners
+  adopt nodes instead of building them. The World controllers are legitimate
+  imperative owners of generated geometry, TSL graphs, and loader lifecycles;
+  a whole-tree consumer scan found no dead module in `src`. Cientos adoption
+  is bounded by the single WebGPU/TSL render path: Lab `OrbitControls` is the
+  one adopted component, while Environment/useEnvironment and the
+  GLSL-ShaderMaterial family (Stars, Sparkles, Sky, transmission, FBO, and
+  reflector components) would import classic WebGL symbols that
+  `three-webgpu-compat` stubs, so they stay non-candidates until that
+  constraint changes. Verified keep verdicts (do not re-litigate without new
+  library evidence): the custom render-demand seam (Tres 5.9.2 on-demand
+  keeps ticking its RAF and cannot express settle-based demand),
+  `Experience/Camera` (Cientos CameraShake/MouseParallax do not map onto
+  WorldConfig section targets or the Lab yield handoff), the
+  caseTexture/ShowreelTheater/ContactCyprusStage loaders (the Cientos
+  loaders lack refcount leases, abort, prewarm, and deferred disposal), and
+  the authored TextReveal/NoiseText/BlurFade effects. The
+  EventBus↔ThemeManager import edge is type-only and erased at runtime; it
+  needs no fix. The remaining pre-migration surface is the imperative UI
+  layer over Vue-rendered DOM, planned in the phase-1 route-UI migration
+  plan below.
 - Deep audit found a shared inverse-theme defect on content routes, including
   Works and Manifesto: `ContentReveal` matched the route DOM section ID against
   `WorldConfig.domSection`, but content configs use `content-0..5` while the
@@ -582,6 +608,36 @@ tracked dist assets (one app-chunk hash change cascading to the lazy view
 chunks and prerendered route HTML). A baseline rebuild of the unmodified
 source reproduced the committed dist with zero diff, confirming the churn is
 the chunk-rename cascade of this edit.
+
+Route-UI Vue migration plan (from the 2026-10-03 TvT v5 audit): the remaining
+old-world surface is imperative UI classes writing into DOM that Vue already
+renders. Four slices, smallest first:
+
+1. Remove verified-dead exports: `tslVec3` in `types/tsl-helpers.ts` (no
+   consumer), the exported `unmountVueApp` wrapper in `app/index.ts` (the
+   host-teardown spec uses the dev hook; the internal teardown mechanism
+   stays), the `export` on `initSplashToggles` (`entry-app.ts` calls it
+   internally and the referenced lifecycle test does not exist), and nine
+   `export` keywords with no importer (`normalizeSiteOrigin`,
+   `supportsPostProcessing`, `resolvePage`, `isCaseStudyPath`, `escapeXml`,
+   `stripSsrComments`, `BLOG_SITE_ORIGIN`, `blogMetaPath`, `labExperiments` —
+   all still used inside their own modules). Correct the stale
+   `src/__tests__/i18n.test.ts` claim in the `core/i18n.ts` header; no i18n
+   unit test exists.
+2. Fold `UI/RouteTransition` into the app layer: the class only sequences
+   `data-state` on the AppShell-declared overlay; an app-owned function pair
+   keeps the same cover/reveal/cancel contract for the router guards.
+3. Move fullscreen overlay content into Vue: `FullscreenOverlayView.vue`
+   binds title, category, description, tags, counter, poster, and arrow
+   visibility from a small reactive store; the UIkit modal, keyboard, and
+   focus-trap behavior stay with the controller class;
+   `ExperienceUI.onProjectSelect` writes the store instead of the class
+   filling DOM text nodes.
+4. Share the story scroll track mapping: one helper owns scroller/section
+   discovery (page-mode selector plus excluded sheet sections) and the
+   rAF-throttled scroll-to-section mapping; `CinematicNav` (scene mode) and
+   the `useJlzPage` no-scene branch both consume it while keeping their own
+   side-state, labels, and activity behavior.
 
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
