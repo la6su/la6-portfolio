@@ -426,6 +426,30 @@ no-op and its sole `Experience._updateInner` callsite — behavior unchanged;
 lint, type-check, and the full production build pass with regenerated tracked
 dist assets.
 
+ExperienceUI ownership checkpoint: every `ExperienceUI` method and caller was
+traced against the Vue route views. `init()` wires CinematicNav, sound,
+project-open, overlay preload, route-close, wobble, and hash events from their
+single emitters; `triggerSplashOpener()` has one caller (`jlz:splash-entered`
+in Experience); `ensureProjectControls()` is called by Experience after
+`buildScene()` and by the three internal event paths; `navigateProject()` is
+reached only through `jlz:project-navigate` (plus the dev-only DevPanel
+buttons); `onProjectSelect()` is the one overlay writer. `activeProjectIndex`
+remains the single canonical index — `BakuCarousel` keeps a continuous scroll
+target, not a mirrored project index, and the route views carry no active
+project state. This trace found one dead seam: `FullscreenOverlay.onPrev` /
+`onNext` were public callback fields never assigned anywhere (repo-wide
+source scan; the Vue view only emits `jlz:fullscreen-overlay-unmounted`),
+while `navigate()` no-op-dispatched them before emitting
+`jlz:project-navigate`, whose sole real consumer is
+`ExperienceUI.navigateProject`. The fields and the no-op dispatch were
+removed; the buttons and arrow keys now reach the handler through the event
+only. Behavior is unchanged. `bun run lint`, `bun run type-check:vue`, the
+full production build, and `git diff --check` pass; the build regenerated
+tracked dist assets (one app-chunk hash change cascading to the lazy view
+chunks and prerendered route HTML). A baseline rebuild of the unmodified
+source reproduced the committed dist with zero diff, confirming the churn is
+the chunk-rename cascade of this edit.
+
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
 host publishes only after its declared Vue/Tres nodes report ready; Experience

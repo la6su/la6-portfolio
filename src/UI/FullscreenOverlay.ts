@@ -61,8 +61,6 @@ export class FullscreenOverlay {
   private _mediaGeneration = 0
   private readonly _listeners = new AbortController()
 
-  public onPrev: (() => void) | null = null
-  public onNext: (() => void) | null = null
   private _perOpenOnClose: (() => void) | null = null
   private _restoreFocus: HTMLElement | null = null
   private _hideHandled = false
@@ -232,8 +230,6 @@ export class FullscreenOverlay {
   }
 
   private navigate(direction: -1 | 1): void {
-    if (direction < 0) this.onPrev?.()
-    else this.onNext?.()
     eventBus.emit('jlz:project-navigate', { direction })
   }
 
