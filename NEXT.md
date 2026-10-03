@@ -1394,6 +1394,13 @@ Execution order:
    `JLZ_CROSS_BROWSER_MATRIX=1`, stdio forwarding, error propagation, and exit
    handling. `bun run lint`, `bun run type-check:vue`, and `bun run build`
    pass; no test suites were run.
+   `bun run build` no longer duplicates the budget check inline. Its final
+   step previously ran `bun scripts/check-build-budgets.ts` directly, the same
+   command defined by `budget:build`; it now ends with `bun run budget:build`,
+   so the budget check has one canonical definition. `bun run format:check`,
+   `bun run lint`, `bun run type-check:vue`, and `bun run build` (budget check
+   routed through `budget:build`) all pass, and `git diff --check` is clean;
+   no test suites were run.
 5. Formatting contract and generated/editorial/vendor ignores are established
    and enforced by CI. Continue removing obsolete styles, code, docs, and config
    only after checking exact imports/callers.
