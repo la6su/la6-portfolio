@@ -880,6 +880,11 @@ The post-recovery-timeout `bun run analyze:bundle` profile at `88291e8` reports
 the Three vendor at 310.98 kB gzip and lazy Lab controls at 21.90 kB. The
 shared core chunk is 7.73 kB gzip (up from the prior 7.50 kB); the recovery
 timeout is a small addition and all configured release budgets still pass.
+The `CasePlane` constructor no longer re-sets `name`, `frustumCulled`, and
+`renderOrder` on the mesh: `CasePlaneNode.vue` already declares all three as
+Tres props, and no runtime path mutates them. Both `BakuCarousel` and
+`WorksPlaneStage` construct `CasePlane` through that single component, so the
+removal covers every consumer. Behavior is unchanged.
 
 ### 3. Production and whole-tree audit — pending
 

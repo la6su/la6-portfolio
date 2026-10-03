@@ -122,9 +122,6 @@ export class CasePlane {
     this._texture = mapTexture
     this._timeUni = resources.time
     this._stateUni = resources.state
-    this.mesh.name = 'works-case-plane'
-    this.mesh.frustumCulled = false
-    this.mesh.renderOrder = 2
   }
 
   get position(): THREE.Vector3 {
