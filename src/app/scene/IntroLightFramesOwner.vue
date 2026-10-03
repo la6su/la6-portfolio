@@ -14,10 +14,12 @@ onMounted(() => {
 
 <template>
   <!-- The trace material is behavior (TSL graph) — the controller assigns it
-       onto this leaf when Experience adopts the node. -->
+       onto this leaf when Experience adopts the node. Hidden until the
+       ParticleBurst lifecycle reveals it. -->
   <TresInstancedMesh
     ref="burst"
     name="intro-light-frames"
+    :visible="false"
     :args="[undefined, undefined, INTRO_TRACE_COUNT]"
     :frustum-culled="false"
   >

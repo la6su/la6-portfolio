@@ -71,6 +71,8 @@ export class ParticleBurst {
   private _origin = new THREE.Vector3()
 
   constructor(nodes: IntroLightFramesNodes) {
+    // Initial visibility is declared by IntroLightFramesOwner.vue
+    // (:visible="false"); the burst lifecycle is the only dynamic writer.
     this._mesh = nodes.mesh
     const uniforms = createTraceUniforms()
     const material = new MeshBasicNodeMaterial({
@@ -89,7 +91,6 @@ export class ParticleBurst {
     // holds no GPU resources and is reclaimed by the GC.
     this._mesh.material = material
     this._uniforms = uniforms
-    this._mesh.visible = false
 
     for (let frame = 0; frame < FRAME_COUNT; frame++) {
       for (let side = 0; side < SEGMENTS_PER_FRAME; side++) {
