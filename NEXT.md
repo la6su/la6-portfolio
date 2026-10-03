@@ -1380,6 +1380,14 @@ Execution order:
    reports updates for other packages, including major TypeScript, jsdom, and
    vitest updates; those were not assessed for compatibility and were not
    changed.
+   The quality workflow's generated-artifact diff gate previously omitted the
+   committed RU blog prerender source inputs `ru/blog.html` and `ru/blog/`; it
+   now includes both. The direct `source-map-js` devDependency is updated
+   1.2.1 → 1.2.2. A frozen Bun install through the OMP worker succeeded and
+   confirmed `node_modules/source-map-js` is 1.2.2 after direct-shell DNS
+   failures. The frozen lockfile check, `bun run format:check`, `bun run lint`,
+   and `bun run build` pass; the build regenerated all locale blog inputs and
+   the 30 sitemap URLs. No unit or browser suites were run.
 5. Formatting contract and generated/editorial/vendor ignores are established
    and enforced by CI. Continue removing obsolete styles, code, docs, and config
    only after checking exact imports/callers.
