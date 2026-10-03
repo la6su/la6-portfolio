@@ -890,6 +890,12 @@ The `CasePlane` constructor no longer re-sets `name`, `frustumCulled`, and
 Tres props, and no runtime path mutates them. Both `BakuCarousel` and
 `WorksPlaneStage` construct `CasePlane` through that single component, so the
 removal covers every consumer. Behavior is unchanged.
+`ContactCyprusStage.bindRoot` no longer re-sets `root.name`:
+`ContactCyprusStageOwner.vue` already declares `name="contact-cyprus-stage"`
+on the `TresGroup`, and Tres 5.9.2's `patchProp` applies the prop directly to
+the object at element creation. No code reads or writes that name otherwise,
+and the controller's visibility ref remains the live source for the SFC's
+`:visible` binding. Behavior is unchanged.
 
 ### 3. Production and whole-tree audit — pending
 

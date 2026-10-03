@@ -58,7 +58,6 @@ export class ContactCyprusStage {
     if (this._disposed) return
     this._root = root
     this._publishModel = publishModel
-    root.name = 'contact-cyprus-stage'
     this._visible.value = false
     if (this._model) void publishModel(this._model)
   }
