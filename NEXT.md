@@ -681,13 +681,18 @@ confirmed `/works` paints light (`rgb(233, 238, 245)`) with dark heading text
 when inverse is active. On `/manifesto`, the toggle and computed shell colors
 also changed as expected, but the screenshot remained dark while the console
 reported `createBuffer` failure and repeated WebGPU `popErrorScope` errors.
-This environment has no usable NVIDIA driver/GPU device, so Manifesto visual
-parity and the WebGPU render path remain unverified on supported hardware.
+The orchestration shell for that attempt could not access an NVIDIA driver
+(`nvidia-smi` failed), so it could not verify Manifesto's physical-GPU visual
+parity. The user has separately confirmed successful physical Firefox/WebGPU
+checks in this project; those earlier results remain valid evidence.
 
 The default sandbox cannot bind `127.0.0.1:4173`; an approved loopback-only
 preview session enabled the HTTP checks above and was stopped afterward. The
-CUA browser kernel could not start (`bwrap` bad descriptor for `.aws`); manual
-Chromium was used for inverse-theme interaction instead. Showreel keyboard/
+CUA browser kernel could not start (`bwrap` bad descriptor for `.aws`); the
+project-root `.aws` path is a protected empty mountpoint and must not be altered
+as a workaround. This is a browser-tool sandbox failure, not browser
+unavailability. Manual Chromium was used for inverse-theme interaction instead.
+Showreel keyboard/
 focus and EN/RU labels, shell reduced-motion transitions, and the Lab camera
 preference gate are confirmed on production preview. Client takeover, remaining
 route keyboard/focus, and other route transitions still need focused browser
