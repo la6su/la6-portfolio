@@ -203,7 +203,9 @@ export class ShowreelTheater {
     if (this.quad && this.quad !== quad)
       throw new Error('Showreel theater can only adopt one Vue-declared quad.')
     this.quad = quad
-    quad.name = 'showreel-theater-quad'
+    // `name` is declared on the TresMesh in ShowreelTheaterOwner.vue, so the
+    // controller no longer re-sets it. `frustumCulled` has no SFC prop, so the
+    // controller remains its sole writer.
     quad.frustumCulled = false
   }
 

@@ -896,6 +896,12 @@ on the `TresGroup`, and Tres 5.9.2's `patchProp` applies the prop directly to
 the object at element creation. No code reads or writes that name otherwise,
 and the controller's visibility ref remains the live source for the SFC's
 `:visible` binding. Behavior is unchanged.
+`ShowreelTheater.bindQuad` no longer re-sets `quad.name`:
+`ShowreelTheaterOwner.vue` already declares `name="showreel-theater-quad"` on
+the `TresMesh`, the same `patchProp` path applies it at creation, and no code
+reads or writes that name otherwise. `bindQuad` still writes
+`quad.frustumCulled = false` because the SFC declares no
+`frustum-culled` prop; that property stays a controller-owned fact.
 
 ### 3. Production and whole-tree audit — pending
 
