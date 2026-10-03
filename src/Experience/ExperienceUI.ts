@@ -277,10 +277,11 @@ export class ExperienceUI {
     const project = projs[safeIdx]
     if (!project) return
 
-    // Open/preload fullscreen overlay with project info + poster.
-    // All opens (showreel, slider, /works) use the unified DOM cinematic
-    // reveal — no origin='plane' 3D handoff.
-    const opts = {
+    // Publish the project's content to the Vue-owned overlay view; the view
+    // binds it (text, tags, poster decode, authored title reveal). Preload
+    // only publishes — the modal stays hidden until a later open. All opens
+    // (showreel, slider, /works) use the unified DOM cinematic reveal.
+    eventBus.emit('jlz:project-content', {
       poster: project.textureUrl,
       title: project.title,
       category: `${project.year ?? ''} · ${project.category ?? ''}`,
@@ -289,12 +290,8 @@ export class ExperienceUI {
       counter: `${safeIdx + 1} / ${projs.length}`,
       hasPrev: true,
       hasNext: true,
-    }
-    if (preload) {
-      overlay.preload(opts)
-    } else {
-      overlay.open(opts)
-    }
+    })
+    if (!preload) overlay.open()
   }
 
   /** Remove every UI-feature listener + dispose the created features. */

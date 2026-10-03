@@ -643,7 +643,20 @@ renders. Four slices, smallest first:
    visibility from a small reactive store; the UIkit modal, keyboard, and
    focus-trap behavior stay with the controller class;
    `ExperienceUI.onProjectSelect` writes the store instead of the class
-   filling DOM text nodes.
+   filling DOM text nodes. [Completed below: content now flows through the
+   typed `jlz:project-content` port — `ExperienceUI.onProjectSelect`
+   publishes one payload and the view owns the reactive state, the poster
+   decode (request-id guarded), the tag list, `v-show` arrow visibility, and
+   the authored title reveal (BlurFade after the title change, plain text
+   plus aria-label under reduced motion). `UI/FullscreenOverlay` keeps only
+   the UIkit modal lifecycle, Escape/arrow/Tab keyboard layer, focus trap,
+   and fullscreen-change events; its `open()`/`preload()` content arguments,
+   the per-open `onClose` callback (never supplied by any caller), the
+   never-read `is-image-mode`/`is-poster-ready` container classes, and the
+   poster/title DOM filling are gone. Preload is now publish-only. The
+   overlay is not part of the prerendered route documents, so SSR output is
+   unchanged. Lint, type-check, the full production build, and
+   `git diff --check` pass with regenerated tracked dist assets.]
 4. Share the story scroll track mapping: one helper owns scroller/section
    discovery (page-mode selector plus excluded sheet sections) and the
    rAF-throttled scroll-to-section mapping; `CinematicNav` (scene mode) and
