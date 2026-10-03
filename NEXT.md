@@ -913,6 +913,16 @@ motion and reduced-motion settle; the `setActive(false)` reset already
 returns scale to the declared zero. The stage is disposed on every route
 exit and recreated on the next visit, so a re-bind can never run against a
 mid-reveal owner state. Behavior is unchanged.
+`DrawTrail`'s constructor no longer sets `nodes.root.visible = false`:
+`CursorTrailOwner.vue` now declares `:visible="false"` on the `draw-trail`
+group, and Tres 5.9.2's `patchProp` applies it at element creation before the
+group is inserted into the scene tree, so no frame can ever see the Three
+default `visible = true`. SceneHost stops the Tres loop and replaces its
+render function before the node slots resolve, and Experience's first drawn
+frame runs only after `buildScene` constructs the trail (the scheduler frame
+path is gated on the coordinator created there), so the initial hidden state
+is identical; `SceneTransformPass.setVisible` remains the sole dynamic
+writer. Behavior is unchanged.
 
 Remaining controller-vs-SFC inventory (fixed facts already moved; the rest
 triaged):
@@ -924,17 +934,14 @@ triaged):
   sort key and does not make the parent group order redundant. Retain this
   assignment unless a dedicated render-order review establishes a replacement.
 - Before-mount visibility defaults (set in the controller constructor or
-  bind, not declared in the SFC): `DrawTrail` sets
-  `nodes.root.visible = false` (`CursorTrailOwner.vue` declares the
-  `draw-trail` group without `:visible`) and `ParticleBurst` sets
+  bind, not declared in the SFC): `ParticleBurst` sets
   `nodes.mesh.visible = false` (`IntroLightFramesOwner.vue` declares the
-  instanced mesh without `:visible`). Both run when Experience adopts the
+  instanced mesh without `:visible`). It runs when Experience adopts the
   host-ready nodes, after SceneHost stops Tres's loop and before the first
   Experience frame, so no rendered frame currently sees the Three default
-  `visible = true`. Declaring `:visible="false"` in the two SFCs and
-  deleting the constructor writes is safe for their initial visibility;
-  `DrawTrail`'s `setVisible` and `ParticleBurst`'s burst-lifecycle visibility
-  remain dynamic controller state.
+  `visible = true`. Declaring `:visible="false"` in the SFC and deleting the
+  constructor write is safe for its initial visibility; the burst-lifecycle
+  visibility remains dynamic controller state.
 - Dynamic values (route, scroll, or per-frame) stay in their controllers:
   `SceneCoordinator` section-slot and route visibility fan-out
   (intro slot, prewarm toggles, Agros particles, Services, Baku, Lab),

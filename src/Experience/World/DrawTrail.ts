@@ -124,9 +124,10 @@ export class DrawTrail {
   }
 
   constructor(nodes: CursorTrailNodes) {
+    // Initial visibility is declared by CursorTrailOwner.vue (:visible="false");
+    // setVisible is the only dynamic writer of the root's visibility.
     this._root = nodes.root
     this._ribbon = nodes.ribbon
-    this._root.visible = false
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       this.trailPositions.push(new THREE.Vector3())
