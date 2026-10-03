@@ -1532,3 +1532,14 @@ Three selects the backend; Showreel shares the TSL graph; and static scene
 transforms use Tres props in reviewed owners. These are partial reductions,
 not proof that the architecture or project is production ready. Continue with
 the source ownership audit, then revise status from concrete findings.
+On 2026-10-03 the TvT v5 architecture audit recorded its findings and the
+route-UI migration plan above; its four slices (dead exports, app-owned
+route-transition cover, Vue-bound fullscreen overlay content, shared story
+scroll track) are complete with regenerated tracked dist assets. The unit
+suite was run once as refactor verification at the user's request: 11 tests
+in 5 files (ExperienceLifecycle, ShowreelController, SectionGroups,
+ContactCyprusStage, WorksPlaneStage) fail on the refactor branch, and the
+identical 11 fail on the base commit `f570314c` in this environment
+(Bun + vitest 4.1.11 + jsdom 29 on Linux), so they are pre-existing baseline
+failures in scene-owner lifecycle assertions, not refactor regressions; the
+other 92 unit tests pass on both. No browser suites were run.
