@@ -255,6 +255,68 @@ Current known facts:
   init-failure ordering (unavailable), physical-GPU/WebGPU parity, and
   attribution of the two isolated idle wake frames.
 
+- Continuous-activity trace (Phase 2 item 5) against the current source;
+  every demand source resolves to visible motion or a deliberate
+  user/environment event, so no source change is made. The scheduler is
+  one-shot demand: `invalidate` opens one frame window, `isSettled` stops it
+  after the settled frame, and `_isLoopSettled` requires no pending demand,
+  no active flag, and a converged cursor spring.
+
+  The 13 `anyActivity` flags. Transient, each bounded by a release: `nav`
+  (scroll/story morph; CinematicNav interaction settles after
+  `INTERACTION_SETTLE_MS` = 220 ms), `carousel` (morph/scroll reach targets,
+  drag ends, cards settle), `worksPlane` (reveal/wobble/installation settle),
+  `contactCyprus` (fade ≥ duration, prewarm done), `drawTrail` (energy decays
+  below 0.008 via `exp(-5.5 t)`), `opener` (phase done/idle), `burst`
+  (elapsed ≥ trace duration), `camShaking`/`camPulsing` (decay; the phase-2
+  timer only retargets the pulse, the flag carries the loop), `cubeRotating`
+  (`_faceLerp` ≥ 1), `particles` (intentional continuous: GPU uTime drift
+  while the Works group and particles are visible; released by section fade
+  `g.visible = false`, `particles.visible = false` on Contact Agros, or
+  reduced motion). Intentional continuous `ambientScene` sub-owners, each
+  released by a section/route/visibility transition: EnvSphere weight lerp
+  (transient), Baku jelly decay (transient), Contact typography glyph bob,
+  Contact halo and Manifesto ink breathing (the halo's former standalone
+  `contactHalo` flag is removed: ContactHaloStage extends PointerInkStage,
+  where `setActive` keeps `active` and `visible` together and `isAnimating`
+  is `active` with reduced motion off, so its visible motion is exactly what
+  `hasVisibleAmbientMotion` reports into `ambientScene` — both
+  reduced-motion values follow Experience synchronously — and the flag
+  duplicated that state; Contact typography and halo both stop on the final
+  Contact section or route change), Manifesto ink breathing (released on
+  route exit), Services part convergence (`settled` re-true at targets), Lab
+  gamepad hover clock (route visibility off). `showreel` (phase enter/exit or
+  video playing; released by
+  close/pause). No `isAnimating` predicate can stay true without a visible
+  animator or an explicit release transition.
+
+  Non-flag demand. Cursor spring (pointer move/hover/click; converges to
+  `isSettled`). Ambient breath (wall-clock 2.5 s timer): its real animator is
+  the volumetric light's wall-clock orbit in `Lights.update` (sin/cos of
+  `performance.now() * 0.0004`, ~15.7 s period, orbit frozen and breath
+  suppressed under reduced motion), so the breath steps a visible light
+  position instead of redrawing identical pixels. One-shot events:
+  first-frame, nav, resize, recovery, motion-preference, theme-applied,
+  visibility-resume. Ecosystem `external`: Lab OrbitControls (continuous only
+  while the user drives the camera, via the controls' own update→invalidate
+  path) and DevPanel force-render. `SfxSystem` is audio-only and raises no
+  frame demand; the DevPanel 500 ms interval reads stats only; `_renderDisabled`
+  is set only by terminal `jlz:webgl-failed`. The breath timer is cancelled on
+  `destroy()` and self-cleans on hidden-tab fire, so no late timer outlives
+  the runtime.
+
+  Source-level verification is complete: no flag without a real animator and
+  no stuck owner were found. The settled-runtime evidence (loopActive=false,
+  two isolated wake frames) is consistent with this trace: the first wake,
+  around 2.5 s after settling, matches the ambient-breath timer and visible
+  orbit but was not directly attributed; the second wake 0.5 s later does
+  not match that cadence and may be a one-shot user-environment event (tab
+  focus/blur → visibility-resume, or pointer move → cursor). Remaining manual
+  checks: attribute the two isolated idle wake frames by sampling
+  `scheduler.diagnostics.lastInvalidation` around the idle window in a
+  supported browser, and re-verify idle settle on a physical GPU/WebGPU. No
+  performance claim is recorded (no new measurement).
+
 - DOM-only startup no longer enables splash Enter while the Vue route owner is
   still loading. `entry-app` now awaits `mountVueApp()` before publishing
   `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
@@ -1106,6 +1168,11 @@ every creator → attachment → live mutator → detach → disposal chain is
 traced in source, no source-level gap remained, and no source change was
 required. The owner chains and the remaining runtime-only gates are
 recorded in Current architecture and evidence.
+Execution-order item 5's source trace is complete: every activity flag and
+non-flag demand has an animator or user/environment event with a bounded
+settle/release path. Attribution of the two idle wake frames and a repeat
+idle check on physical WebGPU remain runtime gates; no performance claim is
+made without new measurements.
 
 ### 3. Production and whole-tree audit — pending
 

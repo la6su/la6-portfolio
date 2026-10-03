@@ -736,7 +736,6 @@ export class Experience {
     const carouselActive = carousel?.isAnimating ?? false
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
-    const contactHaloActive = this._stages.contactHaloStage?.isAnimating ?? false
     const drawTrailActive = this.drawTrail?.isAnimating ?? false
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
@@ -765,7 +764,6 @@ export class Experience {
     activity.carousel = carouselActive
     activity.worksPlane = worksPlaneActive
     activity.contactCyprus = contactCyprusActive
-    activity.contactHalo = contactHaloActive
     activity.drawTrail = drawTrailActive
     activity.opener = openerActive
     activity.burst = burstActive

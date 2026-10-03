@@ -7,10 +7,10 @@
 //
 // Two intentionally different flag sets serve separate decisions:
 //
-//   - `anyActivity` is the 14-flag OR. It is used BOTH to raise render demand
+//   - `anyActivity` is the 13-flag OR. It is used BOTH to raise render demand
 //     (any active flag re-arms the frame) and to decide whether demand may
 //     settle after a rendered frame.
-//   - `idleForAmbientBreath` is a narrower 10-flag AND-NOT plus the
+//   - `idleForAmbientBreath` is a narrower 9-flag AND-NOT plus the
 //     reduced-motion gate. It decides when the ~2.5 s ambient-breath timer
 //     may run. It intentionally EXCLUDES `drawTrail`, `cubeRotating`,
 //     `camPulsing` and `showreel`: those keep the loop alive on their own
@@ -22,7 +22,7 @@
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in
- * the scene. The 14 flags form the `anyActivity` set; the ambient-breath idle
+ * the scene. The 13 flags form the `anyActivity` set; the ambient-breath idle
  * check reads a narrower subset (see `idleForAmbientBreath`).
  */
 export interface RenderActivity {
@@ -34,8 +34,6 @@ export interface RenderActivity {
   worksPlane: boolean
   /** The /contact Cyprus stage is animating. */
   contactCyprus: boolean
-  /** The /contact ink halo is breathing or settling pointer energy. */
-  contactHalo: boolean
   /** The pointer draw-trail is animating. */
   drawTrail: boolean
   /** The home opener animation is active. */
@@ -62,7 +60,6 @@ export const NO_ACTIVITY: RenderActivity = {
   carousel: false,
   worksPlane: false,
   contactCyprus: false,
-  contactHalo: false,
   drawTrail: false,
   opener: false,
   burst: false,
@@ -75,7 +72,7 @@ export const NO_ACTIVITY: RenderActivity = {
 }
 
 /**
- * The 14-flag OR. Used to RAISE render demand and to decide whether demand may
+ * The 13-flag OR. Used to RAISE render demand and to decide whether demand may
  * SETTLE after a frame. If any flag is set, the scene is still changing.
  */
 export function anyActivity(a: RenderActivity): boolean {
@@ -84,7 +81,6 @@ export function anyActivity(a: RenderActivity): boolean {
     a.carousel ||
     a.worksPlane ||
     a.contactCyprus ||
-    a.contactHalo ||
     a.drawTrail ||
     a.opener ||
     a.burst ||
@@ -99,7 +95,7 @@ export function anyActivity(a: RenderActivity): boolean {
 
 /**
  * The narrower idle check for the ambient-breath timer: reduced motion is off
- * AND the 10 "breath-relevant" flags are all clear. `drawTrail`,
+ * AND the 9 "breath-relevant" flags are all clear. `drawTrail`,
  * `cubeRotating`, `camPulsing` and `showreel` are intentionally excluded —
  * setting only one of them must still count as idle for the breath (they keep
  * the loop alive on their own).
@@ -111,7 +107,6 @@ export function idleForAmbientBreath(a: RenderActivity, reducedMotion: boolean):
     !a.carousel &&
     !a.worksPlane &&
     !a.contactCyprus &&
-    !a.contactHalo &&
     !a.opener &&
     !a.burst &&
     !a.camShaking &&
