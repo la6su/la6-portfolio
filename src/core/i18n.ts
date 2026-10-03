@@ -3,8 +3,8 @@
 // `getLang()` and `t(key)` are pull-based reads. The current public URL owns
 // the locale; `toggleLang()` publishes `jlz:lang-change` so consumers can
 // re-render scene textures, copy, and metadata while the router changes URL.
-// It is already unit-locked (`src/__tests__/i18n.test.ts`), including the
-// EN/RU dictionary parity guard.
+// There is no dedicated i18n unit test; behavior is exercised through the
+// app bootstrap and route suites.
 //
 // Translation system: t(key) returns the translated string for the current
 // language. data-i18n attributes on elements auto-translate on load, on

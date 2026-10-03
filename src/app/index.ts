@@ -256,7 +256,7 @@ export async function mountVueApp(): Promise<void> {
 
   try {
     await routerReady
-    // `unmountVueApp()` can be called while initial navigation is still
+    // The app-level unmount path can run while initial navigation is still
     // pending. Its teardown owns the pending mount too: never resurrect the
     // Vue tree after that teardown has completed.
     if (disposed) return
@@ -283,9 +283,4 @@ export async function mountVueApp(): Promise<void> {
       }
     }
   }
-}
-
-/** Release the app-level listeners and timers before unmounting its Vue tree. */
-export function unmountVueApp(): Promise<void> {
-  return unmountMountedVueApp?.() ?? Promise.resolve()
 }

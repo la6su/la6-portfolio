@@ -15,7 +15,7 @@ export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
 }
 
 /** Keep the full-screen TSL graph off low-tier devices on either backend. */
-export function supportsPostProcessing(tier: QualityTier): boolean {
+function supportsPostProcessing(tier: QualityTier): boolean {
   return tier !== 'low'
 }
 

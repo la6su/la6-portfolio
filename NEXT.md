@@ -623,7 +623,11 @@ renders. Four slices, smallest first:
    `stripSsrComments`, `BLOG_SITE_ORIGIN`, `blogMetaPath`, `labExperiments` —
    all still used inside their own modules). Correct the stale
    `src/__tests__/i18n.test.ts` claim in the `core/i18n.ts` header; no i18n
-   unit test exists.
+   unit test exists. [Completed below: every named symbol was re-verified
+   against `src`, `tests`, and `scripts` before removal; all twelve dead
+   exports are gone, the `i18n.ts` header now states the real coverage, and
+   lint, type-check, the full production build, and `git diff --check` pass
+   with regenerated tracked dist assets.]
 2. Fold `UI/RouteTransition` into the app layer: the class only sequences
    `data-state` on the AppShell-declared overlay; an app-owned function pair
    keeps the same cover/reveal/cancel contract for the router guards.
@@ -649,7 +653,8 @@ previously left `onReady` suspended on unresolved slots; the wait now races a
 host-owned cancellation signal, with a lifecycle generation check before
 publishing. No browser evidence was available for exercising that race.
 
-Async teardown source trace: the supported app-level `unmountVueApp()` path
+Async teardown source trace: the supported app-level unmount path (the dev
+`__jlzTestUnmountVueApp` hook backed by the internal teardown owner)
 awaits `AppShell.destroyExperience()` (which awaits `Experience.destroy()`) and
 only then calls `app.unmount()`. Experience stops the scheduler and listeners
 synchronously, awaits an active `compileAsync` prewarm, then awaits lazy-stage
