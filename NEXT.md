@@ -1371,6 +1371,15 @@ Execution order:
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
+   The package-pins and unused-dependency slice of this item is complete. All
+   27 direct dependencies (6 runtime, 21 dev) have a current consumer in
+   source, scripts, or config, and none is unused. Three verified relative pin
+   lags were recorded without changing any version: `@types/three` 0.186.0 vs
+   `three` 0.186.1, `@types/uikit` 3.23.1 vs `uikit` 3.25.25, and the direct
+   `source-map-js` 1.2.1 vs the 1.2.2 resolved by four transitive consumers.
+   Upstream freshness could not be confirmed because npm/DNS access was
+   unavailable, so these are relative pin lags only, not latest-upstream
+   findings.
 5. Formatting contract and generated/editorial/vendor ignores are established
    and enforced by CI. Continue removing obsolete styles, code, docs, and config
    only after checking exact imports/callers.
