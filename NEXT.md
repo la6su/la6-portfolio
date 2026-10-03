@@ -672,6 +672,74 @@ renders. Four slices, smallest first:
    notify payloads and timing are unchanged; lint, type-check, the full
    production build, and `git diff --check` pass with regenerated tracked
    dist assets.]
+5. Restore the unit suite's broken mock wiring: the 2026-10-02 test-tree
+   move (`45941ce1`) rewrote the module-under-test imports but left the
+   `vi.mock()` specifiers relative to the OLD `src/Experience/` location, so
+   the mocks silently stopped matching and 11 tests in 5 files failed on a
+   false baseline. [Completed below: every `vi.mock()` path in the five
+   affected files (`ExperienceLifecycle`, `ShowreelController`,
+   `Scene/SectionGroups`, `World/WorksPlaneStage`, plus the latently broken
+   `Lab/manifest` mock that passed for the wrong reason) now points at the
+   real `src/` modules; `ContactCyprusStage`'s stale `root.name` assertion
+   was updated to the current contract (the name is declared in
+   `ContactCyprusStageOwner.vue`, and the stage must not rename the
+   Vue-owned root — `b00bfb8c`). No new tests, no harness code: the suite is
+   103/103 green on Bun + vitest 4.1.11 + jsdom 29 on Linux. The earlier
+   "pre-existing baseline failures" note in Status is superseded.]
+6. Deduplicate the DRACO decoder delivery: three 0.186's DRACOLoader module
+   eagerly resolves BOTH decoder sets it ships — the standalone
+   `libs/draco/` trio (719 KB draco_decoder.js + 286 KB wasm + 59 KB
+   wrapper) as constructor defaults, and the exported `DRACO_GLTF_CONFIG`
+   (`libs/draco/gltf/` wrapper + wasm pair) — so the bundler emitted both
+   into dist while the runtime (ContactCyprusStage passes
+   `DRACO_GLTF_CONFIG` to `setDecoderPath`) only ever fetches the gltf
+   pair. This closes the previously open "dual DRACO decoder sets" gate
+   statically: the fetched set is provable from
+   `ContactCyprusStage.load()`, no network trace needed.
+   [Completed below: a build-only `strip-unused-draco-decoder-defaults`
+   Vite plugin (vite.config.ts) rewrites the three standalone
+   `new URL(..., import.meta.url)` default initializers to plain
+   page-relative names so nothing is emitted — it warns and no-ops if three
+   changes the shape. The stdlib shim's `DRACOLoader`/`GLTFLoader`
+   re-exports now point at three's own addons modules (one loader
+   implementation in the graph by construction; the three-stdlib copies
+   were already tree-shaken — `vendor-lab-controls` is byte-identical), and
+   `check-stdlib-modules.mjs` resolves package specifiers through the
+   installed exports maps. dist drops the 1.06 MB never-fetched standalone
+   set and keeps only the gltf pair; lint, type-check, `check:stdlib`, the
+   full production build, budgets (three 310.95 kB gzip, unchanged), the
+   103/103 unit suite, and `git diff --check` pass with regenerated tracked
+   dist assets.]
+
+WebGPU→WebGL2 fallback verification (2026-10-03, three 0.186.1 source): the
+fallback IS automatic and the app already relies on it correctly.
+`WebGPURenderer`'s constructor picks `WebGPUBackend` unless `forceWebGL` is
+set, and registers `parameters.getFallback = () => new WebGLBackend(...)` —
+when WebGPU is unavailable (no `navigator.gpu`, adapter/device request
+failure) three falls back to the WebGL2 backend itself and TSL node
+materials compile for either backend. The app's single construction path
+(`createUnifiedWebGPUInstance`) passes `forceWebGL` only for the dev-only
+`?force-webgl-backend` recovery seam and to keep a recovered renderer on
+the backend it had already settled on; `DeviceCapability`'s
+`navigator.gpu` check is an initial DPR/tier HINT only (corrected after
+init via `setFinalRendererMode` + `inspectUnifiedBackend`'s explicit
+backend markers), and it deliberately does not probe with a second
+canvas/context. No app-side fallback duplication exists to remove.
+
+Proposed next route-UI slices (TvT v5 direction, not yet executed — the
+four slices above plus 5–6 are complete):
+
+7. `CinematicNav` is the last large imperative UI controller (~448 LOC)
+   writing into Vue-rendered DOM (nav rail, section labels, keyboard
+   navigation, scroll sync via the shared storyTrack). Incremental
+   Vue-ification in the same pattern as slices 2–4: move the DOM
+   structure and label state into a Vue view bound to the storyTrack
+   position, keep the keyboard/focus/behavior controller slim. Slice only
+   after re-reading its consumers (`ExperienceUI.init`, SceneHost activity
+   flags); verify with the same gates as above.
+8. `ExperienceUI` orchestration audit: after slice 7 the remaining event
+   wiring may collapse further into the owning views; re-trace before
+   writing code.
 
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
@@ -1514,7 +1582,12 @@ Execution order:
 - Read repo instructions, callers, and installed library APIs before changing
   ownership.
 - Make coherent slices that remove the replaced path in the same change.
-- Do not add or run tests unless requested. A production build may be used for
+- Tests exist to guard real user-facing behavior and contracts that can
+  plausibly regress — not coverage for its own sake, and never scaffolding
+  written just to keep an agent-authored test green. Prefer deleting a brittle
+  test over adding harness code, keep the unit suite green instead of growing
+  a baseline of known failures, and do not add new test files without a
+  concrete regression class to guard. A production build may be used for
   type, compatibility, prerender, bundle, and release validation.
 - Do not claim runtime, browser, or performance evidence beyond what ran.
 - Keep generated `dist/` and deployment workarounds only after verifying their
@@ -1543,3 +1616,13 @@ identical 11 fail on the base commit `f570314c` in this environment
 (Bun + vitest 4.1.11 + jsdom 29 on Linux), so they are pre-existing baseline
 failures in scene-owner lifecycle assertions, not refactor regressions; the
 other 92 unit tests pass on both. No browser suites were run.
+Superseded 2026-10-04 (slice 5): the 11 failures were the 2026-10-02
+test-tree move leaving `vi.mock()` specifiers pointing at the old
+`src/Experience/` location — the mocks silently stopped matching after the
+move, and one `ContactCyprusStage` assertion predates the Cyprus root name
+moving into the Vue template. With the wiring restored (no new tests, no
+harness code) the suite is 103/103 green. Slices 5 (mock wiring) and 6
+(DRACO decoder dedup, −1.06 MB of never-fetched dist assets) are complete
+with all gates green; the WebGPU→WebGL2 fallback question was verified
+against three 0.186.1 source (automatic, no app-side duplication — see the
+verification note above). No browser suites were run.
