@@ -1377,9 +1377,17 @@ Execution order:
    succeeded with `bun outdated` on 2026-10-03: `@types/three` 0.186.0 and
    `@types/uikit` 3.23.1 are at their latest upstream versions, and the direct
    `source-map-js` 1.2.1 is outdated relative to 1.2.2. `bun outdated` also
-   reports updates for other packages, including major TypeScript, jsdom, and
-   vitest updates; those were not assessed for compatibility and were not
-   changed.
+   reports updates for other packages; the major TypeScript, jsdom, and Vitest
+   upgrades remain unassessed for compatibility and unchanged.
+   Four further in-range `bun outdated` updates landed on 2026-10-03:
+   `@types/node` 26.6.3 → 26.6.4, `eslint` ^10.11 → ^10.12 (resolved
+   10.12.0), `globals` ^17.12 → ^17.13 (resolved 17.13.0), and `vue-tsc`
+   3.3.11 → 3.3.12; the lockfile also moves the transitive
+   `@vue/language-core` 3.3.11 → 3.3.12 required by `vue-tsc`. The direct
+   `source-map-js` 1.2.2 pin is unchanged. `bun run format:check`,
+   `bun run lint`, `bun run type-check:vue`, `bun run build`, and
+   `git diff --check` all pass; no test suites were run and no major
+   upgrades were made.
    The quality workflow's generated-artifact diff gate previously omitted the
    committed RU blog prerender source inputs `ru/blog.html` and `ru/blog/`; it
    now includes both. The direct `source-map-js` devDependency is updated
