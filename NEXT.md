@@ -184,6 +184,77 @@ Current known facts:
   browser lacks `AbortSignal.any()`, the loaded/failed late result still follows
   the disposed-stage cleanup path. Stage order is source-reviewed; route-churn
   runtime evidence remains open.
+- Per-node and GPU-resource lifecycle trace (Phase 2 item 4) against the
+  current source; every Three object with a GPU allocation resolves to one
+  disposer:
+
+  Lazy / route-owned resources. `caseTexture.ts` is the only refcounted
+  texture cache: in-flight drops after the last release discard late
+  results, failed loads drop their entry, and a late dispose is covered by
+  both `WorksPlaneStage.dispose()` and the disposed-init continuation
+  (`init` releases every acquired texture on failure). `CasePlane` leases
+  the shared plane geometry (module refcount) and owns one per-instance
+  NodeMaterial; `CasePlaneNode.vue` declares `:dispose="null"` and disposes
+  controller-or-raw resources on unmount. `WireframeTypography` disposes
+  its glyph TextGeometry set and the shared MeshPhysicalMaterial after the
+  Vue unbind (`ContactTypographyStageOwner.vue` →
+  `WireframeTypographyOwner.vue`). Halo and Manifesto ink lease per-size
+  shared geometries and own one material each
+  (`PointerInkStageOwner.vue` declares `:dispose="null"`).
+  `ContactCyprusStage` owns a dedicated `LoadingManager`/DRACO pair
+  (disposed in `finally`), aborts fetches on dispose, disposes late-loaded
+  models, and releases route-owned per-mesh `MeshPhysicalMaterial` through
+  `disposeObject3DResources` (textures before materials). `LabGamepad`
+  resources (8 geometries, 4 materials) dispose through the idempotent
+  resource object. `BakuCarousel` refcounts its 8 unique card URLs (12
+  cards); `dispose()` clears the window pointerdown/move/up/cancel/click
+  listeners and the snap timer.
+
+  Persistent scene owners. `BakuCarousel` and `JunniParticles` are created
+  in `createWorksSection`; `SectionGroups.dispose()` disposes the carousel,
+  then the particles, then the section-owned particle sprite texture.
+  `JunniParticles.setCount` disposes the swapped-out geometry and `dispose`
+  covers the current geometry/material pair. The showreel video element,
+  `VideoTexture`, and poster `Texture` dispose through abort +
+  `removeAttribute('src')` + `load()` + element removal
+  (`ShowreelTheater`); the portal quad and material are Tres-owned through
+  default disposal. The `ServicesStage` SFC root declares `:dispose="null"`;
+  the SFC disposes the declared geometries and the controller disposes its
+  five NodeMaterials. `WorksInstallation.vue` disposes arc/trace/tick
+  geometries on unmount and `WorksInstallation.dispose()` disposes the two
+  shared NodeMaterials after the Vue unmount. `EnvSphereOwner.vue` owns the
+  six pavilion materials and five RoundedBox geometries; `EnvSky.vue`
+  disposes only its own plane geometry (`:dispose="null"`) and borrows
+  `skyMaterial`. `SplashCube` geometry/material, the `DrawTrail` ribbon
+  geometry and TSL material, and `ParticleBurst` resources are assigned to
+  Tres-declared leaves whose default disposal releases them; the SFCs retire
+  displaced placeholder geometries. The Ground, CinematicCamera, and
+  CinematicLights controllers hold no GPU resources. `SceneEnvironment`
+  disposes the PMREM texture on apply failure (preserving the previous
+  environment) and at `disposeCurrent` on final teardown.
+  `TSLPostPipeline.dispose()` releases the full-screen pipeline, the bloom
+  pass, and the scene pass.
+
+  Host and app lifetime. `SceneHost` releases the `onBeforeLoop`
+  subscription on reconfiguration and unmount, restores the `invalidate`
+  wrapper, and flushes deferred renderer disposal after Vue unmount;
+  disposal is idempotent through `makeRendererDisposeIdempotent`, so
+  Experience's concurrent stage/renderer teardowns converge on one
+  disposal. `Experience.destroy()` stops the scheduler and cancels timers
+  first, awaits the showreel/stage/renderer teardowns (post-renderer GPU
+  resource disposal is a no-op), then sweeps the case textures.
+  `useJlzPage` removes its no-scene scroll listener and cancels its
+  animation-frame and idle callbacks on unmount; `CinematicNav`,
+  `FullscreenOverlay`, `ExperienceUI`, `Cursor`, `ContentReveal`, and
+  `SfxSystem` release their listeners, timers, and audio context.
+
+  No unaddressed source-level gap remains in late asset results, shared
+  material/geometry leases, callback/listener cleanup, failure paths, or
+  disposal order. The remaining gates are runtime-only: route-churn
+  baseline, device-loss/recovery + resize on a supported GPU/browser,
+  init-failure ordering (unavailable), physical-GPU/WebGPU parity, and
+  attribution of the two isolated idle wake frames.
+
 - DOM-only startup no longer enables splash Enter while the Vue route owner is
   still loading. `entry-app` now awaits `mountVueApp()` before publishing
   `webgl-ready` when `?no-scene` is active, so an immediate Enter click cannot
@@ -1029,6 +1100,12 @@ triaged):
   layout, `CasePlane` reveal visibility, `ContactCyprusStage` camera-follow
   root transform and loaded-GLTF mesh culling/shadow, `ServicesStage`
   camera-follow root and ring spin, and `SplashCube` reaction rotation.
+
+Execution-order item 4 (per-node and GPU-resource traces) is closed:
+every creator → attachment → live mutator → detach → disposal chain is
+traced in source, no source-level gap remained, and no source change was
+required. The owner chains and the remaining runtime-only gates are
+recorded in Current architecture and evidence.
 
 ### 3. Production and whole-tree audit — pending
 
