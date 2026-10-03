@@ -1388,6 +1388,12 @@ Execution order:
    failures. The frozen lockfile check, `bun run format:check`, `bun run lint`,
    and `bun run build` pass; the build regenerated all locale blog inputs and
    the 30 sitemap URLs. No unit or browser suites were run.
+   `scripts/test-browser-matrix.ts` now delegates to the canonical
+   `test:serial` package script through `process.execPath` instead of invoking
+   `playwright test --workers=1 --reporter=line` directly, while preserving
+   `JLZ_CROSS_BROWSER_MATRIX=1`, stdio forwarding, error propagation, and exit
+   handling. `bun run lint`, `bun run type-check:vue`, and `bun run build`
+   pass; no test suites were run.
 5. Formatting contract and generated/editorial/vendor ignores are established
    and enforced by CI. Continue removing obsolete styles, code, docs, and config
    only after checking exact imports/callers.

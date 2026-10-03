@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 
-const result = spawnSync('bunx', ['playwright', 'test', '--workers=1', '--reporter=line'], {
+const result = spawnSync(process.execPath, ['run', 'test:serial'], {
   env: { ...process.env, JLZ_CROSS_BROWSER_MATRIX: '1' },
   stdio: 'inherit',
 })
