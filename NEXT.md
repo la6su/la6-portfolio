@@ -935,15 +935,21 @@ is identical; the burst lifecycle (`trigger`, `update` completion,
 `setReducedMotion`, the `SceneCoordinator` prewarm toggle, `dispose`)
 remains the dynamic visibility owner. Behavior is unchanged.
 
+`WorksPlaneStage.mount` no longer sets `root.renderOrder = 3`:
+`WorksStageOwner.vue` now declares `:render-order="3"` on the stage-root
+`TresGroup`, and Tres 5.9.2's `patchProp` camel-cases the prop and applies
+it directly to the Group at element creation, before the group is inserted
+into the scene tree. Three 0.186.1's WebGLRenderer and common Renderer both
+pass a Group's `renderOrder` as `groupOrder` to descendant render items, so
+the declared value is the same sort key the imperative write produced; the
+child case planes' own `render-order="2"` remains a separate key. The
+controller wrote the value in `mountStage` while the stage's `visible` was
+still its declared `false`, so no frame could ever render with the default
+`renderOrder = 0`. Behavior is unchanged.
+
 Remaining controller-vs-SFC inventory (fixed facts already moved; the rest
 triaged):
 
-- `WorksPlaneStage.mount` sets `root.renderOrder = 3` on the SFC-declared
-  stage root. This is meaningful: Three 0.186.1's WebGLRenderer and common
-  Renderer both pass a Group's `renderOrder` as `groupOrder` to descendant
-  render items. The child case planes' own `render-order="2"` is a separate
-  sort key and does not make the parent group order redundant. Retain this
-  assignment unless a dedicated render-order review establishes a replacement.
 - Dynamic values (route, scroll, or per-frame) stay in their controllers:
   `SceneCoordinator` section-slot and route visibility fan-out
   (intro slot, prewarm toggles, Agros particles, Services, Baku, Lab),

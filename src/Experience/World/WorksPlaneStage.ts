@@ -94,7 +94,6 @@ export class WorksPlaneStage {
       throw new Error('WorksPlaneStage is already mounted to another scene root.')
     }
     this._root = root
-    root.renderOrder = 3
   }
 
   get visible(): boolean {

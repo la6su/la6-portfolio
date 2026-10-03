@@ -37,7 +37,13 @@ onBeforeUnmount(() => unsubscribeCards?.())
 
 <template>
   <!-- Vue owns the stable root; the route controller owns dynamic case leaves. -->
-  <TresGroup ref="root" name="works-plane-stage" :visible="stage?.visible ?? false" :dispose="null">
+  <TresGroup
+    ref="root"
+    name="works-plane-stage"
+    :visible="stage?.visible ?? false"
+    :render-order="3"
+    :dispose="null"
+  >
     <CasePlaneNode
       v-for="card in cards"
       :key="card.key"
