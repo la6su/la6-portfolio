@@ -899,10 +899,29 @@ captured a value already `NoToneMapping`. The redundant wrap and its import
 are removed; the construction itself is unchanged and `toneMappingGuard`
 keeps one live consumer. `bun run lint`, `bun run type-check:vue`,
 `bun run build`, and `git diff --check` pass; tracked `dist` assets were
-regenerated. Item-3 comparison surface still open: `src/Utils/dispose`
-helpers vs Three/Tres disposal utilities, and `webglContextRestore` vs
-Three's WebGLBackend context-loss handling; then item 4's per-node and
-GPU-resource traces where recorded evidence leaves gaps.
+regenerated.
+Item-3 `src/Utils/dispose` audit against installed Three 0.186.1 and
+Tres 5.9.2 found no redundant seam: both helpers carry their own policy.
+Three core and its addons expose per-resource `dispose()` only, with no
+subtree or material-graph utility. Tres exports `disposeObject3D as
+dispose`, but it releases shared geometry/materials once per referencing
+node without deduplication, disposes only the `map` slot, and detaches
+each node while deleting `__tres` bookkeeping, which would entangle
+Vue/Tres detach ownership with the stage's GPU release.
+`disposeMaterialsDeep` dedups materials and textures across its nineteen
+slots and disposes textures before materials; `disposeObject3DResources`
+traverses meshes only and dedups geometries. `ContactCyprusStage` is the
+sole production consumer (source-material release in `load()`, route-owned
+release in `disposeModel`); the primitive's `:dispose="null"` keeps Tres
+from touching those resources, and `releaseLazyStage` provides the
+error isolation. `tests/unit/Utils/dispose.test.ts` pins the exactly-once
+contract. `cyprus_3d.glb` uses only `KHR_draco_mesh_compression` with one
+untextured material, so the installed loader's KHR clearcoat/anisotropy
+texture slots stay unreachable for the current consumer; the slot table
+remains scoped to what callers use. Keep both helpers. Item-3 comparison
+surface still open: `webglContextRestore` vs Three's WebGLBackend
+context-loss handling; then item 4's per-node and GPU-resource traces
+where recorded evidence leaves gaps.
 The `CasePlane` constructor no longer re-sets `name`, `frustumCulled`, and
 `renderOrder` on the mesh: `CasePlaneNode.vue` already declares all three as
 Tres props, and no runtime path mutates them. Both `BakuCarousel` and
