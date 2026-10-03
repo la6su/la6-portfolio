@@ -1206,9 +1206,10 @@ Current production-output scan checked the 15 emitted SPA, case-study, and blog
 documents: each has English default `html[lang]`, a title, canonical URL, one
 `main`, and one `h1`; all images have `alt`, and no unnamed standard links or
 buttons, duplicate IDs, or broken `aria-labelledby` / `aria-describedby`
-references were found. The standalone blog has no locale switch and its
-interface and article sources are English-only, so the bilingual public-route
-criterion still needs an explicit locale-path policy before implementation.
+references were found. The standalone blog has no locale switch, and at that
+scan its article sources were English-only, so the bilingual public-route
+criterion needed an explicit locale-path policy; the URL-based `/ru/...`
+policy and separate Russian editorial sources recorded below implemented it.
 Production Chromium directly loaded `/`, `/services`, `/works`, `/manifesto`,
 `/lab`, and `/contact` in EN then RU. All six updated title, description, and
 `html[lang]`; canonical URLs remained at each route, with no page errors or
