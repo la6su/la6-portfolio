@@ -419,6 +419,13 @@ found. Continue with lifecycle error/teardown paths and inspect route UI
 controllers for behavior that can move back into Vue without losing scene
 ownership.]
 
+Route-UI controller checkpoint: the lifecycle error/teardown source pass found
+no additional source gap (its open items are runtime-evidence gates), and the
+route-UI controller pass removed the dead per-frame `CinematicNav.update()`
+no-op and its sole `Experience._updateInner` callsite — behavior unchanged;
+lint, type-check, and the full production build pass with regenerated tracked
+dist assets.
+
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
 host publishes only after its declared Vue/Tres nodes report ready; Experience

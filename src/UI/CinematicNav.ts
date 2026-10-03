@@ -432,10 +432,6 @@ export class CinematicNav {
     else document.body.dataset.cinematicSheet = this._side
   }
 
-  update(): void {
-    // Native scrolling owns position; the render loop reads progress only.
-  }
-
   dispose(): void {
     this._removeTrackListeners()
     this._cancelPendingFrames()

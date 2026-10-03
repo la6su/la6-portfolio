@@ -721,9 +721,6 @@ export class Experience {
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()
 
-    // Navigation: read the native vertical story track.
-    this._storyNav?.update()
-
     // The transform pass reads continuous story progress directly; section
     // arrivals still trigger the cube face rotation below.
 
