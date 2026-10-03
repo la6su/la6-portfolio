@@ -885,6 +885,24 @@ The post-recovery-timeout `bun run analyze:bundle` profile at `88291e8` reports
 the Three vendor at 310.98 kB gzip and lazy Lab controls at 21.90 kB. The
 shared core chunk is 7.73 kB gzip (up from the prior 7.50 kB); the recovery
 timeout is a small addition and all configured release budgets still pass.
+Item-3 tone-mapping guard trace against installed Three 0.186.1: Three's
+`RenderPipeline` constructor captures `renderer.toneMapping` into its output
+transform (`_update()` re-captures only on change), and its `render()`
+disables tone mapping only around the full-screen quad draw, after that
+capture. The draw-site guard in `src/core/RenderPipeline.render` is therefore
+the owner of the `NoToneMapping` invariant for the graph's captured
+transform; the second `withNoToneMapping` wrap around
+`new TSLRenderPipeline(...)` in `TSLPostPipeline._buildPipeline` ran nested
+inside that same guard on the single lazy construction path (including the
+Showreel's borrowed-scene draws and the post-recovery pipeline rebuild) and
+captured a value already `NoToneMapping`. The redundant wrap and its import
+are removed; the construction itself is unchanged and `toneMappingGuard`
+keeps one live consumer. `bun run lint`, `bun run type-check:vue`,
+`bun run build`, and `git diff --check` pass; tracked `dist` assets were
+regenerated. Item-3 comparison surface still open: `src/Utils/dispose`
+helpers vs Three/Tres disposal utilities, and `webglContextRestore` vs
+Three's WebGLBackend context-loss handling; then item 4's per-node and
+GPU-resource traces where recorded evidence leaves gaps.
 The `CasePlane` constructor no longer re-sets `name`, `frustumCulled`, and
 `renderOrder` on the mesh: `CasePlaneNode.vue` already declares all three as
 Tres props, and no runtime path mutates them. Both `BakuCarousel` and

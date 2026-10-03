@@ -25,7 +25,6 @@ import {
 } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
-import { withNoToneMapping } from './toneMappingGuard'
 import type { PostParams } from './postParams'
 
 /**
@@ -197,14 +196,11 @@ export class TSLPostPipeline {
       // We do NOT apply pow(0.4545) manually — that's an approximation that
       // differs from the exact sRGB curve (especially in shadows).
       //
-      // IMPORTANT: Set renderer.toneMapping = NoToneMapping before building the
-      // pipeline so renderOutput() does NOT apply ACES. ACES was intentionally
-      // removed from the post-processing graph to preserve faithful texture colors.
-      // The pipeline captures toneMapping at build time, so we restore after.
-      this._pipeline = withNoToneMapping(
-        this._renderer,
-        () => new TSLRenderPipeline(this._renderer, color),
-      )
+      // ACES is intentionally absent from this graph to preserve faithful
+      // texture colors: the draw path (RenderPipeline.render) holds
+      // renderer.toneMapping at NoToneMapping for the entire TSL draw, and
+      // the constructor below captures that value into the output transform.
+      this._pipeline = new TSLRenderPipeline(this._renderer, color)
       // outputColorTransform = true (default) → TSLRenderPipeline applies
       // renderOutput(color, NoToneMapping, SRGBColorSpace) which does:
       //   1. toneMapping (NoToneMapping → no-op)
