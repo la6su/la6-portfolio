@@ -726,8 +726,8 @@ init via `setFinalRendererMode` + `inspectUnifiedBackend`'s explicit
 backend markers), and it deliberately does not probe with a second
 canvas/context. No app-side fallback duplication exists to remove.
 
-Proposed next route-UI slices (TvT v5 direction, not yet executed — the
-four slices above plus 5–6 are complete):
+Route-UI controller slices (TvT v5 direction — all eight slices are now
+complete; slices 1–4 and 5–6 above, 7–8 below):
 
 7. `CinematicNav` is the last large imperative UI controller (~448 LOC)
    writing into Vue-rendered DOM (nav rail, section labels, keyboard
@@ -737,9 +737,50 @@ four slices above plus 5–6 are complete):
    position, keep the keyboard/focus/behavior controller slim. Slice only
    after re-reading its consumers (`ExperienceUI.init`, SceneHost activity
    flags); verify with the same gates as above.
+   [Completed below: the rail DOM structure was already Vue-declared in
+   `PersistentConsole.vue`, so the slice targeted the remaining imperative
+   writes into it. The heading-derived storyline labels now travel over a
+   typed `jlz:story-labels` event (published on track bind and language
+   change — i18n patches the `data-i18n` headings synchronously before
+   `jlz:lang-change` fires) and the Vue `:aria-label` binding is the single
+   writer, deleting the dual-writer race where Vue's async re-render could
+   clobber the imperative label write after a language switch. Rail inert
+   while a cinematic sheet is open became a Vue binding from the already-
+   published active index. The `data-sheet` attribute on `#cinematic-nav`
+   had no consumer in CSS, JS, or tests, and the `[data-story-label]` span
+   sat permanently `uk-hidden` (display:none !important) with no CSS
+   rules — both dead paths are deleted together with the `_navButtons`
+   query and the constructor's rail lookup, so `CinematicNav` keeps
+   behavior only: scroll sync via the shared storyTrack, side sheets,
+   keyboard navigation, focus handling, and the scroll-rate per-section
+   story CSS variables (a deliberate non-React write; the CSS-var writes
+   are consumed by `[data-story-state]` rules in main.less). The storyline
+   hint span stays: it is static Vue-owned content with no imperative
+   writer, so touching it is out of scope. Lint, type-check, the full
+   production build, budgets (three 310.95 kB gzip, unchanged), the
+   103/103 unit suite, and `git diff --check` pass with regenerated
+   tracked dist assets.]
 8. `ExperienceUI` orchestration audit: after slice 7 the remaining event
    wiring may collapse further into the owning views; re-trace before
-   writing code.
+   writing code. [Re-traced 2026-10-04, verdict: no collapse is justified.
+   Every remaining `ExperienceUI.init` wire is either a Vue↔runtime
+   semantic port (`jlz:story-navigate` and `jlz:goto-section-by-hash` →
+   storyNav; `jlz:open-project`/`jlz:project-navigate` → overlay; the sfx
+   init and `jlz:sound-toggle` wiring; `jlz:fullscreen-overlay-unmounted` →
+   overlay and carousel release, a Vue-lifecycle → runtime teardown bridge)
+   or 3D behavior that needs Experience-owned resources (`jlz:wobble-pulse`
+   → BakuCube, the window pointerup works-plane raycast via
+   `worksPlaneStage.hitTest`, the sec_works poster preload). Moving any of
+   these into Vue views would make the Vue layer reach into sfx/stage/baku
+   resources — exactly the ownership violation this architecture avoids.
+   The route-change → `overlay.close()` wire stays here rather than being
+   re-expressed as `jlz:close-media-layer` (which the overlay controller
+   already listens to): the direct call is the shorter path through the
+   owner. `TextReveal`/`BlurFade`/`NoiseText` were re-checked under the
+   same lens: they replace element children with per-character spans and
+   interpolate styles per rAF frame — declarative equivalents would pay a
+   vdom diff per frame and reimplement the same math, so they are
+   legitimate no-equivalent imperative code per the working rules.]
 
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
@@ -1626,3 +1667,11 @@ harness code) the suite is 103/103 green. Slices 5 (mock wiring) and 6
 with all gates green; the WebGPU→WebGL2 fallback question was verified
 against three 0.186.1 source (automatic, no app-side duplication — see the
 verification note above). No browser suites were run.
+Slices 7 (storyline rail state Vue-owned; `CinematicNav` is now behavior-
+only) and 8 (ExperienceUI re-trace: keep verdict, no code change) are
+complete with the same gates green and the suite still 103/103; the
+route-UI controller plan is now fully executed. The remaining open items
+are the runtime-evidence gates listed in the work queue (route churn,
+device loss/recovery, HMR during prewarm, fault injection, physical-GPU
+parity, idle wake-frame attribution, ingress verification, TS7) — none
+are autonomously executable without a browser.
