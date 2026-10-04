@@ -41,6 +41,7 @@ import type { ServicesStage } from './World/ServicesStage'
 import { disposeAllCaseTextures } from './World/caseTexture'
 import { devDiagnostic } from '../core/devDiagnostic'
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
+import { readDevTeardownFaults } from '../core/devTeardownFaults'
 
 /**
  * Instances and scene roots borrowed from the persistent SceneHost. Experience
@@ -954,8 +955,14 @@ export class Experience {
     this._readinessGate = null
     const scenePrewarm = this._scenePrewarmPromise
     const teardownErrors: Array<{ owner: string; error: unknown }> = []
+    // Dev-only fault harness: the host-teardown spec replaces one owner's
+    // disposer with a throwing/rejecting stand-in to prove the release chain
+    // isolates owner failures. Inert in production and without registration.
+    const teardownFaults = readDevTeardownFaults()
     const release = <T>(owner: string, action: () => T): T | undefined => {
       try {
+        const fault = teardownFaults?.[owner]
+        if (fault) return fault() as T
         return action()
       } catch (error) {
         teardownErrors.push({ owner, error })

@@ -18,6 +18,11 @@ declare global {
     __jlzTestUnmountVueApp?: () => Promise<void>
     __jlzEmit?: (event: string, detail?: unknown) => void
     __jlzRuntimeDestroy?: () => Promise<void>
+    /**
+     * Development-only teardown fault injectors: owner name → disposer
+     * stand-in that throws (sync owners) or rejects (async-captured owners).
+     */
+    __jlzTestTeardownFaults?: Record<string, () => unknown>
   }
 }
 
