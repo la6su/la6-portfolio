@@ -1845,3 +1845,20 @@ tsc (Vite/esbuild transpile-only), so a side-by-side tsc7 install would
 add a second compiler with no integration value — the `~6.0.3` pin is
 the correct position until both vue-tsc and typescript-eslint ship
 TS7-compatible releases. Re-evaluate only then; no repo change needed.
+2026-10-04 (same day, completeness audit): at the owner's request a
+read-only full-codebase audit re-checked the "TvT v5 on WebGPU complete?"
+claim across three lanes (renderer stack, paradigm compliance,
+cross-cutting); findings and proposed fix slices are recorded in AUDIT.md.
+Verdict: the source tree is architecture-complete (no WebGPU correctness
+gap, no paradigm violation, no dead module, no overturned keep-verdict),
+but the branch is not release-clean — the tracked dist/ predates
+bad05920/e4c4e325 so acceptance criterion 6 is false at HEAD, and bare
+`playwright test` fails at collection because tests/unit/*.test.ts matches
+Playwright's default testMatch (inherited from the 2026-10-02 test-tree
+move on main; breaks test:serial/test:ui/test:headed/test:matrix and the
+README claim). Eight further minor leftovers (dead programs snapshot
+field, stale renderer comments + redundant local type, vitest alias
+skew, stale WorksInstallation comment, dead uikit typings, tracked
+test-results/.last-run.json, optional chrome-selector hardening) are
+queued as slices S1–S9 in AUDIT.md; the audit itself made no source
+change.
