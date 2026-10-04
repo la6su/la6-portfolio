@@ -2,6 +2,20 @@
    small console details and a restrained signal frame keep it in the site's UI. */
 
 .jlz-fs-overlay {
+  // The case theater is authored as a dark media stage. Pin its palette here
+  // so the site's `html.uk-light` inverse tokens cannot put dark ink on the
+  // theater's dark poster/shade.
+  --jlz-color-bg: #05080b;
+  --jlz-color-bg-elevated: #0b1015;
+  --jlz-color-text: #e6edf3;
+  --jlz-color-text-muted: rgb(230 237 243 / 72%);
+  --jlz-color-text-subtle: rgb(230 237 243 / 48%);
+  --jlz-color-text-inverse: #0a0c10;
+  --jlz-color-border: rgb(230 237 243 / 18%);
+  --jlz-color-border-strong: rgb(230 237 243 / 30%);
+  --jlz-color-signal-phosphor: #58e6a9;
+  --jlz-color-signal-phosphor-muted: rgb(88 230 169 / 14%);
+
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg);
 }
