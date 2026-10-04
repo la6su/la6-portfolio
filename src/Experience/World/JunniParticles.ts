@@ -143,7 +143,9 @@ export class JunniParticles {
     //   pos += oPos
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
-      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.08))
+      // Sec3Particle advances the vertical rise and XZ orbit from one shared
+      // time value. `speed` is the single time-scale control for that vortex.
+      const t = (uTime as unknown as TSLNode).mul(uSpeed as unknown as TSLNode)
       const rangeVec = uRange as unknown as TSLVec3
       const rangeHalf = rangeVec.div(2.0)
 
@@ -180,7 +182,7 @@ export class JunniParticles {
       const num = attribute('num') as unknown as TSLVec2
       const offset = attribute('offsetPos') as unknown as TSLVec3
       const rangeVec = uRange as unknown as TSLVec3
-      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.08))
+      const t = (uTime as unknown as TSLNode).mul(uSpeed as unknown as TSLNode)
       const xzCenter = rangeVec.xz.div(2.0)
       const distFromCenter = length(offset.xz.sub(xzCenter))
       const center = float(5.0).sub(distFromCenter).div(4.0).clamp(0.0, 1.0)
@@ -244,8 +246,7 @@ export class JunniParticles {
     mat.positionNode = positionNode()
     mat.scaleNode = scaleNode()
     // Sec3Particle rotates each glyph around its own center. Keep that motion,
-    // but use the much lower Works speed to prevent the fast spin reading as
-    // tile flicker.
+    // but use the shared vortex time scale so spin follows particle travel.
     mat.rotationNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
       return (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(num.y))

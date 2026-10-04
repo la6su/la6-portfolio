@@ -1788,12 +1788,14 @@ particle pass found the likely source of persistent glyph flicker: linearly
 filtered atlas samples could bleed across tile boundaries. The reference
 `Sec3Particle` confirms that atlas selection is static per instance using
 `floor(6 * mod(num.x / 4, 1))`; restore that exact distribution rather than
-mapping every instance across all six cells. It also rotates each glyph and
-uses an abrupt 4× exponential size pulse. Keep rotation at a greatly reduced
-Works speed, remove that pulse and hue cycling, keep glyphs above subpixel
-size, soften the cyan glow threshold, and fade particles near the vertical
-wrap edge. Atlas UVs remain inset to prevent adjacent-cell sampling. This source
-comparison is grounded in
+mapping every instance across all six cells. Particles follow the reference's
+Y rise and XZ orbit around the field center; a mistaken extra `0.08` multiplier
+had almost stopped both motions. Use `speed` as the single time scale (0.35 in
+Works), retain the slow per-glyph rotation, remove the abrupt 4× exponential
+size pulse and hue cycling, keep glyphs above subpixel size, soften the cyan
+glow threshold, and fade particles near the vertical wrap edge. Atlas UVs
+remain inset to prevent adjacent-cell sampling. This source comparison is
+grounded in
 [`Sec3Particle/index.ts`](https://github.com/junni-inc/next.junni.co.jp/blob/master/src/ts/MainScene/World/Sections/Section3/Sec3Particle/index.ts)
 and its vertex/fragment shaders; the new adaptation still needs browser visual
 review.
