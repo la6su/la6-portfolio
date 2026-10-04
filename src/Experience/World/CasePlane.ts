@@ -65,6 +65,7 @@ export const CLOTH_PARAMS = {
 export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
   const time = uniform(0)
   const state = uniform(new THREE.Vector2(0, 0))
+  const ribbon = uniform(0)
   const material = new MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
@@ -84,10 +85,13 @@ export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
     const h2 = sin(local.x.mul(1.8).sub(local.y.mul(1.2)).add(time.mul(1.2)))
     const ripple = h1.add(h2.mul(0.45)).mul(wobble).mul(0.022).mul(clothMask)
     const rippleZ = ripple.mul(0.25)
-    return vec3(local.x, local.y.add(ripple), local.z.add(rippleZ))
+    // Bow the image plane around the same axis as the gallery arc. The
+    // transform stays vertex-local, so standalone Works planes remain flat.
+    const ribbonBend = local.x.mul(local.x).mul(ribbon)
+    return vec3(local.x, local.y.add(ripple), local.z.add(rippleZ).add(ribbonBend))
   })()
   material.opacityNode = Fn(() => state.x)()
-  return { material, time, state }
+  return { material, time, state, ribbon }
 }
 
 type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
@@ -106,6 +110,7 @@ export class CasePlane {
   // Per-instance uniform nodes — each material has its own GPU uniform buffer.
   private readonly _timeUni: CasePlaneMaterialResources['time']
   private readonly _stateUni: CasePlaneMaterialResources['state']
+  private readonly _ribbonUni: CasePlaneMaterialResources['ribbon']
 
   constructor(
     mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>,
@@ -122,6 +127,7 @@ export class CasePlane {
     this._texture = mapTexture
     this._timeUni = resources.time
     this._stateUni = resources.state
+    this._ribbonUni = resources.ribbon
   }
 
   get position(): THREE.Vector3 {
@@ -155,6 +161,11 @@ export class CasePlane {
     this._myReveal = nextReveal
     this._stateUni.value.x = this._myReveal
     this.visible = nextReveal > 0.001
+  }
+
+  setRibbonBend(value: number): void {
+    if (this._disposed) return
+    this._ribbonUni.value = THREE.MathUtils.clamp(value, 0, 1)
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {

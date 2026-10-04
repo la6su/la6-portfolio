@@ -79,6 +79,8 @@ interface AppEvents {
   'jlz:theme-change': { mode: ThemeMode }
   /** Fired by BakuCarousel on a card wobble tap. */
   'jlz:wobble-pulse': void
+  /** BakuCarousel's settled/target focus for the home project ribbon. */
+  'jlz:carousel-focus': { index: number; total: number; title: string; category: string }
   /** Fired by ShowreelConsole.vue when its trigger requests the theater. */
   'jlz:showreel-open': void
   /** Fired by the shared media exit or Esc to exit the showreel theater. */

@@ -105,6 +105,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.works.title': 'Works',
     'home.previousWork': 'Previous work',
     'home.nextWork': 'Next work',
+    'home.works.openHint': 'Select a frame to open the case',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Manifesto',
@@ -318,6 +319,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.works.title': 'Работы',
     'home.previousWork': 'Предыдущая работа',
     'home.nextWork': 'Следующая работа',
+    'home.works.openHint': 'Выберите кадр, чтобы открыть кейс',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Манифест',

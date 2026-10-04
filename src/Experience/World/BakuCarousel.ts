@@ -37,6 +37,8 @@ const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) =>
 // three large cards, with a deliberate breathing gap between each one.
 const CARD_SCALE = 3.05
 const CARD_SPACING = 3.34
+const RIBBON_ANGLE = 0.225
+const RIBBON_RADIUS = CARD_SPACING / Math.sin(RIBBON_ANGLE)
 const MORPH_DAMPING = 3.0
 const SCROLL_DAMPING = 8.8
 const DRAG_SENSITIVITY = 0.0046
@@ -76,6 +78,7 @@ export class BakuCarousel {
   // reconciliation pass, then avoid rewriting all card transforms/uniforms
   // until motion or a lifecycle policy change makes the layout dirty again.
   private _layoutDirty = true
+  private _lastFocusIndex = -1
 
   // Input state
   private isDown = false
@@ -466,8 +469,13 @@ export class BakuCarousel {
       const rawSlot = i + this.scroll.current / SNAP_STEP
       const slot = this.wrapSlot(rawSlot, n)
       const distance = Math.abs(slot)
-      this._tmpStreamPos.set(slot * CARD_SPACING, 0, 0)
-      this._tmpRingRot.set(0, 0, 0)
+      const angle = slot * RIBBON_ANGLE
+      this._tmpStreamPos.set(
+        Math.sin(angle) * RIBBON_RADIUS,
+        0,
+        -(1 - Math.cos(angle)) * RIBBON_RADIUS,
+      )
+      this._tmpRingRot.set(0, -angle, 0)
 
       // Contact-sheet reveal: the centre establishes the composition, then the
       // right and left frames register on deliberately different beats.
@@ -488,13 +496,27 @@ export class BakuCarousel {
       card.scale.setScalar(CARD_SCALE * scale)
       const streamReveal = localReveal * THREE.MathUtils.clamp(3.25 - distance, 0, 1)
       card.setReveal(streamReveal)
-      // No scroll-induced motion bend — keeps textures distortion-free.
-      // The wobble is reserved for explicit pulse events (card tap/open).
+      card.setRibbonBend(localReveal * THREE.MathUtils.clamp(0.72 - distance * 0.11, 0, 0.72))
       // Hidden idle cards still receive their reveal/transform uniforms above,
       // but do not need per-frame cloth time advancement. Keep the CasePlane
       // idle guard active for those cards while preserving updates for visible
       // or already-animating cards during morph and teardown.
       card.update(dt, this._active && (card.visible || card.isAnimating))
+    }
+    const focusIndex =
+      ((Math.round(-this.scroll.target / SNAP_STEP) % PROJECTS.length) + PROJECTS.length) %
+      PROJECTS.length
+    if (focusIndex !== this._lastFocusIndex) {
+      this._lastFocusIndex = focusIndex
+      const project = PROJECTS[focusIndex]
+      if (project) {
+        eventBus.emit('jlz:carousel-focus', {
+          index: focusIndex,
+          total: PROJECTS.length,
+          title: project.title,
+          category: project.category ?? '',
+        })
+      }
     }
     this._layoutDirty = false
   }

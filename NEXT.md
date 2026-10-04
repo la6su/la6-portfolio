@@ -1776,6 +1776,20 @@ checks for this local slice. CUA still exits before initialization, and no
 physical GPU is exposed to this shell, so WebGPU hardware performance remains
 open.
 
+Home Works ribbon checkpoint (2026-10-04): `BakuCarousel` now places its
+existing shared-texture case planes on a shallow 3D arc and yaws each frame
+toward the viewer; `CasePlane` adds a per-instance TSL edge bow that eases in
+with the existing reveal. The home frame publishes its focused project through
+the typed event bus to a small bilingual caption, keeping carousel controls and
+the DOM case viewer on the same project order. The fullscreen viewer now frames
+poster media without cropping its aspect ratio. Local Chromium 152 / SwiftShader
+visual review at 1440×900 and 390×844 confirmed the arc, poster frame, working
+next-card title update and case open; mobile width stayed 390px with no console
+errors. The mobile caption was moved above the scene after the first screenshot
+showed it under the fixed navigation. This is software-rendered visual evidence;
+physical GPU frame timing has not been measured. Type-check, lint, formatting,
+and the complete production build/budget check pass; no test suites were run.
+
 ## Status
 
 Phases 1 (runtime ownership) and 2 (declarative scene composition) are
