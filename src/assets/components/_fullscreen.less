@@ -36,8 +36,13 @@
   max-width: 100% !important;
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg) !important;
-  clip-path: inset(16% 16% 16% 16% round 28px);
-  transform: scale(1.06);
+  // The works plane sits in the right-hand aperture on wide screens and
+  // centers on narrow screens. Expand the editorial layer from that same
+  // visual origin so the 3D surface feels like it opens into the viewer.
+  --jlz-fs-origin-x: 70%;
+  --jlz-fs-origin-y: 50%;
+  clip-path: ellipse(0% 0% at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
+  transform: scale(1.015);
   opacity: 0;
   transition:
     clip-path 0.5s var(--jlz-ease-cinematic),
@@ -46,7 +51,7 @@
 }
 
 .jlz-fs-overlay.uk-open.is-entered .jlz-fs-dialog {
-  clip-path: inset(0 round 0);
+  clip-path: ellipse(150vmax 150vmax at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
   transform: scale(1);
   opacity: 1;
 }
@@ -129,6 +134,10 @@ body.jlz-media-layer-open .jlz-fs-close {
 }
 
 @media (max-width: 639px) {
+  .jlz-fs-overlay .jlz-fs-dialog {
+    --jlz-fs-origin-x: 50%;
+    --jlz-fs-origin-y: 48%;
+  }
   .jlz-fs-meta {
     min-height: 5rem;
     padding: 0.9rem 3.75rem 0.75rem 1rem;

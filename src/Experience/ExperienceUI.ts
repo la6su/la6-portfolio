@@ -97,8 +97,8 @@ export class ExperienceUI {
 
     // ── Semantic project control → open fullscreen overlay ──
     // Works and case-study Vue views emit this port from their native controls.
-    // All opens (showreel, slider, /works) use the same unified DOM cinematic
-    // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
+    // All opens use one DOM viewer. Works planes add a small TSL cloth pulse;
+    // the viewer's matching-origin reveal carries that gesture into the UI.
     this._unsubs.push(
       eventBus.on('jlz:open-project', ({ idx }) => {
         if (typeof idx !== 'number') return

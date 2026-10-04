@@ -1740,6 +1740,20 @@ Execution order:
 - Update this queue when evidence or phase status changes; commit completed
   slices with a message describing the simplification.
 
+Latest local visual slice connects the existing Works plane pulse to the
+fullscreen project viewer: the DOM layer now expands from the plane's visual
+origin (desktop right aperture, mobile center), while case-study media uses a
+larger framed presentation. The case chapter heading also moves clear of the
+material narrative. A static local Chromium DOM review confirmed the Material
+chapter composition at 1440×900 and 390×844 and verified the viewer's computed
+desktop/mobile clip origins; it does not exercise GPU output or the animated
+transition. Type-check, lint, format check, and the production build/budgets
+pass. The first headless screenshot remained behind the splash
+because that environment did not publish renderer-ready; do not treat it as GPU
+visual evidence. The generated project films are not in the repository yet, so
+the existing static texture and showreel media paths remain in use until those
+local renders are ready.
+
 ## Status
 
 Phases 1 (runtime ownership) and 2 (declarative scene composition) are
