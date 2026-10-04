@@ -2,13 +2,12 @@
 //
 // Port of next.junni.co.jp Section3 Sec3Particle to our TSL/WebGPU stack.
 //
-// Section3 behavior (textured sprites + rotation + HSV hue shift):
+// Section3 behavior (textured sprites in a rotating vortex):
 //   - Sprite sheet texture (6 frames in a 768×128 atlas → 6×128 tiles)
 //   - Per-instance: offsetPos (base position) + num (frame index, scale variant)
 //   - Y-drift (particles rise upward, faster near center)
 //   - XZ rotation around center (particles orbit)
-//   - Per-particle XY rotation (spinning sprites)
-//   - Pulse scale (exp curve — particles periodically grow)
+//   - Fixed glyph orientation and scale for legible atlas symbols
 //   - Stable atlas frame per particle (no temporal frame or hue cycling)
 //   - Additive blending — luminous accumulation
 //
@@ -175,7 +174,7 @@ export class JunniParticles {
       return oPos
     })
 
-    // ── scaleNode: per-instance size with edge fade + pulse (Section3) ──
+    // ── scaleNode: steady per-instance size with vertical edge fade ──
     //   Smoothly fade particles at the vertical wrap boundary to avoid a pop.
     // SpriteNodeMaterial uses scaleNode for the sprite quad size.
     const scaleNode = Fn(() => {
@@ -245,12 +244,8 @@ export class JunniParticles {
     })
     mat.positionNode = positionNode()
     mat.scaleNode = scaleNode()
-    // Sec3Particle rotates each glyph around its own center. Keep that motion,
-    // but use the shared vortex time scale so spin follows particle travel.
-    mat.rotationNode = Fn(() => {
-      const num = attribute('num') as unknown as TSLVec2
-      return (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(num.y))
-    })()
+    // Keep each atlas glyph upright while its center follows the shared vortex.
+    // Per-sprite spin made the asymmetric triangle/arrow cells read as tile swaps.
     mat.colorNode = colorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
 

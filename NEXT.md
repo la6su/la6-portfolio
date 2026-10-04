@@ -1791,10 +1791,11 @@ filtered atlas samples could bleed across tile boundaries. The reference
 mapping every instance across all six cells. Particles follow the reference's
 Y rise and XZ orbit around the field center; a mistaken extra `0.08` multiplier
 had almost stopped both motions. Use `speed` as the single time scale (0.35 in
-Works), retain the slow per-glyph rotation, remove the abrupt 4× exponential
-size pulse and hue cycling, keep glyphs above subpixel size, soften the cyan
-glow threshold, and fade particles near the vertical wrap edge. Atlas UVs
-remain inset to prevent adjacent-cell sampling. This source comparison is
+Works), keep each glyph upright (per-sprite spin made the asymmetric triangle
+and arrow cells read as tile swaps), remove the abrupt 4× exponential size
+pulse and hue cycling, keep glyphs above subpixel size, soften the cyan glow
+threshold, and fade particles near the vertical wrap edge. Atlas UVs remain
+inset to prevent adjacent-cell sampling. This source comparison is
 grounded in
 [`Sec3Particle/index.ts`](https://github.com/junni-inc/next.junni.co.jp/blob/master/src/ts/MainScene/World/Sections/Section3/Sec3Particle/index.ts)
 and its vertex/fragment shaders; the new adaptation still needs browser visual
