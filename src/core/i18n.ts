@@ -164,10 +164,6 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Pro193: an online store for tall men, centred on fit, clothing and a clear path to product.',
     'works.enterRooms': 'Explore the four rooms',
     'works.archiveLabel': 'Project archive',
-    'works.section1.title': 'Motion & CG',
-    'works.section2.title': 'Motion & CG',
-    'works.section3.title': 'Product website',
-    'works.section4.title': 'E-commerce',
 
     // Manifesto page
     'manifesto.purpose.title': 'Purpose',
@@ -381,10 +377,6 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Pro193: интернет-магазин для высоких мужчин, построенный вокруг посадки, вещей и ясного выбора.',
     'works.enterRooms': 'Войти в четыре комнаты',
     'works.archiveLabel': 'Архив проектов',
-    'works.section1.title': 'Моушн и CG',
-    'works.section2.title': 'Моушн и CG',
-    'works.section3.title': 'Продуктовый сайт',
-    'works.section4.title': 'E-commerce',
 
     // Manifesto page
     'manifesto.purpose.title': 'Цель',

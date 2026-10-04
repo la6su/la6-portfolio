@@ -740,7 +740,7 @@ test('Renderer recovers from WebGL context loss on the persistent canvas', async
     )
   if (!recovered) {
     const failure = await page
-      .locator('.renderer-unsupported')
+      .locator('.jlz-renderer-failure')
       .innerText()
       .catch(() => 'no failure UI')
     throw new Error(
