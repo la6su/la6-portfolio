@@ -26,6 +26,8 @@ jobs:
       - name: Verify generated outputs match their sources
         run: >-
           git diff --exit-code -- dist blog.html blog/ ru/blog.html ru/blog/ prerender/home.html public/robots.txt public/sitemap.xml
+      - name: Build self-hosted production image
+        run: docker build --tag la6-portfolio:ci .
       - run: bun run test:unit
       - run: bun run lint
 

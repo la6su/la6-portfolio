@@ -641,7 +641,7 @@ Current known facts:
 
 ## Work queue
 
-### 1. Reduce runtime ownership overlap — active
+### 1. Reduce runtime ownership overlap — complete
 
 Trace callers and state before changing boundaries. For each method in
 `Experience`, `SceneCoordinator`, `SceneTransformPass`, `StageRegistry`,
@@ -678,13 +678,9 @@ their shared async cancellation/release mechanics; `useSceneStages` owns the
 Vue-declared mount points. `ExperienceUI` owns navigation and project-overlay
 behavior. The reduced-motion fan-out is split by domain and currently has no
 mirrored value; keep it until a specific duplicate owner is demonstrated.
-Next inspect `SceneHost` readiness/renderer bridge and the split route policy
-between `Experience`, `SceneCoordinator`, and `StageRegistry` before moving
-state. [Completed below: SceneHost bridge, route policy and navigation observer
-ownership were traced; no redundant RAF, scheduler or scroll-state owner was
-found. Continue with lifecycle error/teardown paths and inspect route UI
-controllers for behavior that can move back into Vue without losing scene
-ownership.]
+The complete source trace found one owner for renderer/RAF/scheduling,
+route-stage creation, scroll state, and UI orchestration. Lifecycle and teardown
+paths were rechecked; remaining items are external runtime acceptance gates.
 
 Route-UI controller checkpoint: the lifecycle error/teardown source pass found
 no additional source gap (its open items are runtime-evidence gates), and the
@@ -1234,7 +1230,7 @@ Execution order:
    evaluated Three core URLs and inspect the actual backend when browser access
    is available.
 
-### 2. Make scene composition declarative where it helps — active
+### 2. Make scene composition declarative where it helps — complete
 
 Inventory scene owners as stable declared nodes, loaded assets, generated
 geometry/TSL, or route-lazy behavior. Stable transforms and hierarchy belong
@@ -1484,7 +1480,7 @@ settle/release path. Attribution of the two idle wake frames and a repeat
 idle check on physical WebGPU remain runtime gates; no performance claim is
 made without new measurements.
 
-### 3. Production and whole-tree audit — pending
+### 3. Production and whole-tree audit — implementation complete; deployment gated
 
 Review direct route entry, accessibility, reduced motion, locale switching,
 responsive behavior, renderer failure, content generation, asset paths,
@@ -1746,141 +1742,30 @@ Execution order:
 
 ## Status
 
-Phases 1, 2, and 3 remain active. Prior work has removed the
-app-authored renderer backend recreation, silent TSL render fallback, duplicate
-route-mount flag, duplicate route state, repeated frame config lookups, and a
-dead particle branch. The host contract now belongs to the Experience runtime;
-Three selects the backend; Showreel shares the TSL graph; and static scene
-transforms use Tres props in reviewed owners. These are partial reductions,
-not proof that the architecture or project is production ready. Continue with
-the source ownership audit, then revise status from concrete findings.
-On 2026-10-03 the TvT v5 architecture audit recorded its findings and the
-route-UI migration plan above; its four slices (dead exports, app-owned
-route-transition cover, Vue-bound fullscreen overlay content, shared story
-scroll track) are complete with regenerated tracked dist assets. The unit
-suite was run once as refactor verification at the user's request: 11 tests
-in 5 files (ExperienceLifecycle, ShowreelController, SectionGroups,
-ContactCyprusStage, WorksPlaneStage) fail on the refactor branch, and the
-identical 11 fail on the base commit `f570314c` in this environment
-(Bun + vitest 4.1.11 + jsdom 29 on Linux), so they are pre-existing baseline
-failures in scene-owner lifecycle assertions, not refactor regressions; the
-other 92 unit tests pass on both. No browser suites were run.
-Superseded 2026-10-04 (slice 5): the 11 failures were the 2026-10-02
-test-tree move leaving `vi.mock()` specifiers pointing at the old
-`src/Experience/` location — the mocks silently stopped matching after the
-move, and one `ContactCyprusStage` assertion predates the Cyprus root name
-moving into the Vue template. With the wiring restored (no new tests, no
-harness code) the suite is 103/103 green. Slices 5 (mock wiring) and 6
-(DRACO decoder dedup, −1.06 MB of never-fetched dist assets) are complete
-with all gates green; the WebGPU→WebGL2 fallback question was verified
-against three 0.186.1 source (automatic, no app-side duplication — see the
-verification note above). No browser suites were run.
-Slices 7 (storyline rail state Vue-owned; `CinematicNav` is now behavior-
-only) and 8 (ExperienceUI re-trace: keep verdict, no code change) are
-complete with the same gates green and the suite still 103/103; the
-route-UI controller plan is now fully executed. The remaining open items
-are the runtime-evidence gates listed in the work queue (route churn,
-device loss/recovery, HMR during prewarm, fault injection, physical-GPU
-parity, idle wake-frame attribution, ingress verification, TS7) — none
-are autonomously executable without a browser.
-Superseded 2026-10-04 (second session): a headless-Chromium runtime
-session closed the software-WebGL2 versions of the route-churn plateau,
-idle wake-frame attribution (all breath), driven synthetic device
-loss/recovery, post-recovery resize, ready-state SceneHost HMR
-replacement, and HMR-during-prewarm gates — see the runtime-evidence
-record above; a production-preview smoke (auto WebGL2 fallback, route
-navigation, zero errors) also passed. The deep-analysis slices of the
-same session removed the envColor dataflow, unread WorldConfig fields,
-dead controller accessors, dead capability state, never-applied uikit
-form-range CSS (−5.5 KB), nine unused icons, dead i18n entries, the
-ambient less module, and unexported 22 internal-only types; every slice
-passed type-check, lint, format, the 103/103 unit suite, and full
-production builds. Remaining open gates are now only the ones no
-software browser can provide: physical-GPU/WebGPU parity, natural
-(non-synthetic) device loss, fault injection of a throwing disposer
-(needs a patched-disposer harness — the existing host-teardown spec is
-the natural vehicle when the user wants it run), production ingress
-verification, and the TS7 toolchain question.
-2026-10-04 (same day, styling layer): a LESS/CSS whole-assembly audit
-verified the ownership split (zero dead `.jlz-*` classes/custom
-properties), confirmed the `?inline` CSS-in-JS seam and the full-bundle
-UIkit JS import as documented keep-decisions, and removed the one dead
-uikit import (`form.less`) for a measured −21.75 KB SPA CSS / −20.29 KB
-blog CSS. The ~380 unused `uk-*` variant selectors inside live component
-families are recorded as deliberately kept (purge tooling fails the
-anti-overengineering bar); lint and 103/103 units green.
-2026-10-04 (same day, gates): the throwing-disposer fault-injection gate
-is closed with browser evidence. A dev-only owner-keyed injector seam in
-`Experience.release()` (`src/core/devTeardownFaults.ts`, same pattern as
-the existing `__jlz*` dev hooks, inert in production) drives two new
-cases in the host-teardown spec: a sync throwing disposer (`ground`)
-mid-chain and a rejecting async scene-owner teardown (`showreel`). Both
-proved the chain isolates the failure (logged once by owner name), keeps
-the documented release order for every other owner (stages → backend →
-SceneHost renderer), and still resolves the public teardown promise with
-zero page errors. Full spec 4/4 on the dedicated dev run; lint,
-type-check, format, and the 103/103 unit suite green. The production
-ingress verification attempt also has a concrete result now: the origin
-domain `justlovejazz.dev` (apex and www) does not resolve from the
-external reader service (DNS-level failure), and web search returns no
-indexed presence for the domain — the production deployment is absent or
-its DNS is not live, so the ingress acceptance gate is blocked on
-deployment, not on tooling; the user should check the domain's
-registration/DNS status before publishing. Remaining open gates:
-physical-GPU/WebGPU parity, natural (non-synthetic) device loss, and the
-TS7 toolchain question.
-2026-10-04 (same day, TS7): the toolchain question is closed with
-registry and runtime evidence — the repo stays on `typescript ~6.0.3`.
-`typescript@7.0.2` is the latest stable, but its package removed the
-classic JS Compiler API (the root export resolves to a version stub; the
-programmatic surface moved to `./unstable/*` with a new shape). Live
-probes with the latest toolchain against TS 7.0.2 both fail hard:
-`vue-tsc@3.3.12` (already the repo's version) crashes on load with
-`ERR_PACKAGE_PATH_NOT_EXPORTED: Package subpath './lib/tsc' is not
-defined by "exports"`, and `typescript-eslint@8.71.0` (also the repo's
-version) has an explicit runtime guard "typescript-eslint does not
-support TS 7.0" pointing at the official side-by-side-with-TS-6 guidance
-and tracking issue #10940 for TS >=7.1. The build itself never invokes
-tsc (Vite/esbuild transpile-only), so a side-by-side tsc7 install would
-add a second compiler with no integration value — the `~6.0.3` pin is
-the correct position until both vue-tsc and typescript-eslint ship
-TS7-compatible releases. Re-evaluate only then; no repo change needed.
-2026-10-04 (same day, completeness audit): at the owner's request a
-read-only full-codebase audit re-checked the "TvT v5 on WebGPU complete?"
-claim across three lanes (renderer stack, paradigm compliance,
-cross-cutting); findings and proposed fix slices are recorded in AUDIT.md.
-Verdict: the source tree is architecture-complete (no WebGPU correctness
-gap, no paradigm violation, no dead module, no overturned keep-verdict),
-but the branch is not release-clean — the tracked dist/ predates
-bad05920/e4c4e325 so acceptance criterion 6 is false at HEAD, and bare
-`playwright test` fails at collection because tests/unit/*.test.ts matches
-Playwright's default testMatch (inherited from the 2026-10-02 test-tree
-move on main; breaks test:serial/test:ui/test:headed/test:matrix and the
-README claim). Eight further minor leftovers (dead programs snapshot
-field, stale renderer comments + redundant local type, vitest alias
-skew, stale WorksInstallation comment, dead uikit typings, tracked
-test-results/.last-run.json, optional chrome-selector hardening) are
-queued as slices S1–S9 in AUDIT.md; the audit itself made no source
-change.
-Superseded 2026-10-04 (same day, slices executed): S1–S9 are complete
-with all gates green — Playwright collection restored (24 tests list,
-exit 0) plus the local test output untracked (`0013a85c`); renderer-stack
-leftovers dropped (`2dafbebc`); the unit suite now resolves the
-production three module graph (`ca67608c`, resolution probed through
-the vitest config's own plugin container); dead uikit typings removed
-and the Works contract comment reworded (`febd263f`); chrome input
-selectors have a single rename source (`6c16764f`); tracked dist
-regenerated with a byte-identical rebuild proof (`168b9130`, SPA CSS
-203,891 B and blog CSS 138,201 B with zero uk-form rules, budgets
-unchanged). Verification set: type-check, lint, format, 103/103 unit
-tests, production build ×2, an agent-browser production smoke, and the
-full e2e suite via bare `playwright test --workers=1` — 18 passed,
-6 skipped (documented opt-in gates), 0 failed. The restored bare run
-also exposed and fixed two pre-existing spec races the broken
-collection had hidden (`d6557fef`): the case-study language toggle
-clicked before the lazy app chunk installed its meta listener (the app
-itself toggles correctly once mounted — verified in-browser), and the
-contact churn spec needed an honest 60 s budget for the software-WebGL2
-environment (measured 32.6 s vs the 30 s default). Remaining open gates
-are unchanged: physical-GPU/WebGPU parity, natural device loss, and the
-ingress/deployment acceptance.
+Phases 1 (runtime ownership) and 2 (declarative scene composition) are
+complete. Phase 3's source, quality gates, route output, and static deployment
+configuration are implemented. The S1–S9 release audit findings are closed;
+the latest recorded verification includes type-check, lint, formatting,
+103/103 unit tests, two byte-identical production builds, and e2e results of
+18 passed / 6 skipped / 0 failed. This session's `bun run build`,
+`bun run lint`, `bun run format:check`, and Compose config validation passed;
+a static route check mapped all 30 sitemap URLs to generated HTML files. No
+test suites were rerun.
+
+The project now includes a non-root NGINX image and Compose service for the
+existing reverse-proxy deployment shape. The image built locally and passed
+`nginx -t`; its restricted runtime became healthy as UID 101 with a read-only
+root filesystem. HTTP smoke checks passed for all 30 sitemap routes, EN/RU
+language markers, security/cache headers, gzip, `/healthz`, missing-asset 404,
+and the unknown-route fallback. The first smoke exposed a route/directory
+collision on `/works` and `/blog`; ordering `$uri.html` before `$uri/` fixed it.
+
+The workstation's `nvidia-smi` cannot reach the NVIDIA driver; recorded
+software-WebGL2 evidence does not close physical-GPU/WebGPU parity or natural
+device-loss acceptance. Production ingress remains unverified: the last
+recorded DNS probe found no live records for `justlovejazz.dev`.
+
+Production-ready acceptance is not yet complete. The next useful work requires
+deployment-host access to build and run the container behind HAProxy, verify
+public headers/routes/TLS, and capture physical-GPU Firefox or Chrome evidence.
+Do not claim those external gates from local build results.

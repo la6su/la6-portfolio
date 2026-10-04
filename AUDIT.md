@@ -19,8 +19,10 @@ itself changed no source file; the live work queue remains
 
 ## Verdict
 
-**The source tree is architecture-complete; the branch is not
-release-clean, so "fully complete" is not yet an honest claim.**
+**The architecture and tracked release artifacts are clean. Production
+acceptance remains open for deployment ingress and physical-GPU runtime
+evidence.** The initial blockers below are historical findings, superseded by
+the S1–S9 outcome recorded immediately after this verdict.
 
 > **Outcome (2026-10-04, same day):** slices S1–S9 are executed and
 > verified — `0013a85c` (S2+S3), `2dafbebc` (S4+S5), `ca67608c` (S6),
@@ -45,12 +47,10 @@ release-clean, so "fully complete" is not yet an honest claim.**
   owners are Vue/Tres-declared, imperative code is confined to sanctioned
   categories, Cientos is bounded to OrbitControls with the constraint
   re-verified, and no recorded keep-verdict is overturned (section D).
-- Two MAJOR release-state defects exist at HEAD (section A): the tracked
-  `dist/` predates two source commits (acceptance criterion 6 is false),
-  and bare `playwright test` fails at collection. Both are mechanical
-  fixes, neither touches the refactor architecture.
-- Eight minor leftovers/hardening items (sections B and C), plus the three
-  previously recorded hardware/deployment gates (section E).
+- The tracked `dist/`, Playwright collection, and eight minor leftovers in
+  sections A–C have since been fixed and verified by S1–S9 below.
+- Open acceptance gates are the physical-GPU/native-WebGPU checks and
+  production ingress/deployment checks in section E.
 
 ## A. Release-blocking findings
 

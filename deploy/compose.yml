@@ -1,0 +1,23 @@
+services:
+  portfolio:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    ports:
+      - '8080:8080'
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    stop_grace_period: 10s
