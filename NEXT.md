@@ -1812,9 +1812,22 @@ default HAProxy 503. DNS-over-HTTPS independently returns NXDOMAIN for both
 No OPNsense configuration was changed, consistent with the user's
 clarification that the project is still in development and checks are local.
 
+Follow-up attempt to exercise the OPNsense HAProxy binary itself on a temporary
+LAN-only listener (`192.168.10.1:18443`) did not complete. QEMU Guest Agent
+timed out while staging the temporary config/certificate; subsequent
+`qm agent ping` reports that the guest agent is not running. The OPNsense VM
+remains `running`, the existing `pvebase.6la.ru` and `opnroute.6la.ru` routes
+still return 200, port 18443 times out, and the temporary origin container was
+removed. Persistent `config.xml` and the active `:443` frontend were untouched.
+Guest `/tmp` cleanup could not be confirmed after QGA stopped; any remaining
+files contain only the generated self-signed test certificate/key and
+temporary HAProxy config. Do not reboot the firewall VM without approval; QGA
+recovery requires local console access or a controlled restart before this
+test can be retried.
+
 Production-ready acceptance is not yet complete. Remaining gates are
 an app-specific route through the local OPNsense HAProxy using its existing
 certificate (including container-origin headers/routes/TLS), WebKit app
-coverage, and natural hardware device-loss evidence. Public DNS/TLS and
-deployment remain later release gates; local build and isolated HAProxy smoke
-do not claim them.
+coverage, natural hardware device-loss evidence, and recovery of the OPNsense
+guest agent before a direct-gateway test. Public DNS/TLS and deployment remain
+later release gates; local build and isolated HAProxy smoke do not claim them.
