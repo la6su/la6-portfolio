@@ -8,6 +8,7 @@ import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
@@ -140,6 +141,7 @@ const PRINCIPLES: readonly Principle[] = [
                 </p>
               </div>
               <a
+                v-if="!rendererAvailable"
                 :href="localizedPath(langFromPath(route.path), p.href)"
                 class="uk-button uk-button-text jlz-manifesto-link"
                 ><span>{{ p.routeLabel }}</span

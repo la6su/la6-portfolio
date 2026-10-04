@@ -5,7 +5,7 @@
 // FullscreenOverlayView.vue (#jlz-fs-overlay), index.html (#jlz-app-loader),
 // views/NavMenu.vue ([data-cinematic-menu]), views/ContactFooter.vue
 // ([data-contact-footer]), views/HomeView.vue ([data-baku-carousel-control]),
-// and views/WorksView.vue (.jlz-works-aperture, .jlz-works-actions).
+// and views/WorksView.vue (.jlz-works-actions).
 
 /** Chrome that BakuCarousel pointer input must never claim as a scene drag. */
 export const UI_CHROME_SELECTOR =
@@ -13,4 +13,4 @@ export const UI_CHROME_SELECTOR =
 
 /** Chrome the works-plane tap handler must not reinterpret as a plane tap. */
 export const WORKS_TAP_CHROME_SELECTOR =
-  '.jlz-works-aperture, .jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'
+  '.jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'

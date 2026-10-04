@@ -8,6 +8,7 @@ import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
@@ -82,6 +83,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                     </li>
                   </ul>
                   <a
+                    v-if="!rendererAvailable"
                     :href="blogHref('/blog/glassmorphism-webgpu')"
                     class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle uk-margin-medium-top"
                   >
@@ -164,6 +166,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-bottom-small; delay: 90; repeat: true">
                     <a
+                      v-if="!rendererAvailable"
                       :href="blogHref('/blog/on-demand-rendering')"
                       class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
                     >
@@ -228,6 +231,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                   </p>
                   <div uk-scrollspy="cls: uk-animation-slide-left-small; delay: 120; repeat: true">
                     <a
+                      v-if="!rendererAvailable"
                       :href="blogHref('/blog/tsl-changes-everything')"
                       class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
                     >
@@ -292,6 +296,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
                     Brief → prototype → measured scene → handoff.
                   </p>
                   <a
+                    v-if="!rendererAvailable"
                     href="mailto:hello@justlovejazz.com?subject=Project%20brief"
                     class="uk-button uk-button-primary uk-margin-medium-top"
                     data-i18n="services.aiSystems.action"

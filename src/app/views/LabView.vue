@@ -7,6 +7,7 @@ import { langFromPath, localizedPath } from '../../core/routeManifest'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
@@ -160,6 +161,7 @@ const EXPERIMENTS: readonly Experiment[] = [
                     Isolated scene · in development
                   </span>
                   <a
+                    v-if="!rendererAvailable"
                     :href="localizedPath(langFromPath(route.path), exp.noteHref)"
                     class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle uk-margin-auto-left"
                   >

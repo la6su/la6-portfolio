@@ -1925,11 +1925,19 @@ coverage, natural hardware device-loss evidence, and recovery of the OPNsense
 guest agent before a direct-gateway test. Public DNS/TLS and deployment remain
 later release gates; local build and isolated HAProxy smoke do not claim them.
 
-The persistent cinematic CTA is the only visible section action in the 3D
-story frames and follows the active frame: Intro opens the existing showreel,
-About navigates to Services, Works opens the carousel's focused project in the
-existing fullscreen viewer, and the Contact frame opens the existing contact
-footer. Its label and accessible name update with both frame and locale; the
-pagination rail remains unchanged. The Works action consumes the carousel's
-existing focus event and adds no new project-selection state. Route links stay
-available when the renderer is unavailable.
+The persistent cinematic CTA is the only visible content action across the 3D
+routes. On Home it opens the showreel, Services, the focused Works project, or
+the Contact footer according to the active frame. Services, Manifesto, and Lab
+use the active section to open its related article; Works opens the case for
+the active room; case-study chapters open the focused project's fullscreen
+material, with Contact on the final chapter. Labels use short EN/RU copy and a
+single fixed-size left icon. Pagination and route navigation remain separate;
+Telegram, GitHub, and email channels remain available. Inline CTAs are retained
+only in the no-renderer continuation path.
+
+Local visual review used headless Chromium with SwiftShader at 390×844 and
+1440×900. The single launcher remained visible in both layouts; its label
+changed through Reel, Explore, Explore, Contact. The Works action opened the
+focused Porsche project viewer, and the Services action reached its static
+article route. This checks DOM/UI flow and responsive placement only; it is not
+physical-GPU rendering evidence.

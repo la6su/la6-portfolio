@@ -3,8 +3,8 @@ import { computed, ref, watch, onBeforeUnmount, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { CASE_STUDIES, CASE_STUDY_BY_PROJECT } from '../../Data/CaseStudies'
 import { PROJECTS } from '../../Data/Projects'
-import { setWorksCaseProject } from '../../core/worksExperience'
 import { eventBus } from '../../core/EventBus'
+import { setWorksCaseProject } from '../../core/worksExperience'
 import { getLang } from '../../core/i18n'
 import { localizedPath } from '../../core/routeManifest'
 import { applyMetaTags } from '../../core/pageMeta'
@@ -56,7 +56,6 @@ const labels = computed(() =>
         response: 'Решение',
         constraints: 'Условия',
         material: 'Ближе к материалу.',
-        view: 'Открыть материал',
         result: 'Что получилось.',
         next: 'Продолжить исследование',
         contact: 'Обсудить похожий проект',
@@ -76,7 +75,6 @@ const labels = computed(() =>
         response: 'The response',
         constraints: 'Constraints',
         material: 'A closer look.',
-        view: 'Expand the material',
         result: 'What remains.',
         next: 'Continue exploring',
         contact: 'Discuss a similar project',
@@ -88,8 +86,6 @@ const labels = computed(() =>
         status: 'Project material is being prepared for publication.',
       },
 )
-const open = (): void => eventBus.emit('jlz:open-project', { idx: projectIndex.value })
-
 // Set intent before useJlzPage publishes route readiness. Reused detail routes
 // re-publish after their DOM changes so the cinematic track is rebuilt once.
 let releaseCaseIntent = (): void => undefined
@@ -208,19 +204,12 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                     {{ localizedStudy.media[0].caption ?? labels.material }}
                   </figcaption>
                 </figure>
-                <button
-                  v-if="rendererAvailable"
-                  type="button"
-                  class="uk-button uk-button-text jlz-works-enter"
-                  @click="open"
-                >
-                  {{ labels.view }} ⤢
-                </button>
               </template>
               <template v-else>
                 <p class="jlz-works-premise">{{ localizedStudy.result }}</p>
                 <p class="jlz-case-status">{{ labels.status }}</p>
                 <RouterLink
+                  v-if="!rendererAvailable"
                   :to="localizedPath(language, '/contact')"
                   class="uk-button uk-button-text jlz-works-enter"
                   >{{ labels.contact }} ↗</RouterLink
@@ -236,14 +225,6 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
                 </nav>
               </template>
             </div>
-            <button
-              v-if="rendererAvailable"
-              type="button"
-              class="jlz-works-aperture"
-              @click="open"
-              :aria-label="`${labels.view}: ${project.title}`"
-              data-cursor="view"
-            ></button>
             <footer class="jlz-works-footnote">
               <span>{{ project.year }} / {{ labels.clientProject }}</span
               ><span>{{ project.title }} — 0{{ index + 1 }} / 04</span>

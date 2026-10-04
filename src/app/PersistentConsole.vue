@@ -10,17 +10,28 @@ import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
 import { rendererAvailable, setRendererAvailable } from '../core/rendererAvailability'
 import { noSceneRequested } from '../core/sceneMode'
-import { langFromPath, localizedPagePath, localizedPath } from '../core/routeManifest'
+import {
+  langFromPath,
+  localizedPagePath,
+  localizedPath,
+  unlocalizedPath,
+} from '../core/routeManifest'
+import { getWorksCaseProject } from '../core/worksExperience'
 
 const language = ref(getLang())
 const route = useRoute()
 const pageHref = (page: import('../core/routeManifest').PageId): string =>
   localizedPagePath(page, langFromPath(route.path))
 const blogHref = (path: string): string => localizedPath(langFromPath(route.path), path)
+const currentPath = computed(() => unlocalizedPath(route.path))
 const soundMuted = ref(getSoundMuted())
 const fullscreenOpen = ref(false)
 const activeIndex = ref(0)
 const focusedProjectIndex = ref(0)
+const activePageSection = ref('')
+watch(currentPath, () => {
+  activePageSection.value = ''
+})
 // Storyline labels published by the CinematicNav behavior controller from the
 // track's section headings; this view is the single aria-label writer.
 const storyLabels = ref<string[]>([])
@@ -48,6 +59,9 @@ onMounted(() => {
   if (nav.value) {
     UIkit.update(nav.value)
   }
+  activePageSection.value =
+    document.querySelector<HTMLElement>('.jlz-page-section.section-active')?.dataset.pageSection ??
+    ''
   unsubscribers.push(
     eventBus.on('jlz:lang-change', () => {
       language.value = getLang()
@@ -66,6 +80,9 @@ onMounted(() => {
     }),
     eventBus.on('jlz:carousel-focus', ({ index }) => {
       focusedProjectIndex.value = index
+    }),
+    eventBus.on('jlz:page-section-change', ({ sectionId }) => {
+      activePageSection.value = sectionId
     }),
     eventBus.on('jlz:story-labels', ({ labels }) => {
       storyLabels.value = labels
@@ -91,36 +108,68 @@ function requestStoryNavigation(index: number): void {
   eventBus.emit('jlz:story-navigate', { index })
 }
 
+const SECTION_EXPLORE_PATHS: Record<string, string> = {
+  'services-creativeDirection': '/blog/glassmorphism-webgpu',
+  'services-interactiveDev': '/blog/on-demand-rendering',
+  'services-motionRealtime': '/blog/tsl-changes-everything',
+  'manifesto-purpose': '/blog/tsl-changes-everything',
+  'manifesto-clarity': '/blog/on-demand-rendering',
+  'manifesto-emotion': '/blog/undercurrent-webgpu-fluid',
+  'manifesto-simplicity': '/blog/glassmorphism-webgpu',
+  'lab-01': '/blog/glassmorphism-webgpu',
+  'lab-02': '/blog/tsl-changes-everything',
+  'lab-03': '/blog/undercurrent-webgpu-fluid',
+  'lab-04': '/blog/on-demand-rendering',
+}
+
 const launcherLabel = computed(() => {
-  let key: string
-  switch (activeIndex.value) {
-    case 1:
-      key = 'home.studio.showreel'
-      break
-    case 2:
-    case 3:
-      key = 'common.explore'
-      break
-    default:
-      key = 'story.contact'
+  let key = 'launcher.contact'
+  if (currentPath.value === '/') {
+    if (activeIndex.value === 1) key = 'launcher.reel'
+    else if (activeIndex.value === 2 || activeIndex.value === 3) key = 'launcher.explore'
+  } else if (
+    SECTION_EXPLORE_PATHS[activePageSection.value] ||
+    activePageSection.value.startsWith('works-') ||
+    /^case-[1-3]$/.test(activePageSection.value)
+  ) {
+    key = 'launcher.explore'
   }
   return TRANSLATIONS[language.value][key] ?? t(key)
 })
 
 function activateContextAction(): void {
-  switch (activeIndex.value) {
-    case 1:
-      eventBus.emit('jlz:showreel-open')
-      break
-    case 2:
-      eventBus.emit('jlz:navigate', { path: pageHref('services') })
-      break
-    case 3:
-      eventBus.emit('jlz:open-project', { idx: focusedProjectIndex.value })
-      break
-    default:
-      requestStoryNavigation(0)
+  if (currentPath.value === '/') {
+    switch (activeIndex.value) {
+      case 1:
+        eventBus.emit('jlz:showreel-open')
+        return
+      case 2:
+        eventBus.emit('jlz:navigate', { path: pageHref('services') })
+        return
+      case 3:
+        eventBus.emit('jlz:open-project', { idx: focusedProjectIndex.value })
+        return
+    }
   }
+
+  const explorePath = SECTION_EXPLORE_PATHS[activePageSection.value]
+  if (explorePath) {
+    window.location.assign(blogHref(explorePath))
+    return
+  }
+
+  const worksSection = /^works-(\d+)$/.exec(activePageSection.value)
+  if (worksSection) {
+    eventBus.emit('jlz:open-project', { idx: Number(worksSection[1]) - 1 })
+    return
+  }
+
+  if (/^case-[1-3]$/.test(activePageSection.value)) {
+    eventBus.emit('jlz:open-project', { idx: getWorksCaseProject() ?? 0 })
+    return
+  }
+
+  requestStoryNavigation(0)
 }
 
 /** The storyline button label: the track heading when published, else the slot. */
@@ -243,16 +292,11 @@ function toggleSound(): void {
           @click="activateContextAction"
         >
           <span class="jlz-contact-launcher__channel" aria-hidden="true">
-            <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
+            <svg viewBox="0 0 16 16" focusable="false">
               <path d="M2 3h10v8H2ZM5 13v2M9 13v2M5 6h4M5 8.5h2" />
             </svg>
           </span>
           <span>{{ launcherLabel }}</span>
-          <span
-            class="jlz-contact-launcher__arrow"
-            uk-icon="icon: arrow-up; ratio: 0.8"
-            aria-hidden="true"
-          ></span>
         </button>
       </div>
       <nav

@@ -77,6 +77,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Common CTAs
+    'launcher.reel': 'Reel',
+    'launcher.explore': 'Explore',
+    'launcher.contact': 'Contact',
     'common.explore': 'Explore',
     'common.close': 'Close',
     'common.closeContactFooter': 'Close contact footer',
@@ -294,6 +297,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Lab section (RU)
     // Common CTAs
+    'launcher.reel': 'Ролик',
+    'launcher.explore': 'Открыть',
+    'launcher.contact': 'Контакт',
     'common.explore': 'Исследовать',
     'common.close': 'Закрыть',
     'common.closeContactFooter': 'Закрыть контакты',
