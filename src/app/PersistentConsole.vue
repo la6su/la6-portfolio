@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import UIkit from '../core/uikit'
 import { NAV_ITEMS } from './navItems'
-import { getLang, t, toggleLang } from '../core/i18n'
+import { getLang, t, toggleLang, TRANSLATIONS } from '../core/i18n'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
@@ -20,6 +20,7 @@ const blogHref = (path: string): string => localizedPath(langFromPath(route.path
 const soundMuted = ref(getSoundMuted())
 const fullscreenOpen = ref(false)
 const activeIndex = ref(0)
+const focusedProjectIndex = ref(0)
 // Storyline labels published by the CinematicNav behavior controller from the
 // track's section headings; this view is the single aria-label writer.
 const storyLabels = ref<string[]>([])
@@ -63,6 +64,9 @@ onMounted(() => {
     eventBus.on('jlz:story-index-change', ({ index }) => {
       activeIndex.value = index
     }),
+    eventBus.on('jlz:carousel-focus', ({ index }) => {
+      focusedProjectIndex.value = index
+    }),
     eventBus.on('jlz:story-labels', ({ labels }) => {
       storyLabels.value = labels
     }),
@@ -85,6 +89,38 @@ function requestStoryNavigation(index: number): void {
     return
   }
   eventBus.emit('jlz:story-navigate', { index })
+}
+
+const launcherLabel = computed(() => {
+  let key: string
+  switch (activeIndex.value) {
+    case 1:
+      key = 'home.studio.showreel'
+      break
+    case 2:
+    case 3:
+      key = 'common.explore'
+      break
+    default:
+      key = 'story.contact'
+  }
+  return TRANSLATIONS[language.value][key] ?? t(key)
+})
+
+function activateContextAction(): void {
+  switch (activeIndex.value) {
+    case 1:
+      eventBus.emit('jlz:showreel-open')
+      break
+    case 2:
+      eventBus.emit('jlz:navigate', { path: pageHref('services') })
+      break
+    case 3:
+      eventBus.emit('jlz:open-project', { idx: focusedProjectIndex.value })
+      break
+    default:
+      requestStoryNavigation(0)
+  }
 }
 
 /** The storyline button label: the track heading when published, else the slot. */
@@ -202,17 +238,16 @@ function toggleSound(): void {
           class="uk-button uk-button-default uk-flex uk-flex-middle jlz-contact-launcher__button"
           type="button"
           id="jlz-contact-launcher"
-          aria-controls="section-lab"
-          :aria-expanded="activeIndex === 0"
+          :aria-label="launcherLabel"
           :tabindex="activeIndex === 0 || activeIndex === 5 ? -1 : 0"
-          @click="requestStoryNavigation(0)"
+          @click="activateContextAction"
         >
           <span class="jlz-contact-launcher__channel" aria-hidden="true">
             <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
               <path d="M2 3h10v8H2ZM5 13v2M9 13v2M5 6h4M5 8.5h2" />
             </svg>
           </span>
-          <span data-i18n="story.contact">{{ t('story.contact') }}</span>
+          <span>{{ launcherLabel }}</span>
           <span
             class="jlz-contact-launcher__arrow"
             uk-icon="icon: arrow-up; ratio: 0.8"

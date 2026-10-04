@@ -1924,3 +1924,12 @@ certificate (including container-origin headers/routes/TLS), WebKit app
 coverage, natural hardware device-loss evidence, and recovery of the OPNsense
 guest agent before a direct-gateway test. Public DNS/TLS and deployment remain
 later release gates; local build and isolated HAProxy smoke do not claim them.
+
+The persistent cinematic CTA is the only visible section action in the 3D
+story frames and follows the active frame: Intro opens the existing showreel,
+About navigates to Services, Works opens the carousel's focused project in the
+existing fullscreen viewer, and the Contact frame opens the existing contact
+footer. Its label and accessible name update with both frame and locale; the
+pagination rail remains unchanged. The Works action consumes the carousel's
+existing focus event and adds no new project-selection state. Route links stay
+available when the renderer is unavailable.

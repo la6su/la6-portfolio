@@ -84,25 +84,6 @@ onBeforeUnmount(() => stopCarouselFocus?.())
                   Creative direction. Automation. Performance.
                 </p>
               </div>
-              <div class="uk-margin-top">
-                <button
-                  v-if="rendererAvailable"
-                  type="button"
-                  class="jlz-showreel-btn"
-                  id="jlz-showreel-trigger"
-                  data-cursor="play"
-                  aria-haspopup="dialog"
-                >
-                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">[</span>
-                  <span class="jlz-showreel-btn__glyph" aria-hidden="true">▶</span>
-                  <span class="jlz-showreel-btn__label" data-i18n="home.studio.showreel"
-                    >Showreel</span
-                  >
-                  <span class="jlz-showreel-btn__meta" aria-hidden="true">MP4·2026</span>
-                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">]</span>
-                  <span class="jlz-showreel-btn__cursor" aria-hidden="true"></span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -148,6 +129,7 @@ onBeforeUnmount(() => stopCarouselFocus?.())
                 </p>
               </div>
               <RouterLink
+                v-if="!rendererAvailable"
                 :to="pageHref('services')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
@@ -215,7 +197,11 @@ onBeforeUnmount(() => stopCarouselFocus?.())
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
-      <RouterLink :to="pageHref('works')" class="jlz-works-entrance uk-button uk-button-default">
+      <RouterLink
+        v-if="!rendererAvailable"
+        :to="pageHref('works')"
+        class="jlz-works-entrance uk-button uk-button-default"
+      >
         <span data-i18n="works.enterRooms">Explore the four rooms</span> ↗
       </RouterLink>
     </section>
@@ -262,6 +248,7 @@ onBeforeUnmount(() => stopCarouselFocus?.())
                 </p>
               </div>
               <RouterLink
+                v-if="!rendererAvailable"
                 :to="pageHref('manifesto')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
