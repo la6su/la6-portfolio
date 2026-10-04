@@ -1981,3 +1981,10 @@ mobile review at 390×844 confirms all four versions stay within their frames;
 the tallest RU dossier ends 94 px above the persistent launcher. Title,
 subtitle, principle rule, and compact practice/check labels now provide the
 reading hierarchy while leaving more of the canvas available to the 3D scene.
+
+Chrome cleanup checkpoint (2026-10-05): removed the phosphor corner-tick
+bezel from the top control bank and bottom console bar, including its hover /
+focus brightening state. Removed the fullscreen theater's inset border and
+corner brackets, then deleted the now-empty frame element and its transition
+rules. The banks retain their neutral housing and individual key feedback.
+Type-check, lint, build/budgets, and `git diff --check` pass; no tests were run.

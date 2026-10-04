@@ -147,7 +147,6 @@ watch(title, (value) => {
             <span aria-hidden="true">↗</span>
           </RouterLink>
         </section>
-        <div class="jlz-fs-frame" aria-hidden="true"></div>
       </main>
     </div>
   </div>

@@ -103,8 +103,7 @@
 }
 
 .jlz-fs-poster,
-.jlz-fs-shade,
-.jlz-fs-frame {
+.jlz-fs-shade {
   position: absolute;
   inset: 0;
 }
@@ -130,45 +129,6 @@
   background:
     linear-gradient(180deg, rgb(4 8 11 / 42%) 0%, transparent 25%, transparent 40%, #05080bf2 100%),
     linear-gradient(90deg, rgb(4 8 11 / 40%), transparent 72%);
-}
-
-.jlz-fs-frame {
-  z-index: 1;
-  inset: max(0.55rem, env(safe-area-inset-top)) 0.55rem max(0.55rem, env(safe-area-inset-bottom));
-  border: 1px solid color-mix(in srgb, var(--jlz-color-signal-phosphor) 24%, transparent);
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.985);
-  transition:
-    opacity 0.4s ease 0.2s,
-    transform 0.72s var(--jlz-ease-cinematic) 0.08s;
-}
-
-.jlz-fs-overlay.is-entered .jlz-fs-frame {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.jlz-fs-frame::before,
-.jlz-fs-frame::after {
-  position: absolute;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-color: var(--jlz-color-signal-phosphor);
-  border-style: solid;
-  content: '';
-}
-
-.jlz-fs-frame::before {
-  top: -1px;
-  left: -1px;
-  border-width: 1px 0 0 1px;
-}
-
-.jlz-fs-frame::after {
-  right: -1px;
-  bottom: -1px;
-  border-width: 0 1px 1px 0;
 }
 
 .jlz-fs-topline {
@@ -357,16 +317,11 @@
     margin-top: 1.4rem;
     padding: 0 1rem;
   }
-
-  .jlz-fs-frame {
-    inset: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .jlz-fs-dialog,
   .jlz-fs-poster,
-  .jlz-fs-frame,
   .jlz-fs-overlay.is-entered .jlz-fs-topline,
   .jlz-fs-overlay.is-entered .jlz-fs-copy {
     clip-path: none;

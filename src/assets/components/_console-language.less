@@ -919,8 +919,7 @@ body[data-cinematic-sheet] .jlz-console-bar {
 
 // ── Canonical control banks ──
 // One tactile language for the lower navigation island and the top menu
-// bank. Square housings with a phosphor corner-tick bezel (the TUI frame),
-// keys composed from the shared bank mixins.
+// bank. Square housings and keys composed from the shared bank mixins.
 .jlz-console-bar {
   right: max(1.15rem, calc(env(safe-area-inset-right) + 0.9rem));
   bottom: max(1.1rem, calc(env(safe-area-inset-bottom) + 0.9rem));
@@ -934,7 +933,6 @@ body[data-cinematic-sheet] .jlz-console-bar {
   padding: 0.2rem;
   .jlz-control-bank();
   clip-path: none;
-  .jlz-tui-frame();
 }
 
 .jlz-console-bar__signal,
@@ -1046,16 +1044,6 @@ body[data-cinematic-sheet] .jlz-console-bar {
   padding: 0.2rem;
   .jlz-control-bank();
   clip-path: none;
-  .jlz-tui-frame();
-}
-
-// A live key lights the bank bezel: ticks go full phosphor.
-.jlz-topbar-controls:has(:hover),
-.jlz-topbar-controls:has(:focus-visible),
-.jlz-topbar-controls:has([aria-expanded='true']),
-.jlz-console-bar:has(:hover),
-.jlz-console-bar:has(:focus-visible) {
-  .jlz-tui-frame-active();
 }
 
 .jlz-topbar-controls .uk-icon-button,
