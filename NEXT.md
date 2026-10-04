@@ -1809,3 +1809,23 @@ uikit import (`form.less`) for a measured −21.75 KB SPA CSS / −20.29 KB
 blog CSS. The ~380 unused `uk-*` variant selectors inside live component
 families are recorded as deliberately kept (purge tooling fails the
 anti-overengineering bar); lint and 103/103 units green.
+2026-10-04 (same day, gates): the throwing-disposer fault-injection gate
+is closed with browser evidence. A dev-only owner-keyed injector seam in
+`Experience.release()` (`src/core/devTeardownFaults.ts`, same pattern as
+the existing `__jlz*` dev hooks, inert in production) drives two new
+cases in the host-teardown spec: a sync throwing disposer (`ground`)
+mid-chain and a rejecting async scene-owner teardown (`showreel`). Both
+proved the chain isolates the failure (logged once by owner name), keeps
+the documented release order for every other owner (stages → backend →
+SceneHost renderer), and still resolves the public teardown promise with
+zero page errors. Full spec 4/4 on the dedicated dev run; lint,
+type-check, format, and the 103/103 unit suite green. The production
+ingress verification attempt also has a concrete result now: the origin
+domain `justlovejazz.dev` (apex and www) does not resolve from the
+external reader service (DNS-level failure), and web search returns no
+indexed presence for the domain — the production deployment is absent or
+its DNS is not live, so the ingress acceptance gate is blocked on
+deployment, not on tooling; the user should check the domain's
+registration/DNS status before publishing. Remaining open gates:
+physical-GPU/WebGPU parity, natural (non-synthetic) device loss, and the
+TS7 toolchain question.
