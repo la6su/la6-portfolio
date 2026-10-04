@@ -93,12 +93,6 @@ export class EnvSphere {
   private readonly _floorMaterial: THREE.MeshBasicMaterial
   private readonly _skyMaterial: THREE.MeshBasicMaterial
   readonly materials: Record<PavilionMaterial, THREE.MeshBasicMaterial>
-  private readonly _backColor = new THREE.Color()
-  private readonly _leftColor = new THREE.Color()
-  private readonly _rightColor = new THREE.Color()
-  private readonly _ceilingColor = new THREE.Color()
-  private readonly _floorColor = new THREE.Color()
-  private readonly _skyColor = new THREE.Color()
   private readonly _targetColor = new THREE.Color()
   private readonly _sampleColor = new THREE.Color()
   private readonly _leftTargetColor = new THREE.Color()
@@ -210,23 +204,17 @@ export class EnvSphere {
 
     // Section weights already animate between palettes. A second lerp here
     // would leave the materials short of the target when the weights settle.
-    this._backColor.copy(this._targetColor)
     this._leftTargetColor.copy(this._targetColor).multiplyScalar(0.88)
     this._rightTargetColor.copy(this._targetColor).multiplyScalar(0.94)
     this._ceilingTargetColor.copy(this._targetColor).multiplyScalar(0.82)
     this._floorTargetColor.copy(this._targetColor).multiplyScalar(0.78)
     this._skyTargetColor.copy(this._targetColor).multiplyScalar(0.96)
-    this._leftColor.copy(this._leftTargetColor)
-    this._rightColor.copy(this._rightTargetColor)
-    this._ceilingColor.copy(this._ceilingTargetColor)
-    this._floorColor.copy(this._floorTargetColor)
-    this._skyColor.copy(this._skyTargetColor)
-    this._backMaterial.color.copy(this._backColor)
-    this._leftMaterial.color.copy(this._leftColor)
-    this._rightMaterial.color.copy(this._rightColor)
-    this._ceilingMaterial.color.copy(this._ceilingColor)
-    this._floorMaterial.color.copy(this._floorColor)
-    this._skyMaterial.color.copy(this._skyColor)
+    this._backMaterial.color.copy(this._targetColor)
+    this._leftMaterial.color.copy(this._leftTargetColor)
+    this._rightMaterial.color.copy(this._rightTargetColor)
+    this._ceilingMaterial.color.copy(this._ceilingTargetColor)
+    this._floorMaterial.color.copy(this._floorTargetColor)
+    this._skyMaterial.color.copy(this._skyTargetColor)
     this._dirty = false
   }
 

@@ -260,10 +260,6 @@ export class Experience {
     this._stages.contactCyprusStage?.resize(width, height)
   }
 
-  private lifecycleToken(): number {
-    return this._lifecycleGeneration
-  }
-
   private isLifecycleCurrent(token: number): boolean {
     return !this._destroyed && token === this._lifecycleGeneration
   }
@@ -461,7 +457,7 @@ export class Experience {
     if (this._destroyed) {
       throw new DOMException('Experience initialization was cancelled.', 'AbortError')
     }
-    const token = this.lifecycleToken()
+    const token = this._lifecycleGeneration
     // Install recovery ownership before the first renderer/scene await. A
     // device-loss event can arrive during any async initialization gap.
     this.installRendererRecovery()

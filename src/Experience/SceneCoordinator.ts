@@ -198,8 +198,7 @@ export class SceneCoordinator {
   }
 
   /** The demand-gated owner frame fan-out. On an idle frame it keeps
-   *  route ownership state synchronized without advancing any animation
-   *  clock (parity pinned by SceneCoordinator.motionParity). */
+   *  route ownership state synchronized without rendering. */
   public update(deltaTime: number, needsRender: boolean = true): void {
     const page = this.page()
     const burst = this.owners.particleBurst
@@ -266,8 +265,7 @@ export class SceneCoordinator {
   }
 
   /** The pooled scroll→world transform pass (range mapping, easing,
-   *  group fades, arrival fog, camera/baku/env lerp). The contract is
-   *  pinned by SceneCoordinator.routeVisuals/doubleEase/scrollStates. */
+   *  group fades, arrival fog, camera/baku lerp). */
   public updateTransform(scrollValue: number): WorldTransformResult {
     return this._transform.updateTransform(scrollValue)
   }
