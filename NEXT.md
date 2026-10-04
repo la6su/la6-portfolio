@@ -1819,6 +1819,14 @@ format checks and the full production build/budget check pass. The refreshed
 particle change has not had a new browser render because headless SwiftShader
 stalled at splash initialization. No test suites were run.
 
+The fullscreen entrance now uses a trigger-origin circular aperture, with a
+short phosphor bloom, a restrained poster settle, then staggered frame and
+copy reveals. Keyboard opens fall back to the focused trigger or viewport
+center, and reduced-motion mode bypasses the bloom/transitions. This pass has
+build evidence and a forced-open 390×844 headless Chromium/SwiftShader layout
+review with no horizontal overflow. This checked the settled theater and CSS
+origin variables, not the live pointer-trigger lifecycle or physical GPU.
+
 ## Status
 
 Phases 1 (runtime ownership) and 2 (declarative scene composition) are

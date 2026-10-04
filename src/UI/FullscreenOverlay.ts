@@ -203,16 +203,18 @@ export class FullscreenOverlay {
       ? pointer.x
       : focusRect
         ? focusRect.left + focusRect.width / 2
-        : null
+        : innerWidth / 2
     const originY = pointerIsCurrent
       ? pointer.y
       : focusRect
         ? focusRect.top + focusRect.height / 2
-        : null
+        : innerHeight / 2
     const dialog = this.container.querySelector<HTMLElement>('.jlz-fs-dialog')
-    if (dialog && originX !== null && originY !== null && innerWidth > 0 && innerHeight > 0) {
-      dialog.style.setProperty('--jlz-fs-origin-x', `${(originX / innerWidth) * 100}%`)
-      dialog.style.setProperty('--jlz-fs-origin-y', `${(originY / innerHeight) * 100}%`)
+    if (dialog && innerWidth > 0 && innerHeight > 0) {
+      const x = Math.min(100, Math.max(0, (originX / innerWidth) * 100))
+      const y = Math.min(100, Math.max(0, (originY / innerHeight) * 100))
+      dialog.style.setProperty('--jlz-fs-origin-x', `${x}%`)
+      dialog.style.setProperty('--jlz-fs-origin-y', `${y}%`)
     }
     UIkit.modal(this.container).show()
   }

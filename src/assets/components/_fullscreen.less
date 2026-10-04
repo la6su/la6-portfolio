@@ -45,17 +45,18 @@
   background: var(--jlz-color-bg) !important;
   --jlz-fs-origin-x: 50%;
   --jlz-fs-origin-y: 50%;
-  clip-path: ellipse(0% 0% at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
-  transform: scale(1.015);
+  transform-origin: var(--jlz-fs-origin-x) var(--jlz-fs-origin-y);
+  clip-path: circle(0 at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
+  transform: scale(0.975);
   opacity: 0;
   transition:
-    clip-path 0.55s var(--jlz-ease-cinematic),
-    transform 0.55s var(--jlz-ease-cinematic),
-    opacity 0.3s ease;
+    clip-path 0.68s var(--jlz-ease-cinematic),
+    transform 0.68s var(--jlz-ease-cinematic),
+    opacity 0.36s ease;
 }
 
 .jlz-fs-overlay.uk-open.is-entered .jlz-fs-dialog {
-  clip-path: ellipse(150vmax 150vmax at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
+  clip-path: circle(150vmax at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
   transform: scale(1);
   opacity: 1;
 }
@@ -69,6 +70,38 @@
   background: #05080b;
 }
 
+// A low-energy phosphor bloom follows the aperture out from the clicked tile.
+// The dialog's circular clip remains the reveal; this adds a short spatial
+// cue without introducing another canvas or render pass.
+.jlz-fs-theater::before {
+  position: absolute;
+  z-index: 0;
+  top: var(--jlz-fs-origin-y);
+  left: var(--jlz-fs-origin-x);
+  width: 1.5vmax;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(88 230 169 / 24%) 0%,
+    rgb(88 230 169 / 10%) 36%,
+    transparent 72%
+  );
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.2);
+  transition:
+    transform 0.78s var(--jlz-ease-cinematic),
+    opacity 0.3s ease;
+}
+
+.jlz-fs-overlay.is-entered .jlz-fs-theater::before {
+  opacity: 0.8;
+  transform: translate(-50%, -50%) scale(90);
+  transition-delay: 0s, 0.08s;
+}
+
 .jlz-fs-poster,
 .jlz-fs-shade,
 .jlz-fs-frame {
@@ -79,16 +112,16 @@
 .jlz-fs-poster {
   z-index: -2;
   background: #05080b center / cover no-repeat;
-  filter: saturate(0.88) brightness(0.8);
-  transform: scale(1.025);
+  filter: saturate(0.8) brightness(0.68);
+  transform: scale(1.075);
   transition:
-    opacity 0.55s ease,
-    filter 0.55s ease,
-    transform 1s var(--jlz-ease-cinematic);
+    opacity 0.58s ease 0.08s,
+    filter 0.75s var(--jlz-ease-cinematic),
+    transform 1.15s var(--jlz-ease-cinematic);
 }
 
 .jlz-fs-overlay.is-entered .jlz-fs-poster {
-  filter: saturate(0.94) brightness(0.9);
+  filter: saturate(0.96) brightness(0.88);
   transform: scale(1);
 }
 
@@ -103,7 +136,17 @@
   z-index: 1;
   inset: max(0.55rem, env(safe-area-inset-top)) 0.55rem max(0.55rem, env(safe-area-inset-bottom));
   border: 1px solid color-mix(in srgb, var(--jlz-color-signal-phosphor) 24%, transparent);
+  opacity: 0;
   pointer-events: none;
+  transform: scale(0.985);
+  transition:
+    opacity 0.4s ease 0.2s,
+    transform 0.72s var(--jlz-ease-cinematic) 0.08s;
+}
+
+.jlz-fs-overlay.is-entered .jlz-fs-frame {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .jlz-fs-frame::before,
@@ -258,18 +301,23 @@
   text-transform: uppercase;
 }
 
-.jlz-fs-overlay.is-entered .jlz-fs-topline,
+.jlz-fs-overlay.is-entered .jlz-fs-topline {
+  animation: jlz-fs-copy-in 0.42s var(--jlz-ease-cinematic) 0.12s both;
+}
+
 .jlz-fs-overlay.is-entered .jlz-fs-copy {
-  animation: jlz-fs-copy-in 0.65s var(--jlz-ease-cinematic) both;
+  animation: jlz-fs-copy-in 0.58s var(--jlz-ease-cinematic) 0.18s both;
 }
 
 @keyframes jlz-fs-copy-in {
   from {
     opacity: 0;
-    transform: translateY(0.8rem);
+    filter: blur(0.35rem);
+    transform: translateY(1rem);
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: translateY(0);
   }
 }
@@ -318,6 +366,7 @@
 @media (prefers-reduced-motion: reduce) {
   .jlz-fs-dialog,
   .jlz-fs-poster,
+  .jlz-fs-frame,
   .jlz-fs-overlay.is-entered .jlz-fs-topline,
   .jlz-fs-overlay.is-entered .jlz-fs-copy {
     clip-path: none;
@@ -325,5 +374,9 @@
     opacity: 1;
     animation: none;
     transition: none;
+  }
+
+  .jlz-fs-theater::before {
+    display: none;
   }
 }
