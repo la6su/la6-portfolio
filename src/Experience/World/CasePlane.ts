@@ -26,7 +26,7 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 let sharedGeometry: THREE.PlaneGeometry | null = null
 let sharedGeometryUsers = 0
 
-export interface CasePlaneGeometryLease {
+interface CasePlaneGeometryLease {
   readonly geometry: THREE.PlaneGeometry
   release(): void
 }
@@ -90,7 +90,7 @@ export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
   return { material, time, state }
 }
 
-export type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
+type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
 
 export class CasePlane {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>

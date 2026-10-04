@@ -25,7 +25,7 @@ import type { BakuCarousel } from './World/BakuCarousel'
  * render demand, and initialization remain callbacks because they can change
  * or are actions rather than owned objects.
  */
-export interface ExperienceUIHost {
+interface ExperienceUIHost {
   page: () => PageId
   baku: SplashCube
   particleBurst: ParticleBurst

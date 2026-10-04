@@ -4,7 +4,7 @@
 
 import type { ThemeMode } from './ThemeManager'
 
-export interface AppEvents {
+interface AppEvents {
   /** ExperienceRuntime begins scene preparation after SceneHost readiness. */
   'jlz:experience-starting': void
   /** Fired by the Vue runtime owner after Experience's first successful draw. */

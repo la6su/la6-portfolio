@@ -12,7 +12,7 @@ import { easeOutCubic } from '../../Utils/easing'
 
 const bubbleFont = new FontLoader().parse(fontJson as never)
 
-export interface TypographyGlyph {
+interface TypographyGlyph {
   geometry: THREE.BufferGeometry
   x: number
   phase: number

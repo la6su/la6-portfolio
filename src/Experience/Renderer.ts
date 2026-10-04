@@ -26,9 +26,9 @@ import {
   inspectUnifiedBackend,
 } from '../core/unifiedRenderer'
 
-export type RenderSurface = WebGPURenderer
+type RenderSurface = WebGPURenderer
 
-export interface Viewport {
+interface Viewport {
   width: number
   height: number
   dpr: number
@@ -47,7 +47,7 @@ type DeviceLossCapableRenderer = WebGPURenderer & {
  * capability, and recovery instead of constructing another renderer. `mode`
  * names the backend Three initialized.
  */
-export interface AdoptedRenderer {
+interface AdoptedRenderer {
   instance: RenderSurface
   mode: FinalMode
   /** Sync the live instance after a device-loss recovery swap. */

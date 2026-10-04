@@ -19,7 +19,7 @@ import { SITE_ORIGIN } from './siteConfig'
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 
-export interface PageMetaOverrides {
+interface PageMetaOverrides {
   title?: string
   description?: string
   canonicalPath?: string

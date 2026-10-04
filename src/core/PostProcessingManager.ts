@@ -13,7 +13,7 @@ import { copyPostParams, NEUTRAL_GRADE, postParamsMatch } from './postParams'
  * default to neutral/off in applyPreset). Bloom's blur shape is NOT authored
  * here — it is renderer-specific (see PHASE_BLOOM_SHAPES).
  */
-export type SectionPostParams = Pick<PostParams, 'bloom' | 'vignette' | 'grain' | 'chromatic'> &
+type SectionPostParams = Pick<PostParams, 'bloom' | 'vignette' | 'grain' | 'chromatic'> &
   Partial<Pick<PostParams, 'refract' | 'gradeShadows' | 'gradeHighlights'>>
 
 interface BloomShape {

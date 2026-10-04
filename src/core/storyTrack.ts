@@ -21,7 +21,7 @@ import { clampStoryPosition, mainSectionFromPosition } from './storyState'
 /** Sheet sections that are story sides, not main story frames. */
 const EXCLUDED_SECTIONS = new Set(['lab', 'menu', 'page-lab', 'page-menu'])
 
-export interface StoryTrack {
+interface StoryTrack {
   /** The scrolling element: the home `#spa-content` root or the page's `.jlz-page`. */
   scroller: HTMLElement
   /** The main story sections in track order, excluding the sheet sections. */

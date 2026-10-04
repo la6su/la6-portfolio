@@ -28,7 +28,7 @@
 import { eventBus } from './EventBus'
 import { langFromPath } from './routeManifest'
 
-export type Lang = 'EN' | 'RU'
+type Lang = 'EN' | 'RU'
 
 // ── Translation dictionaries ──
 /** Complete EN/RU content data. Exported for the parity regression check. */

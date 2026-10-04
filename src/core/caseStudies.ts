@@ -29,7 +29,7 @@ export interface CaseStudy {
   ru: CaseStudyCopy
 }
 
-export interface CaseStudyCopy {
+interface CaseStudyCopy {
   outcome: string
   context: string
   problem: string

@@ -51,7 +51,7 @@ export type SceneTransitionEasing = 'ease-out' | 'ease-in-out'
 /** Per-section 3D scene control. All optional — sections without these
  *  use defaults (objects visible when their scene group is visible,
  *  standard transition). */
-export interface SceneControl {
+interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
     wireframeText?: boolean
