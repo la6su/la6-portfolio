@@ -1821,9 +1821,15 @@ still return 200, port 18443 times out, and the temporary origin container was
 removed. Persistent `config.xml` and the active `:443` frontend were untouched.
 Guest `/tmp` cleanup could not be confirmed after QGA stopped; any remaining
 files contain only the generated self-signed test certificate/key and
-temporary HAProxy config. Do not reboot the firewall VM without approval; QGA
-recovery requires local console access or a controlled restart before this
-test can be retried.
+temporary HAProxy config. Follow-up recovery probes confirm the VM is running,
+but `qm agent ping`/`guest-exec` still fail, direct root SSH rejects the
+available public key, serial terminal exposes no shell prompt, and unauthenticated
+WebGUI requests reach only the login redirect (`/` 200, `/ui/` 302). CUA
+automation also cannot start because its sandbox reports `.aws: Bad file
+descriptor`; `.aws` was not touched. No non-disruptive guest recovery path is
+available from this session. Do not reboot the firewall VM without approval;
+QGA recovery requires authenticated local console access or a controlled
+restart before this test can be retried.
 
 Production-ready acceptance is not yet complete. Remaining gates are
 an app-specific route through the local OPNsense HAProxy using its existing
