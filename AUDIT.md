@@ -261,8 +261,10 @@ Re-verified in this audit, not assumed from prior records:
 1. **Browser/backend coverage** — Chromium 152 on RTX 5090/Blackwell ran the
    app on native WebGPU and Three's WebGL2 backend. A controlled Works-route
    comparison had no console/page errors and matching composition; native
-   WebGPU and ANGLE/NVIDIA contexts were confirmed. Firefox could not launch
-   through Playwright Juggler; Firefox/WebKit app coverage remains open.
+   WebGPU and ANGLE/NVIDIA contexts were confirmed. Pinned Playwright Firefox
+   155 passed 17 tests with 7 documented opt-in skips. WebKit could not launch
+   because the host lacks `libicu74`, `libxml2`, and `libflite1`; WebKit app
+   coverage remains open.
 2. **Natural (non-synthetic) device loss** — driven loss and undriven
    synthetic loss are proven; natural loss has not been observed on hardware.
 3. **Portfolio ingress route** — local OPNsense HAProxy on `192.168.10.1:443`

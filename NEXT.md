@@ -1751,9 +1751,10 @@ the latest recorded verification includes type-check, lint, formatting,
 `bun run type-check:vue`, `bun run lint`, `bun run format:check`,
 `bun run check:stdlib`, `bun run test:unit` (103/103), and
 `bun run test:serial` (18 passed / 6 opt-in skipped) passed; the Playwright
-suite used the pinned Chromium 153 installed under `/tmp`. Compose config
-validation passed and a static route check mapped all 30 sitemap URLs to
-generated HTML files. The full production build passed with budgets unchanged.
+suite used pinned Chromium 153 installed under `/tmp`. A pinned Firefox 155
+run also passed 17 tests with 7 opt-in skips. Compose config validation passed
+and a static route check mapped all 30 sitemap URLs to generated HTML files.
+The full production build passed with budgets unchanged.
 
 The project now includes a non-root NGINX image and Compose service for the
 existing reverse-proxy deployment shape. The image built locally and passed
@@ -1773,20 +1774,22 @@ Works-route comparison on the same GPU confirmed Three's WebGL2 backend as
 scene composition and the runs had no errors. This is visual/runtime evidence,
 not pixel-identical output. The workstation also exposes an RTX 4060 Ti.
 
-Firefox app coverage remains unavailable: system Firefox 155 repeatedly timed
-out at Playwright's Juggler launch handshake, including with a fresh disposable
-profile. The CUA automation runtime also exited unexpectedly. Neither failure
-is evidence of an app defect. Firefox/WebKit runtime coverage and natural
-hardware device-loss evidence remain open. Production ingress remains
-unverified: the last recorded DNS probe found no live records for
-`justlovejazz.dev`.
+Firefox app coverage is now confirmed by the pinned Playwright Firefox 155
+run (17 passed / 7 opt-in skipped). The system Firefox executable had failed
+the Playwright Juggler handshake, but using Playwright's pinned browser resolved
+that environment mismatch. WebKit 26.6 installed, but Playwright could not
+launch it because the host lacks `libicu74`, `libxml2`, and `libflite1`;
+WebKit's 20 launch failures are environment failures, not app assertions. An
+attempt to use the matching official Playwright Docker image instead made no
+download progress for over four minutes and was stopped; no system packages
+were installed.
+Natural hardware device-loss evidence remains open. The CUA automation runtime
+also exited unexpectedly and was not needed for these Playwright checks.
 
 Ingress recheck on 2026-10-04: system DNS returned no addresses for
 `justlovejazz.dev` or `www.justlovejazz.dev`, and HTTPS failed before
-connection with `Could not resolve host`. The only Docker context is the local
-Unix socket. The system SSH config refuses to load because its keepalive file
-permissions are invalid; using the user SSH config reaches `pvebase` (details
-and the OPNsense response are recorded below).
+connection with `Could not resolve host`; independent DNS-over-HTTPS returned
+NXDOMAIN for both. The only Docker context is the local Unix socket.
 
 The user SSH config resolves `pvebase` to `192.168.10.192`; its OPNsense VM
 (ID 100, `192.168.10.1`) has an active TLS frontend on port 443 and presents a
@@ -1801,6 +1804,6 @@ clarification that the project is still in development and checks are local.
 
 Production-ready acceptance is not yet complete. Remaining gates are
 an app-specific route through the local OPNsense HAProxy (including the
-container origin's headers/routes/TLS), Firefox/WebKit app coverage, and
-natural hardware device-loss evidence. Public DNS/TLS and deployment remain
-later release gates; local build and ingress evidence do not claim them.
+container origin's headers/routes/TLS), WebKit app coverage, and natural
+hardware device-loss evidence. Public DNS/TLS and deployment remain later
+release gates; local build and ingress evidence do not claim them.
