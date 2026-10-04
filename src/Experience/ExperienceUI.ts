@@ -13,6 +13,7 @@ import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
+import { WORKS_TAP_CHROME_SELECTOR } from '../core/chromeSelectors'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 import { PROJECTS } from '../Data/Projects'
@@ -157,12 +158,7 @@ export class ExperienceUI {
       // present. It must not be reinterpreted as a click on the first 3D plane.
       if (document.getElementById('jlz-app-loader')) return
       const target = e.target as HTMLElement | null
-      if (
-        target?.closest(
-          '.jlz-works-aperture, .jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]',
-        )
-      )
-        return
+      if (target?.closest(WORKS_TAP_CHROME_SELECTOR)) return
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       this.ensureProjectControls()

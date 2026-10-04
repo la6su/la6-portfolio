@@ -8,13 +8,12 @@
 
 import * as THREE from 'three'
 import { shallowRef } from 'vue'
+import { UI_CHROME_SELECTOR } from '../../core/chromeSelectors'
 // Ignore interactions that belong to the cinematic app chrome.
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
-  return !!target.closest(
-    '#cinematic-nav, #jlz-fs-overlay, #jlz-app-loader, [data-cinematic-menu], [data-contact-footer], [data-baku-carousel-control]',
-  )
+  return !!target.closest(UI_CHROME_SELECTOR)
 }
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
