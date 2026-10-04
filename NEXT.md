@@ -1748,9 +1748,12 @@ configuration are implemented. The S1–S9 release audit findings are closed;
 the latest recorded verification includes type-check, lint, formatting,
 103/103 unit tests, two byte-identical production builds, and e2e results of
 18 passed / 6 skipped / 0 failed. This session's `bun run build`,
-`bun run lint`, `bun run format:check`, and Compose config validation passed;
-a static route check mapped all 30 sitemap URLs to generated HTML files. No
-test suites were rerun.
+`bun run type-check:vue`, `bun run lint`, `bun run format:check`,
+`bun run check:stdlib`, `bun run test:unit` (103/103), and
+`bun run test:serial` (18 passed / 6 opt-in skipped) passed; the Playwright
+suite used the pinned Chromium 153 installed under `/tmp`. Compose config
+validation passed and a static route check mapped all 30 sitemap URLs to
+generated HTML files. The full production build passed with budgets unchanged.
 
 The project now includes a non-root NGINX image and Compose service for the
 existing reverse-proxy deployment shape. The image built locally and passed
@@ -1785,17 +1788,19 @@ Unix socket. The system SSH config refuses to load because its keepalive file
 permissions are invalid; using the user SSH config reaches `pvebase` (details
 and the OPNsense response are recorded below).
 
-Correction from the same-day local-lab probe: the user SSH config resolves
-`pvebase` to `192.168.10.192`, and that Proxmox host runs OPNsense VM 100 at
-`192.168.10.1`. Its HTTPS frontend is reachable on port 443 and presents a
-Let's Encrypt wildcard certificate for `*.6la.ru` (valid through 2026-12-23),
-but HAProxy returns `503 No server is available to handle this request` for
-the default host and SNI `justlovejazz.dev`, `6la.ru`, and `www.6la.ru` alike.
-The public IP path timed out and both public site hostnames still have no DNS
-records. Thus a local ingress exists, but no working backend route was
-observed for this project. No OPNsense configuration was changed.
+The user SSH config resolves `pvebase` to `192.168.10.192`; its OPNsense VM
+(ID 100, `192.168.10.1`) has an active TLS frontend on port 443 and presents a
+Let's Encrypt wildcard certificate for `*.6la.ru` (valid through
+2026-12-23). Existing `pvebase.6la.ru` and `opnroute.6la.ru` routes return
+200 through this frontend. Read-only config inspection found active ACL/action
+routes for other services but none for `justlovejazz.dev`; that SNI gets the
+default HAProxy 503. DNS-over-HTTPS independently returns NXDOMAIN for both
+`justlovejazz.dev` and `www.justlovejazz.dev`; the public IP path timed out.
+No OPNsense configuration was changed, consistent with the user's
+clarification that the project is still in development and checks are local.
 
 Production-ready acceptance is not yet complete. Remaining gates are
-deployment-host access to run the container behind HAProxy and verify public
-headers/routes/TLS, browser coverage in Firefox/WebKit, and natural hardware
-device-loss evidence. Do not claim those gates from local build results.
+an app-specific route through the local OPNsense HAProxy (including the
+container origin's headers/routes/TLS), Firefox/WebKit app coverage, and
+natural hardware device-loss evidence. Public DNS/TLS and deployment remain
+later release gates; local build and ingress evidence do not claim them.

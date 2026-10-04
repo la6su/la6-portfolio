@@ -265,8 +265,12 @@ Re-verified in this audit, not assumed from prior records:
    through Playwright Juggler; Firefox/WebKit app coverage remains open.
 2. **Natural (non-synthetic) device loss** — driven loss and undriven
    synthetic loss are proven; natural loss has not been observed on hardware.
-3. **Production ingress** — `justlovejazz.dev` (apex and www) has no live
-   DNS and no indexed presence; blocked on deployment, not tooling.
+3. **Portfolio ingress route** — local OPNsense HAProxy on `192.168.10.1:443`
+   is active: existing `pvebase.6la.ru` and `opnroute.6la.ru` return 200.
+   The configured frontend has no host ACL/action/backend for
+   `justlovejazz.dev`, which returns default 503. Public DNS-over-HTTPS returns
+   NXDOMAIN for apex and `www`; the project remains in development and no
+   router configuration was changed.
 
 ## Proposed solutions (ordered minimal slices)
 
