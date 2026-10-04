@@ -635,7 +635,7 @@ Current known facts:
   safelist (build complexity); neither clears the anti-overengineering
   bar while CSS sits behind the splash gate. Same for the UIkit JS side:
   the package ships no per-component ESM entry, so `import UIkit from
-  'uikit'` bundles all JS components (vendor-ui 153 KB, async) — swapping
+'uikit'` bundles all JS components (vendor-ui 153 KB, async) — swapping
   to deep `src/js` imports is brittle and not worth it now. Lint and the
   103/103 unit suite green after the slice.
 
