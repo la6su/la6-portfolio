@@ -1974,3 +1974,10 @@ new section IDs. Chromium review covered all four principles in EN/RU at
 in every mobile section. EN/RU dictionaries have no missing keys. Local type
 check, lint, build/budgets, and `git diff --check` passed. No tests or external
 deployment were run.
+
+Manifesto copy checkpoint (2026-10-05): shortened every principle to a punchy
+headline, a client-facing benefit, a one-line action, and a brief test. EN/RU
+mobile review at 390×844 confirms all four versions stay within their frames;
+the tallest RU dossier ends 94 px above the persistent launcher. Title,
+subtitle, principle rule, and compact practice/check labels now provide the
+reading hierarchy while leaving more of the canvas available to the 3D scene.
