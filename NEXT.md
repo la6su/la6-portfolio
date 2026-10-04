@@ -1783,9 +1783,13 @@ substrate follows that path beneath the tiles, so the home display reads as one
 spatial timeline ribbon rather than a set of individually bent cards. The
 substrate was muted and narrowed after the first local render showed bright,
 rectangular patches in the gaps. This ribbon material is enabled only for the
-home carousel; `/works` case planes keep their existing material. Particle
-motion and color cycling have been slowed and the scale pulse softened so the
-glyphs hold their identity longer.
+home carousel; `/works` case planes keep their existing material. A follow-up
+particle pass found the likely source of persistent glyph flicker: linearly
+filtered atlas samples could bleed across tile boundaries, while frame indices
+were encoded through an unrelated time-style formula. Frames are now assigned
+statically per instance, sampling is inset from atlas edges, hue cycling and
+the sharp scale pulse are removed, and field motion is reduced to a slow drift
+with a 2.5% breathing scale.
 
 Opening a project now presents a full-viewport mobile-first case theater in the
 site's graphite, phosphor and technical type system. It features the selected
@@ -1798,8 +1802,9 @@ with no console errors. The attempted fresh 390×844 review stalled at the
 disabled splash-entry control under headless SwiftShader, so this revision does
 not claim new mobile-render evidence. Earlier mobile scene evidence remains in
 the history above. No physical GPU timing was measured. Type-check, lint and
-format checks pass; run the full production build/budget check next. No test
-suites were run.
+format checks and the full production build/budget check pass. The refreshed
+particle change has not had a new browser render because headless SwiftShader
+stalled at splash initialization. No test suites were run.
 
 ## Status
 
