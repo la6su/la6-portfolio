@@ -530,6 +530,81 @@ Current known facts:
   `vue-tsc` path is not established; keep the verified TypeScript 6 toolchain
   until upstream support is confirmed. `bun outdated` could not reach npm due
   to DNS, so transitive dependency freshness is still unverified.
+- Runtime-evidence session on 2026-10-04 (headless Chromium via the
+  agent-browser CLI, dev server + `?force-webgl-backend` and `dev:hmr` mode;
+  software WebGL2/SwiftShader backend — the same environment class as the
+  earlier manual Chromium runs, not physical GPU). All sampling used the
+  dev-only `__jlzRuntimeSnapshot()` probe; the production preview smoke
+  (direct `/` and `/works` load, splash Enter, automatic WebGL2 fallback)
+  ran without the probe and with zero page/console errors. Evidence gathered:
+
+  - Idle wake-frame attribution: a 21-second settled window sampled at
+    100 ms recorded 10 wake frames, every one carrying
+    `lastInvalidation: 'breath'` at a steady 2.4–2.6 s cadence, with
+    `loopActive=false` between wakes, `settledFrames` advancing 1:1 with
+    frames, and zero activity flags. All idle wake demand is the deliberate
+    ambient-breath timer stepping the volumetric-light orbit; no stuck
+    animator and no stray one-shot source appeared. This closes the
+    attribution question on software WebGL2; a physical-GPU repeat stays
+    open.
+  - Route-churn plateau: 15 stops across 3 full home→works→manifesto→
+    contact→lab cycles held `rendererCanvasCount=1` and
+    `documentCanvasCount=2` at every stop and returned route-identical
+    scene counts from cycle 2 onward (the cycle-1→2 delta of +8
+    geometries/+4 materials is the documented Lab-stays-mounted contract).
+    A follow-up contact probe with a 12 s settle converged to exactly
+    37/35 scene geometries/materials and 27/12 renderer geometries/textures
+    on three consecutive visits (an earlier 6 s settle had sampled mid
+    Cyprus prewarm — timing, not a leak). No route-churn resource leak on
+    software WebGL2.
+  - Driven synthetic device loss: `WEBGL_lose_context.loseContext()` plus an
+    externally driven `restoreContext()` 300 ms later produced the recorded
+    loss(prevented)→restore→disposal-loss→helper-restore sequence,
+    `__jlzHost.recovered=true`, resumed frame advancement, one renderer
+    canvas, and no failure overlay — matching the earlier production
+    evidence, now also on the dev path. An undriven synthetic loss
+    (no external restore) correctly terminates in the failure overlay after
+    the 5 s restore wait: the first wait deliberately does not call
+    `restoreContext()` because natural browser loss restores itself.
+  - Post-recovery resize: after recovery, viewport changes to 390×844 and
+    1600×900 each mirrored exactly into the canvas drawing buffer with
+    frames advancing — the recovered-renderer viewport ownership path
+    works.
+  - Ready-state SceneHost HMR replacement (script-block comment edit via an
+    in-place write): vue:reload → old runtime retired → full re-init
+    sequence in console → resources back at the home baseline (22/28/5),
+    one canvas, no overlay, no page errors.
+  - HMR during active prewarm: a page-side watcher fired the SceneHost
+    script edit at the exact window where `__jlzHost` was published but
+    `__jlzRuntimeSnapshot` did not yet exist (Experience mid-init,
+    `compileAsync` prewarm active; edit landed at t≈5.9 s of boot). The
+    replacement retired the mid-init runtime and the new runtime completed
+    init at t≈9.3 s with baseline resources, one canvas, Enter enabled, no
+    errors. The teardown barrier + generation guard hold during startup,
+    closing the HMR-during-prewarm gate on software WebGL2.
+  - Environment note for reading future logs: `sed -i` (temp-file rename)
+    edits are invisible to the Vite watcher in this sandbox — in-place
+    writes (`printf >>`/`writeFileSync`) are required to trigger HMR.
+    Vite 8 mirrors browser console lines into the server terminal tagged
+    `(client)`.
+
+  Slices executed after the evidence session (all zero-reader deletions
+  verified by rg across src/tests/scripts/prerender/content, then
+  type-check, lint, format, the 103/103 unit suite, and full production
+  builds): the envColor dataflow (config → Section.lightData → per-frame
+  lerp → no reader) including LightTransform/lighting/lightColor/
+  lightIntensity and dead Section.name/phaseIndex; unread WorldConfig
+  fields (sectionLights, ui.showGallery, bgColor, unreachable domSection
+  fallback); dead controller accessors (WorksPlaneStage.handleTap,
+  BakuCarousel.getTargetCardIndex/sceneRoot, JunniParticles.mesh);
+  DeviceCapability.isTouch plus a provably-redundant guard; stale
+  spec-reference comments; EnvSphere's six pass-through color fields;
+  the never-applied 5.5 KB uikit form-range CSS plus nine unused console
+  icons, two never-invoked accordion hook mixins, and one dead blog CSS
+  rule; eight dead works.sectionN.title i18n keys in both dictionaries;
+  the consumer-less `src/types/less.d.ts` ambient module, a phantom eslint
+  ignore, the stale `.renderer-unsupported` e2e locator (now
+  `.jlz-renderer-failure`), and 22 internal-only type export keywords.
 
 ## Work queue
 
@@ -1675,3 +1750,21 @@ are the runtime-evidence gates listed in the work queue (route churn,
 device loss/recovery, HMR during prewarm, fault injection, physical-GPU
 parity, idle wake-frame attribution, ingress verification, TS7) — none
 are autonomously executable without a browser.
+Superseded 2026-10-04 (second session): a headless-Chromium runtime
+session closed the software-WebGL2 versions of the route-churn plateau,
+idle wake-frame attribution (all breath), driven synthetic device
+loss/recovery, post-recovery resize, ready-state SceneHost HMR
+replacement, and HMR-during-prewarm gates — see the runtime-evidence
+record above; a production-preview smoke (auto WebGL2 fallback, route
+navigation, zero errors) also passed. The deep-analysis slices of the
+same session removed the envColor dataflow, unread WorldConfig fields,
+dead controller accessors, dead capability state, never-applied uikit
+form-range CSS (−5.5 KB), nine unused icons, dead i18n entries, the
+ambient less module, and unexported 22 internal-only types; every slice
+passed type-check, lint, format, the 103/103 unit suite, and full
+production builds. Remaining open gates are now only the ones no
+software browser can provide: physical-GPU/WebGPU parity, natural
+(non-synthetic) device loss, fault injection of a throwing disposer
+(needs a patched-disposer harness — the existing host-teardown spec is
+the natural vehicle when the user wants it run), production ingress
+verification, and the TS7 toolchain question.
