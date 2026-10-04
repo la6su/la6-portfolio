@@ -1829,3 +1829,19 @@ deployment, not on tooling; the user should check the domain's
 registration/DNS status before publishing. Remaining open gates:
 physical-GPU/WebGPU parity, natural (non-synthetic) device loss, and the
 TS7 toolchain question.
+2026-10-04 (same day, TS7): the toolchain question is closed with
+registry and runtime evidence — the repo stays on `typescript ~6.0.3`.
+`typescript@7.0.2` is the latest stable, but its package removed the
+classic JS Compiler API (the root export resolves to a version stub; the
+programmatic surface moved to `./unstable/*` with a new shape). Live
+probes with the latest toolchain against TS 7.0.2 both fail hard:
+`vue-tsc@3.3.12` (already the repo's version) crashes on load with
+`ERR_PACKAGE_PATH_NOT_EXPORTED: Package subpath './lib/tsc' is not
+defined by "exports"`, and `typescript-eslint@8.71.0` (also the repo's
+version) has an explicit runtime guard "typescript-eslint does not
+support TS 7.0" pointing at the official side-by-side-with-TS-6 guidance
+and tracking issue #10940 for TS >=7.1. The build itself never invokes
+tsc (Vite/esbuild transpile-only), so a side-by-side tsc7 install would
+add a second compiler with no integration value — the `~6.0.3` pin is
+the correct position until both vue-tsc and typescript-eslint ship
+TS7-compatible releases. Re-evaluate only then; no repo change needed.
