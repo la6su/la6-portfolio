@@ -272,7 +272,10 @@ Re-verified in this audit, not assumed from prior records:
    The configured frontend has no host ACL/action/backend for
    `justlovejazz.dev`, which returns default 503. Public DNS-over-HTTPS returns
    NXDOMAIN for apex and `www`; the project remains in development and no
-   router configuration was changed.
+   router configuration was changed. An isolated HAProxy 3.2.19 container
+   matching the OPNsense version successfully proxied the restricted NGINX
+   origin with local TLS; all 30 sitemap routes, headers, gzip, and error
+   paths passed. This does not close the actual OPNsense route gate.
 
 ## Proposed solutions (ordered minimal slices)
 

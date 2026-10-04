@@ -1763,6 +1763,16 @@ root filesystem. HTTP smoke checks passed for all 30 sitemap routes, EN/RU
 language markers, security/cache headers, gzip, `/healthz`, missing-asset 404,
 and the unknown-route fallback. The first smoke exposed a route/directory
 collision on `/works` and `/blog`; ordering `$uri.html` before `$uri/` fixed it.
+An isolated local HAProxy 3.2.19 listener (matching the OPNsense binary) then
+proxied the restricted origin container over a private Docker bridge. A
+temporary self-signed `portfolio.test` certificate verified TLS/SNI locally;
+`/healthz` returned 204, all 30 sitemap routes returned 200, security and
+HTML cache headers matched policy, gzip was enabled, missing assets returned
+404, and unmatched Host returned 404. HAProxy/origin containers, network, and
+certificate were removed automatically. This closes the local origin↔HAProxy
+integration smoke, but does not stand in for the OPNsense frontend: no
+app-specific ACL/action/backend exists there yet, and its existing LE
+certificate/public DNS route was not used for the portfolio.
 
 Physical-GPU Chromium evidence is now available. With Chromium 152 on the
 RTX 5090 (Blackwell), the production app requested a non-fallback NVIDIA
@@ -1803,7 +1813,8 @@ No OPNsense configuration was changed, consistent with the user's
 clarification that the project is still in development and checks are local.
 
 Production-ready acceptance is not yet complete. Remaining gates are
-an app-specific route through the local OPNsense HAProxy (including the
-container origin's headers/routes/TLS), WebKit app coverage, and natural
-hardware device-loss evidence. Public DNS/TLS and deployment remain later
-release gates; local build and ingress evidence do not claim them.
+an app-specific route through the local OPNsense HAProxy using its existing
+certificate (including container-origin headers/routes/TLS), WebKit app
+coverage, and natural hardware device-loss evidence. Public DNS/TLS and
+deployment remain later release gates; local build and isolated HAProxy smoke
+do not claim them.
