@@ -58,7 +58,6 @@ export class SceneTransformPass {
   private _poolLookAt = new THREE.Vector3()
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
-  private _poolEnvColor = new THREE.Color()
   // The transform result is consumed synchronously by Experience.update().
   // Pool its nested metadata too; otherwise the vectors/colors above still
   // sat inside a fresh object graph on every demand-driven frame.
@@ -77,7 +76,6 @@ export class SceneTransformPass {
         roughness: 0,
         metalness: 0,
       },
-      envColor: this._poolEnvColor,
     },
   }
 
@@ -304,8 +302,6 @@ export class SceneTransformPass {
     const toCam = toSec.cameraTransform
     const fromBaku = fromSec.bakuTransform
     const toBaku = toSec.bakuTransform
-    const fromLight = fromSec.lightData
-    const toLight = toSec.lightData
 
     // fromCfg/toCfg already declared above (for easing selection)
     // Use the config from section's phaseConfig for ground/post/lighting
@@ -358,11 +354,6 @@ export class SceneTransformPass {
     bakuMaterial.metalness = THREE.MathUtils.lerp(
       fromBaku.material.metalness,
       toBaku.material.metalness,
-      t,
-    )
-    worldState.envColor = this._poolEnvColor.lerpColors(
-      fromLight.ambientColor,
-      toLight.ambientColor,
       t,
     )
     return result

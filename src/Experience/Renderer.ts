@@ -348,7 +348,7 @@ export class Renderer {
     // Fog is managed by SceneCoordinator (per-section fog color + density
     // from WorldConfig). SceneCoordinator creates scene.fog on init and
     // updates it on section change. Do NOT touch scene.fog here — that
-    // would overwrite the per-section fog with a stale envColor value.
+    // would overwrite the per-section fog with stale values.
 
     // Recovery closes the frame window while its replacement pipeline is built.
     const pipeline = this.pipeline

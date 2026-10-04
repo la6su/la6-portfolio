@@ -1,6 +1,5 @@
 // src/core/Section.ts — Per-section state machine (ready → viewing → passed)
 
-import * as THREE from 'three'
 import { type PhaseConfig, type CameraTransform, type BakuTransform } from './WorldConfig'
 
 export enum SectionState {
@@ -10,12 +9,6 @@ export enum SectionState {
 }
 
 export type { CameraTransform, BakuTransform }
-
-/** Light data used by Section (subset of LightTransform). */
-interface LightData {
-  ambientColor: THREE.Color
-  intensity: number
-}
 
 /** Route transition state only; renderable section content lives in SectionGroups.
  *
@@ -30,12 +23,10 @@ interface LightData {
 export class Section {
   private _disposed = false
   public phaseConfig: PhaseConfig
-  public readonly name: string
 
   // Transform holders read from PhaseConfig at construction
   public cameraTransform: CameraTransform
   public bakuTransform: BakuTransform
-  public lightData: LightData
 
   // Viewing state machinery (ready/viewing/passed)
   private _state: SectionState = SectionState.READY
@@ -45,11 +36,7 @@ export class Section {
     return this._state
   }
 
-  constructor(
-    config: PhaseConfig,
-    public phaseIndex: number,
-  ) {
-    this.name = `section-${config.id}`
+  constructor(config: PhaseConfig) {
     this.phaseConfig = config
 
     // Extract transforms from PhaseConfig
@@ -71,11 +58,6 @@ export class Section {
         roughness: config.baku.material.roughness,
         metalness: config.baku.material.metalness,
       },
-    }
-
-    this.lightData = {
-      ambientColor: config.lighting.ambientColor.clone(),
-      intensity: config.lighting.intensity,
     }
   }
 

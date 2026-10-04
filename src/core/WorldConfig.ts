@@ -27,11 +27,6 @@ export interface BakuTransform {
   }
 }
 
-export interface LightTransform {
-  ambientColor: THREE.Color
-  intensity: number
-}
-
 interface FogTransform {
   color: THREE.Color
   density: number
@@ -90,7 +85,6 @@ export interface PhaseConfig {
   camFovDuration: number
   camSmoothing: number
   baku: BakuTransform
-  lighting: LightTransform
   fog: FogTransform
   post: PostTransform
   ui: { showGallery: boolean }
@@ -125,8 +119,6 @@ type RawScene = {
   postRefract?: number
   postGradeShadows?: [number, number, number]
   postGradeHighlights?: [number, number, number]
-  lightColor?: number
-  lightIntensity?: number
   fogColor?: number
   fogDensity?: number
   bgColor?: number
@@ -159,8 +151,6 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   postRefract: 0,
   postGradeShadows: [1.0, 1.0, 1.0],
   postGradeHighlights: [1.0, 1.0, 1.0],
-  lightColor: 0xffffff,
-  lightIntensity: 1.2,
   fogColor: 0x000000,
   fogDensity: 0.005,
   bgColor: 0x000000,
@@ -199,8 +189,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     bakuOpacity: 0.35,
     bakuColor: 0xc0c0c0,
     postBloom: 0.4,
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
     groundOpacity: 0.08,
     sceneTransition: { easing: 'ease-out' },
   },
@@ -214,8 +202,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     bakuOpacity: 0.4,
     bakuColor: 0xc0c0c0,
     showGallery: true,
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
     groundOpacity: 0.1,
     sceneObjects: { bakuCarousel: true },
     sceneTransition: { easing: 'ease-out' },
@@ -225,8 +211,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     id: 'sec_contact',
     context: 'CONTACT — Footer',
     postBloom: 0.2,
-    lightColor: 0xffffff,
-    lightIntensity: 1.5,
     groundColor: 0x121212,
     groundOpacity: 0.4,
     sceneObjects: { wireframeText: true },
@@ -242,8 +226,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     postRefract: 0.012,
     postGradeShadows: [0.82, 0.84, 1.0],
     postGradeHighlights: [1.0, 0.98, 0.72],
-    lightColor: 0xa6a9d6,
-    lightIntensity: 0.72,
     groundOpacity: 0.02,
     sceneTransition: { easing: 'ease-in-out' },
   },
@@ -284,10 +266,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
         roughness: 0.05,
         metalness: 0.0,
       },
-    },
-    lighting: {
-      ambientColor: _toColor(r.lightColor!),
-      intensity: r.lightIntensity!,
     },
     fog: { color: _toColor(r.fogColor!), density: r.fogDensity! },
     post: {

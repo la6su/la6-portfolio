@@ -40,7 +40,7 @@ export class SectionStateMachine {
   /** Build the Section instances for the configs beginRoute loaded. */
   public buildSections(): void {
     this._configs.forEach((config, index) => {
-      const section = new Section(config, index)
+      const section = new Section(config)
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
         section.forceState(SectionState.VIEWING)
