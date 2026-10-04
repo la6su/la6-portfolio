@@ -8,7 +8,7 @@ was re-verified in the main session before being recorded here. The audit
 itself changed no source file; the live work queue remains
 [NEXT.md](NEXT.md).
 
-- Date: 2026-10-04 · Branch: `refactor/tvt-v5-audit` @ `dbfcaed6` (clean tree)
+- Date: 2026-10-04 · Branch: `refactor/tvt-v5-audit`; follow-up evidence is in `NEXT.md`
 - Checks that ran: static reads/greps across `src/`, `tests/`, `scripts/`,
   `blog/`, `content/`, configs; module-graph probes of installed
   `three` 0.186.1, `@tresjs/core` 5.9.2, `@tresjs/cientos` 5.9.2,
@@ -20,9 +20,11 @@ itself changed no source file; the live work queue remains
 ## Verdict
 
 **The architecture and tracked release artifacts are clean. Production
-acceptance remains open for deployment ingress and physical-GPU runtime
-evidence.** The initial blockers below are historical findings, superseded by
-the S1–S9 outcome recorded immediately after this verdict.
+acceptance remains open for deployment ingress, browser/device-loss runtime
+evidence, and external deployment checks. Physical-GPU Chromium coverage is
+now recorded in `NEXT.md`.** The initial blockers below are historical
+findings, superseded by the S1–S9 outcome recorded immediately after this
+verdict.
 
 > **Outcome (2026-10-04, same day):** slices S1–S9 are executed and
 > verified — `0013a85c` (S2+S3), `2dafbebc` (S4+S5), `ca67608c` (S6),
@@ -49,7 +51,7 @@ the S1–S9 outcome recorded immediately after this verdict.
   re-verified, and no recorded keep-verdict is overturned (section D).
 - The tracked `dist/`, Playwright collection, and eight minor leftovers in
   sections A–C have since been fixed and verified by S1–S9 below.
-- Open acceptance gates are the physical-GPU/native-WebGPU checks and
+- Open acceptance gates are the remaining browser/device-loss checks and
   production ingress/deployment checks in section E.
 
 ## A. Release-blocking findings
@@ -256,10 +258,13 @@ Re-verified in this audit, not assumed from prior records:
 
 ## E. Open gates no code change can close
 
-1. **Physical-GPU / native-WebGPU parity** — all runtime evidence to date
-   is software-WebGL2; needs a real GPU.
+1. **Browser/backend coverage** — Chromium 152 on RTX 5090/Blackwell ran the
+   app on native WebGPU and Three's WebGL2 backend. A controlled Works-route
+   comparison had no console/page errors and matching composition; native
+   WebGPU and ANGLE/NVIDIA contexts were confirmed. Firefox could not launch
+   through Playwright Juggler; Firefox/WebKit app coverage remains open.
 2. **Natural (non-synthetic) device loss** — driven loss and undriven
-   synthetic loss are proven; natural loss needs real hardware.
+   synthetic loss are proven; natural loss has not been observed on hardware.
 3. **Production ingress** — `justlovejazz.dev` (apex and www) has no live
    DNS and no indexed presence; blocked on deployment, not tooling.
 

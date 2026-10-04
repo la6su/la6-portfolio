@@ -1760,12 +1760,25 @@ language markers, security/cache headers, gzip, `/healthz`, missing-asset 404,
 and the unknown-route fallback. The first smoke exposed a route/directory
 collision on `/works` and `/blog`; ordering `$uri.html` before `$uri/` fixed it.
 
-The workstation's `nvidia-smi` cannot reach the NVIDIA driver; recorded
-software-WebGL2 evidence does not close physical-GPU/WebGPU parity or natural
-device-loss acceptance. Production ingress remains unverified: the last
-recorded DNS probe found no live records for `justlovejazz.dev`.
+Physical-GPU Chromium evidence is now available. With Chromium 152 on the
+RTX 5090 (Blackwell), the production app requested a non-fallback NVIDIA
+adapter (`GPUCanvasContext`, `isFallbackAdapter=false`) and rendered the
+Home → Services → Works → Porsche 911 Spider → Manifesto → Lab → Contact SPA
+sequence on one persistent canvas without page or console errors. A controlled
+Works-route comparison on the same GPU confirmed Three's WebGL2 backend as
+`WebGL2RenderingContext` via ANGLE/NVIDIA; both screenshots showed matching
+scene composition and the runs had no errors. This is visual/runtime evidence,
+not pixel-identical output. The workstation also exposes an RTX 4060 Ti.
 
-Production-ready acceptance is not yet complete. The next useful work requires
-deployment-host access to build and run the container behind HAProxy, verify
-public headers/routes/TLS, and capture physical-GPU Firefox or Chrome evidence.
-Do not claim those external gates from local build results.
+Firefox app coverage remains unavailable: system Firefox 155 repeatedly timed
+out at Playwright's Juggler launch handshake, including with a fresh disposable
+profile. The CUA automation runtime also exited unexpectedly. Neither failure
+is evidence of an app defect. Firefox/WebKit runtime coverage and natural
+hardware device-loss evidence remain open. Production ingress remains
+unverified: the last recorded DNS probe found no live records for
+`justlovejazz.dev`.
+
+Production-ready acceptance is not yet complete. Remaining gates are
+deployment-host access to run the container behind HAProxy and verify public
+headers/routes/TLS, browser coverage in Firefox/WebKit, and natural hardware
+device-loss evidence. Do not claim those gates from local build results.
