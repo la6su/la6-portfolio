@@ -43,13 +43,6 @@ type PostTransform = Pick<
   'bloom' | 'vignette' | 'grain' | 'chromatic' | 'refract' | 'gradeShadows' | 'gradeHighlights'
 >
 
-interface SectionLightDef {
-  hexColor: string
-  intensity?: number
-  distance?: number
-  position: [number, number, number]
-}
-
 /** Transition easing authored in WorldConfig. The list is closed: only these
  *  two curves are used by any section, so SceneCoordinator implements exactly
  *  them (no dead 'linear'/'cubic-bezier' branches). */
@@ -87,9 +80,7 @@ export interface PhaseConfig {
   baku: BakuTransform
   fog: FogTransform
   post: PostTransform
-  ui: { showGallery: boolean }
   ground: { color: THREE.Color; opacity: number }
-  sectionLights?: SectionLightDef[]
   /** Per-section 3D scene control (background pattern, objects, transition). */
   scene?: SceneControl
   /** Section theme: 'light' = light background (dark text), 'dark' = dark background (light text).
@@ -121,8 +112,6 @@ type RawScene = {
   postGradeHighlights?: [number, number, number]
   fogColor?: number
   fogDensity?: number
-  bgColor?: number
-  showGallery?: boolean
   groundColor?: number
   groundOpacity?: number
   /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text). */
@@ -153,8 +142,6 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   postGradeHighlights: [1.0, 1.0, 1.0],
   fogColor: 0x000000,
   fogDensity: 0.005,
-  bgColor: 0x000000,
-  showGallery: false,
   groundColor: 0x101010,
   groundOpacity: 0,
   sectionTheme: 'dark',
@@ -201,7 +188,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     camSmoothing: 6,
     bakuOpacity: 0.4,
     bakuColor: 0xc0c0c0,
-    showGallery: true,
     groundOpacity: 0.1,
     sceneObjects: { bakuCarousel: true },
     sceneTransition: { easing: 'ease-out' },
@@ -246,7 +232,7 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
   return {
     id: r.id,
     context: r.context,
-    domSection: r.domSection ?? r.id.replace(/^sec_/, ''),
+    domSection: r.domSection,
     range: r.range,
     camera: { position: _toVec(r.camPos!), target: _toVec(r.camTarget!), fov: r.camFov! },
     camFovOffset: r.camFovOffset!,
@@ -277,7 +263,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       gradeShadows: r.postGradeShadows!,
       gradeHighlights: r.postGradeHighlights!,
     },
-    ui: { showGallery: r.showGallery! },
     ground: {
       color: _toColor(r.groundColor!),
       opacity: r.groundOpacity!,
