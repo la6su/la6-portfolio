@@ -15,8 +15,10 @@ export interface WorksInstallationNodes {
 
 /**
  * Camera-local motion and material controller for the Works instrument.
- * Vue/Tres declares its mesh and geometry subtree; this owner deliberately
- * retains the two shared NodeMaterials until their own lifecycle slice.
+ * Vue/Tres declares and owns the mesh and geometry subtree; this controller
+ * deliberately owns the two shared NodeMaterials across stage lifetimes
+ * (release() drops node references only) and disposes them with the
+ * Experience teardown.
  */
 export class WorksInstallation {
   private readonly metal = new MeshStandardNodeMaterial({
