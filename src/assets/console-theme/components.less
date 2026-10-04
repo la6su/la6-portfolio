@@ -4,9 +4,6 @@
 @icon-button-border-radius: 0;
 @accordion-title-font-size: 1rem;
 @accordion-content-margin-top: @global-small-margin;
-@form-focus-border: @jlz-color-accent-secondary;
-@form-focus-background: @jlz-color-surface;
-@form-focus-color: @jlz-color-text;
 @tooltip-background: @jlz-color-bg-elevated;
 @tooltip-color: @jlz-color-text;
 @tooltip-border-radius: 0;
@@ -46,14 +43,6 @@
 }
 .hook-inverse-icon-button-active() {
   .hook-icon-button-active();
-}
-.hook-form() {
-  background: var(--jlz-color-surface);
-  color: var(--jlz-color-text);
-  font-family: @jlz-font-body;
-}
-.hook-form-focus() {
-  border-color: var(--jlz-color-accent-secondary);
 }
 .hook-tooltip() {
   border: 1px solid var(--jlz-color-border-strong);
