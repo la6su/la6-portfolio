@@ -1776,19 +1776,30 @@ checks for this local slice. CUA still exits before initialization, and no
 physical GPU is exposed to this shell, so WebGPU hardware performance remains
 open.
 
-Home Works ribbon checkpoint (2026-10-04): `BakuCarousel` now places its
-existing shared-texture case planes on a shallow 3D arc and yaws each frame
-toward the viewer; `CasePlane` adds a per-instance TSL edge bow that eases in
-with the existing reveal. The home frame publishes its focused project through
-the typed event bus to a small bilingual caption, keeping carousel controls and
-the DOM case viewer on the same project order. The fullscreen viewer now frames
-poster media without cropping its aspect ratio. Local Chromium 152 / SwiftShader
-visual review at 1440×900 and 390×844 confirmed the arc, poster frame, working
-next-card title update and case open; mobile width stayed 390px with no console
-errors. The mobile caption was moved above the scene after the first screenshot
-showed it under the fixed navigation. This is software-rendered visual evidence;
-physical GPU frame timing has not been measured. Type-check, lint, formatting,
-and the complete production build/budget check pass; no test suites were run.
+Home Works ribbon and project theater checkpoint (2026-10-04): the carousel
+tiles remain flat image planes while their positions, yaw and small residual
+shader deformation sample the same continuous path. A single narrow TSL
+substrate follows that path beneath the tiles, so the home display reads as one
+spatial timeline ribbon rather than a set of individually bent cards. The
+substrate was muted and narrowed after the first local render showed bright,
+rectangular patches in the gaps. This ribbon material is enabled only for the
+home carousel; `/works` case planes keep their existing material. Particle
+motion and color cycling have been slowed and the scale pulse softened so the
+glyphs hold their identity longer.
+
+Opening a project now presents a full-viewport mobile-first case theater in the
+site's graphite, phosphor and technical type system. It features the selected
+project's cover, title, description, metadata and tags, a dedicated close
+control, and a link to its localized case route; carousel arrows and arrow-key
+navigation were removed from the overlay. The overlay keeps its focus trap and
+Escape behavior. Desktop SwiftShader review from this change confirmed the
+selected-project content and successful navigation to `/works/porsche-911-spider`
+with no console errors. The attempted fresh 390×844 review stalled at the
+disabled splash-entry control under headless SwiftShader, so this revision does
+not claim new mobile-render evidence. Earlier mobile scene evidence remains in
+the history above. No physical GPU timing was measured. Type-check, lint and
+format checks pass; run the full production build/budget check next. No test
+suites were run.
 
 ## Status
 

@@ -7,6 +7,7 @@
 // Clicking a case uses a focus → travel handoff before UIkit takes ownership.
 
 import * as THREE from 'three'
+import type { MeshBasicNodeMaterial } from 'three/webgpu'
 import { shallowRef } from 'vue'
 import { UI_CHROME_SELECTOR } from '../../core/chromeSelectors'
 // Ignore interactions that belong to the cinematic app chrome.
@@ -16,7 +17,12 @@ function isUiChromeEvent(e: Event): boolean {
   return !!target.closest(UI_CHROME_SELECTOR)
 }
 import { PROJECTS } from '../../Data/Projects'
-import { CasePlane, CLOTH_PARAMS } from './CasePlane'
+import {
+  CasePlane,
+  CLOTH_PARAMS,
+  WORKS_RIBBON_PATH,
+  createWorksRibbonMaterialResources,
+} from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import type { PageId } from '../../core/routeManifest'
 import type { StorySide } from '../../core/storyState'
@@ -35,10 +41,8 @@ const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) =>
 
 // At the configured Works camera distance these dimensions frame exactly
 // three large cards, with a deliberate breathing gap between each one.
-const CARD_SCALE = 3.05
-const CARD_SPACING = 3.34
-const RIBBON_ANGLE = 0.225
-const RIBBON_RADIUS = CARD_SPACING / Math.sin(RIBBON_ANGLE)
+const CARD_SCALE = WORKS_RIBBON_PATH.cardWidth
+const CARD_SPACING = WORKS_RIBBON_PATH.spacing
 const MORPH_DAMPING = 3.0
 const SCROLL_DAMPING = 8.8
 const DRAG_SENSITIVITY = 0.0046
@@ -62,6 +66,9 @@ export class BakuCarousel {
   private cardAssets: BakuCarouselCardAsset[] = []
   private readonly cardListeners = new Set<(cards: readonly BakuCarouselCardAsset[]) => void>()
   private _root: THREE.Group | null = null
+  readonly ribbonGeometry: THREE.PlaneGeometry
+  readonly ribbonMaterial: MeshBasicNodeMaterial
+  private readonly ribbonReveal: ReturnType<typeof createWorksRibbonMaterialResources>['reveal']
   private readonly _visible = shallowRef(true)
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
@@ -106,7 +113,17 @@ export class BakuCarousel {
   constructor(
     private readonly page: () => PageId = () => 'home',
     private readonly storySide: () => StorySide = () => 'center',
-  ) {}
+  ) {
+    this.ribbonGeometry = new THREE.PlaneGeometry(
+      CARD_SPACING * CARD_COUNT,
+      WORKS_RIBBON_PATH.bandWidth,
+      CARD_COUNT * 16,
+      1,
+    )
+    const ribbon = createWorksRibbonMaterialResources()
+    this.ribbonMaterial = ribbon.material
+    this.ribbonReveal = ribbon.reveal
+  }
 
   get visible(): boolean {
     return this._visible.value
@@ -435,6 +452,7 @@ export class BakuCarousel {
 
     // Eased morph for animations (smoothstep gives ease-in/ease-out)
     const easedT = THREE.MathUtils.smoothstep(this._morphT, 0, 1)
+    this.ribbonReveal.value = easedT * 0.72
 
     // Continue the released drag velocity as carousel momentum.
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
@@ -469,13 +487,29 @@ export class BakuCarousel {
       const rawSlot = i + this.scroll.current / SNAP_STEP
       const slot = this.wrapSlot(rawSlot, n)
       const distance = Math.abs(slot)
-      const angle = slot * RIBBON_ANGLE
-      this._tmpStreamPos.set(
-        Math.sin(angle) * RIBBON_RADIUS,
+      const path = WORKS_RIBBON_PATH
+      const elevation =
+        Math.sin(slot * path.elevationA.frequency) * path.elevationA.amplitude +
+        Math.sin(slot * path.elevationB.frequency) * path.elevationB.amplitude
+      const depth =
+        Math.sin(slot * path.depthA.frequency) * path.depthA.amplitude +
+        Math.sin(slot * path.depthB.frequency) * path.depthB.amplitude
+      const elevationSlope =
+        Math.cos(slot * path.elevationA.frequency) *
+          path.elevationA.frequency *
+          path.elevationA.amplitude +
+        Math.cos(slot * path.elevationB.frequency) *
+          path.elevationB.frequency *
+          path.elevationB.amplitude
+      const depthSlope =
+        Math.cos(slot * path.depthA.frequency) * path.depthA.frequency * path.depthA.amplitude +
+        Math.cos(slot * path.depthB.frequency) * path.depthB.frequency * path.depthB.amplitude
+      this._tmpStreamPos.set(slot * CARD_SPACING, elevation, depth)
+      this._tmpRingRot.set(
         0,
-        -(1 - Math.cos(angle)) * RIBBON_RADIUS,
+        -Math.atan(depthSlope / CARD_SPACING),
+        Math.atan(elevationSlope / CARD_SPACING),
       )
-      this._tmpRingRot.set(0, -angle, 0)
 
       // Contact-sheet reveal: the centre establishes the composition, then the
       // right and left frames register on deliberately different beats.
@@ -496,7 +530,7 @@ export class BakuCarousel {
       card.scale.setScalar(CARD_SCALE * scale)
       const streamReveal = localReveal * THREE.MathUtils.clamp(3.25 - distance, 0, 1)
       card.setReveal(streamReveal)
-      card.setRibbonBend(localReveal * THREE.MathUtils.clamp(0.72 - distance * 0.11, 0, 0.72))
+      card.setRibbonPath(slot, streamReveal)
       // Hidden idle cards still receive their reveal/transform uniforms above,
       // but do not need per-frame cloth time advancement. Keep the CasePlane
       // idle guard active for those cards while preserving updates for visible
@@ -541,6 +575,8 @@ export class BakuCarousel {
     this._onCardClick = null
     this.onActivity = null
     this._camera = null
+    this.ribbonGeometry.dispose()
+    this.ribbonMaterial.dispose()
     this.isDown = false
     this.dragMoved = false
     this.dragAxis = 'pending'

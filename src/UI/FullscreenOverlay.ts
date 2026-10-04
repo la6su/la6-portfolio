@@ -2,15 +2,14 @@
 // overlay shell (FullscreenOverlayView.vue).
 //
 // This class owns only what Vue cannot: the UIKit3 modal lifecycle
-// (uk-open state, Esc to close, bg-close), the keyboard layer (Escape,
-// prev/next arrows, Tab focus trap), and the fullscreen-change events.
-// Content (title, category, description, tags, counter, poster, arrow
+// (uk-open state, Esc to close, bg-close), the keyboard layer (Escape and
+// Tab focus trap), and the fullscreen-change events.
+// Content (project id, title, category, description, tags and poster
 // visibility) is reactive state in the Vue view, published through the
 // typed `jlz:project-content` event by ExperienceUI.
 //
-// Video playback is not part of this surface: the only video source belongs
-// to the ShowreelTheater render mode (ShowreelConsole.vue chrome), so the
-// overlay is image-only by construction.
+// Case playback will use project-owned media when those assets are supplied;
+// this controller stays independent of whether the current hero is an image.
 
 import UIkit from 'uikit'
 import { eventBus } from '../core/EventBus'
@@ -27,8 +26,6 @@ function focusableElements(container: HTMLElement): HTMLElement[] {
 
 export class FullscreenOverlay {
   private container: HTMLDivElement
-  private prevBtn: HTMLButtonElement
-  private nextBtn: HTMLButtonElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _focusTrapHandler: ((e: FocusEvent) => void) | null = null
   private _lastShiftTab = false
@@ -53,16 +50,6 @@ export class FullscreenOverlay {
     if (!this.container.isConnected) {
       throw new Error('Fullscreen overlay must be mounted by AppShell before initialization.')
     }
-    // Wire the nav buttons; their visibility is Vue-owned content state.
-    this.prevBtn = this.container.querySelector('.jlz-fs-prev')!
-    this.nextBtn = this.container.querySelector('.jlz-fs-next')!
-
-    this.prevBtn.addEventListener('click', () => this.navigate(-1), {
-      signal: this._listeners.signal,
-    })
-    this.nextBtn.addEventListener('click', () => this.navigate(1), {
-      signal: this._listeners.signal,
-    })
     document.addEventListener(
       'pointerdown',
       (event: PointerEvent) => {
@@ -119,7 +106,7 @@ export class FullscreenOverlay {
     })
     UIkit.util.on(this.container, 'hide', () => this.handleHide())
     UIkit.util.on(this.container, 'hidden', this._onModalHidden)
-    // Keyboard: Escape + ArrowLeft/Right (prev/next)
+    // Keyboard: Escape closes the theater; Tab stays within it.
     // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents CinematicNav's window keydown from
     // also firing, so project arrows do not move the story behind the modal.
@@ -150,14 +137,6 @@ export class FullscreenOverlay {
         e.preventDefault()
         e.stopImmediatePropagation()
         this.close()
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        this.navigate(-1)
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        this.navigate(1)
       }
     }
 
@@ -203,10 +182,6 @@ export class FullscreenOverlay {
     if (this._focusTrapHandler) {
       document.removeEventListener('focusin', this._focusTrapHandler)
     }
-  }
-
-  private navigate(direction: -1 | 1): void {
-    eventBus.emit('jlz:project-navigate', { direction })
   }
 
   /**

@@ -182,10 +182,11 @@ export class JunniParticles {
     // SpriteNodeMaterial uses scaleNode for the sprite quad size.
     const scaleNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
-      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
-      // Pulse: exp(-mod(time + num.y*2, 1) * 7) * 3
+      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.35))
+      // Keep the glyphs legible between pulses; the old two-second, 4× pulse
+      // read as tile flicker while the sprites crossed the Works frame.
       const pulsePhase = mod(t.add(num.y.mul(2.0)), float(1.0))
-      const pulse = exp(pulsePhase.mul(-7.0)).mul(3.0)
+      const pulse = exp(pulsePhase.mul(-5.0)).mul(0.8)
       return num.y.mul(float(1.0).add(pulse)).mul(uSize as unknown as TSLNode)
     })
 
@@ -211,7 +212,7 @@ export class JunniParticles {
       const sheetUv = buildSheetUv() as unknown as TSLVec2
       const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
       const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
-      const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
+      const hueShift = (uTime as unknown as TSLNode).mul(0.035).add(num.y.mul(0.18))
       const shifted = vec3(hsv.x.add(hueShift).mod(1.0), hsv.y, hsv.z)
       const cycled = mx_hsvtorgb(shifted) as unknown as TSLVec3
       return cycled.mul(uColor as unknown as TSLVec3)

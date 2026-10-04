@@ -85,6 +85,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.toggleSound': 'Toggle sound',
     'common.skipToContent': 'Skip to content',
     'common.fullscreenViewer': 'Fullscreen project viewer',
+    'common.selectedProject': 'Selected project',
+    'common.projectPresentation': 'Project presentation',
+    'common.exploreCase': 'Explore case study',
     'common.previous': 'Previous',
     'common.next': 'Next',
 
@@ -299,6 +302,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.toggleSound': 'Переключить звук',
     'common.skipToContent': 'Перейти к содержимому',
     'common.fullscreenViewer': 'Полноэкранный просмотр проекта',
+    'common.selectedProject': 'Выбранный проект',
+    'common.projectPresentation': 'Презентация проекта',
+    'common.exploreCase': 'Перейти к кейсу',
     'common.previous': 'Предыдущий проект',
     'common.next': 'Следующий проект',
 

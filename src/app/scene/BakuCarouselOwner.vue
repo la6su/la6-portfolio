@@ -35,10 +35,19 @@ onBeforeUnmount(() => {
 
 <template>
   <TresGroup ref="root" name="baku-carousel" :visible="carousel.visible">
+    <TresMesh
+      name="works-time-ribbon"
+      :geometry="carousel.ribbonGeometry"
+      :material="carousel.ribbonMaterial"
+      :frustum-culled="false"
+      :render-order="1"
+      :dispose="null"
+    />
     <CasePlaneNode
       v-for="card in cards"
       :key="card.key"
       :card="card"
+      ribbon
       @ready="adoptCard(card, $event)"
     />
   </TresGroup>

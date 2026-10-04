@@ -107,13 +107,6 @@ export class ExperienceUI {
       }),
     )
 
-    this._unsubs.push(
-      eventBus.on('jlz:project-navigate', ({ direction }) => {
-        if (!this.overlay?.isOpen) return
-        this.navigateProject(direction)
-      }),
-    )
-
     // The fullscreen poster belongs to this UI owner. Warm it on the first
     // home Works arrival instead of checking overlay state on every scene frame.
     this._unsubs.push(
@@ -278,14 +271,12 @@ export class ExperienceUI {
     // only publishes — the modal stays hidden until a later open. All opens
     // (showreel, slider, /works) use the unified DOM cinematic reveal.
     eventBus.emit('jlz:project-content', {
+      projectId: project.id,
       poster: project.textureUrl,
       title: project.title,
       category: `${project.year ?? ''} · ${project.category ?? ''}`,
       description: project.description,
       tags: project.tags,
-      counter: `${safeIdx + 1} / ${projs.length}`,
-      hasPrev: true,
-      hasNext: true,
     })
     if (!preload) overlay.open()
   }

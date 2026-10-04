@@ -1,25 +1,29 @@
 <script setup lang="ts">
-// Owns the fullscreen overlay CONTENT: text bindings, tag list, nav-arrow
-// visibility, poster decode, and the authored title reveal. The UIkit modal
+// Owns the fullscreen case theater: project copy, tags, route CTA, poster
+// decode, and the authored title reveal. The UIkit modal
 // lifecycle, keyboard handling, and focus trap stay with the
 // `FullscreenOverlay` behavior controller that ExperienceUI creates over this
 // same element. Content arrives through the typed `jlz:project-content` port.
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import UIkit from '../core/uikit'
 import { eventBus } from '../core/EventBus'
+import { langFromPath, localizedPath } from '../core/routeManifest'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { BlurFade } from '../UI/BlurFade'
 
 const container = ref<HTMLDivElement | null>(null)
 const titleEl = ref<HTMLElement | null>(null)
+const route = useRoute()
 
+const projectId = ref('')
 const category = ref('')
 const description = ref('')
-const counter = ref('')
 const tags = ref<string[]>([])
-const hasPrev = ref(false)
-const hasNext = ref(false)
 const title = ref('')
+const caseHref = computed(() =>
+  projectId.value ? localizedPath(langFromPath(route.path), `/works/${projectId.value}`) : null,
+)
 
 const posterUrl = ref<string | null>(null)
 const posterReady = ref(false)
@@ -33,13 +37,11 @@ onMounted(() => {
   }
   unsubs.push(
     eventBus.on('jlz:project-content', (content) => {
+      projectId.value = content.projectId
       title.value = content.title ?? ''
       category.value = content.category ?? ''
       description.value = content.description ?? ''
-      counter.value = content.counter ?? ''
       tags.value = (content.tags ?? []).filter(Boolean)
-      hasPrev.value = content.hasPrev
-      hasNext.value = content.hasNext
       posterUrl.value = content.poster ?? null
     }),
   )
@@ -101,7 +103,7 @@ watch(title, (value) => {
   <div
     id="jlz-fs-overlay"
     ref="container"
-    uk-modal="bg-close: true; esc-close: true; stack: false"
+    uk-modal="bg-close: false; esc-close: true; stack: false"
     data-no-magnetic
     class="jlz-fs-overlay uk-modal uk-modal-full uk-light"
     role="dialog"
@@ -116,58 +118,37 @@ watch(title, (value) => {
         aria-label="Close"
         data-i18n-aria-label="common.close"
       >
-        <span uk-icon="icon: close; ratio: 1.25" aria-hidden="true"></span>
+        <span class="jlz-fs-close__label" data-i18n="common.close">Close</span>
+        <span uk-icon="icon: close; ratio: 1.15" aria-hidden="true"></span>
       </button>
-      <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
-        <div>
-          <div class="jlz-fs-cat uk-text-meta uk-text-uppercase">{{ category }}</div>
-          <h2 ref="titleEl" class="jlz-fs-title uk-heading-small uk-margin-remove"></h2>
-          <p
-            class="jlz-fs-desc uk-visible@s uk-text-truncate uk-margin-small-top uk-margin-remove-bottom"
-          >
-            {{ description }}
-          </p>
-        </div>
-        <div class="jlz-fs-meta-end uk-visible@s uk-text-right">
-          <div class="jlz-fs-counter uk-text-meta">{{ counter }}</div>
-          <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top">
-            <span
-              v-for="tag in tags"
-              :key="tag"
-              class="jlz-fs-tag uk-text-meta uk-text-uppercase"
-              >{{ tag }}</span
-            >
-          </div>
-        </div>
-      </header>
-      <main class="jlz-fs-media-stage uk-position-relative">
+      <main class="jlz-fs-theater uk-position-relative">
         <div
-          class="jlz-fs-poster uk-position-cover"
+          class="jlz-fs-poster"
           aria-hidden="true"
           :style="{
             backgroundImage: posterReady && posterUrl ? `url('${posterUrl}')` : '',
             opacity: posterReady ? '1' : '0',
           }"
         ></div>
+        <div class="jlz-fs-shade" aria-hidden="true"></div>
+        <div class="jlz-fs-topline" aria-hidden="true">
+          <span data-i18n="common.selectedProject">Selected project</span>
+          <span>{{ category }}</span>
+        </div>
+        <section class="jlz-fs-copy" :aria-label="title">
+          <p class="jlz-fs-kicker" data-i18n="common.projectPresentation">Project presentation</p>
+          <h1 ref="titleEl" class="jlz-fs-title"></h1>
+          <p class="jlz-fs-desc">{{ description }}</p>
+          <div v-if="tags.length" class="jlz-fs-tags" aria-label="Project disciplines">
+            <span v-for="tag in tags" :key="tag" class="jlz-fs-tag">{{ tag }}</span>
+          </div>
+          <RouterLink v-if="caseHref" class="jlz-fs-case-link" :to="caseHref">
+            <span data-i18n="common.exploreCase">Explore case study</span>
+            <span aria-hidden="true">↗</span>
+          </RouterLink>
+        </section>
+        <div class="jlz-fs-frame" aria-hidden="true"></div>
       </main>
-      <button
-        v-show="hasPrev"
-        class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center"
-        type="button"
-        aria-label="Previous"
-        data-i18n-aria-label="common.previous"
-      >
-        <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
-      </button>
-      <button
-        v-show="hasNext"
-        class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center"
-        type="button"
-        aria-label="Next"
-        data-i18n-aria-label="common.next"
-      >
-        <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
-      </button>
     </div>
   </div>
 </template>

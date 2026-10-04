@@ -39,15 +39,15 @@ export function createWorksSection(
   // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
 
-  // JunniParticles — exact junni Section3 params:
-  //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=1.0
+  // JunniParticles — adapted Section3 field with calmer tile motion:
+  //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=0.65
   // scaleNode = num.y * size (num.y = 0.05-1.0 → final 0.01-0.2)
   // Blending is theme-aware (setBlending via jlz:theme-applied).
   const particles = new JunniParticles({
     count: 100,
     range: [7, 8, 7],
     size: 0.2,
-    speed: 1.0,
+    speed: 0.65,
     color: 0x4488ff,
     texture: particleTexture,
     textureTiles: [6, 1],

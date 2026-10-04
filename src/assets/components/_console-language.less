@@ -1108,33 +1108,12 @@ body[data-cinematic-sheet] .jlz-console-bar {
   .jlz-tui-frame(@len: 1.1rem);
 }
 
-/* Fullscreen media keeps one consistent exit in the persistent top bar. */
+/* The fullscreen project theater owns its close control and hides story chrome. */
 .jlz-cinematic-shell.is-fullscreen-open {
-  z-index: 30020;
-  pointer-events: none;
-}
-
-.jlz-cinematic-shell.is-fullscreen-open .jlz-topbar__brand,
-.jlz-cinematic-shell.is-fullscreen-open .jlz-lang-toggle,
-.jlz-cinematic-shell.is-fullscreen-open .jlz-theme-toggle,
-.jlz-cinematic-shell.is-fullscreen-open .jlz-sound-toggle,
-.jlz-cinematic-shell.is-fullscreen-open .jlz-console-bar {
+  z-index: 0;
+  visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--jlz-duration-fast) ease;
-}
-
-.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher {
-  color: var(--jlz-color-signal-phosphor);
-  pointer-events: auto;
-}
-
-.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher__glyph i:first-child {
-  transform: translateY(0.15rem) rotate(35deg) scaleX(1);
-}
-
-.jlz-cinematic-shell.is-fullscreen-open .jlz-menu-launcher__glyph i:last-child {
-  transform: translateY(-0.15rem) rotate(-35deg);
 }
 
 [data-contact-footer] {
