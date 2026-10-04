@@ -36,9 +36,9 @@
   max-width: 100% !important;
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg) !important;
-  // The works plane sits in the right-hand aperture on wide screens and
-  // centers on narrow screens. Expand the editorial layer from that same
-  // visual origin so the 3D surface feels like it opens into the viewer.
+  // Pointer opens override this fallback with the interaction point; keyboard
+  // opens use the focused control's center. Keep a stable origin for scripted
+  // opens that have no visual trigger.
   --jlz-fs-origin-x: 70%;
   --jlz-fs-origin-y: 50%;
   clip-path: ellipse(0% 0% at var(--jlz-fs-origin-x) var(--jlz-fs-origin-y));
@@ -140,7 +140,8 @@ body.jlz-media-layer-open .jlz-fs-close {
   }
   .jlz-fs-meta {
     min-height: 5rem;
-    padding: 0.9rem 3.75rem 0.75rem 1rem;
+    // Keep the title below the persistent media close control on phones.
+    padding: 4.5rem 3.75rem 0.75rem 1rem;
   }
   .jlz-fs-close {
     top: max(0.65rem, env(safe-area-inset-top)) !important;

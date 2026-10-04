@@ -35,6 +35,7 @@ export class FullscreenOverlay {
   private _enterFallback: number | null = null
   private _shownRevealFrame: number | null = null
   private _mediaGeneration = 0
+  private _pointerOrigin: { x: number; y: number; at: number } | null = null
   private readonly _listeners = new AbortController()
 
   private _restoreFocus: HTMLElement | null = null
@@ -62,6 +63,20 @@ export class FullscreenOverlay {
     this.nextBtn.addEventListener('click', () => this.navigate(1), {
       signal: this._listeners.signal,
     })
+    document.addEventListener(
+      'pointerdown',
+      (event: PointerEvent) => {
+        this._pointerOrigin = { x: event.clientX, y: event.clientY, at: performance.now() }
+      },
+      { capture: true, signal: this._listeners.signal },
+    )
+    document.addEventListener(
+      'keydown',
+      () => {
+        this._pointerOrigin = null
+      },
+      { capture: true, signal: this._listeners.signal },
+    )
 
     // UIKit3 modal events — uk-open is the authoritative state. UIkit adds it
     // on show and removes it on hide; isOpen reads it directly. No custom
@@ -206,6 +221,24 @@ export class FullscreenOverlay {
     // modal before this overlay's event callbacks run.
     this._restoreFocus =
       document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const pointer = this._pointerOrigin
+    const pointerIsCurrent = pointer && performance.now() - pointer.at < 800
+    const focusRect = this._restoreFocus?.getBoundingClientRect()
+    const originX = pointerIsCurrent
+      ? pointer.x
+      : focusRect
+        ? focusRect.left + focusRect.width / 2
+        : null
+    const originY = pointerIsCurrent
+      ? pointer.y
+      : focusRect
+        ? focusRect.top + focusRect.height / 2
+        : null
+    const dialog = this.container.querySelector<HTMLElement>('.jlz-fs-dialog')
+    if (dialog && originX !== null && originY !== null && innerWidth > 0 && innerHeight > 0) {
+      dialog.style.setProperty('--jlz-fs-origin-x', `${(originX / innerWidth) * 100}%`)
+      dialog.style.setProperty('--jlz-fs-origin-y', `${(originY / innerHeight) * 100}%`)
+    }
     UIkit.modal(this.container).show()
   }
 

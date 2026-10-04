@@ -1740,19 +1740,41 @@ Execution order:
 - Update this queue when evidence or phase status changes; commit completed
   slices with a message describing the simplification.
 
-Latest local visual slice connects the existing Works plane pulse to the
-fullscreen project viewer: the DOM layer now expands from the plane's visual
-origin (desktop right aperture, mobile center), while case-study media uses a
-larger framed presentation. The case chapter heading also moves clear of the
-material narrative. A static local Chromium DOM review confirmed the Material
-chapter composition at 1440×900 and 390×844 and verified the viewer's computed
-desktop/mobile clip origins; it does not exercise GPU output or the animated
-transition. Type-check, lint, format check, and the production build/budgets
-pass. The first headless screenshot remained behind the splash
-because that environment did not publish renderer-ready; do not treat it as GPU
-visual evidence. The generated project films are not in the repository yet, so
-the existing static texture and showreel media paths remain in use until those
-local renders are ready.
+The project viewer expands from the current interaction point: pointer opens
+use the captured pointer location, keyboard opens use the focused control's
+center, and the desktop/mobile scene coordinates are fallbacks for scripted
+opens. The plane's existing TSL cloth pulse and DOM clip reveal form one
+gesture. Case-study media now uses a larger framed presentation, and case
+titles clear the material narrative. Static local
+Chromium review at 1440×900 and 390×844 found and fixed two mobile overlaps:
+the Works title against the orbit installation, and the fullscreen title
+against the persistent media controls. Mobile `/works` has no horizontal
+overflow; the viewer poster decodes and the transition settles without console
+errors. Pointer-origin computation and focus-origin fallback both resolve to
+the trigger location. These screenshots use SwiftShader and are visual
+DOM/backend smoke, not physical-GPU visual evidence.
+
+A local Chromium 152 run forced Three's WebGL2 backend over SwiftShader because
+this session has no `/dev/dri` or `/dev/nvidia*`, and `nvidia-smi` cannot reach a
+driver. On `/works`, the settled snapshot reported one renderer canvas, 27
+scene geometries, 22 materials, 5 scene textures, and renderer counters of 14
+geometries / 16 textures. Idle ended with `loopActive=false`; 22 startup/idle
+frames had total CPU-frame p50 1.5 ms / p95 70.4 ms, with the latest at 1.7 ms.
+After warmup, 120 pointer-active frames measured total p50 0.9 ms / p95 1.9 ms
+and renderer p50 0.6 ms / p95 1.3 ms. The startup p95 outlier is shader/backend
+initialization under software rendering, not a physical-GPU budget result. A
+resource-snapshot traversal measured about 0.058 ms per call on this scene.
+DevPanel previously performed that scene traversal and refreshed hidden
+Tweakpane controls every 500 ms in development; its refresh now returns early
+while hidden. The Vite dev dependency transfer (~19.6 MB) is unbundled and is
+not used as a production-size metric. The final project films are not present
+yet, so the existing static placeholder textures remain until the local renders
+are ready; the current Porsche cover is visibly marked “EBB VIBES”.
+
+Type-check, lint, format check and production build/budgets remain the release
+checks for this local slice. CUA still exits before initialization, and no
+physical GPU is exposed to this shell, so WebGPU hardware performance remains
+open.
 
 ## Status
 
