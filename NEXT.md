@@ -606,6 +606,39 @@ Current known facts:
   ignore, the stale `.renderer-unsupported` e2e locator (now
   `.jlz-renderer-failure`), and 22 internal-only type export keywords.
 
+  2026-10-04 styling-layer audit (LESS/CSS whole-assembly pass). Facts
+  established: the SPA's compiled theme ships inside the entry JS chunk
+  (`main-*.js` is 225,152 bytes of CSS string under a 225,183-byte chunk —
+  the `?inline` import in entry-app.ts); the blog ships the same
+  `_import.less` assembly as a real stylesheet (159,495 bytes minified).
+  The `?inline` seam is a verified port, not debt: the inline comment
+  documents that dev-mode CSS HMR through the reverse proxy breaks
+  `/@vite/client` injection, and the runtime cost in production is hidden
+  behind the splash gate — keep. Project-owned CSS is clean: all 99
+  `.jlz-*` classes and all 97 `--jlz-*` custom properties in the shipped
+  CSS have live references (zero dead). The uikit import list was re-walked
+  against every markup/JS consumer: one import was dead — `form.less`
+  (no `<form>`/`<input>`/`<select>`/`<textarea>` anywhere, no `uk-form-*`
+  or `uk-input`-family class usage, no programmatic form usage) — and is
+  now commented out with its `.hook-form()`/`.hook-form-focus()` hooks and
+  `@form-focus-*` vars removed from the console theme. Measured with
+  esbuild-minified compiles of both roots: SPA CSS 226,900 → 205,150
+  bytes (−9.6%), blog 159,495 → 139,209 bytes (−12.7%). Every other
+  active uikit import has at least one live consumer (`uk-tooltip` drives
+  PersistentConsole, `uk-modal` drives FullscreenOverlay, `uk-scrollspy`
+  drives Contact/Services reveals, `uk-accordion`/`uk-card`/`uk-navbar`
+  families drive the views). Known dead weight left in place deliberately:
+  ~380 unused `uk-*` variant selectors inside live component families
+  (card color-variants, inverse color-mode blocks, width/margin/position
+  utility variants) — removing them needs either hand-trimmed copies of
+  uikit sources (upgrade hazard) or a purge tool with a runtime-class
+  safelist (build complexity); neither clears the anti-overengineering
+  bar while CSS sits behind the splash gate. Same for the UIkit JS side:
+  the package ships no per-component ESM entry, so `import UIkit from
+  'uikit'` bundles all JS components (vendor-ui 153 KB, async) — swapping
+  to deep `src/js` imports is brittle and not worth it now. Lint and the
+  103/103 unit suite green after the slice.
+
 ## Work queue
 
 ### 1. Reduce runtime ownership overlap — active
@@ -1768,3 +1801,11 @@ software browser can provide: physical-GPU/WebGPU parity, natural
 (needs a patched-disposer harness — the existing host-teardown spec is
 the natural vehicle when the user wants it run), production ingress
 verification, and the TS7 toolchain question.
+2026-10-04 (same day, styling layer): a LESS/CSS whole-assembly audit
+verified the ownership split (zero dead `.jlz-*` classes/custom
+properties), confirmed the `?inline` CSS-in-JS seam and the full-bundle
+UIkit JS import as documented keep-decisions, and removed the one dead
+uikit import (`form.less`) for a measured −21.75 KB SPA CSS / −20.29 KB
+blog CSS. The ~380 unused `uk-*` variant selectors inside live component
+families are recorded as deliberately kept (purge tooling fails the
+anti-overengineering bar); lint and 103/103 units green.
