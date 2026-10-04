@@ -288,14 +288,6 @@ export class WorksPlaneStage {
     return true
   }
 
-  /** Pointer interaction for the visual plane itself, outside DOM hit targets. */
-  handleTap(clientX: number, clientY: number, openOverlay: (index: number) => void): boolean {
-    if (this._disposed || !this._camera || !this._active) return false
-    const idx = this.hitTest(clientX, clientY)
-    if (idx < 0) return false
-    return this.openProject(idx, openOverlay)
-  }
-
   /** Raycast against visible planes. Returns the project index or -1 on miss. */
   hitTest(clientX: number, clientY: number): number {
     if (this._disposed || !this._camera || !this._active) return -1

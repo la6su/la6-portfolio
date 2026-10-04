@@ -109,9 +109,6 @@ export class BakuCarousel {
   get visible(): boolean {
     return this._visible.value
   }
-  get sceneRoot(): THREE.Group | null {
-    return this._root
-  }
   set visible(value: boolean) {
     this._visible.value = value
   }
@@ -393,15 +390,6 @@ export class BakuCarousel {
   getFrontCardIndex(): number {
     if (this.cards.length === 0) return 0
     const idx = Math.round(-this.scroll.current / SNAP_STEP)
-    return ((idx % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
-  }
-
-  /** Get the index of the card that WILL face the camera after the current
-   *  scroll animation settles (uses scroll.target, not scroll.current).
-   *  Use this right after prev()/next() to know which project to load. */
-  getTargetCardIndex(): number {
-    if (this.cards.length === 0) return 0
-    const idx = Math.round(-this.scroll.target / SNAP_STEP)
     return ((idx % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
   }
 

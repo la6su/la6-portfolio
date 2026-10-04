@@ -250,9 +250,6 @@ export class JunniParticles {
   get count(): number {
     return this._count
   }
-  get mesh(): THREE.InstancedMesh | null {
-    return this._mesh
-  }
   get visible(): boolean {
     return this._visible.value
   }
