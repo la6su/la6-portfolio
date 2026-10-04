@@ -1781,10 +1781,19 @@ unverified: the last recorded DNS probe found no live records for
 Ingress recheck on 2026-10-04: system DNS returned no addresses for
 `justlovejazz.dev` or `www.justlovejazz.dev`, and HTTPS failed before
 connection with `Could not resolve host`. The only Docker context is the local
-Unix socket; `pvebase` is not resolvable from this workstation with SSH config
-bypassed. The system SSH config also refuses to load because its keepalive
-file permissions are invalid. Therefore no active HAProxy deployment target
-could be reached or verified in this session.
+Unix socket. The system SSH config refuses to load because its keepalive file
+permissions are invalid; using the user SSH config reaches `pvebase` (details
+and the OPNsense response are recorded below).
+
+Correction from the same-day local-lab probe: the user SSH config resolves
+`pvebase` to `192.168.10.192`, and that Proxmox host runs OPNsense VM 100 at
+`192.168.10.1`. Its HTTPS frontend is reachable on port 443 and presents a
+Let's Encrypt wildcard certificate for `*.6la.ru` (valid through 2026-12-23),
+but HAProxy returns `503 No server is available to handle this request` for
+the default host and SNI `justlovejazz.dev`, `6la.ru`, and `www.6la.ru` alike.
+The public IP path timed out and both public site hostnames still have no DNS
+records. Thus a local ingress exists, but no working backend route was
+observed for this project. No OPNsense configuration was changed.
 
 Production-ready acceptance is not yet complete. Remaining gates are
 deployment-host access to run the container behind HAProxy and verify public
