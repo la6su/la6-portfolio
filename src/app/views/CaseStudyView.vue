@@ -125,6 +125,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
       class="jlz-page jlz-case-study-page"
       data-page-view="case-study"
       :data-case-project="projectId"
+      :style="{ '--jlz-case-accent': project?.color ?? 'var(--jlz-color-accent)' }"
     >
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <template v-if="study && project && localizedStudy">
@@ -133,6 +134,7 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
           :key="index"
           :id="`section-case-${index + 1}`"
           :data-page-section="`case-${index + 1}`"
+          :data-case-chapter="index + 1"
           class="jlz-page-section jlz-case-chapter"
           :class="{ 'section-active': activeSectionId === `case-${index + 1}` }"
         >
@@ -158,9 +160,9 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
               <template v-if="index === 0">
                 <p class="jlz-works-premise">{{ localizedStudy.outcome }}</p>
                 <p class="jlz-works-context">{{ localizedStudy.role }}</p>
-                <p class="jlz-works-discipline uk-margin-top">
-                  {{ localizedStudy.stack.join(' / ') }}
-                </p>
+                <div class="jlz-case-stack" aria-label="Project disciplines">
+                  <span v-for="item in localizedStudy.stack" :key="item">{{ item }}</span>
+                </div>
                 <dl class="jlz-case-facts uk-description-list uk-margin-top">
                   <template v-for="item in localizedStudy.constraints" :key="item">
                     <dt>{{ item }}</dt>

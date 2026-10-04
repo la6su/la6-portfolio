@@ -1941,3 +1941,21 @@ changed through Reel, Explore, Explore, Contact. The Works action opened the
 focused Porsche project viewer, and the Services action reached its static
 article route. This checks DOM/UI flow and responsive placement only; it is not
 physical-GPU rendering evidence.
+
+Route-template checkpoint (2026-10-05): Services now uses a capability
+instrument layout with a clear editorial heading and a readable proof panel;
+Manifesto uses a principles folio with a large principle index and working
+protocol; Lab uses a compact experiment readout; case studies use the project's
+accent color, chapter marker, discipline chips, and a legible narrative panel.
+The same mono index, accent rule, elevated panel, and persistent launcher tie
+the pages together without forcing one shared page component. English and
+Russian labels were added for the new protocol/run markers. Headless Chromium
+visual review covered all four routes at 390×844 and 1440×900; section content
+fits its desktop viewport, and mobile copy panels sit clear of the persistent
+launcher. The main Works carousel and Home, Contact remain unchanged; the case
+study template was included because it was among the unfinished content routes.
+The preview used SwiftShader and does not certify physical-GPU rendering.
+
+This local slice passed `bun run type-check:vue`, `bun run lint`, and
+`bun run build` with existing bundle budgets. No tests were run, consistent
+with the repository's local-work contract.

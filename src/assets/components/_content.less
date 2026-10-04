@@ -402,6 +402,160 @@
   line-height: 1.35;
 }
 
+// Route-specific editorial shells keep the 3D object in a dedicated middle
+// field while the title and reading panel stay legible above it.
+.jlz-services-page .jlz-page-section > .uk-container,
+.jlz-lab-section > .uk-container {
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.jlz-service-heading,
+.jlz-lab-heading {
+  position: relative;
+  z-index: 3;
+  width: min(100%, 36rem);
+  align-items: flex-start !important;
+  margin: 0;
+  text-align: left !important;
+}
+
+.jlz-service-heading::before,
+.jlz-lab-heading::before {
+  position: absolute;
+  z-index: -1;
+  inset: -1rem -1rem 0;
+  background: linear-gradient(180deg, var(--jlz-color-bg) 68%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.jlz-service-heading .studio-title,
+.jlz-lab-heading .studio-title {
+  max-width: 13ch;
+  font-size: clamp(2.45rem, 9vw, 5rem);
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.jlz-service-heading .uk-text-lead,
+.jlz-lab-heading .uk-text-lead {
+  max-width: 28ch;
+  margin-top: 0.75rem;
+  color: var(--jlz-color-text-muted);
+  font-size: clamp(1rem, 3.2vw, 1.3rem);
+  line-height: 1.35;
+}
+
+.jlz-service-panel,
+.jlz-lab-panel {
+  position: relative;
+  z-index: 3;
+  width: min(100%, 40rem);
+  align-self: flex-end;
+  margin: 0;
+  padding: 0;
+}
+
+.jlz-service-content,
+.jlz-lab-readout {
+  border-left: 2px solid var(--jlz-color-accent);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 94%, transparent);
+  box-shadow: 0 1rem 3rem color-mix(in srgb, #000 18%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.jlz-service-content > :first-child,
+.jlz-lab-readout > :first-child {
+  display: none;
+}
+
+.jlz-service-content > :last-child,
+.jlz-lab-readout > :last-child {
+  padding: clamp(1rem, 3vw, 1.6rem);
+}
+
+.jlz-service-console {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jlz-service-console::before {
+  display: none;
+}
+
+.jlz-service-console .jlz-console-card__chrome {
+  margin-bottom: 1rem;
+}
+
+.jlz-service-console__statement,
+.jlz-service-runtime__caption {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+}
+
+.jlz-service-spec {
+  margin-top: 1rem;
+}
+
+.jlz-service-runtime,
+.jlz-service-motion {
+  width: 100%;
+}
+
+.jlz-service-runtime__field {
+  width: min(100%, 15rem);
+}
+
+.jlz-service-motion__words {
+  width: 100%;
+  font-size: clamp(2.4rem, 9vw, 4rem);
+}
+
+.jlz-service-console--cta .jlz-console-card__chrome {
+  margin-bottom: 1rem;
+}
+
+.jlz-lab-readout__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.85rem;
+  color: var(--jlz-color-accent-secondary);
+  font:
+    0.64rem var(--jlz-font-mono),
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.jlz-lab-readout__run {
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-lab-readout__copy {
+  gap: 0.35rem;
+}
+
+.jlz-lab-readout__copy .uk-text-meta {
+  color: var(--jlz-color-text);
+  font-size: 0.82rem;
+}
+
+.jlz-lab-readout .jlz-experiment-footer {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--jlz-color-border);
+}
+
+.jlz-experiment-footer__state {
+  color: var(--jlz-color-text-subtle);
+}
+
 @media (max-width: 639px) {
   .jlz-contact-section .uk-container {
     align-items: stretch;
@@ -445,31 +599,42 @@
 // UIkit Scrollspy owns simple DOM entrances. The section controller owns frame
 // changes, while BlurFade/NoiseText and the Cyprus stage keep specialised owners.
 .jlz-manifesto-room {
-  position: relative;
-  padding: 7rem 7vw 8rem;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
 }
 .jlz-manifesto-head {
-  max-width: 48rem;
+  position: relative;
+  z-index: 3;
+  max-width: 42rem;
 }
 .jlz-manifesto-head .jlz-eyebrow {
   color: var(--jlz-color-accent);
   font-family: var(--jlz-font-mono);
 }
 .jlz-manifesto-lead {
-  max-width: 34rem;
+  max-width: 25ch;
+  margin-top: 0.75rem;
   color: var(--jlz-color-text-muted);
+  font-size: clamp(1rem, 3.2vw, 1.3rem);
+  line-height: 1.35;
 }
 .jlz-manifesto-grid {
   display: grid;
-  grid-template-columns: 6rem minmax(0, 32rem) 1fr;
-  gap: 2rem;
-  align-items: end;
-  min-height: 42vh;
-  margin-top: 8vh;
+  position: relative;
+  z-index: 3;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  margin: auto 0 0;
+  padding-top: 1rem;
 }
 .jlz-manifesto-index {
   color: var(--jlz-color-text);
-  font: clamp(2rem, 5vw, 5rem) var(--jlz-font-mono);
+  font: 2rem var(--jlz-font-mono);
   letter-spacing: -0.08em;
 }
 .jlz-manifesto-index span {
@@ -479,8 +644,13 @@
   letter-spacing: 0.12em;
 }
 .jlz-manifesto-protocol {
-  border-top: 1px solid var(--jlz-color-border-strong);
-  padding-top: 1rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-top: 2px solid var(--jlz-color-accent);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 94%, transparent);
+  box-shadow: 0 1rem 3rem color-mix(in srgb, #000 18%, transparent);
+  backdrop-filter: blur(14px);
 }
 .jlz-manifesto-protocol__label {
   color: var(--jlz-color-accent-secondary);
@@ -488,14 +658,15 @@
   letter-spacing: 0.12em;
 }
 .jlz-manifesto-protocol__line {
-  margin: 0.8rem 0;
-  font-size: clamp(1.35rem, 2.2vw, 2.3rem);
-  line-height: 1.1;
+  margin: 0.7rem 0;
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  line-height: 1.18;
 }
 .jlz-manifesto-evidence {
-  max-width: 30rem;
+  max-width: 34ch;
+  margin-bottom: 0;
   color: var(--jlz-color-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   line-height: 1.6;
 }
 .jlz-manifesto-link {
@@ -504,17 +675,51 @@
   margin-top: 1.5rem;
   color: var(--jlz-color-accent);
 }
-@media (max-width: 959px) {
-  .jlz-manifesto-room {
-    padding: 6rem 6vw 7rem;
-  }
+@media (min-width: 960px) {
   .jlz-manifesto-grid {
-    grid-template-columns: 3rem minmax(0, 1fr);
-    gap: 1rem;
-    margin-top: 6vh;
+    grid-template-columns: 5.5rem minmax(0, 36rem);
+    gap: 1.4rem;
+    padding-bottom: 1rem;
   }
   .jlz-manifesto-index {
-    font-size: 2.2rem;
+    font-size: 3.5rem;
+  }
+  .jlz-manifesto-protocol {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .jlz-service-panel,
+  .jlz-lab-panel {
+    width: 100%;
+  }
+
+  .jlz-service-content > :last-child,
+  .jlz-lab-readout > :last-child {
+    padding: 0.9rem 1rem;
+  }
+
+  .jlz-service-console__statement,
+  .jlz-service-runtime__caption {
+    font-size: 0.95rem;
+  }
+
+  .jlz-service-spec {
+    font-size: 0.65rem;
+  }
+
+  .jlz-manifesto-grid {
+    grid-template-columns: 2.8rem minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .jlz-manifesto-index {
+    font-size: 1.6rem;
+  }
+
+  .jlz-manifesto-protocol {
+    padding: 0.8rem;
   }
 }
 

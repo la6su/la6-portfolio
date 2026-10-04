@@ -63,6 +63,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.routes': 'Portfolio routes',
     'nav.goToSection': 'Go to section',
     'nav.section': 'Section',
+    'manifesto.protocolLabel': 'Working protocol',
+    'lab.run': 'Run /',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
@@ -282,6 +284,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.routes': 'Разделы портфолио',
     'nav.goToSection': 'Перейти к разделу',
     'nav.section': 'Раздел',
+    'manifesto.protocolLabel': 'Принцип работы',
+    'lab.run': 'Запуск /',
 
     // Menu overlay (RU)
     'menu.navigate': 'Меню',

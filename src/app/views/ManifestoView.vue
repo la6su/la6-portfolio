@@ -93,13 +93,12 @@ const PRINCIPLES: readonly Principle[] = [
       <section
         v-for="p in PRINCIPLES"
         :key="p.key"
+        class="jlz-manifesto-section"
         :class="[
-          'jlz-page-section',
-          'uk-section',
-          'uk-section-small',
-          'uk-section-large@m',
+          'jlz-page-section uk-section uk-section-small uk-section-large@m',
           activeSectionId === p.key.replace('manifesto.', 'manifesto-') ? 'section-active' : '',
         ]"
+        :data-principle="p.num"
         :id="`section-${p.key.replace('manifesto.', 'manifesto-')}`"
         :data-page-section="`${p.key.replace('manifesto.', 'manifesto-')}`"
       >
@@ -124,10 +123,12 @@ const PRINCIPLES: readonly Principle[] = [
               {{ p.lead }}
             </p>
           </div>
-          <div class="jlz-manifesto-grid">
+          <div class="jlz-manifesto-grid" role="group" :aria-label="`${p.num} / 04`">
             <div class="jlz-manifesto-index" aria-hidden="true">{{ p.num }}<span>/04</span></div>
             <div class="jlz-manifesto-protocol">
-              <p class="jlz-manifesto-protocol__label">WORKING PROTOCOL</p>
+              <p class="jlz-manifesto-protocol__label" data-i18n="manifesto.protocolLabel">
+                WORKING PROTOCOL
+              </p>
               <p class="jlz-manifesto-protocol__line">{{ p.protocol }}</p>
               <p class="jlz-manifesto-evidence">{{ p.evidence }}</p>
               <div v-if="p.desc.length" class="jlz-service-desc uk-flex uk-flex-column">

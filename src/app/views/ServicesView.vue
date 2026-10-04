@@ -33,6 +33,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
       <!-- 01 · Creative Direction (start, active) -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
+        data-service-frame="creative"
         id="section-services-creativeDirection"
         data-page-section="services-creativeDirection"
         :class="{ 'section-active': activeSectionId === 'services-creativeDirection' }"
@@ -40,7 +41,9 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
         >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+          <div
+            class="jlz-section-top jlz-service-heading uk-text-center uk-flex uk-flex-column uk-flex-middle"
+          >
             <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="01"
               >01</span
             >
@@ -54,8 +57,8 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
               Start with the business, its audience and its data.
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
+          <div class="jlz-section-bottom jlz-service-panel">
+            <div class="jlz-cinematic-shell jlz-service-content">
               <div>
                 <span aria-hidden="true">></span>
               </div>
@@ -103,6 +106,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
       <!-- 02 · Development -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
+        data-service-frame="development"
         id="section-services-interactiveDev"
         data-page-section="services-interactiveDev"
         :class="{ 'section-active': activeSectionId === 'services-interactiveDev' }"
@@ -110,7 +114,9 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
         >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+          <div
+            class="jlz-section-top jlz-service-heading uk-text-center uk-flex uk-flex-column uk-flex-middle"
+          >
             <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="02"
               >02</span
             >
@@ -124,8 +130,8 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
               Fast to ship, built around real tasks.
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
+          <div class="jlz-section-bottom jlz-service-panel">
+            <div class="jlz-cinematic-shell jlz-service-content">
               <div>
                 <span aria-hidden="true">></span>
               </div>
@@ -187,6 +193,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
       <!-- 03 · Motion -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
+        data-service-frame="motion"
         id="section-services-motionRealtime"
         data-page-section="services-motionRealtime"
         :class="{ 'section-active': activeSectionId === 'services-motionRealtime' }"
@@ -194,7 +201,9 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
         >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+          <div
+            class="jlz-section-top jlz-service-heading uk-text-center uk-flex uk-flex-column uk-flex-middle"
+          >
             <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="03"
               >03</span
             >
@@ -208,8 +217,8 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
               Show how the product works and why it's worth choosing.
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
+          <div class="jlz-section-bottom jlz-service-panel">
+            <div class="jlz-cinematic-shell jlz-service-content">
               <div>
                 <span aria-hidden="true">></span>
               </div>
@@ -252,6 +261,7 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
       <!-- 04 · AI & automation -->
       <section
         class="jlz-page-section uk-section uk-section-small uk-section-large@m"
+        data-service-frame="automation"
         id="section-services-aiSystems"
         data-page-section="services-aiSystems"
         :class="{ 'section-active': activeSectionId === 'services-aiSystems' }"
@@ -259,7 +269,9 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
         >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+          <div
+            class="jlz-section-top jlz-service-heading uk-text-center uk-flex uk-flex-column uk-flex-middle"
+          >
             <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="04"
               >04</span
             >
@@ -273,8 +285,8 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
               Automate the routine: content, handoffs and publishing.
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
+          <div class="jlz-section-bottom jlz-service-panel">
+            <div class="jlz-cinematic-shell jlz-service-content">
               <div>
                 <span aria-hidden="true">></span>
               </div>

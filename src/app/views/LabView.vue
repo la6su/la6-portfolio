@@ -99,6 +99,7 @@ const EXPERIMENTS: readonly Experiment[] = [
       <section
         v-for="exp in EXPERIMENTS"
         :key="exp.num"
+        class="jlz-lab-section"
         :class="[
           'jlz-page-section',
           'uk-section',
@@ -112,7 +113,9 @@ const EXPERIMENTS: readonly Experiment[] = [
         <div
           class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
         >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
+          <div
+            class="jlz-section-top jlz-lab-heading uk-text-center uk-flex uk-flex-column uk-flex-middle"
+          >
             <span
               class="jlz-eyebrow uk-display-inline-block"
               data-eyebrow
@@ -129,13 +132,20 @@ const EXPERIMENTS: readonly Experiment[] = [
               {{ exp.lead }}
             </p>
           </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
+          <div class="jlz-section-bottom jlz-lab-panel">
+            <div class="jlz-cinematic-shell jlz-lab-readout">
               <div>
                 <span aria-hidden="true">></span>
               </div>
               <div>
-                <div class="jlz-service-desc uk-flex uk-flex-column">
+                <div class="jlz-lab-readout__head">
+                  <span class="jlz-lab-readout__run" data-i18n="lab.run">RUN /</span>
+                  <span class="jlz-lab-readout__number">{{ exp.num }}</span>
+                  <span class="jlz-experiment-footer__mode" :data-i18n="exp.modeKey">
+                    {{ exp.mode }}
+                  </span>
+                </div>
+                <div class="jlz-service-desc jlz-lab-readout__copy uk-flex uk-flex-column">
                   <p
                     v-for="(line, d) in exp.desc"
                     :key="d"
@@ -148,12 +158,6 @@ const EXPERIMENTS: readonly Experiment[] = [
                 <div
                   class="jlz-experiment-footer uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top"
                 >
-                  <span
-                    class="jlz-experiment-footer__mode uk-text-uppercase"
-                    :data-i18n="exp.modeKey"
-                  >
-                    {{ exp.mode }}
-                  </span>
                   <span
                     class="jlz-experiment-footer__state uk-text-uppercase uk-text-muted"
                     data-i18n="lab.sceneState"
