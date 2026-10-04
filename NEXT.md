@@ -1778,6 +1778,14 @@ hardware device-loss evidence remain open. Production ingress remains
 unverified: the last recorded DNS probe found no live records for
 `justlovejazz.dev`.
 
+Ingress recheck on 2026-10-04: system DNS returned no addresses for
+`justlovejazz.dev` or `www.justlovejazz.dev`, and HTTPS failed before
+connection with `Could not resolve host`. The only Docker context is the local
+Unix socket; `pvebase` is not resolvable from this workstation with SSH config
+bypassed. The system SSH config also refuses to load because its keepalive
+file permissions are invalid. Therefore no active HAProxy deployment target
+could be reached or verified in this session.
+
 Production-ready acceptance is not yet complete. Remaining gates are
 deployment-host access to run the container behind HAProxy and verify public
 headers/routes/TLS, browser coverage in Firefox/WebKit, and natural hardware
