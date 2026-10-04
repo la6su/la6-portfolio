@@ -25,7 +25,7 @@ interface AppEvents {
   /**
    * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
    * the renderer. The PMREM environment texture dies with the lost device, so
-   * Experience re-runs setupEnvironment() to bind a fresh one.
+   * Experience re-applies the environment (SceneEnvironment.apply()).
    */
   'jlz:renderer-recovered': void
   /** Fired by the nav template / UI controls when the cinematic menu panel must close. */

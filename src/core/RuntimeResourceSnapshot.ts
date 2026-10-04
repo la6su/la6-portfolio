@@ -13,7 +13,6 @@ export interface RuntimeResourceSnapshot {
   renderer: {
     geometries: number | null
     textures: number | null
-    programs: number | null
   }
   post: {
     tslPostPipeline: boolean
@@ -23,7 +22,6 @@ export interface RuntimeResourceSnapshot {
 export interface RendererResourceInfo {
   info?: {
     memory?: { geometries?: number; textures?: number }
-    programs?: unknown[]
   }
 }
 
@@ -83,7 +81,6 @@ export function captureRuntimeResourceSnapshot(
     renderer: {
       geometries: info?.memory?.geometries ?? null,
       textures: info?.memory?.textures ?? null,
-      programs: Array.isArray(info?.programs) ? info.programs.length : null,
     },
     post,
   }

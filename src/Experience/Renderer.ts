@@ -34,13 +34,6 @@ interface Viewport {
   dpr: number
 }
 
-/** WebGPURenderer's device-loss hook is runtime-supported but not declared
- * by the Three type surface used by this project. Keep that narrow extension
- * at the integration boundary instead of weakening the whole renderer. */
-type DeviceLossCapableRenderer = WebGPURenderer & {
-  onDeviceLost?: (info: unknown) => void
-}
-
 /**
  * The SceneHost renderer factory creates, initializes, and inspects the
  * actual backend. This owner adopts the instance for pipeline management,
@@ -150,10 +143,12 @@ export class Renderer {
    * Experience handles by closing the scheduler window.
    */
   private attachDeviceLossRecovery(renderer: WebGPURenderer): void {
-    const wg = renderer as DeviceLossCapableRenderer
-    if (typeof wg.onDeviceLost !== 'function') return
-    const orig = wg.onDeviceLost.bind(wg)
-    wg.onDeviceLost = (info: unknown) => {
+    // Three declares `onDeviceLost` and initializes it in the Renderer
+    // constructor, so the hook is always present; the wrapper runs the bounded
+    // recovery first, then defers to Three's own handler for its internal
+    // bookkeeping.
+    const orig = renderer.onDeviceLost.bind(renderer)
+    renderer.onDeviceLost = (info) => {
       if (this._disposed) {
         orig(info)
         return
@@ -180,7 +175,7 @@ export class Renderer {
         orig(info)
         return
       }
-      const recovery = this.recoverFromDeviceLost(info as { api?: string })
+      const recovery = this.recoverFromDeviceLost(info)
       this._recoveryPromise = recovery
       void recovery
         .finally(() => {
