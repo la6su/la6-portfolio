@@ -1788,8 +1788,9 @@ particle pass found the likely source of persistent glyph flicker: linearly
 filtered atlas samples could bleed across tile boundaries, while frame indices
 were encoded through an unrelated time-style formula. Frames are now assigned
 statically per instance, sampling is inset from atlas edges, hue cycling and
-the sharp scale pulse are removed, and field motion is reduced to a slow drift
-with a 2.5% breathing scale.
+all scale pulsing are removed, the smallest glyphs are kept above subpixel
+size, the cyan glow uses a softer alpha threshold, and field drift is slowed
+further.
 
 Opening a project now presents a full-viewport mobile-first case theater in the
 site's graphite, phosphor and technical type system. It features the selected

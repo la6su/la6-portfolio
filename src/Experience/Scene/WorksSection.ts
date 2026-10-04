@@ -39,15 +39,15 @@ export function createWorksSection(
   // and clicking a card opens the fullscreen FullscreenOverlay.
   const carousel = new BakuCarousel(page, storySide)
 
-  // JunniParticles — stable atlas glyphs with slow, restrained field motion:
-  //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=0.24
+  // JunniParticles — stable atlas glyphs with very slow field drift:
+  //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=0.08
   // scaleNode = num.y * size (num.y = 0.05-1.0 → final 0.01-0.2)
   // Blending is theme-aware (setBlending via jlz:theme-applied).
   const particles = new JunniParticles({
     count: 100,
     range: [7, 8, 7],
     size: 0.2,
-    speed: 0.24,
+    speed: 0.08,
     color: 0x4488ff,
     texture: particleTexture,
     textureTiles: [6, 1],

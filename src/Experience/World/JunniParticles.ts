@@ -114,7 +114,7 @@ export class JunniParticles {
       offsetPos[i * 3 + 1] = Math.random() * range.y
       offsetPos[i * 3 + 2] = Math.random() * range.z
       numAttr[i * 2] = i % (tiles[0] * tiles[1]) // stable atlas frame per particle
-      numAttr[i * 2 + 1] = Math.random() * 0.95 + 0.05 // scale variant 0.05-1.0
+      numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45 // keep glyphs above subpixel scale
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
     geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
@@ -145,7 +145,7 @@ export class JunniParticles {
     //   pos += oPos
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
-      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.2))
+      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.08))
       const rangeVec = uRange as unknown as TSLVec3
       const rangeHalf = rangeVec.div(2.0)
 
@@ -181,12 +181,7 @@ export class JunniParticles {
     // SpriteNodeMaterial uses scaleNode for the sprite quad size.
     const scaleNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
-      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.25))
-      // A restrained breath preserves legibility and avoids the old sharp
-      // scale pop that made stationary atlas glyphs look like they were
-      // changing frames.
-      const breath = sin(t.add(num.y.mul(6.283))).mul(0.025)
-      return num.y.mul(float(1.0).add(breath)).mul(uSize as unknown as TSLNode)
+      return num.y.mul(uSize as unknown as TSLNode)
     })
 
     // ── colorNode + opacityNode: textured sprite sheet ──
@@ -221,7 +216,9 @@ export class JunniParticles {
       const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
       // The JPEG sprite sheet has no alpha channel; mask its black background.
       const lum = texColor.r.mul(0.299).add(texColor.g.mul(0.587)).add(texColor.b.mul(0.114))
-      const masked = smoothstep(float(0.1), float(0.3), lum)
+      // Keep the cyan glow instead of thresholding to the thin white core;
+      // the wider transition avoids subpixel alpha flicker while particles drift.
+      const masked = smoothstep(float(0.025), float(0.12), lum)
       return masked.mul(uVisibility as unknown as TSLNode)
     })
     // SpriteNodeMaterial — purpose-built for billboarded particles.
@@ -322,7 +319,7 @@ export class JunniParticles {
       offsetPos[i * 3 + 1] = Math.random() * this._range.y
       offsetPos[i * 3 + 2] = Math.random() * this._range.z
       numAttr[i * 2] = i % this._tileCount
-      numAttr[i * 2 + 1] = Math.random() * 0.95 + 0.05
+      numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
     geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
