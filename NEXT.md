@@ -1795,8 +1795,11 @@ Works), keep each glyph upright (per-sprite spin made the asymmetric triangle
 and arrow cells read as tile swaps), remove the abrupt 4× exponential size
 pulse and hue cycling, keep glyphs above subpixel size, soften the cyan glow
 threshold, and fade particles near the vertical wrap edge. Atlas UVs remain
-inset to prevent adjacent-cell sampling. This source comparison is
-grounded in
+inset to prevent adjacent-cell sampling. A separate immutable `atlasFrame`
+instance attribute now carries the CPU-computed reference frame, so time and
+position nodes cannot influence tile identity. Frustum culling is enabled with
+a conservative sphere covering the orbit, wrap and visibility-fade expansion.
+This source comparison is grounded in
 [`Sec3Particle/index.ts`](https://github.com/junni-inc/next.junni.co.jp/blob/master/src/ts/MainScene/World/Sections/Section3/Sec3Particle/index.ts)
 and its vertex/fragment shaders; the new adaptation still needs browser visual
 review.

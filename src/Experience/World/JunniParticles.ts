@@ -77,7 +77,9 @@ export class JunniParticles {
   private _disposed = false
   private _time = 0
   private readonly _baseCount: number
+  private readonly _tileCount: number
   private readonly _range: THREE.Vector3
+  private readonly _boundsRadius: number
   private _reduced = false
   private _mesh: THREE.InstancedMesh | null = null
   private readonly _visible = shallowRef(true)
@@ -98,24 +100,11 @@ export class JunniParticles {
     const colorObj = new THREE.Color(color)
     const tiles = opts.textureTiles ?? [6, 1]
 
+    this._range = range
+    this._tileCount = tiles[0] * tiles[1]
+    this._boundsRadius = this.computeBoundsRadius(range, size)
     // Base geometry — unit plane. SpriteNodeMaterial billboards it.
-    const geo = new THREE.PlaneGeometry(1, 1)
-
-    // Per-instance attributes:
-    // - offsetPos: base position in range volume (random spread)
-    // - num: vec2 — x = stable frame seed, y = scale variant (0.45-0.8)
-    //   Matches Section3: numArray.push(i, Math.random() * 0.95 + 0.05)
-    const offsetPos = new Float32Array(count * 3)
-    const numAttr = new Float32Array(count * 2)
-    for (let i = 0; i < count; i++) {
-      offsetPos[i * 3] = Math.random() * range.x
-      offsetPos[i * 3 + 1] = Math.random() * range.y
-      offsetPos[i * 3 + 2] = Math.random() * range.z
-      numAttr[i * 2] = i // reference keeps the instance index as its stable seed
-      numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45 // keep glyphs above subpixel scale
-    }
-    geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
-    geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
+    const geo = this.createGeometry(count)
 
     // Per-instance uniforms (created BEFORE the TSL Fn closures that capture them)
     const uTime = uniform(0)
@@ -198,16 +187,14 @@ export class JunniParticles {
     // texSampler is the raw Texture — texture() TSL node accepts it directly.
     const texSampler = uTex
     const buildSheetUv = () => {
-      const num = attribute('num') as unknown as TSLVec2
+      const frame = attribute('atlasFrame') as unknown as TSLNode
       const vUv = uv()
       const tilesVec = uTiles as unknown as TSLVec2
       // Frame assignment is immutable per instance. Inset the sample region
       // so linear filtering cannot pull bright strokes from a neighboring
       // tile at the atlas boundary.
-      // Match Sec3Particle's fixed per-instance atlas selection. num.x is the
-      // instance index; this is not driven by time, despite the reference
-      // helper's `time` parameter name.
-      const frame = floor(tilesVec.x.mul(tilesVec.y).mul(mod(num.x.div(4.0), float(1.0))))
+      // The frame is precomputed from Sec3Particle's fixed per-instance
+      // formula; the shader only applies the atlas cell offset.
       const localUv = vUv.mul(0.992).add(0.004)
       const sx = localUv.x.add(mod(frame, tilesVec.x))
       const sy = localUv.y.sub(floor(frame.div(tilesVec.x)))
@@ -253,7 +240,6 @@ export class JunniParticles {
     this.material = mat
     this._count = count
     this._baseCount = count
-    this._range = range
     this._uTime = uTime
   }
 
@@ -275,6 +261,8 @@ export class JunniParticles {
       throw new Error('JunniParticles can only own one mounted instance node.')
     this._mesh = mesh
     mesh.count = this._count
+    mesh.frustumCulled = true
+    mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(), this._boundsRadius)
     this.writeIdentityMatrices(mesh)
   }
 
@@ -325,23 +313,13 @@ export class JunniParticles {
 
     this.geometry.dispose()
 
-    const geo = new THREE.PlaneGeometry(1, 1)
-    const offsetPos = new Float32Array(newCount * 3)
-    const numAttr = new Float32Array(newCount * 2)
-    for (let i = 0; i < newCount; i++) {
-      offsetPos[i * 3] = Math.random() * this._range.x
-      offsetPos[i * 3 + 1] = Math.random() * this._range.y
-      offsetPos[i * 3 + 2] = Math.random() * this._range.z
-      numAttr[i * 2] = i
-      numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45
-    }
-    geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
-    geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
+    const geo = this.createGeometry(newCount)
     this.geometry = geo
     this._count = newCount
     if (this._mesh) {
       this._mesh.geometry = geo
       this._mesh.count = newCount
+      this._mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(), this._boundsRadius)
       this.writeIdentityMatrices(this._mesh)
     }
     if (markReduced) this._reduced = newCount < this._baseCount
@@ -349,6 +327,36 @@ export class JunniParticles {
 
   get isReduced(): boolean {
     return this._reduced
+  }
+
+  /** Build deterministic per-instance atlas frames and conservative field bounds. */
+  private createGeometry(count: number): THREE.BufferGeometry {
+    const geometry = new THREE.PlaneGeometry(1, 1)
+    const offsetPos = new Float32Array(count * 3)
+    const num = new Float32Array(count * 2)
+    const atlasFrame = new Float32Array(count)
+
+    for (let i = 0; i < count; i++) {
+      offsetPos[i * 3] = Math.random() * this._range.x
+      offsetPos[i * 3 + 1] = Math.random() * this._range.y
+      offsetPos[i * 3 + 2] = Math.random() * this._range.z
+      num[i * 2] = i
+      num[i * 2 + 1] = Math.random() * 0.35 + 0.45
+      // Preserve Sec3Particle's fixed frame pattern, computed once on CPU.
+      atlasFrame[i] = Math.floor(this._tileCount * ((i / 4) % 1))
+    }
+
+    geometry.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
+    geometry.setAttribute('num', new THREE.InstancedBufferAttribute(num, 2))
+    geometry.setAttribute('atlasFrame', new THREE.InstancedBufferAttribute(atlasFrame, 1))
+    geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), this._boundsRadius)
+    return geometry
+  }
+
+  private computeBoundsRadius(range: THREE.Vector3, size: number): number {
+    // Visibility fade may double the XZ field before the particles disappear.
+    const horizontal = Math.hypot(range.x / 2, range.z / 2) * 2
+    return Math.hypot(horizontal, range.y / 2) + size
   }
 
   get baseCount(): number {
