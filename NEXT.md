@@ -1959,3 +1959,18 @@ The preview used SwiftShader and does not certify physical-GPU rendering.
 This local slice passed `bun run type-check:vue`, `bun run lint`, and
 `bun run build` with existing bundle budgets. No tests were run, consistent
 with the repository's local-work contract.
+
+Manifesto redesign checkpoint (2026-10-05): replaced the generic Purpose /
+Clarity / Emotion / Simplicity copy with four specific studio decision rules:
+remove user friction, make interface states legible, give motion a job, and
+justify technical complexity. Each section now pairs its rule with a practical
+method and a check. The mobile-first visual uses a compact field-note heading,
+the live 3D object, and a structured dossier panel. All copy, links, labels,
+and page metadata have EN/RU entries; language switching was verified in both
+directions on the live local preview, including `html[lang]`. The existing
+`manifesto-clarity` hash remains navigable, and launcher targets now match the
+new section IDs. Chromium review covered all four principles in EN/RU at
+390×844 plus desktop composition at 1440×900; the dossier clears the launcher
+in every mobile section. EN/RU dictionaries have no missing keys. Local type
+check, lint, build/budgets, and `git diff --check` passed. No tests or external
+deployment were run.

@@ -174,19 +174,38 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.enterRooms': 'Explore the four rooms',
     'works.archiveLabel': 'Project archive',
 
-    // Manifesto page
-    'manifesto.purpose.title': 'Purpose',
-    'manifesto.purpose.lead': "We don't build what everyone builds.",
-    'manifesto.purpose.desc1': 'We solve different problems.',
-    'manifesto.purpose.desc2': 'We improve experience and understand the pain.',
-    'manifesto.clarity.title': 'Clarity',
-    'manifesto.clarity.lead': 'Clean structure.',
-    'manifesto.clarity.desc1': 'Clear logic.',
-    'manifesto.clarity.desc2': 'No noise.',
-    'manifesto.emotion.title': 'Emotion',
-    'manifesto.emotion.lead': 'We use motion, light and interaction to create a sense of presence.',
-    'manifesto.simplicity.title': 'Simplicity',
-    'manifesto.simplicity.lead': 'We strive for minimalism — but not emptiness.',
+    // Manifesto page: decisions and checks, not abstract promises.
+    'manifesto.pageTitle': 'A point of view, put to work',
+    'manifesto.sectionLabel': 'FIELD NOTES / STUDIO PRACTICE',
+    'manifesto.ruleLabel': 'DECISION RULE',
+    'manifesto.practiceLabel': 'IN PRACTICE',
+    'manifesto.checkLabel': 'WE CHECK',
+    'manifesto.friction.title': 'Start with friction',
+    'manifesto.friction.lead': 'Find the moment the task becomes harder than it should be.',
+    'manifesto.friction.rule': 'Improve the point of hesitation before adding another feature.',
+    'manifesto.friction.practice': 'Watch one real task, find the pause, then change one thing.',
+    'manifesto.friction.check': 'Can someone finish the task without a new explanation?',
+    'manifesto.friction.link': 'Explore our services',
+    'manifesto.clarity.title': 'Make every state legible',
+    'manifesto.clarity.lead': 'An interface should explain what just happened and what comes next.',
+    'manifesto.clarity.rule': 'Never leave people guessing whether an action worked.',
+    'manifesto.clarity.practice': 'Name loading, success and failure; give each a clear next step.',
+    'manifesto.clarity.check': 'Can the state be understood without relying on color alone?',
+    'manifesto.clarity.link': 'Read our rendering notes',
+    'manifesto.motion.title': 'Give motion a job',
+    'manifesto.motion.lead': 'Movement earns its place when it reveals cause, change or focus.',
+    'manifesto.motion.rule': 'Use motion to explain a transition, never to hold attention hostage.',
+    'manifesto.motion.practice': 'Keep feedback close to the action and respect reduced motion.',
+    'manifesto.motion.check': 'Does the same task stay clear when animation is removed?',
+    'manifesto.motion.link': 'Explore realtime experiments',
+    'manifesto.complexity.title': 'Spend complexity with care',
+    'manifesto.complexity.lead': 'Use 3D, shaders and automation where they change the experience.',
+    'manifesto.complexity.rule':
+      'Every costly effect must make a decision clearer or a task faster.',
+    'manifesto.complexity.practice':
+      'Ship a useful static state first; add depth when it proves its value.',
+    'manifesto.complexity.check': 'Is the result still useful on a small screen or without a GPU?',
+    'manifesto.complexity.link': 'See how we work',
 
     // Lab page
     'lab.shaderLab.title': 'Shader Lab',
@@ -245,7 +264,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Selected projects in design, motion and development. Explore the intent, decisions and materials behind each case.',
     'meta.manifesto.title': 'Manifesto — JUSTLOVEJAZZ',
     'meta.manifesto.description':
-      'Purpose, clarity, emotion, simplicity. The principles that guide our work.',
+      'Four practical principles for digital work: start with user friction, make interface states legible, give motion a job and spend technical complexity with care.',
     'meta.lab.title': 'Lab — JUSTLOVEJAZZ',
     'meta.lab.description':
       'Experiments in shaders, interactive interfaces and realtime 3D. A place to test ideas for future digital experiences.',
@@ -396,20 +415,39 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.enterRooms': 'Войти в четыре комнаты',
     'works.archiveLabel': 'Архив проектов',
 
-    // Manifesto page
-    'manifesto.purpose.title': 'Цель',
-    'manifesto.purpose.lead': 'Мы не делаем то, что делают все.',
-    'manifesto.purpose.desc1': 'Мы решаем другие задачи.',
-    'manifesto.purpose.desc2': 'Мы улучшаем опыт и понимаем боль.',
-    'manifesto.clarity.title': 'Ясность',
-    'manifesto.clarity.lead': 'Чистая структура.',
-    'manifesto.clarity.desc1': 'Чёткая логика.',
-    'manifesto.clarity.desc2': 'Без шума.',
-    'manifesto.emotion.title': 'Эмоция',
-    'manifesto.emotion.lead':
-      'Мы используем движение, свет и взаимодействие, чтобы создать чувство присутствия.',
-    'manifesto.simplicity.title': 'Простота',
-    'manifesto.simplicity.lead': 'Мы стремимся к минимализму — но не к пустоте.',
+    // Manifesto page: decisions and checks, not abstract promises.
+    'manifesto.pageTitle': 'Точка зрения в работе',
+    'manifesto.sectionLabel': 'ЗАМЕТКИ / ПРАКТИКА СТУДИИ',
+    'manifesto.ruleLabel': 'ПРАВИЛО РЕШЕНИЯ',
+    'manifesto.practiceLabel': 'НА ПРАКТИКЕ',
+    'manifesto.checkLabel': 'ПРОВЕРЯЕМ',
+    'manifesto.friction.title': 'Начинаем с трения',
+    'manifesto.friction.lead': 'Находим момент, когда задача становится сложнее, чем должна быть.',
+    'manifesto.friction.rule': 'Сначала убираем заминку, потом добавляем возможности.',
+    'manifesto.friction.practice': 'Смотрим, как решают задачу; находим паузу и меняем одну вещь.',
+    'manifesto.friction.check': 'Сможет ли человек закончить задачу без новых объяснений?',
+    'manifesto.friction.link': 'Наши услуги',
+    'manifesto.clarity.title': 'Делаем состояние понятным',
+    'manifesto.clarity.lead': 'Интерфейс объясняет, что произошло и что делать дальше.',
+    'manifesto.clarity.rule': 'Человек не должен гадать, сработало ли действие.',
+    'manifesto.clarity.practice':
+      'Обозначаем загрузку, успех и ошибку; у каждого состояния есть следующий шаг.',
+    'manifesto.clarity.check': 'Можно ли понять состояние, не полагаясь только на цвет?',
+    'manifesto.clarity.link': 'Заметки о рендеринге',
+    'manifesto.motion.title': 'У движения есть задача',
+    'manifesto.motion.lead': 'Анимация нужна, когда показывает причину, изменение или фокус.',
+    'manifesto.motion.rule': 'Движение объясняет переход, а не удерживает внимание любой ценой.',
+    'manifesto.motion.practice':
+      'Даем обратную связь рядом с действием и учитываем reduced motion.',
+    'manifesto.motion.check': 'Останется ли задача понятной, если убрать анимацию?',
+    'manifesto.motion.link': 'Эксперименты в реальном времени',
+    'manifesto.complexity.title': 'Тратим сложность осмысленно',
+    'manifesto.complexity.lead': '3D, шейдеры и автоматизация должны менять пользовательский опыт.',
+    'manifesto.complexity.rule': 'Затратный эффект должен прояснять выбор или ускорять задачу.',
+    'manifesto.complexity.practice':
+      'Сначала полезная статичная версия; глубину добавляем, когда она себя оправдала.',
+    'manifesto.complexity.check': 'Останется ли результат полезным на телефоне или без GPU?',
+    'manifesto.complexity.link': 'Как мы работаем',
 
     // Lab page
     'lab.shaderLab.title': 'Шейдерная лаборатория',
@@ -468,7 +506,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Избранные проекты в дизайне, моушне и разработке. Задачи, решения и материалы каждого кейса.',
     'meta.manifesto.title': 'Манифест — JUSTLOVEJAZZ',
     'meta.manifesto.description':
-      'Цель, ясность, эмоция, простота. Принципы, направляющие нашу работу.',
+      'Четыре практических принципа цифровых проектов: находить трение пользователя, прояснять состояния интерфейса, давать задачу анимации и осмысленно использовать сложные технологии.',
     'meta.lab.title': 'Лаборатория — JUSTLOVEJAZZ',
     'meta.lab.description':
       'Эксперименты с шейдерами, интерактивными интерфейсами и 3D в реальном времени. Проверяем идеи для будущих цифровых решений.',
