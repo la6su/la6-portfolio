@@ -1862,3 +1862,25 @@ skew, stale WorksInstallation comment, dead uikit typings, tracked
 test-results/.last-run.json, optional chrome-selector hardening) are
 queued as slices S1–S9 in AUDIT.md; the audit itself made no source
 change.
+Superseded 2026-10-04 (same day, slices executed): S1–S9 are complete
+with all gates green — Playwright collection restored (24 tests list,
+exit 0) plus the local test output untracked (`0013a85c`); renderer-stack
+leftovers dropped (`2dafbebc`); the unit suite now resolves the
+production three module graph (`ca67608c`, resolution probed through
+the vitest config's own plugin container); dead uikit typings removed
+and the Works contract comment reworded (`febd263f`); chrome input
+selectors have a single rename source (`6c16764f`); tracked dist
+regenerated with a byte-identical rebuild proof (`168b9130`, SPA CSS
+203,891 B and blog CSS 138,201 B with zero uk-form rules, budgets
+unchanged). Verification set: type-check, lint, format, 103/103 unit
+tests, production build ×2, an agent-browser production smoke, and the
+full e2e suite via bare `playwright test --workers=1` — 18 passed,
+6 skipped (documented opt-in gates), 0 failed. The restored bare run
+also exposed and fixed two pre-existing spec races the broken
+collection had hidden (`d6557fef`): the case-study language toggle
+clicked before the lazy app chunk installed its meta listener (the app
+itself toggles correctly once mounted — verified in-browser), and the
+contact churn spec needed an honest 60 s budget for the software-WebGL2
+environment (measured 32.6 s vs the 30 s default). Remaining open gates
+are unchanged: physical-GPU/WebGPU parity, natural device loss, and the
+ingress/deployment acceptance.

@@ -22,6 +22,21 @@ itself changed no source file; the live work queue remains
 **The source tree is architecture-complete; the branch is not
 release-clean, so "fully complete" is not yet an honest claim.**
 
+> **Outcome (2026-10-04, same day):** slices S1–S9 are executed and
+> verified — `0013a85c` (S2+S3), `2dafbebc` (S4+S5), `ca67608c` (S6),
+> `febd263f` (S7+S8), `6c16764f` (S9), `168b9130` (S1). Gates after the
+> slices: type-check, lint, format, 103/103 unit tests, full production
+> build ×2 (byte-identical rebuild, dist-diff clean, budgets unchanged),
+> agent-browser production smoke (splash → works route, pointer/chrome
+> filtering, zero errors), and the full e2e suite via the restored bare
+> `playwright test --workers=1`: **18 passed, 6 skipped (documented
+> opt-in gates), 0 failed**. Running the suite bare also exposed and
+> fixed two pre-existing spec races the broken collection had hidden
+> (`d6557fef`): the case-study language toggle clicked before the lazy
+> app chunk installed its meta listener, and the contact churn spec
+> measured 32.6 s under the software WebGL2 fallback against the 30 s
+> default. The section-E gates remain open (hardware/deployment-bound).
+
 - The WebGPU/Tres renderer path has no correctness gap: single renderer
   construction, exact backend-selection and fallback semantics, verified
   shims, race-free async init, bounded device-loss recovery, and a fully
