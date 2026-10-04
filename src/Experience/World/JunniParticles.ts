@@ -30,6 +30,7 @@ import {
   float,
   uniform,
   uv,
+  abs,
   smoothstep,
   sin,
   cos,
@@ -45,13 +46,13 @@ interface JunniParticlesOptions {
   count?: number
   /** Field spread [x, y, z]. Particles wrap around this volume. */
   range?: [number, number, number]
-  /** Base particle size (world units, before pulse scaling). */
+  /** Base particle size in world units. */
   size?: number
   /** Drift speed multiplier (affects Y-rise + rotation frequency). */
   speed?: number
   /** Particle color tint (default white). */
   color?: number
-  /** Sprite sheet texture sampled with per-instance frame selection and hue cycling. */
+  /** Sprite sheet texture sampled at one stable frame per instance. */
   texture: THREE.Texture
   /** Sprite sheet tile count [x, y] (e.g. [6, 1] for a 6-frame horizontal strip). */
   textureTiles?: [number, number]
@@ -77,7 +78,6 @@ export class JunniParticles {
   private _disposed = false
   private _time = 0
   private readonly _baseCount: number
-  private readonly _tileCount: number
   private readonly _range: THREE.Vector3
   private _reduced = false
   private _mesh: THREE.InstancedMesh | null = null
@@ -98,14 +98,13 @@ export class JunniParticles {
     const color = opts.color ?? 0xffffff
     const colorObj = new THREE.Color(color)
     const tiles = opts.textureTiles ?? [6, 1]
-    this._tileCount = tiles[0] * tiles[1]
 
     // Base geometry — unit plane. SpriteNodeMaterial billboards it.
     const geo = new THREE.PlaneGeometry(1, 1)
 
     // Per-instance attributes:
     // - offsetPos: base position in range volume (random spread)
-    // - num: vec2 — x = frame index (for sprite sheet), y = scale variant (0.05-1.0)
+    // - num: vec2 — x = stable frame seed, y = scale variant (0.45-0.8)
     //   Matches Section3: numArray.push(i, Math.random() * 0.95 + 0.05)
     const offsetPos = new Float32Array(count * 3)
     const numAttr = new Float32Array(count * 2)
@@ -113,7 +112,7 @@ export class JunniParticles {
       offsetPos[i * 3] = Math.random() * range.x
       offsetPos[i * 3 + 1] = Math.random() * range.y
       offsetPos[i * 3 + 2] = Math.random() * range.z
-      numAttr[i * 2] = i % (tiles[0] * tiles[1]) // stable atlas frame per particle
+      numAttr[i * 2] = i // reference keeps the instance index as its stable seed
       numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45 // keep glyphs above subpixel scale
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
@@ -125,8 +124,7 @@ export class JunniParticles {
     const uRange = uniform(range)
     const uSize = uniform(size)
     const uSpeed = uniform(speed)
-    // Tint color — multiplies the texture/HSV color so particles aren't pure
-    // white (which is invisible on light backgrounds with AdditiveBlending).
+    // Tint color keeps the glyphs in the Works palette on either background.
     const uColor = uniform(colorObj)
     // TSL texture() expects a raw THREE.Texture — NOT wrapped in uniform().
     // TSL creates the TextureNode internally. Wrapping in uniform() causes
@@ -141,7 +139,7 @@ export class JunniParticles {
     //   oPos = mod(oPos, range) - range/2 (wrap)
     //   oPos.xz *= rotate(time * center)  (orbit around center)
     //   oPos.xz *= 1 + (1 - uVisibility)  (expand when fading out)
-    //   pos = position * smoothstep(...) * num.y * pulse * rotate(time * num.y)
+    //   pos = position * smoothstep(...) * num.y * rotate(time * num.y)
     //   pos += oPos
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
@@ -176,12 +174,22 @@ export class JunniParticles {
     })
 
     // ── scaleNode: per-instance size with edge fade + pulse (Section3) ──
-    //   scale = num.y * (1 + exp(-mod(time + num.y*2, 1) * 7) * 3) * uSize
-    //   × edgeFade (smoothstep on Y boundary)
+    //   Smoothly fade particles at the vertical wrap boundary to avoid a pop.
     // SpriteNodeMaterial uses scaleNode for the sprite quad size.
     const scaleNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
-      return num.y.mul(uSize as unknown as TSLNode)
+      const offset = attribute('offsetPos') as unknown as TSLVec3
+      const rangeVec = uRange as unknown as TSLVec3
+      const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.08))
+      const xzCenter = rangeVec.xz.div(2.0)
+      const distFromCenter = length(offset.xz.sub(xzCenter))
+      const center = float(5.0).sub(distFromCenter).div(4.0).clamp(0.0, 1.0)
+      const wrappedY = mod(offset.y.add(t.mul(center)), rangeVec.y).sub(rangeVec.y.div(2.0))
+      const edge = abs(wrappedY)
+      const edgeFade = float(1.0).sub(
+        smoothstep(rangeVec.y.div(2.0).sub(0.5), rangeVec.y.div(2.0), edge),
+      )
+      return num.y.mul(edgeFade).mul(uSize as unknown as TSLNode)
     })
 
     // ── colorNode + opacityNode: textured sprite sheet ──
@@ -195,14 +203,17 @@ export class JunniParticles {
       // Frame assignment is immutable per instance. Inset the sample region
       // so linear filtering cannot pull bright strokes from a neighboring
       // tile at the atlas boundary.
-      const frame = mod(floor(num.x), tilesVec.x.mul(tilesVec.y))
+      // Match Sec3Particle's fixed per-instance atlas selection. num.x is the
+      // instance index; this is not driven by time, despite the reference
+      // helper's `time` parameter name.
+      const frame = floor(tilesVec.x.mul(tilesVec.y).mul(mod(num.x.div(4.0), float(1.0))))
       const localUv = vUv.mul(0.992).add(0.004)
       const sx = localUv.x.add(mod(frame, tilesVec.x))
       const sy = localUv.y.sub(floor(frame.div(tilesVec.x)))
       return vec2(sx, sy).div(tilesVec)
     }
 
-    // Section3 fragment: sprite sheet UV + HSV hue cycling + tint
+    // Fixed atlas frame with a stable project tint.
     const colorNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
       const sheetUv = buildSheetUv() as unknown as TSLVec2
@@ -232,6 +243,13 @@ export class JunniParticles {
     })
     mat.positionNode = positionNode()
     mat.scaleNode = scaleNode()
+    // Sec3Particle rotates each glyph around its own center. Keep that motion,
+    // but use the much lower Works speed to prevent the fast spin reading as
+    // tile flicker.
+    mat.rotationNode = Fn(() => {
+      const num = attribute('num') as unknown as TSLVec2
+      return (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(num.y))
+    })()
     mat.colorNode = colorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
 
@@ -318,7 +336,7 @@ export class JunniParticles {
       offsetPos[i * 3] = Math.random() * this._range.x
       offsetPos[i * 3 + 1] = Math.random() * this._range.y
       offsetPos[i * 3 + 2] = Math.random() * this._range.z
-      numAttr[i * 2] = i % this._tileCount
+      numAttr[i * 2] = i
       numAttr[i * 2 + 1] = Math.random() * 0.35 + 0.45
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))

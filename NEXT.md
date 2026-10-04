@@ -1785,12 +1785,18 @@ substrate was muted and narrowed after the first local render showed bright,
 rectangular patches in the gaps. This ribbon material is enabled only for the
 home carousel; `/works` case planes keep their existing material. A follow-up
 particle pass found the likely source of persistent glyph flicker: linearly
-filtered atlas samples could bleed across tile boundaries, while frame indices
-were encoded through an unrelated time-style formula. Frames are now assigned
-statically per instance, sampling is inset from atlas edges, hue cycling and
-all scale pulsing are removed, the smallest glyphs are kept above subpixel
-size, the cyan glow uses a softer alpha threshold, and field drift is slowed
-further.
+filtered atlas samples could bleed across tile boundaries. The reference
+`Sec3Particle` confirms that atlas selection is static per instance using
+`floor(6 * mod(num.x / 4, 1))`; restore that exact distribution rather than
+mapping every instance across all six cells. It also rotates each glyph and
+uses an abrupt 4× exponential size pulse. Keep rotation at a greatly reduced
+Works speed, remove that pulse and hue cycling, keep glyphs above subpixel
+size, soften the cyan glow threshold, and fade particles near the vertical
+wrap edge. Atlas UVs remain inset to prevent adjacent-cell sampling. This source
+comparison is grounded in
+[`Sec3Particle/index.ts`](https://github.com/junni-inc/next.junni.co.jp/blob/master/src/ts/MainScene/World/Sections/Section3/Sec3Particle/index.ts)
+and its vertex/fragment shaders; the new adaptation still needs browser visual
+review.
 
 Opening a project now presents a full-viewport mobile-first case theater in the
 site's graphite, phosphor and technical type system. It features the selected
