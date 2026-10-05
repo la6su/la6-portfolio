@@ -2037,6 +2037,18 @@ No second renderer/RAF or parallel route scroll observer was introduced. The
 only new scroll policy is scoped to Services because its native story sections
 were forcing a snap stop on every gesture. Broad visual changes to the shared
 blurred surfaces were deferred: their cost needs measurements on the target
-GPU. The workstation browser has no GPU device/driver exposed here, and
-SwiftShader's WebGPU backend fails on a 48-byte mapped buffer, so physical
-frame-time, fill-rate, and scene-appearance claims remain open gates.
+GPU. The headless shell Chromium had no GPU device/driver and SwiftShader's
+WebGPU backend failed on a 48-byte mapped buffer. This limitation belongs to
+that harness, not the workstation browser generally.
+
+Firefox WebGPU runtime checkpoint (2026-10-05): the user supplied local Firefox
+startup logs for the development build. They report
+`WebGPU (WebGPUBackend)`, `TSL post=true`, and `isFallbackAdapter=false`; scene
+owners, the Works carousel, procedural environment, DevPanel, and SceneHost
+all reached ready without a fatal renderer error in the supplied excerpt.
+Firefox warns that its requested adapter `featureLevel: compatibility` is not
+implemented yet and returns its core-defaulting adapter; Three still
+initialized the WebGPU backend. This confirms backend startup only. The
+excerpt has no frame timing or screenshot, so Services appearance, scroll
+latency, idle wake count, and sustained per-route GPU performance still need
+direct Firefox measurements before they are marked verified.
