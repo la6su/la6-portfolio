@@ -2052,3 +2052,16 @@ initialized the WebGPU backend. This confirms backend startup only. The
 excerpt has no frame timing or screenshot, so Services appearance, scroll
 latency, idle wake count, and sustained per-route GPU performance still need
 direct Firefox measurements before they are marked verified.
+
+Firefox Services snapshot (user supplied, 2026-10-05): on the Services route,
+the live probe reports WebGPUBackend, TSL post enabled, one renderer canvas,
+28 scene geometries / 31 materials / 5 scene textures, and 29 renderer-side
+geometries / 24 textures. Two document canvases are expected: the renderer
+canvas plus the custom 2D cursor. The scheduler is stopped, `needsRender=false`,
+the cursor is settled, and all activity flags are false. Across 120 CPU-side
+frame samples, renderer p50/p95 are 1/1 ms and total application frame-path
+p50/p95 are 1/2 ms. These are CPU timing spans around the render call, not GPU
+timestamp-query results. `frames=6619` and `settledFrames=147` are cumulative
+since boot; without a timed before/after idle interval they do not establish
+the idle wake rate. The snapshot confirms low settled frame-path cost and
+correct on-demand idle state, not every route's sustained GPU performance.
