@@ -197,18 +197,6 @@ export class SceneTransformPass {
       }
     }
 
-    // The cursor signal belongs to the standalone Works route. On home it
-    // remains outside the large media stream, where it would cut across the
-    // case artwork instead of supporting it. Route replacement can retain the
-    // same section index, so this must run outside the arrival-only branch.
-    const trail = this._ctx.owners.drawTrail
-    if (trail) {
-      const isStandaloneWorks = page === 'works'
-      trail.setVisible(
-        isStandaloneWorks || (activeIndex === WORKS_SLOT_INDEX && !carouselOwner?.isActive),
-      )
-    }
-
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
     // EnvSphere follows the active theme via jlz:theme-applied.
@@ -234,7 +222,8 @@ export class SceneTransformPass {
       // Experience-owned reference.
       const carousel = i === WORKS_SLOT_INDEX ? carouselOwner : undefined
       const cfg = configs[i]
-      const showCarousel = page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
+      const sceneObjects = cfg?.scene?.objects
+      const showCarousel = sceneObjects?.bakuCarousel === true
 
       if (shouldShow) {
         g.visible = fade > 0.001
@@ -276,7 +265,6 @@ export class SceneTransformPass {
         // ── Per-section 3D object visibility (SceneControl) ──
         // Toggle section-specific 3D content based on config.
         // objects undefined = defaults (visible if present in scene group).
-        const sceneObjects = cfg?.scene?.objects
         if (sceneObjects && i === CONTACT_SLOT_INDEX) {
           const visible = sceneObjects.wireframeText !== false && fade > 0.01
           this._ctx.owners.stages.contactTypographyStage?.setActive(visible && fade > 0.5)
@@ -290,6 +278,18 @@ export class SceneTransformPass {
         if (carousel) carousel.visible = false
       }
     }
+
+    // Slot 3 is reused across routes. Effects are opt-in on the active scene
+    // config so a shared slot never leaks visual activity to another page.
+    const worksGroup = groups[WORKS_SLOT_INDEX]
+    const activeObjects = configs[activeIndex]?.scene?.objects
+    this._ctx.owners.sectionGroups.works.particles.visible =
+      activeObjects?.junniParticles === true && Boolean(worksGroup?.visible)
+
+    // DrawTrail follows the same per-scene opt-in. Home Works disables it while
+    // the carousel is open so the ribbon does not cross the artwork.
+    const trail = this._ctx.owners.drawTrail
+    trail?.setVisible(activeObjects?.drawTrail === true && !carouselOwner?.isActive)
 
     const fromSec = sections[fromIndex]!
     const toSec = sections[toIndex]!

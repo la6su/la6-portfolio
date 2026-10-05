@@ -140,13 +140,10 @@ export class SceneCoordinator {
    */
   public setContactSceneSection(index: number): void {
     const isContact = this.page() === 'contact'
-    const isAgros = isContact && index === 2
     const isFinal = isContact && index === 3
 
-    const particles = this.owners.sectionGroups.works.particles
-    if (particles) particles.visible = !isAgros
     this.owners.stages.contactTypographyStage?.setActive(isContact && !isFinal)
-    // The halo backs the greeting — it shares the flock's chapter gating.
+    // The halo backs the greeting and follows the contact chapter state.
     this.owners.stages.contactHaloStage?.setActive(isContact && !isFinal)
     this._transform.invalidate()
   }
@@ -156,7 +153,7 @@ export class SceneCoordinator {
    * Experience uses this to keep on-demand rendering alive so GPU drift
    * (uTime) advances every frame — without it particles freeze on settled
    * sections (only ambient-breath frames every 2.5s).
-   * Currently only Works (home idx 3) creates particles.
+   * The active scene config opts into continuous particle motion.
    */
   public hasVisibleParticles(): boolean {
     const worksGroup = this.sceneGroups[WORKS_SLOT_INDEX]
@@ -239,28 +236,26 @@ export class SceneCoordinator {
     this.owners.stages.labGamepad?.update?.(deltaTime)
     const baku = this.owners.baku
 
-    if (!this.isReducedMotion()) {
-      if (baku?.visible) baku.update(deltaTime)
-      const isStandaloneWorks = page === 'works'
-      const isWorksStoryFrame = this._story.currentSectionIndex === WORKS_SLOT_INDEX
-      const trail = this.owners.drawTrail
-      if (trail && (isStandaloneWorks || isWorksStoryFrame)) {
-        trail.update(deltaTime, this.camera)
-      }
-    }
-
     const carousel = this.owners.carousel
     const groups = this.owners.sectionGroups.groups
     const carouselGroup = groups[WORKS_SLOT_INDEX]
-    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
+    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) {
+      carousel.update(deltaTime)
+    }
     if (carousel && baku) {
       baku.visible =
         bakuVisibleOnRoute(page, contactCyprusStage?.isActive ?? false) &&
         (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
     }
     if (!this.isReducedMotion()) {
+      if (baku?.visible) baku.update(deltaTime)
+      const trail = this.owners.drawTrail
+      if (trail?.visible) trail.update(deltaTime, this.camera)
+
       const particles = this.owners.sectionGroups.works.particles
-      if (carouselGroup?.visible && particles?.visible !== false) particles?.update(deltaTime)
+      if (carouselGroup?.visible && particles?.visible) {
+        particles.update(deltaTime)
+      }
     }
   }
 

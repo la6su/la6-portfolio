@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import type { PageId } from './routeManifest'
 import { BakuRole } from './types'
 import type { PostParams } from './postParams'
-import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
+import { WORKS_SLOT_INDEX, worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
 
 // ── Types ──
 export interface CameraTransform {
@@ -56,6 +56,8 @@ interface SceneControl {
   objects?: {
     wireframeText?: boolean
     bakuCarousel?: boolean
+    junniParticles?: boolean
+    drawTrail?: boolean
   }
   /** Transition easing for camera + baku morph when entering this section.
    *  (The former duration field had zero readers — the crossfade speed and
@@ -189,7 +191,7 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     bakuOpacity: 0.4,
     bakuColor: 0xc0c0c0,
     groundOpacity: 0.1,
-    sceneObjects: { bakuCarousel: true },
+    sceneObjects: { bakuCarousel: true, junniParticles: true, drawTrail: true },
     sceneTransition: { easing: 'ease-out' },
   },
   {
@@ -373,6 +375,8 @@ function makeContentScenes(pageId: ContentPageId): PhaseConfig[] {
       fogColor: p.fogColor,
       groundColor: p.groundColor,
       groundOpacity: 0.05,
+      sceneObjects:
+        pageId === 'works' && idx === WORKS_SLOT_INDEX ? { drawTrail: true } : undefined,
     }),
   )
 }

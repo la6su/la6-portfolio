@@ -2065,3 +2065,18 @@ timestamp-query results. `frames=6619` and `settledFrames=147` are cumulative
 since boot; without a timed before/after idle interval they do not establish
 the idle wake rate. The snapshot confirms low settled frame-path cost and
 correct on-demand idle state, not every route's sustained GPU performance.
+
+Scene-effect ownership checkpoint (2026-10-05): the user supplied a second
+Services snapshot from its third section where `activity.particles=true`,
+`needsRender=true`, and the scheduler stayed active. Shared slot index 3 had
+been treated as effect ownership, allowing home Works particles and DrawTrail
+to leak into routes that reuse slot 3. Effects now use the existing
+`WorldConfig.scene.objects` opt-in: home Works authors JunniParticles and
+DrawTrail; standalone Works opts into DrawTrail; other content sections
+default off. `SceneTransformPass` applies visibility from the active scene
+config, and `SceneCoordinator` advances only visible opted-in effects. The old
+contact-section particle visibility writer was removed. This keeps scene
+tuning explicit without another effect registry. Type-check, lint,
+formatting, diff check, and the complete production build passed. A fresh
+local Firefox snapshot is still needed to confirm Services third-section
+settles with `particles=false` and `loopActive=false`.
