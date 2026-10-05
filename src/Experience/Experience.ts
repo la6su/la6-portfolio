@@ -226,9 +226,21 @@ export class Experience {
     )
     // Tres/Cientos invalidate calls (for example Lab camera-control changes)
     // enter the same demand path as internal activity.
-    this._unsubExternalInvalidate = this._host.loop.onExternalInvalidate(() =>
-      this._raiseRenderDemand('external'),
-    )
+    this._unsubExternalInvalidate = this._host.loop.onExternalInvalidate(() => {
+      // Tres can receive redundant prop invalidations while the Services
+      // composition is settled. Its meaningful wakes come from our routed
+      // navigation, resize, theme and pointer owners; let those own the frame
+      // budget instead of reopening an idle renderer loop.
+      const servicesSettled =
+        this._host.page() === 'services' &&
+        !this._needsRender &&
+        !this._storyNav?.isActive() &&
+        !this.coordinator?.hasVisibleAmbientMotion() &&
+        !this.servicesStage?.isAnimating &&
+        this.cursor?.isSettled !== false
+      if (servicesSettled) return
+      this._raiseRenderDemand('external')
+    })
     // A terminal device-loss failure stops the loop through the event bus.
     this._webglFailedUnsub = eventBus.on('jlz:webgl-failed', () => {
       this._renderDisabled = true
@@ -657,7 +669,12 @@ export class Experience {
    * scheduler's typed 'breath' invalidation.
    */
   private _scheduleBreath(activity: RenderActivity): void {
-    const idle = !document.hidden && idleForAmbientBreath(activity, this._reducedMotion)
+    // Services is intentionally a still composition at rest; it has no
+    // ambient shader or periodic refresh that needs a wall-clock wake-up.
+    const idle =
+      this._host.page() !== 'services' &&
+      !document.hidden &&
+      idleForAmbientBreath(activity, this._reducedMotion)
     if (!idle || this._breathTimer !== null) {
       if (!idle) this._cancelBreath()
       return
@@ -677,6 +694,7 @@ export class Experience {
 
   private _onBreathFire(): void {
     this._breathTimer = null
+    if (this._host.page() === 'services') return
     // Keep the ambient rhythm going while the scene stays idle.
     this._scheduleBreath(this._activitySnapshot)
     // Activity may have resumed since the last frame — then no breath frame.

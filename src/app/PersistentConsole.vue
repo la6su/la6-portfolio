@@ -112,6 +112,7 @@ const SECTION_EXPLORE_PATHS: Record<string, string> = {
   'services-creativeDirection': '/blog/glassmorphism-webgpu',
   'services-interactiveDev': '/blog/on-demand-rendering',
   'services-motionRealtime': '/blog/tsl-changes-everything',
+  'services-aiSystems': '/blog/on-demand-rendering',
   'manifesto-friction': '/services',
   'manifesto-clarity': '/blog/on-demand-rendering',
   'manifesto-motion': '/blog/undercurrent-webgpu-fluid',

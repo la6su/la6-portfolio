@@ -1988,3 +1988,55 @@ focus brightening state. Removed the fullscreen theater's inset border and
 corner brackets, then deleted the now-empty frame element and its transition
 rules. The banks retain their neutral housing and individual key feedback.
 Type-check, lint, build/budgets, and `git diff --check` pass; no tests were run.
+
+Services redesign checkpoint (2026-10-05): replaced four differently composed
+panels with one compact, localized capability dossier per chapter. The 3D
+stage is now a five-part signal sculpture with one fixed rail (10 meshes to 6);
+its four chapter layouts interpolate only after navigation. Removed the ring
+spin that advanced on sparse demand frames, and disabled the periodic ambient
+breath wake-up on Services so its settled scene has no clock-driven redraw.
+Added the fourth chapter's launcher destination and updated the stage unit
+fixture for the new composition. `bun run build` (including Vue type-check,
+route prerender and bundle budgets), `bun run lint`, and `git diff --check`
+passed; tests were not run. Local Chromium interaction at 390×844 verified RU
+copy, no horizontal overflow, and a chapter transition. After settling, two
+snapshots 2.5 seconds apart both reported `loopActive: false`,
+`needsRender: false`, with no frame-count change; chapter navigation woke the
+renderer and it returned to idle after the transition. SwiftShader timing was
+p50 0.4 ms / p95 1.0 ms for the frame path, but the same software backend
+reported `tslPostPipeline: false` and once threw a WebGPU `createBuffer`
+mapped-at-creation error. Its rendered middle field therefore does not
+validate the intended 3D sculpture. The connected-browser adapter also reset
+on both attempts. Confirm the 3D image in the workstation's GPU-backed browser
+before treating visual review as complete; no hardware GPU result is claimed.
+
+Services follow-up checkpoint (2026-10-05): removed the heading's opaque panel
+and the full-frame dark scrim, dropped the redundant chapter count, and set
+titles to keep whole words intact at narrow widths. The sculpture now uses
+distinct octahedron/dodecahedron forms, five chapter nodes, and two static
+crossed rails (seven draw objects); depth and rail pose change only when the
+chapter changes. Services alone uses proximity snapping, automatic scroll
+behavior, and normal snap stops so a wheel/touch burst can pass chapter edges.
+The shared launcher keeps its established size/icon and now has a phosphor
+edge wash plus a short reveal line. Removed the dead count styles/translations
+and consolidated launcher emphasis into its final component rule. Build
+(including Vue type-check and bundle budgets), lint, and `git diff --check`
+pass; tests were not run. Local Chromium
+at 390×844 confirmed transparent heading backing, `word-break: keep-all`, the
+correct four RU headings, launcher presence, and chapter selection after a
+wheel gesture; scroll settled at the next 844px chapter in about 150–200ms.
+SwiftShader still fails WebGPU buffer creation (`size 48` with
+`mappedAtCreation`), leaving the actual scene image unverified in this
+software-only browser; no physical GPU claim is made.
+
+Cross-project performance review checkpoint (2026-10-05): source inspection
+confirms the existing single persistent Tres canvas, one RenderScheduler
+driving Tres's loop, one shared scroll-track observer, lazy route stages, a
+1.5 DPR cap, low-tier TSL post bypass, and sustained-low-FPS particle reduction.
+No second renderer/RAF or parallel route scroll observer was introduced. The
+only new scroll policy is scoped to Services because its native story sections
+were forcing a snap stop on every gesture. Broad visual changes to the shared
+blurred surfaces were deferred: their cost needs measurements on the target
+GPU. The workstation browser has no GPU device/driver exposed here, and
+SwiftShader's WebGPU backend fails on a 48-byte mapped buffer, so physical
+frame-time, fill-rate, and scene-appearance claims remain open gates.

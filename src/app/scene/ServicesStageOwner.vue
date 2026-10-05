@@ -8,20 +8,16 @@ const stage = markRaw(new ServicesStage())
 const root = shallowRef<Group | null>(null)
 const parts = shallowRef<Mesh[]>([])
 const rings = shallowRef<Mesh[]>([])
-const ringConfigs = [
-  { radius: 1.5, scale: [1.5, 1.5, 1.5], rotation: [0.3, 0, 0] },
-  { radius: 2.2, scale: [2.2, 2.2, 2.2], rotation: [-0.5, 0, 0.4] },
-  { radius: 2.8, scale: [2.8, 2.8, 2.8], rotation: [0.8, 0, -0.3] },
-] as const
 
 onMounted(() => {
-  if (!root.value || parts.value.length !== 7 || rings.value.length !== ringConfigs.length) {
+  if (!root.value || parts.value.length !== 5 || rings.value.length !== 2) {
     throw new Error('Declarative services stage did not mount completely.')
   }
-
-  const mountedParts = parts.value.map(toRaw)
-  const mountedRings = rings.value.map(toRaw)
-  stage.adopt({ root: toRaw(root.value), parts: mountedParts, rings: mountedRings })
+  stage.adopt({
+    root: toRaw(root.value),
+    parts: parts.value.map(toRaw),
+    rings: rings.value.map(toRaw),
+  })
   emit('ready', stage)
 })
 
@@ -33,26 +29,32 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <TresGroup ref="root" name="services-assembly" :visible="stage.visible" :dispose="null">
+  <TresGroup ref="root" name="services-signal-sculpture" :dispose="null">
     <TresMesh
-      v-for="index in 7"
-      :key="`service-part-${index}`"
+      v-for="index in 5"
+      :key="`service-node-${index}`"
       ref="parts"
-      :material="index === 4 ? stage.signalMaterial : stage.metalMaterial"
+      :material="index === 1 ? stage.signalMaterial : stage.metalMaterial"
+      :scale="
+        index === 1
+          ? [0.84, 0.84, 0.18]
+          : [index === 2 ? 0.46 : 0.35, index === 2 ? 0.46 : 0.35, 0.12]
+      "
     >
-      <TresBoxGeometry :args="[0.8, 0.8, 0.08]" />
+      <TresOctahedronGeometry v-if="index === 1" :args="[0.72, 1]" />
+      <TresDodecahedronGeometry v-else-if="index === 2" :args="[0.55, 0]" />
+      <TresBoxGeometry v-else :args="[1, 1, 1]" />
     </TresMesh>
     <TresMesh
-      v-for="(ring, index) in ringConfigs"
-      :key="`service-ring-${index}`"
+      v-for="index in 2"
+      :key="`services-rail-${index}`"
       ref="rings"
-      :name="`services-orbit-${index}`"
-      :material="stage.orbitMaterials[index]"
-      :scale="ring.scale"
-      :rotation="ring.rotation"
-      :position="[0, 0, -1]"
+      :name="`services-fixed-rail-${index}`"
+      :material="stage.railMaterial"
+      :position="[0, 0, index === 1 ? -0.45 : 0.08]"
+      :rotation="[index === 1 ? 0 : 1.1, 0, index === 1 ? 0 : 0.4]"
     >
-      <TresTorusGeometry :args="[1, 0.012, 8, 64]" />
+      <TresTorusGeometry :args="[index === 1 ? 1 : 0.78, index === 1 ? 0.009 : 0.006, 6, 72]" />
     </TresMesh>
   </TresGroup>
 </template>
