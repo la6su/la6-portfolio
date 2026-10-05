@@ -184,6 +184,7 @@ export class Experience {
       scene: this.scene,
       renderer: () => this.renderer,
       baku: () => this.baku,
+      services: () => this.servicesStage,
     })
     this._showreel = new ShowreelController({
       isDestroyed: () => this._destroyed,
