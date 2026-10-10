@@ -2400,13 +2400,12 @@ the known headless-shell GPU limit, not regressions from this work. Firefox and
 WebKit coverage stays an open gate. The user's task explicitly authorized running
 the unit and browser suites, superseding work-queue item 6.
 
-Open audit items (2026-10-10): `--jlz-color-text-subtle` measures 3.20:1 over
+Open audit items (2026-10-10): `--jlz-color-text-subtle` measured 3.20:1 over
 `#161b26` and 3.57:1 over `#f5f8fc`, below WCAG 1.4.3 at the sizes its consumers
 use (`.jlz-storyline__item` 0.62rem mono, `.jlz-menu-nav__num` 0.68rem,
-`.jlz-boot-gate__code` 0.6rem, `.jlz-topbar__mode` 0.55rem); the fix is alpha
-≈0.55 dark / ≈0.62 inverse, or moving those consumers to
-`--jlz-color-text-muted` (~6.7:1). Either is a palette decision, so it is
-reported rather than applied. `app-*.js` still statically imports
+`.jlz-boot-gate__code` 0.6rem, `.jlz-topbar__mode` 0.55rem); the alpha was
+raised to 0.55 dark / 0.62 inverse, closed by the subtle-text contrast
+checkpoint below. `app-*.js` still statically imports
 `chunk-experience` (114.35 kB), which swallows `src/UI/CinematicNav` and
 `FullscreenOverlay`; no `chunk-ui-*.js` is emitted even though `name(id)` maps
 `/src/UI/` to `chunk-ui`, so the UI layer has no independent cache identity.
@@ -2765,3 +2764,24 @@ three GPU-limited timeouts. Gates: `bun run type-check:vue` clean,
 `CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` at 15 passed / 6 skipped /
 3 failed with the same three GPU-limited timeouts. Physical-GPU WebGPU parity
 remains **unverified**.
+
+Subtle-text contrast checkpoint (2026-10-10): closes the palette audit item.
+`@jlz-color-text-subtle` moved from `rgba(230, 237, 243, 0.38)` to `0.55` and
+the `html.uk-light` override from `rgba(11, 14, 19, 0.5)` to `0.62`
+(`src/assets/_import.less`); `.jlz-fs-overlay` needed the same fix on its own
+because it pins a dark palette that the inverse theme cannot reach, and its
+48% measured 4.37:1 over the pinned `#05080b` stage
+(`src/assets/components/_fullscreen.less`). No consumer was repointed to
+`--jlz-color-text-muted`, so the subtle/muted hierarchy keeps two steps.
+Measured in the live page (throwaway Playwright probe against `bun run dev` on
+127.0.0.1:5199 that composites each element's `color` alpha over the stacked
+`background-color` of its ancestors and applies the WCAG relative-luminance
+ratio; probe deleted): `.jlz-topbar__mode` at 8.8px and `.jlz-menu-nav__num` at
+10.88px measure 5.45:1 in dark and 5.17:1 with `html.uk-light` applied.
+`.jlz-storyline__item` is not a subtle consumer — it renders in
+`--jlz-color-signal-phosphor` at 10.92:1 dark / 5.04:1 inverse — so the audit's
+consumer list was partly wrong. `.jlz-boot-gate__code` never renders in a
+healthy boot (the gate is the boot-failure `role="alert"` block injected by
+`src/entry-app.ts`), so its pair is computed from the authored CSS: 5.46:1 over
+the gate's `color-mix(in srgb, var(--jlz-color-bg) 92%, #000)` and 5.00:1 in
+inverse. Every value clears the 4.5:1 floor of WCAG 1.4.3.
