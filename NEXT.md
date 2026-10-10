@@ -1722,6 +1722,123 @@ Execution order:
    unit or browser test suites without the user's explicit request; report the
    unverified runtime cases as open acceptance gates.
 
+### 4. Declarative Vue + TresJS v5 migration — architecture decision
+
+Decision: keep the existing three-layer split and finish it by moving **scene
+composition** (geometry and material construction) out of the runtime stage
+classes and into Tres primitives, one route-owned owner at a time. The first
+slice is the pointer-ink family (`ContactHaloStage`, `ManifestoInkStage`),
+because it is the smallest real scene that exercises the whole path: a lazy
+route dynamic import, a TSL `MeshBasicNodeMaterial`, per-frame uniform
+updates, pointer reactivity, reveal damping, reduced-motion snap, theme
+retint, and deterministic teardown.
+
+Ownership after the migration:
+
+| Layer                                                                     | Owns                                                                                                                                          | Must not own                                                                                   |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Vue host (`src/app/SceneHost.vue`, `src/app/scene/*.vue`)                 | canvas, renderer factory call, route-owned node lifetime, declarative geometry/material construction, disposal of declaratively created nodes | per-frame math, render calls                                                                   |
+| TresJS 5.9.2                                                              | catalogue construction of scene nodes, attach/patch, unmount disposal of created nodes                                                        | the render step (replaced in `onReady`)                                                        |
+| Experience runtime (`src/Experience/**`)                                  | frame semantics: uniform values, damping, reveal, theme, quality policy, render pipeline, device-loss recovery                                | `scene.add` of route content, a second renderer or loop, GPU resources declared by a Vue owner |
+| Shared framework-independent modules (`src/core/**`, authored TSL fields) | backend policy, scheduler, budgets, pure TSL subgraphs                                                                                        | scene-graph membership                                                                         |
+
+Boundary rules:
+
+- One renderer, one RAF. `SceneHost.rendererFactory` is the only construction
+  site; `manager.replaceRenderFunction` keeps `Renderer.update` →
+  `RenderPipeline` as the only render step.
+- A Vue owner that declares a node constructs and disposes it. A runtime owner
+  that borrows a node never disposes it; borrowing is explicit in the owner's
+  comment and its `onBeforeUnmount` (see `EnvSky.vue`).
+- Runtime stages expose _behavior_ to the template (visibility, position,
+  scale, uniform updates), not GPU resources.
+- Lazy loading is a contract, not an accident: route stage implementations
+  stay behind `createImportedLazyStage`, and the boot closure stays under
+  24 kB gzip with no `vendor-three` reachability.
+
+Installed-API evidence (verified against the tree, not the docs alone):
+
+- `@tresjs/core` 5.9.2 `dist/tres.js`: `catalogue = ref({})` (:716),
+  `extend = (objects) => Object.assign(catalogue.value, objects)` (:717),
+  `extend(THREE)` at canvas setup (:2080), `createElement` maps
+  `tag.replace("Tres","")` → `catalogue.value[name]` → `new target(...props.args)`
+  and errors `"<name> is not defined on the THREE namespace. Use extend to add
+it to the catalog."` (:1216). `:args` is the constructor-argument seam.
+- `vite.config.ts` aliases bare `three` → `src/three-webgpu-compat.ts`, which
+  re-exports `three/webgpu`. Tres imports bare `three`, so its catalogue is the
+  WebGPU namespace: `<TresMeshBasicNodeMaterial>` resolves without an extra
+  `extend` call. Confirmed `three/webgpu` 0.186.1 exports
+  `MeshBasicNodeMaterial` and 17 other node materials.
+- Tres `remove(node, dispose)` (:1265-1292) disposes catalogue-created nodes
+  and their attached children on unmount; `:dispose="null"` opts a subtree out.
+  Declarative geometry/material therefore needs no manual dispose in the owner;
+  borrowed resources must keep `:dispose="null"` plus an explicit release.
+- `TresCanvas` props/events match docs.tresjs.org 5.9.3
+  (`/api/components/tres-canvas`, `/api/advanced/web-gpu`): the `renderer`
+  factory `(ctx: TresRendererSetupContext) => renderer` is the documented
+  WebGPU seam, and `ready`/`error` are the documented events. The project's
+  `rendererFactory` + `src/core/unifiedRenderer.ts` is that seam plus async
+  init, backend inspection, deferred disposal, and bounded device-loss
+  recovery.
+- Post-processing is already WebGPU-native: `src/core/TSLPostPipeline.ts` uses
+  three's `RenderPipeline` + `PassNode` + `BloomNode` for both backends; no
+  EffectComposer, no ShaderMaterial, no `@tresjs/post-processing` dependency.
+
+Migration order (each step is a coherent cutover that deletes the replaced
+path in the same change):
+
+1. Pointer-ink family — **complete 2026-10-10** (see the declarative
+   pointer-ink checkpoint in `## Status`): declarative `<TresPlaneGeometry>` +
+   `<TresMeshBasicNodeMaterial>` in `PointerInkStageOwner.vue`; the stage keeps
+   uniform nodes, damping, reveal, theme, reduced-motion settle, and the
+   authored `inkField`; the refcounted shared-geometry lease is removed because
+   the two voices use different extents and never coexist per voice.
+2. Remaining imperative geometry/material owners, smallest first:
+   `WireframeTypographyOwner`, `CursorTrailOwner`, `EnvSphereOwner`,
+   `BakuCubeOwner`, `BakuCarouselOwner`, `CasePlaneNode`, `ServicesStageOwner`,
+   `LabGamepadOwner` (materials only where the material is plain data).
+3. Runtime-adopted groups (`ContactCyprusStageOwner` `<primitive>`,
+   `ContactTypographyStageOwner`, `WorksStageOwner`, `SectionGroupRoots`):
+   convert only where the adopted object is plain composition; keep the
+   adoption where the runtime genuinely owns a non-trivial object graph or an
+   async-loaded resource.
+4. Re-measure budgets and the e2e matrix after each cutover; a cutover that
+   moves GPU work into the boot closure is rejected.
+
+Compatibility risks:
+
+- Tres patches material props after construction, so material options must be
+  set before the node first renders; the ink group starts `:visible="false"`
+  and only becomes visible after `configure`, which runs after the owner's
+  `onMounted` bind.
+- `instanceof` guards across the alias boundary are safe only because bare
+  `three`, `three/webgpu`, and the compat shim resolve to one evaluated core;
+  the invariant in `src/three-webgpu-compat.ts` (no direct build-entry import)
+  must stay enforced.
+- Tres's unmount order disposes its renderer manager before the Vue scene tree
+  unmounts; `deferRendererDisposal` is what keeps owner teardown ahead of GPU
+  teardown. Any new owner must not assume Tres's disposal runs after its own.
+- Declarative construction per mesh removes cross-instance geometry sharing.
+  That is acceptable only where instances never coexist; where they do, the
+  shared buffer must stay owned by one explicit owner and be borrowed.
+
+Acceptance criteria (measurable):
+
+- The migrated owner's template contains the geometry and material it uses;
+  the stage class contains no `new THREE.*Geometry` or `new *Material` for
+  that scene.
+- `bun run budget:build` keeps Splash ≤ 5 kB, boot closure ≤ 24 kB with no
+  `vendor-three` reachability, lazy `vendor-three` ≤ 350 kB, `vendor-ui` ≤ 56 kB.
+- Unit suite covers: bind rejects a non-node material, node assignment feeds
+  color and opacity, update/reveal/energy/reduced-motion settle semantics,
+  teardown leaves the stage inert and does not dispose component-owned GPU
+  resources, and repeated route switching rebinds cleanly.
+- The gated dev teardown run records the ink owner's bind before stage ready
+  and its unbind before `renderer:backend-disposed`.
+- Browser validation on `/contact` and `/manifesto` shows the ink mesh mounted
+  with a node material, no page errors, and clean teardown; physical-GPU
+  WebGPU parity stays a separate gate until observed on real hardware.
+
 ## Working rules
 
 - Read repo instructions, callers, and installed library APIs before changing
@@ -2059,3 +2176,198 @@ tuning explicit without another effect registry. Type-check, lint,
 formatting, diff check, and the complete production build passed. A fresh
 local Firefox snapshot is still needed to confirm Services third-section
 settles with `particles=false` and `loopActive=false`.
+
+ServicesStage test checkpoint (2026-10-10): the ribbon rework left one stale
+unit-test expectation. `ServicesStage.updateState` now lifts the root by
+`height * (mobile ? 0.045 : 0.1)`, but the test still asserted the raw camera
+y (`2`), so `bun run test:unit` failed at HEAD. The source lift is intentional
+(the same test asserts the x `0.22` and z `-5` offsets added by the rework);
+only the test expectation was corrected to camera y plus the desktop lift. No
+source changed. `bun run test:unit` now passes 103/103, and lint, type-check,
+and `git diff --check` pass.
+
+Modal handler and route resolution checkpoint (2026-10-10): `FullscreenOverlay`
+never released its UIkit modal handlers — `dispose()` only aborted
+`_listeners`, leaving the four `UIkit.util.on` disposers attached to document
+for the lifetime of the page. Each disposer is now stored in `_modalOffs` and
+`dispose()` drains it after `_listeners.abort()`. UIkit is reached through a
+typed port, `src/core/uikit.ts` (`Omit<typeof UIkit, 'update' | 'util'>` with
+`util.on(...): () => void`); `Omit` is required because the intersection
+otherwise keeps the wrong `@types/uikit` overload and fails with TS2345.
+`src/assets/console-icons.ts` still imports `uikit` directly with its local
+`icon.add` cast: routing it through `core/uikit` would add a `chunk-core` edge
+from a lazy bootstrap leaf. `SceneHost` resolves the current page id from a
+`computed` instead of re-resolving the route on every render.
+`tests/unit/UI/FullscreenOverlay.test.ts` was confirmed failing before the fix.
+
+Boot bundle laziness checkpoint (2026-10-10): the emitted chunk graph violated
+the invariant `vite.config.ts` documents for `chunk-bootstrap-core` ("Otherwise
+importing the event bus / sound / motion policy from entry-app makes the whole
+Three vendor graph eager"). `entry-app` statically imported `chunk-core`, which
+statically imported `vendor-three`, `vendor-misc`, and `vendor-ui` (≈1.99 MB
+raw) on the boot hop. `manualChunks` now groups `routeManifest` into
+`chunk-bootstrap-core`, severing that edge, and a new `chunk-contact-stage`
+group (priority 9, `includeDependenciesRecursively: false`) placed before
+`chunk-bootstrap-core` keeps the Contact-only GLTF/DRACO loaders,
+`FontLoader`/`TextGeometry`, and the inlined Comfortaa font out of the eagerly
+imported `chunk-world` (28.81 → 19.68 kB). Verified from the emitted graph:
+`entry-app` → `chunk-bootstrap-core`, `chunk-dom-reveal`, `chunk-runtime` only;
+`chunk-bootstrap-core` has no static imports; `chunk-world` has no contact
+addons; `vendor-three-contact-*` is reachable only from `chunk-contact-stage`
+and from `chunk-experience`'s dynamic-import map.
+`scripts/check-build-budgets.ts` now walks the static import closure of
+`entry-app` (dynamic imports excluded) and fails if any `vendor-three*` chunk
+is reachable or the closure exceeds 24 kB gzip; the current closure is 4 modules
+/ 14.32 kB gzip. The guard was proven by repointing it at `app-*.js`, which does
+statically import `vendor-three`: it failed with the vendor message plus a
+507.26 kB overage, and passed again once the pattern was restored.
+
+Frame hot-path checkpoint (2026-10-10): removed per-frame work with no
+observable effect. `SplashCube`'s `_blendFromEmissive` / `_blendToEmissive` were
+written but never read by `applyMaterialBlend`; both fields were deleted and
+`updateWorldBlend` returns early when the blend value is unchanged. Wiring the
+emissive pair would have changed visuals without a proven cause, so it was not
+wired. `WireframeTypography`, `SectionStateMachine.updateSections`, and
+`ParticleBurst.updateMatrices` no longer allocate closures or iterators per
+frame; `SceneTransformPass` writes `_opacityCache` only on a cache miss;
+`Lights` skips the volumetric orbit at zero intensity. Recorded, not changed:
+`CinematicNav.getOverallProgress` reads layout on every rendered frame (caching
+risks a one-frame-stale story transform), `ServicesStage.updateState` recomputes
+`Math.tan(degToRad(fov / 2))` per frame while `camera.pulse` animates fov,
+`WorksPlaneStage` recomputes view height, and `BlurFade.renderFrame` writes
+per-character inline styles. Each needs frame-time measurement on the target GPU
+before a caching contract is justified.
+
+Accessibility and reduced-motion checkpoint (2026-10-10): applied the audited
+findings that had a proven cause. Keyboard capture in `CinematicNav` now yields
+to open modals, media layers, text inputs, modifier chords, and scrollable story
+panels (`_scrollsInsideStorySection`), and `Escape` closes a side sheet.
+`[data-cinematic-menu]` / `[data-contact-footer]` are `inert` while closed, which
+only formalizes their existing `visibility: hidden; pointer-events: none` state
+and closes the 900 ms / 1400 ms tabbable close window; `CinematicNav` remains
+their sole `inert` owner. `PersistentConsole` starts on the `intro` slot instead
+of the Contact slot, so `nav#cinematic-nav` and `#jlz-contact-launcher` are
+focusable before Experience publishes an index, and the mounted shell carries
+the `.jlz-skip-link` (the fallback branch reuses the class; `#jlz-menu-launcher`
+is `inert` while the fullscreen overlay is open). The splash skip link is now
+removed with the loader, because its handler `preventDefault()`s into an
+already-exited `exitSplash`. Reduced motion reaches the custom cursor (hidden,
+native pointer restored), the real `.jlz-bank-key()` consumers
+(`.jlz-storyline__item`, `.jlz-contact-launcher__button`, `.jlz-menu-launcher`,
+`.jlz-topbar-controls .uk-icon-button`), the fullscreen dialog reveal (the
+reduce selector gained the `.jlz-fs-overlay` ancestor so it outranks the base
+reveal), and the UIkit hook-button transitions, which switched from the
+compile-time `@jlz-duration-fast` to `var(--jlz-duration-fast)`. `Cursor` gained
+`setReducedMotion` and a `_motionDisabled()` gate (3 call sites) that keeps the
+click sound while dropping the bump; `Experience` publishes the preference at
+construction and on change. Showreel open/close announces through `announce()`
+and restores focus to a still-connected trigger. `role="group"` plus
+`data-i18n-aria-label` name the fullscreen tag list, the case-study stack, and
+the contact location; the Works `<h2 id="jlz-works-title">` moved from `hidden`
+(which pruned the node its group's `aria-labelledby` points at) to the new
+`.jlz-visually-hidden` utility, because `uk-hidden-visually` is absent from the
+compiled CSS. `tests/unit/UI/CinematicNav.test.ts` (5 cases) and two `Cursor`
+cases were confirmed failing before the fixes. A throwaway Playwright pass
+against the production preview confirmed 13/13 live checks: the skip link is the
+first focusable element and un-clips on focus, the story rail is focusable at
+startup, closed sheets are inert, the open menu sheet focuses
+`[data-close-cinematic-sheet]`, Escape re-inerts the sheet and restores focus to
+`#jlz-menu-launcher`, reduce hides `.custom-cursor-canvas` with `body { cursor:
+auto }` and `0s` bank-key transitions, and the three labelled groups resolve
+their names.
+
+Chromium e2e checkpoint (2026-10-10): `bunx playwright install chromium`
+supplied the missing `chromium_headless_shell-1243`, and
+`CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` (chromium-only, no retries)
+reports 15 passed, 6 skipped, 3 failed in 2.6 min. The three failures — Works
+lazy scene mount/release cycles, Showreel TresPortal mount/close, and fullscreen
+overlay focus trapping — time out waiting for `.jlz-works-entrance`,
+`#jlz-showreel-trigger`, and the `View material` button, all of which mount only
+after the 3D stage is ready. A clean `git worktree` at HEAD `b7721f9` with none
+of these changes fails the same three tests with the same call logs, so they are
+the known headless-shell GPU limit, not regressions from this work. Firefox and
+WebKit coverage stays an open gate. The user's task explicitly authorized running
+the unit and browser suites, superseding work-queue item 6.
+
+Open audit items (2026-10-10): `--jlz-color-text-subtle` measures 3.20:1 over
+`#161b26` and 3.57:1 over `#f5f8fc`, below WCAG 1.4.3 at the sizes its consumers
+use (`.jlz-storyline__item` 0.62rem mono, `.jlz-menu-nav__num` 0.68rem,
+`.jlz-boot-gate__code` 0.6rem, `.jlz-topbar__mode` 0.55rem); the fix is alpha
+≈0.55 dark / ≈0.62 inverse, or moving those consumers to
+`--jlz-color-text-muted` (~6.7:1). Either is a palette decision, so it is
+reported rather than applied. `app-*.js` still statically imports
+`chunk-experience` (114.35 kB), which swallows `src/UI/CinematicNav` and
+`FullscreenOverlay`; no `chunk-ui-*.js` is emitted even though `name(id)` maps
+`/src/UI/` to `chunk-ui`, so the UI layer has no independent cache identity.
+`public/assets/projects/nocturne-blue/detail.jpg` is 160.2 kB where the three
+sibling `detail.webp` textures are 3.8–5.6 kB (`src/Data/Projects.ts:57`);
+re-encoding is a release-asset change that needs visual sign-off.
+`public/_headers` has no cache rule for `/textures/` or `/js/blog.js`, and the
+blog pages request JetBrains Mono without declaring it.
+`FullscreenOverlayView`'s poster loader has only a `{ once: true }` `load`
+listener on a local `new Image()`, so nothing leaks, but a failed poster leaves
+`posterReady` false forever with no fallback. Physical-GPU WebGPU parity,
+natural device loss, WebKit app coverage, and the `justlovejazz.dev` NXDOMAIN
+remain the standing gates.
+
+Declarative pointer-ink slice checkpoint (2026-10-10): work-queue step 4.1
+cut over. `PointerInkStageOwner.vue` now declares
+`<TresPlaneGeometry :args="stage.planeSize">` and
+`<TresMeshBasicNodeMaterial :transparent :depth-write :side :fog :tone-mapped>`
+inside `<TresGroup :name :visible>`, and `PointerInkStage` no longer constructs
+any geometry or material: it keeps the five uniform nodes, damping, reveal,
+theme and reduced-motion settle, adopts the mounted mesh through `bindMesh`
+(which throws unless `inkMesh.material instanceof MeshBasicNodeMaterial` and
+then assigns one shared `ink` subgraph to both `material.colorNode` and
+`material.opacityNode`), releases it through `unbindMesh`, and `dispose()`
+retires only its own frame state. The refcounted `sharedGeometries` lease
+(`acquireGeometry`/`releaseGeometry`) and the never-read `focusScale` config
+field were deleted; `planeSize` became a stable `[number, number]` so the
+template hands the same array identity to `:args`. `StageRegistry` release
+comments now state that Tres disposes the declared geometry and material.
+`tests/unit/Experience/World/PointerInkStage.test.ts` was rewritten around the
+new contract (5 cases: node wiring, rejection of a non-node material, reveal
+damp plus clean re-entry, reduced-motion settle, inert dispose that must not
+dispose the component-owned surface); the case pinning the old refcount was
+deleted rather than re-pinned. Gates after the change: `bun run type-check:vue`
+clean, `bun run test:unit` 37 files / 115 tests pass, `bun run lint` clean,
+`bun run format:check` clean, `git diff --check` clean.
+
+Browser evidence for the slice (throwaway Playwright probes against
+`bun run dev` on 127.0.0.1:5199, deleted after the run): headless Chromium
+reports `mode=webgpu`, `backend=WebGPUBackend`, `isFallbackAdapter=true` and
+loses the device within seconds (`A valid external Instance reference no longer
+exists`, then `createBuffer failed, size (…) is too large … when
+mappedAtCreation == true`) — the known SwiftShader limit, not a scene defect.
+The same run with the DEV seam `?force-webgl-backend` is clean:
+`mode=webgl`, `backend=WebGLBackend`, `post.tslPostPipeline=true`, zero page or
+console errors. A scene probe through the Vue tree found
+`contact-halo-stage` → `contact-halo` with `PlaneGeometry(1.7, 0.95)`,
+`MeshBasicNodeMaterial` (`transparent`, `depthWrite=false`, `side=DoubleSide`,
+`fog=false`, `toneMapped=false`, `renderOrder=1`, `frustumCulled=false`) and
+non-null `colorNode`/`opacityNode`: Tres resolved `<TresMeshBasicNodeMaterial>`
+from the aliased catalogue with no `extend` call, and no
+`is not defined on the THREE namespace` error appeared. `/contact` →
+`/manifesto` → `/contact` swapped `contact-halo` for `manifesto-ink`
+(`PlaneGeometry(1.9, 1.05)`) and back, with scene counts 21 geometries / 17
+materials → 15 / 15 → 21 / 17 and renderer counts 16 / 17 stable: mount and
+release balance. Toggling only the halo mesh's `visible` changed 448 pixels
+(mean Δ 10.5, max Δ 24.1 luma) inside its own projected rect (403,264,165×92),
+while a visible-vs-visible control pair differed in 20 pixels of unrelated UI,
+so the declarative ink demonstrably paints. `bun run test:host-teardown`
+(`JLZ_HOST_TEARDOWN_TEST=1`, dev server, 4 tests) passes with the new
+assertions: `scene-owner:pointer-ink-bound` precedes
+`scene-stage:ContactHaloStage:ready`, and `scene-owner:pointer-ink-unbound`
+appears exactly once before `renderer:backend-disposed`. `bun run build`
+reproduced the baseline budgets exactly (Splash 3.32/5.00, boot closure
+14.32/24.00 from 4 modules with no `vendor-three` reachability, lazy
+`vendor-three` 310.95/350, `vendor-ui` 53.84/56, public media 5390.23 total).
+Physical-GPU WebGPU parity is still **unverified**: the only WebGPU adapter
+reachable from Playwright here is the SwiftShader fallback that dies,
+Playwright's Firefox reports neither `navigator.gpu` nor a WebGL2 context, and
+the Firefox MCP server exits before it can attach. One unrelated defect surfaced
+on the dead device: `ContactCyprusStage` release throws
+`TypeError: Cannot read properties of undefined (reading 'destroy')` inside
+three's `WebGPUBackend.destroyAttribute` from `BufferGeometry.onDispose`, so
+geometry disposal after device loss is a three-side path to re-check when a real
+adapter is available.
