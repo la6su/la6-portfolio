@@ -1799,14 +1799,31 @@ path in the same change):
    rule below forbids per-mesh construction), and the glyph `TextGeometry` set
    is an addon geometry whose bounding boxes feed the layout math, so neither
    side is plain per-mesh data. `CursorTrailOwner` — **complete 2026-10-10**
-   (see the cursor trail checkpoint in `## Status`). Then `EnvSphereOwner`,
-   `BakuCubeOwner`, `BakuCarouselOwner`, `CasePlaneNode`, `ServicesStageOwner`,
-   `LabGamepadOwner` (materials only where the material is plain data).
-3. Runtime-adopted groups (`ContactCyprusStageOwner` `<primitive>`,
-   `ContactTypographyStageOwner`, `WorksStageOwner`, `SectionGroupRoots`):
-   convert only where the adopted object is plain composition; keep the
-   adoption where the runtime genuinely owns a non-trivial object graph or an
-   async-loaded resource.
+   (see the cursor trail checkpoint in `## Status`). `EnvSphereOwner` —
+   **complete 2026-10-10** (five declared `RoundedBoxGeometry` surfaces,
+   materials kept runtime-owned; see the pavilion checkpoint in `## Status`).
+   `BakuCubeOwner` — **complete 2026-10-10**: `<TresBoxGeometry :args>` +
+   `<TresMeshPhysicalMaterial v-bind>` bound to the authored tables in
+   `SplashCube.ts`, with the rounding recipe applied in place before the
+   deformation reads the buffer (see the baku shell checkpoint in `## Status`).
+   `WorksInstallation.vue` — **complete 2026-10-10**: its declared arc, trace
+   and tick children plus the tick `InstancedMesh` now release through Tres
+   instead of four manual `dispose()` calls.
+3. Runtime-adopted groups and controller-owned resources
+   (`ContactCyprusStageOwner` `<primitive>`, `ContactTypographyStageOwner`,
+   `WorksStageOwner`, `SectionGroupRoots`): convert only where the adopted
+   object is plain composition; keep the adoption where the runtime genuinely
+   owns a non-trivial object graph or an async-loaded resource. Measured 2026-10-10
+   and moved here out of step 2: `BakuCarouselOwner` (`carousel.ribbonGeometry`,
+   `carousel.ribbonMaterial`), `CasePlaneNode` (the refcounted
+   `acquireCasePlaneGeometry()` lease shared by coexisting cards),
+   `ServicesStageOwner` (`stage.ribbonGeometry`, `stage.sculptureMaterial`,
+   `stage.seamGeometry`, `stage.seamSignalMaterial`) and `LabGamepadOwner`
+   (`stage.resources.geometry.*`, `stage.resources.material.*`, with
+   `geometry.button` and `material.accent` reused by several coexisting
+   meshes): every one of them borrows buffers the controller shares, so
+   declarative per-mesh construction would duplicate a buffer the runtime
+   deliberately keeps single.
 4. Re-measure budgets and the e2e matrix after each cutover; a cutover that
    moves GPU work into the boot closure is rejected.
 
@@ -1852,6 +1869,22 @@ Compatibility risks:
   refs on the group, the mesh and a geometry node are populated. Read declared
   materials off the mesh ref (`Mesh<BufferGeometry, MeshBasicNodeMaterial>`),
   as `CasePlaneNode.vue` already does.
+- Addon geometries are not in the catalogue Tres builds from the aliased `three`
+  namespace, so a declarative `<TresRoundedBoxGeometry>` needs one
+  `extend({ RoundedBoxGeometry })` call before the owner mounts
+  (`EnvSphereOwner.vue` is the only such call site). `:args` must keep a stable
+  identity: Tres' `patchProp` re-instantiates the node and copies the new
+  instance's writable properties onto the old one when `args` change and are
+  unequal (:1320-1335), so the argument array is built once in the owner's
+  setup (`geometryArgs`) instead of inline in the template.
+- Runtime-owned materials can coexist with default Tres disposal when they are
+  passed as mesh props rather than declared as child nodes: they never enter
+  `__tres.objects`, and three's `Object3D.dispose`
+  (`three/src/core/Object3D.js:1665-1672`) only dispatches an event, so Tres
+  releases the declared geometry children and leaves the borrowed materials to
+  their owner. `InstanceProps.dispose` is typed `null` only, so a subtree cannot
+  be re-enabled with `:dispose="true"`; drop the group-level `:dispose="null"`
+  instead.
 
 Acceptance criteria (measurable):
 
@@ -2478,3 +2511,87 @@ coordinates, not the plane's own `(±0.5, ±0.5, 0)` grid, so `DrawTrail`
 demonstrably writes into the Tres-owned geometry. Physical-GPU WebGPU parity
 remains **unverified**: headless Chromium only reaches the SwiftShader fallback
 adapter, which dies within seconds.
+
+Ambient pavilion declarative cutover checkpoint (2026-10-10): work-queue step
+4.2 `EnvSphereOwner.vue` now declares `<TresGroup name="env-pavilion">` with
+five `<TresMesh>` children, each carrying `<TresRoundedBoxGeometry :args>`.
+`RoundedBoxGeometry` is a three addon, so it is absent from the catalogue Tres
+builds from the aliased `three` namespace: the owner calls
+`extend({ RoundedBoxGeometry })` once in its setup — the repository's first
+`extend`. Each surface's argument array (`[...size, segments, radius]`) is
+built once in setup and kept as a stable `:args` identity, because Tres's
+`patchProp` re-instantiates a node whenever its args are unequal. The five
+pavilion materials stay runtime-owned and are passed as mesh props, so Tres's
+default disposal releases only the declared geometry children; the group-level
+`:dispose="null"` and the `surfaces.forEach(({ geometry }) => geometry.dispose())`
+loop were deleted in the same change. `onBeforeUnmount` keeps `owner.dispose()`
+and the DEV `scene-owner:env-sphere-disposed` trace.
+
+Baku shell and works installation declarative cutover checkpoint (2026-10-10):
+work-queue step 4.2. `SplashCube.ts` lost `buildBakuShellGeometry()` and
+`createBakuShellMaterial()`; the authored data is now `SHELL_SIZE`,
+`SHELL_SEGMENTS`, `SHELL_ROUNDING`, the exported `BAKU_SHELL_ARGS` tuple and
+`BAKU_SHELL_MATERIAL` parameter table (with their rationale comments kept), and
+`applyBakuShellRecipe(geometry)`, which rounds the declared container in place,
+deletes `uv`/`normal`, welds it with `mergeVertices(geometry, 0.01)` and copies
+the merged `index` + `position` back before `computeVertexNormals()`. The
+constructor runs the recipe immediately after adopting `nodes.shell` and before
+capturing `_basePositions`/`_normals`, so the deformation and the lazily
+computed bounding sphere never see unrounded vertices. `BakuCubeOwner.vue`
+declares `<TresBoxGeometry :args="BAKU_SHELL_ARGS">` plus
+`<TresMeshPhysicalMaterial v-bind="BAKU_SHELL_MATERIAL">` and still throws
+`'Declarative baku cube did not mount completely.'` unless both refs exist.
+`WorksInstallation.vue` replaced `disposeGeometry()` with `releaseNodes()`: the
+four manual `geometry.dispose()` / `ticks.dispose()` calls are gone, the
+assembly group no longer carries `:dispose="null"`, and Tres now disposes the
+declared arc/trace/tick geometries and the tick `InstancedMesh` while
+`WorksInstallation.release()` only drops its reference.
+
+Gates after both cutovers: `bun run type-check:vue` clean, `bun run test:unit`
+37 files / 115 tests pass, `bun run lint` clean, `bun run format:check` clean,
+`git diff --check` clean, `bun run test:host-teardown` 4/4 with
+`scene-owner:env-sphere-disposed` and `scene-owner:env-sky-disposed` recorded,
+`bun run build` reproducing the baseline budgets exactly (Splash 3.32/5.00,
+boot closure 14.32/24.00 from 4 modules with no `vendor-three` reachability,
+lazy `vendor-three` 310.95/350, `vendor-ui` 53.84/56, public media 5390.23
+total / 4160.18 max), and `CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial`
+at 15 passed / 6 skipped / 3 failed — the same three GPU-limited timeouts as
+the baseline, no new failures.
+
+Browser evidence (throwaway Playwright probes against `bun run dev` on
+127.0.0.1:5199, deleted after the run): under `?force-webgl-backend` the app
+reaches splash `READY` with zero page or console errors, `mode=webgl`,
+`backend=WebGLBackend`. `env-pavilion` holds five meshes, each with a
+`RoundedBoxGeometry` (position 6084, non-indexed), `renderOrder=-1000`,
+`frustumCulled=false`, and a material whose identity is `===`
+`owner.materials[key]`; registering dispose listeners before
+`__jlzTestUnmountVueApp()` recorded the five materials disposing first
+(`EnvSphere.dispose()`) and the five geometries second (Tres), proving the
+prop-borrowed materials are not double-disposed. `baku-shell` is a
+`BoxGeometry` with position 3458, index 20736, no `uv`, normal 3458, zero
+vertices at `(±0.4, ±0.4, ±0.4)` and maximum vertex magnitude 0.5652 —
+exactly `0.225 + 0.175/√3` per axis, where an unrounded box corner would read
+0.6928 — so the recipe demonstrably ran on the declared container. Its live
+material carries every authored option (`transmission 0.9`, `thickness 2.6`,
+`ior 1.34`, `dispersion 0.035`, `roughness 0.14`, `clearcoat 0.85`,
+`iridescence 0.48` / `1.3` / `[120, 360]`, `envMapIntensity 2.05`,
+`attenuationDistance 1.8` / `0xd9cfe8`, `emissiveIntensity 0.02`,
+`depthWrite=false`, `side=0`, `metalness=0`); its `color` reads
+`(0.525, 0.503, 0.55)` because `SplashCube` retints the shared material per
+theme. `works-installation-assembly` holds five children: three
+`TorusGeometry` (1111 verts, `MeshStandardNodeMaterial`), one trace
+`TorusGeometry` (606 verts, `MeshBasicNodeMaterial`) and one `InstancedMesh`
+(`BoxGeometry` 24 verts, 48 instances); unmounting fired five geometry and five
+material dispose events for it, then `geometry:baku-shell` and
+`material:baku-shell` — Tres now releases both shell resources, where the
+imperative owner released neither.
+
+Render participation was proven through the renderer's own bookkeeping rather
+than screenshots: Playwright screenshots of this canvas read black at the
+centre (no `preserveDrawingBuffer`), so pixel diffs only measure DOM UI. In
+`renderer._geometries` / `renderer._attributes` the shell geometry is present
+with `position`, `index` and `normal` buffers uploaded and no `uv` buffer, all
+five pavilion geometries are uploaded, and the hidden `trail-ribbon` is not —
+the expected pattern for a group gated off until the pointer moves. Physical-
+GPU WebGPU parity remains **unverified**: headless Chromium only reaches the
+SwiftShader fallback adapter, which dies within seconds.
