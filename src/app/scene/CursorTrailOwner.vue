@@ -1,44 +1,54 @@
 <script setup lang="ts">
-import { markRaw, onBeforeUnmount, onMounted, shallowRef } from 'vue'
-import { BufferAttribute, BufferGeometry, type Group, type Mesh } from 'three'
+// Declarative composition of the Works cursor trail. Tres constructs the ribbon
+// geometry container and the TSL node material and disposes both when this
+// owner unmounts; DrawTrail keeps the pointer history, writes the ribbon
+// buffers into the declared geometry and feeds the declared material's nodes.
+import { onBeforeUnmount, onMounted, shallowRef, toRaw } from 'vue'
+import { AdditiveBlending, DoubleSide } from 'three'
+import type { BufferGeometry, Mesh } from 'three'
+import type { MeshBasicNodeMaterial } from 'three/webgpu'
 import { traceDevLifecycle } from '../../core/devLifecycleTrace'
 import type { CursorTrailNodes } from '../../Experience/World/DrawTrail'
 
 const emit = defineEmits<{ ready: [nodes: CursorTrailNodes] }>()
-const root = shallowRef<Group | null>(null)
-const ribbon = shallowRef<Mesh | null>(null)
-// An attribute-less mesh crashes Tres's scene memory sampler
-// (calculateMemoryUsage reads geometry.attributes.position.count). The
-// placeholder carries the empty position attribute the sampler expects; the
-// controller replaces it with the hand-built ribbon geometry at adoption —
-// long before the mesh is ever visible or rendered.
-const placeholderGeometry = markRaw(new BufferGeometry())
-placeholderGeometry.setAttribute('position', new BufferAttribute(new Float32Array(0), 3))
+const root = shallowRef<CursorTrailNodes['root'] | null>(null)
+const ribbon = shallowRef<Mesh<BufferGeometry, MeshBasicNodeMaterial> | null>(null)
 
 onMounted(() => {
   if (!root.value || !ribbon.value) {
     throw new Error('Declarative cursor trail did not mount completely.')
   }
-  emit('ready', { root: root.value, ribbon: ribbon.value })
+  emit('ready', {
+    root: toRaw(root.value),
+    ribbon: toRaw(ribbon.value),
+  })
+  if (import.meta.env.DEV) traceDevLifecycle('scene-owner:cursor-trail-bound')
 })
 
 onBeforeUnmount(() => {
-  placeholderGeometry.dispose()
-  if (import.meta.env.DEV) traceDevLifecycle('scene-owner:cursor-placeholder-disposed')
+  if (import.meta.env.DEV) traceDevLifecycle('scene-owner:cursor-trail-unbound')
 })
 </script>
 
 <template>
-  <!-- The hand-built ribbon geometry + TSL signal material are behavior — the
-       controller assigns them onto this leaf when Experience adopts the node. -->
+  <!-- The declared container is a 35-segment strip: 36 trail points x 2 ribbon
+       edges, which is exactly the ribbon topology DrawTrail writes. Its own
+       plane buffers exist from the first frame (Tres' built-in performance
+       sampler reads `geometry.attributes.position` on every RAF tick) and
+       DrawTrail replaces them with the pointer-driven buffers. -->
   <!-- Hidden until SceneTransformPass gates the works trail on via setVisible. -->
   <TresGroup ref="root" name="draw-trail" :visible="false">
-    <TresMesh
-      ref="ribbon"
-      name="trail-ribbon"
-      :geometry="placeholderGeometry"
-      :frustum-culled="false"
-      :render-order="7"
-    />
+    <TresMesh ref="ribbon" name="trail-ribbon" :frustum-culled="false" :render-order="7">
+      <TresPlaneGeometry :args="[1, 1, 35, 1]" />
+      <TresMeshBasicNodeMaterial
+        :transparent="true"
+        :depth-write="false"
+        :depth-test="false"
+        :blending="AdditiveBlending"
+        :side="DoubleSide"
+        :fog="false"
+        :tone-mapped="false"
+      />
+    </TresMesh>
   </TresGroup>
 </template>

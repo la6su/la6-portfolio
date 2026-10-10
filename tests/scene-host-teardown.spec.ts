@@ -146,7 +146,7 @@ test('SceneHost releases declared owners before disposing its renderer', async (
   for (const ownerRelease of [
     'scene-owner:env-sphere-disposed',
     'scene-owner:env-sky-disposed',
-    'scene-owner:cursor-placeholder-disposed',
+    'scene-owner:cursor-trail-unbound',
     'scene-owner:showreel-quad-unbound',
     'scene-owner:pointer-ink-unbound',
   ]) {

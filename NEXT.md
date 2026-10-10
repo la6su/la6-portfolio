@@ -1794,7 +1794,12 @@ path in the same change):
    authored `inkField`; the refcounted shared-geometry lease is removed because
    the two voices use different extents and never coexist per voice.
 2. Remaining imperative geometry/material owners, smallest first:
-   `WireframeTypographyOwner`, `CursorTrailOwner`, `EnvSphereOwner`,
+   `WireframeTypographyOwner` — **kept runtime-owned 2026-10-10**: its seven
+   glyph meshes coexist and share one `MeshPhysicalMaterial` (the shared-buffer
+   rule below forbids per-mesh construction), and the glyph `TextGeometry` set
+   is an addon geometry whose bounding boxes feed the layout math, so neither
+   side is plain per-mesh data. `CursorTrailOwner` — **complete 2026-10-10**
+   (see the cursor trail checkpoint in `## Status`). Then `EnvSphereOwner`,
    `BakuCubeOwner`, `BakuCarouselOwner`, `CasePlaneNode`, `ServicesStageOwner`,
    `LabGamepadOwner` (materials only where the material is plain data).
 3. Runtime-adopted groups (`ContactCyprusStageOwner` `<primitive>`,
@@ -1821,6 +1826,32 @@ Compatibility risks:
 - Declarative construction per mesh removes cross-instance geometry sharing.
   That is acceptable only where instances never coexist; where they do, the
   shared buffer must stay owned by one explicit owner and be borrowed.
+- Tres installs `window.__TRES__DEVTOOLS__` unconditionally in the browser
+  (`registerTresDevtools` at `dist/tres.js:2098`, `setupTresDevtools` :1528-1530),
+  so its RAF performance sampler (`calculateMemoryUsage` :1504-1518) reads
+  `geometry.attributes.position.count` for every mesh in the scene on every
+  tick. A declared geometry must therefore carry a `position` attribute from
+  the first frame: `<TresBufferGeometry>` alone crashes the app with
+  `Cannot read properties of undefined (reading 'count')` before any owner
+  code runs. Declare a built-in geometry whose own constructor fills the
+  attributes (the cursor trail declares `PlaneGeometry(1, 1, 35, 1)`, which is
+  exactly the 36-point × 2-edge ribbon topology) and let the controller replace
+  the buffers.
+- Declarative `attach="attributes-*"` children are unsafe with three's node
+  renderer. Tres `remove()` disposes a node's attached children first
+  (:1265-1292), and `detach()` (:395-415) restores `previousAttach` or deletes
+  the key — so `geometry.attributes.position` is gone before `node.dispose()`.
+  three's `Geometries.onDispose` (`three/src/renderers/common/Geometries.js:185-245`)
+  then iterates the _live_ `geometry.attributes` and never reaches
+  `Attributes.delete` → `backend.destroyAttribute` (`Attributes.js:52`), leaking
+  the GPU buffer. Rule: declare the geometry container, never declarative
+  attribute children.
+- A template `ref` on a Tres material node is null inside the owner's
+  `onMounted` (measured: `root=true geometry=true material=false` while
+  `mesh.material` was already the constructed `MeshBasicNodeMaterial`), while
+  refs on the group, the mesh and a geometry node are populated. Read declared
+  materials off the mesh ref (`Mesh<BufferGeometry, MeshBasicNodeMaterial>`),
+  as `CasePlaneNode.vue` already does.
 
 Acceptance criteria (measurable):
 
@@ -1854,6 +1885,11 @@ Acceptance criteria (measurable):
 - Do not claim runtime, browser, or performance evidence beyond what ran.
 - Keep generated `dist/` and deployment workarounds only after verifying their
   consumers.
+- Never run `bun run build` while `bun run test:serial` runs: the serial
+  suite's Playwright `webServer` is `bun run build && bun run preview`, so two
+  builds race on `dist/` and `prerender-routes.mjs` (which reads
+  `dist/index.html` as its template) injects the hreflang block twice. Run the
+  build gate and the serial suite sequentially.
 - Update this queue when evidence or phase status changes; commit completed
   slices with a message describing the simplification.
 
@@ -2371,3 +2407,74 @@ on the dead device: `ContactCyprusStage` release throws
 three's `WebGPUBackend.destroyAttribute` from `BufferGeometry.onDispose`, so
 geometry disposal after device loss is a three-side path to re-check when a real
 adapter is available.
+
+Cursor trail declarative cutover checkpoint (2026-10-10): work-queue step 4.2
+first owner cut over. `CursorTrailOwner.vue` now declares
+`<TresPlaneGeometry :args="[1, 1, 35, 1]">` (35 segments = 36 trail points × 2
+ribbon edges, exactly the ribbon topology) and
+`<TresMeshBasicNodeMaterial :transparent :depth-write="false" :depth-test="false" :blending="AdditiveBlending" :side="DoubleSide" :fog="false" :tone-mapped="false">`
+inside `<TresMesh name="trail-ribbon" :frustum-culled="false" :render-order="7">`
+inside `<TresGroup ref="root" name="draw-trail" :visible="false">`, and hands
+them through one typed mesh ref (`Mesh<BufferGeometry, MeshBasicNodeMaterial>`,
+the same shape `CasePlaneNode.vue` already uses). The `markRaw` placeholder
+`BufferGeometry` with its empty `position` attribute, the manual
+`placeholderGeometry.dispose()`, the `:dispose="null"` opt-out on the group and
+the `BufferGeometry`/`BufferAttribute` imports are gone; the owner now emits
+`scene-owner:cursor-trail-bound` on mount and `scene-owner:cursor-trail-unbound`
+on unmount (DEV-guarded). `DrawTrail` no longer constructs anything:
+`CursorTrailNodes` is `{ root, ribbon: Mesh<BufferGeometry, MeshBasicNodeMaterial> }`,
+the `_ribbon` field and the `(material as unknown as { opacityNode: unknown })`
+cast are deleted, the constructor assigns `colorNode`/`opacityNode` on the
+declared material and writes `position` (72 vertices), `uv` (72) and `index`
+(210) into the declared container, and `dispose()` retires only animation state.
+`tests/scene-host-teardown.spec.ts` now expects `scene-owner:cursor-trail-unbound`
+in the owner-release list, and the second case of
+`tests/unit/Experience/World/SceneNodeDisposal.test.ts` was rewritten as
+"fills the declared cursor ribbon container and leaves it to Tres": it builds
+`PlaneGeometry(1,1,35,1)` + `MeshBasicNodeMaterial` + `Mesh`, asserts the mesh
+keeps both identities, the attribute counts are 72/72/210, both nodes are
+assigned, `trail.dispose()` must not dispose either resource, and Tres's
+`dispose(mesh)` disposes each exactly once. The old case that pinned the
+displaced-placeholder path was deleted rather than re-pinned.
+
+Two real failure modes surfaced and are now recorded as compatibility risks:
+an attribute-less `<TresBufferGeometry>` crashes the app
+(`Cannot read properties of undefined (reading 'count')`) because Tres installs
+`window.__TRES__DEVTOOLS__` unconditionally and its RAF sampler reads
+`geometry.attributes.position.count` for every mesh, and a template `ref` on a
+Tres material node is null in the owner's `onMounted` while `mesh.material` is
+already the constructed `MeshBasicNodeMaterial`. The first attempt (empty
+declared geometry + material ref) reproduced both in the browser before the
+declared-container design fixed them.
+
+Gates after the change: `bun run type-check:vue` clean, `bun run test:unit` 37
+files / 115 tests pass, `bun run lint` clean, `bun run format:check` clean,
+`git diff --check` clean, `bun run test:host-teardown` 4/4 with
+`scene-owner:cursor-trail-bound` recorded and
+`scene-owner:cursor-trail-unbound` present exactly once before
+`renderer:backend-disposed`, `bun run build` reproducing the baseline budgets
+exactly (Splash 3.32/5.00, boot closure 14.32/24.00 from 4 modules with no
+`vendor-three` reachability, lazy `vendor-three` 310.95/350, `vendor-ui`
+53.84/56, public media 5390.23 total / 4160.18 max), and
+`CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` at 15 passed / 6 skipped /
+3 failed — the same three GPU-limited timeouts as the baseline, no new failures.
+
+Browser evidence (throwaway Playwright probes against `bun run dev` on
+127.0.0.1:5199, deleted after the run): with the DEV seam
+`?force-webgl-backend` the app reaches splash `READY` with zero page or console
+errors and `mode=webgl`, `backend=WebGLBackend`. A scene probe through the Vue
+tree found `draw-trail` → `trail-ribbon` with `PlaneGeometry`, attributes
+`position` 72 / `uv` 72 / `index` 210, and `MeshBasicNodeMaterial` with
+`transparent=true`, `depthWrite=false`, `depthTest=false`, `blending=2`
+(AdditiveBlending), `side=2` (DoubleSide), `fog=false`, `toneMapped=false` and
+non-null `colorNode`/`opacityNode`: Tres resolved `<TresMeshBasicNodeMaterial>`
+and `<TresPlaneGeometry>` from the aliased catalogue with no `extend` call and
+no catalogue error. On `/works` the root is gated off (`rootVisible=false` while
+the carousel owner is active), matching `SceneTransformPass`. Forcing
+`drawTrail.setVisible(true)` and moving the pointer made the declared container
+live: `isAnimating=true`, `position.version` 21 (21 `needsUpdate` uploads), head
+vertices `(1.865, -0.135, 0)` / `(2.030, -0.054, 0)` — pointer-driven ribbon
+coordinates, not the plane's own `(±0.5, ±0.5, 0)` grid, so `DrawTrail`
+demonstrably writes into the Tres-owned geometry. Physical-GPU WebGPU parity
+remains **unverified**: headless Chromium only reaches the SwiftShader fallback
+adapter, which dies within seconds.
