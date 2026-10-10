@@ -214,12 +214,27 @@ export default defineConfig(({ mode }) => {
                 priority: 10,
               },
               {
+                // Contact typography and the Cyprus model are dynamic route
+                // stages, but the directory-based application group below maps
+                // every `src/Experience/World/` module to `chunk-world`, which
+                // the persistent scene imports eagerly. That merge turned the
+                // Contact-only Three addons (GLTFLoader/DRACOLoader,
+                // FontLoader/TextGeometry) and the inlined Comfortaa typeface
+                // into a boot dependency of every route. Naming them keeps the
+                // route dynamic import a separate chunk.
+                name: 'chunk-contact-stage',
+                test: /[\\/]src[\\/]Experience[\\/]World[\\/](?:ContactCyprusStage|ContactTypographyStage|WireframeTypography)\.ts$/,
+                includeDependenciesRecursively: false,
+                priority: 9,
+              },
+              {
                 // Keep the shell's tiny runtime ports out of the broad core
                 // chunk, which also contains renderer and TSL implementations.
-                // Otherwise importing the event bus / sound / motion policy
-                // from entry-app makes the whole Three vendor graph eager.
+                // Otherwise importing the event bus / sound / motion policy /
+                // route manifest from entry-app makes the whole Three vendor
+                // graph eager.
                 name: 'chunk-bootstrap-core',
-                test: /[\\/]src[\\/]core[\\/](?:EventBus|SfxSystem|contentRoot|devDiagnostic|i18n|motionPolicy|sceneMode)\.ts$/,
+                test: /[\\/]src[\\/]core[\\/](?:EventBus|SfxSystem|contentRoot|devDiagnostic|i18n|motionPolicy|routeManifest|sceneMode)\.ts$/,
                 includeDependenciesRecursively: false,
                 priority: 8,
               },
