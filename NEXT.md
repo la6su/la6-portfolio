@@ -1727,7 +1727,7 @@ Execution order:
    unit or browser test suites without the user's explicit request; report the
    unverified runtime cases as open acceptance gates.
 
-### 4. Declarative Vue + TresJS v5 migration — owner sweep complete; physical-GPU parity gated
+### 4. Declarative Vue + TresJS v5 migration — owner sweep complete; physical-GPU parity observed
 
 Decision: keep the existing three-layer split and finish it by moving **scene
 composition** (geometry and material construction) out of the runtime stage
@@ -1943,7 +1943,8 @@ Acceptance criteria (measurable):
   and its unbind before `renderer:backend-disposed`.
 - Browser validation on `/contact` and `/manifesto` shows the ink mesh mounted
   with a node material, no page errors, and clean teardown; physical-GPU
-  WebGPU parity stays a separate gate until observed on real hardware.
+  WebGPU parity was observed on the RTX 5090 (see the physical-GPU parity
+  checkpoint in `## Status`, including the Chromium Dawn-Vulkan OOM defect).
 
 ## Working rules
 
@@ -2842,3 +2843,78 @@ type-check:vue` clean, `bun run test:unit` 37 files / 115 tests pass, `bun run
 lint` and `bun run format:check` clean, and `CI= JLZ_CROSS_BROWSER_MATRIX= bun
 run test:serial` at 15 passed / 6 skipped / 3 failed with the same three
 GPU-limited timeouts.
+
+Lighthouse performance checkpoint (2026-10-10): the reported Home audit
+(Performance 43, FCP 1.2 s, LCP 8.3 s, TBT 1050 ms, CLS 0.002, SI 23.9 s) was
+reproduced with Lighthouse 13.5.0 on headless Chromium 153 (Wayland): preview
+4173 scored 44 (FCP 903, LCP 6035, TBT 3441, SI 5488, CLS 0) and the dev
+server 5174 scored 34 (FCP 1202 — matching the reported 1.2 s — LCP 21458,
+TBT 3693, SI 41020). Three root causes were fixed:
+
+1. LCP: the prerendered intro paragraph painted behind the opaque splash
+   loader is an LCP candidate because Chrome's LCP ignores occlusion, and
+   `mountVueApp` re-renders it at Vue-mount time (~6 s preview, ~21 s dev),
+   which moved LCP to the mount. `index.html` now gates the shell with
+   `#jlz-app-loader:not(.is-exiting) ~ #app { visibility: hidden }` — an
+   unpainted element is not an LCP candidate, layout is preserved (no CLS),
+   IntersectionObserver geometry is unchanged (reveal timing identical), and
+   visibility flips the instant the exit animation starts. The noscript
+   fallback re-enables visibility for crawler/no-JS reads of the prerendered
+   shell.
+2. TBT: continuous scene rendering behind the opaque loader.
+   `Experience.ts` gained a `_splashEntered` flag (set in the
+   `jlz:splash-entered` listener) that gates `ambientSceneActive`,
+   `particlesActive`, `carouselActive`, `drawTrailActive` and ambient-breath
+   arming; the first frame still renders (Enter is gated on it) and
+   `compileAsync` prewarm is untouched.
+3. Render delay: `/fonts/commissioner.css` and `/fonts/jetbrains-mono.css`
+   were render-blocking `<link>` stylesheets (~450 ms combined); the
+   `@font-face` rules are now inlined in the `index.html` `<style>`, and the
+   woff2 `<link rel=preload>` tags stay.
+   Measured after: preview 44 → 91 (LCP 2702 — now the splash text, TBT 261,
+   SI 2480, long tasks 20 → 7 with total duration 4.2 s → 0.78 s, CLS 0) and
+   dev 34 → 64 (LCP 3002, TBT 854). Verification: `type-check:vue`, `lint`,
+   `format:check` clean, `test:unit` 115/115, `bun run test:serial` 18 passed /
+   6 skipped / 0 failed — the three previously failing GPU-limited timeouts now
+   pass because splash gating removes headless-WebGPU boot pressure. A live
+   probe confirmed `#app` visibility `hidden` → `visible` across Enter with the
+   loader removed, and `GPUQueue.submit` counting showed 0 submissions during a
+   3 s settled splash idle versus 42 in the 2 s after Enter (ambient rendering
+   resumes). Tradeoff recorded: the prerendered shell is `visibility: hidden`
+   in the JS-rendered DOM until Enter (still present in HTML and in the
+   rendered DOM; noscript fallback visible).
+
+Physical-GPU WebGPU parity checkpoint (2026-10-10): headed Chromium 153 on
+Wayland with `--webgpu-dawn-backend=vulkan` on the RTX 5090 acquired a
+non-fallback adapter and matched every declarative-owner baseline against the
+WebGL2 run (baku-shell 3458/20736 no-uv, pavilion 5×6084, sky 140×96, trail
+72/72/210, halo 1.7×0.95, ink 1.9×1.05, works 3×1111+606+24/48), with 48
+unique resources disposed and owner-unbind ordered before
+`renderer:backend-disposed`. The same runs intermittently produced 2070
+console errors — `vkAllocateMemory failed with VK_ERROR_OUT_OF_DEVICE_MEMORY`
+on CreateTexture / `-msaa` / `output` / `depth` / UnrealBloom / PMREM
+allocations, cascading Invalid TextureView/CommandBuffer/BindGroup failures,
+and once a SIGNAL LOST boot gate before readiness. This is a Chromium
+Dawn-Vulkan defect on this dual-NVIDIA workstation (RTX 5090 + RTX 4060 Ti,
+driver 610.57.04; cf. crbug 332574918 dual-GPU Linux, crbug 486562072
+Blackwell), not an app defect. X11 probe: under Xwayland `:0`, Chromium's
+WebGPU selects the SwiftShader fallback adapter (same with `--use-vulkan`) or
+returns no adapter at all with `--enable-vulkan --use-angle=vulkan` — Wayland
+is the only Chromium path to the physical adapter here. Firefox: Arch
+Firefox 155.0.1 does not expose `navigator.gpu` by default; the user profile
+sets `user_pref("dom.webgpu.enabled", true)` (read-only inspection of
+`~/.config/mozilla/firefox/4exhwnwu.default-release/prefs.js`), matching the
+user's clean WebGPU experience. Playwright's pinned Firefox 155 with the same
+pref (headless) reached `mode=webgpu`, `backend=WebGPUBackend`,
+`isFallbackAdapter=false` — the physical wgpu/Vulkan path — and confirmed the
+new splash gating there (0 `GPUQueue.submit` calls during a settled 3 s
+splash idle, continuous submissions after Enter, `#app` visibility
+`hidden`→`visible`), with 19 `Not enough memory left` render-target errors
+(`output` / `output-msaa` / `depth`) while the app stayed functional.
+Headless system-Firefox automation (firefox-devtools-mcp BiDi, direct
+geckodriver, raw BiDi WebSocket) failed to hold a session on the app page
+during this session — instance resets and exit-1 launches — consistent with
+accumulated GPU/memory pressure from repeated headed WebGPU runs rather than
+an app assertion; the machine became unstable and the user is rebooting.
+Headed system-Firefox WebGPU verification of the gating is therefore not yet
+recorded; the user's own Firefox session remains the reference for that path.

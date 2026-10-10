@@ -112,6 +112,12 @@ export class Experience {
     return this.features?.storyNav ?? null
   }
   private _needsRender = true // start true to render the first frame
+  /** False until the visitor passes the splash. While the opaque loader
+   *  covers the canvas, continuous ambient/particle/carousel activity must
+   *  not raise render demand: those frames are invisible and only burn
+   *  main-thread time during boot. The first frame still renders (Enter is
+   *  gated on it), and prewarm compiles materials without rendering. */
+  private _splashEntered = false
   private _debugContinuousRendering = false
   // Ambient breathing requests one refresh frame every ~2.5 s while idle.
   // The loop stops when settled, so the per-frame dt
@@ -523,6 +529,7 @@ export class Experience {
     // Enter is not exposed until the first successful frame, after the UI
     // owner and its scene dependencies have been initialized.
     this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
+      this._splashEntered = true
       features.triggerSplashOpener()
     })
     // Sync the scene and cursor with the effective section theme. Theme toggles
@@ -674,7 +681,10 @@ export class Experience {
   private _scheduleBreath(activity: RenderActivity): void {
     // Services is intentionally a still composition at rest; it has no
     // ambient shader or periodic refresh that needs a wall-clock wake-up.
+    // Before Enter the loader covers the canvas: a breath frame would be
+    // invisible work during boot.
     const idle =
+      this._splashEntered &&
       this._host.page() !== 'services' &&
       !document.hidden &&
       idleForAmbientBreath(activity, this._reducedMotion)
@@ -751,10 +761,10 @@ export class Experience {
     // crossing frame, active navigation keeps the frame scheduled; later
     // frames use isAnimating to carry the morph through to its settled state.
     const carousel = this._host.page() === 'home' ? this.carousel : null
-    const carouselActive = carousel?.isAnimating ?? false
+    const carouselActive = this._splashEntered && (carousel?.isAnimating ?? false)
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
-    const drawTrailActive = this.drawTrail?.isAnimating ?? false
+    const drawTrailActive = this._splashEntered && (this.drawTrail?.isAnimating ?? false)
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
     const burstActive = this.particleBurst?.isActive ?? false
@@ -768,9 +778,13 @@ export class Experience {
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).
     const particlesActive =
-      !this._reducedMotion && (this.coordinator?.hasVisibleParticles() ?? false)
+      !this._reducedMotion &&
+      this._splashEntered &&
+      (this.coordinator?.hasVisibleParticles() ?? false)
     const ambientSceneActive =
-      !this._reducedMotion && (this.coordinator?.hasVisibleAmbientMotion() ?? false)
+      !this._reducedMotion &&
+      this._splashEntered &&
+      (this.coordinator?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
     const camPulsing = this.camera.isPulsing
