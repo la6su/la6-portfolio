@@ -2409,9 +2409,9 @@ checkpoint below. `app-*.js` still statically imports
 `chunk-experience` (114.35 kB), which swallows `src/UI/CinematicNav` and
 `FullscreenOverlay`; no `chunk-ui-*.js` is emitted even though `name(id)` maps
 `/src/UI/` to `chunk-ui`, so the UI layer has no independent cache identity.
-`public/assets/projects/nocturne-blue/detail.jpg` is 160.2 kB where the three
-sibling `detail.webp` textures are 3.8–5.6 kB (`src/Data/Projects.ts:57`);
-re-encoding is a release-asset change that needs visual sign-off.
+`public/assets/projects/nocturne-blue/detail.jpg` was 160.2 kB where the three
+sibling `detail.webp` textures are 3.8–5.6 kB (`src/Data/Projects.ts:57`); it is
+now a 109.1 kB WebP, closed by the nocturne detail texture checkpoint below.
 `public/_headers` has no cache rule for `/textures/` or `/js/blog.js`, and the
 blog pages request JetBrains Mono without declaring it (both closed the same
 day — see the blog cache and mono-font checkpoint below).
@@ -2785,3 +2785,27 @@ healthy boot (the gate is the boot-failure `role="alert"` block injected by
 `src/entry-app.ts`), so its pair is computed from the authored CSS: 5.46:1 over
 the gate's `color-mix(in srgb, var(--jlz-color-bg) 92%, #000)` and 5.00:1 in
 inverse. Every value clears the 4.5:1 floor of WCAG 1.4.3.
+
+Nocturne detail texture checkpoint (2026-10-10): closes the asset audit item and
+corrects its premise. `public/assets/projects/nocturne-blue/detail.jpg`
+(1344×768, 160,213 B) became `detail.webp` (1344×768, 109,074 B) through
+`magick -quality 75 -define webp:method=6`, and `src/Data/Projects.ts:57` points
+at the new file. The saving is 51.1 kB (32%), not the ~96% the audit implied: the
+sibling textures are 3.8–5.8 kB because they are much smoother images, not
+because WebP is that efficient. Measured as RMSE against a 1.5px blur, the
+nocturne texture carries 0.0766 high-frequency energy where the siblings carry
+0.0224–0.0247, so its byte weight was proportionate to its content. Fidelity
+against the source JPEG (ffmpeg): SSIM All 0.9796 / Y 0.9871 and PSNR 38.13 dB
+at q75, versus 0.9786 / 37.87 dB at q72 (105.8 kB) and 0.9842 / 39.72 dB at q80
+(131.3 kB); the committed file is byte-identical to the measured candidate
+(PSNR inf). Dimensions stayed 1344×768, so the carousel texture in
+`src/Experience/World/BakuCarousel.ts` and the 16:9 aspect implied by the
+`width`/`height` pair in `src/Data/CaseStudies.ts` (1600×900) are unchanged. No
+vision model is configured for `modelRoles.vision` in this session, so the
+sign-off is metric-based rather than visual. `tests/portfolio.spec.ts` moved to
+the new path and `image/webp`; `bunx playwright test tests/portfolio.spec.ts
+--grep "public SPA routes render"` passes (src attribute, content type and
+decoded width 1344), `bun run type-check:vue`, `bun run test:unit` (37 files /
+115 tests), `bun run lint` and `bun run format:check` are clean, and
+`bun run build` reports public media at 5339.09 kB — 51.14 kB below the previous
+total.
