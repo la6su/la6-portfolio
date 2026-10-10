@@ -1808,7 +1808,11 @@ path in the same change):
    deformation reads the buffer (see the baku shell checkpoint in `## Status`).
    `WorksInstallation.vue` — **complete 2026-10-10**: its declared arc, trace
    and tick children plus the tick `InstancedMesh` now release through Tres
-   instead of four manual `dispose()` calls.
+   instead of four manual `dispose()` calls. `EnvSky.vue` — **complete
+   2026-10-10**: the declared `<TresPlaneGeometry :args="[140, 96]">` lost its
+   mesh-level `:dispose="null"` and its manual `geometry.dispose()`, while the
+   borrowed sky material stays disposed by `EnvSphere.dispose()` (see the
+   environment sky checkpoint in `## Status`).
 3. Runtime-adopted groups and controller-owned resources
    (`ContactCyprusStageOwner` `<primitive>`, `ContactTypographyStageOwner`,
    `WorksStageOwner`, `SectionGroupRoots`): convert only where the adopted
@@ -1823,7 +1827,18 @@ path in the same change):
    `geometry.button` and `material.accent` reused by several coexisting
    meshes): every one of them borrows buffers the controller shares, so
    declarative per-mesh construction would duplicate a buffer the runtime
-   deliberately keeps single.
+   deliberately keeps single. Measured 2026-10-10, the four runtime-adopted
+   entries need no conversion: `SectionGroupRoots.vue` and `WorksStageOwner.vue`
+   already declare their roots as `TresGroup`s and only hand the mounted
+   references to the runtime (`WorksStageOwner`'s `:dispose="null"` is
+   load-bearing because it protects the refcounted case-plane lease when the
+   group is removed as a unit); `ContactCyprusStageOwner` adopts a GLTF scene
+   that arrives asynchronously through `stage.bindRoot`, and
+   `ContactTypographyStageOwner` adopts the runtime-built `WireframeTypography`
+   glyph set classified in step 2. A sweep of `src/app/scene/*.vue` for
+   `new *Geometry` / `new *Material` / `geometry.dispose()` then left only
+   `CasePlaneNode`'s shared-lease material disposal and `WorksInstallation`'s
+   scratch `THREE.Object3D` matrix helper, so step 4.2 has no owner left.
 4. Re-measure budgets and the e2e matrix after each cutover; a cutover that
    moves GPU work into the boot closure is rejected.
 
@@ -1885,6 +1900,20 @@ Compatibility risks:
   their owner. `InstanceProps.dispose` is typed `null` only, so a subtree cannot
   be re-enabled with `:dispose="true"`; drop the group-level `:dispose="null"`
   instead.
+- Tres' disposal suppression propagates only inside a single `remove()`
+  traversal. Vue's custom renderer calls `nodeOps.remove(el)` with no `dispose`
+  argument (`dist/tres.js:1172-1265`), so a node Vue unmounts on its own
+  resolves to `"default"` and disposes its declared subtree no matter what an
+  ancestor's `:dispose="null"` says; the ancestor's suppression applies only
+  when the ancestor itself is removed as a unit and `dispose` is handed down to
+  `__tres.objects` and children (:1283-1285). Measured: unmounting the app
+  disposed the works installation geometries (Vue unmounts children first)
+  while `works-plane-stage` keeps `:dispose="null"`, which is what protects the
+  refcounted case-plane lease when that group is removed as a whole. A
+  `<primitive>` is already exempt from default disposal
+  (`shouldDispose = dispose === "default" ? !isPrimitive : !!dispose`, :1281),
+  so `ContactCyprusStageOwner`'s `:dispose="null"` documents intent instead of
+  changing behaviour.
 
 Acceptance criteria (measurable):
 
@@ -2595,3 +2624,50 @@ five pavilion geometries are uploaded, and the hidden `trail-ribbon` is not —
 the expected pattern for a group gated off until the pointer moves. Physical-
 GPU WebGPU parity remains **unverified**: headless Chromium only reaches the
 SwiftShader fallback adapter, which dies within seconds.
+
+Environment sky declarative release checkpoint (2026-10-10): work-queue step
+4.2 closes with `EnvSky.vue`, the last scene owner that still released a
+declared GPU resource by hand. It already declared
+`<TresPlaneGeometry :args="[140, 96]">` but carried a mesh-level
+`:dispose="null"` plus `mesh.value?.geometry.dispose()` in `onBeforeUnmount`;
+both are gone, so Tres disposes the plane and `EnvSphere.dispose()` keeps
+disposing the borrowed `_skyMaterial` with the other five pavilion materials.
+The DEV `scene-owner:env-sky-disposed` trace is unchanged.
+
+Step 4.3 classification (2026-10-10): none of the four runtime-adopted entries
+is a cutover candidate, and the sweep of `src/app/scene/*.vue` for
+`new *Geometry` / `new *Material` / `geometry.dispose()` left only
+`CasePlaneNode`'s shared-lease material disposal and `WorksInstallation`'s
+scratch `THREE.Object3D` matrix helper. `SectionGroupRoots.vue` and
+`WorksStageOwner.vue` are already declarative `TresGroup` roots that only hand
+mounted references to the runtime; `ContactCyprusStageOwner` adopts an
+asynchronously loaded GLTF scene and `ContactTypographyStageOwner` adopts the
+runtime-built `WireframeTypography` glyph set. Reading `dist/tres.js:1172-1292`
+explained why the remaining `:dispose="null"` markers are load-bearing rather
+than vestigial: Vue calls `nodeOps.remove(el)` with no `dispose` argument, so
+each individually unmounted node disposes by default, and an ancestor's
+suppression only reaches a subtree when that ancestor is removed as a unit.
+
+Gates after the sky cutover: `bun run type-check:vue` clean, `bun run test:unit`
+37 files / 115 tests pass, `bun run lint` clean, `bun run format:check` clean,
+`git diff --check` clean, `bun run test:host-teardown` 4/4, `bun run build`
+reproducing the baseline budgets exactly (Splash 3.32/5.00, boot closure
+14.32/24.00 from 4 modules with no `vendor-three` reachability, lazy
+`vendor-three` 310.95/350, `vendor-ui` 53.84/56, public media 5390.23 total /
+4160.18 max), and `CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` at 15
+passed / 6 skipped / 3 failed — the same three GPU-limited timeouts as the
+baseline, no new failures.
+
+Browser evidence (throwaway Playwright probe against `bun run dev` on
+127.0.0.1:5199, deleted after the run): under `?force-webgl-backend`
+`pavilion-sky` is a `PlaneGeometry` with `parameters` `{ width: 140, height: 96,
+widthSegments: 1, heightSegments: 1 }` (position 4, index 6), its geometry and
+`position` buffer are present in `renderer._geometries` / `renderer._attributes`,
+`renderOrder=-1001`, `frustumCulled=false`, `position=(0, 0, -44)`, and its
+material is `=== runtime.envSphere.skyMaterial`. Registering dispose listeners
+and awaiting `__jlzTestUnmountVueApp()` recorded the six materials disposing
+first — `pavilion-back/left/right/ceiling/floor` then `sky` — followed by the
+six geometries including `pavilion-sky`, with `scene-owner:env-sky-disposed`
+present exactly once and zero page or console errors: the borrowed material is
+disposed once by its owner and the declared plane once by Tres. Physical-GPU
+WebGPU parity remains **unverified**.

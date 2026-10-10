@@ -13,9 +13,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  // The material is borrowed from EnvSphereOwner. Keep disposal at that
-  // owner's boundary and release only the geometry created by this component.
-  mesh.value?.geometry.dispose()
+  // The material is borrowed from EnvSphereOwner, which disposes it with the
+  // other pavilion materials; the declared plane geometry stays with Tres.
   if (import.meta.env.DEV) traceDevLifecycle('scene-owner:env-sky-disposed')
 })
 </script>
@@ -28,7 +27,6 @@ onBeforeUnmount(() => {
     :position="[0, 0, -44]"
     :render-order="-1001"
     :frustum-culled="false"
-    :dispose="null"
   >
     <TresPlaneGeometry :args="[140, 96]" />
   </TresMesh>
