@@ -1677,6 +1677,11 @@ Execution order:
 4. Audit public asset URLs, MIME/deployment paths, static multi-page output,
    Caddy/reverse-proxy development accommodations, scripts, package pins,
    unused dependencies, generated outputs, and workflow duplication.
+   The cache-rule and font-declaration part of this item is complete
+   2026-10-10: `public/_headers` now covers `/textures/*` (loaded at runtime by
+   `WorksSection`) and `/js/blog.js`, and `renderBlogDocument` declares
+   `/fonts/jetbrains-mono.css` on every EN/RU blog document (see the blog cache
+   and mono-font checkpoint in `## Status`).
    The package-pins and unused-dependency slice of this item is complete. All
    27 direct dependencies (6 runtime, 21 dev) have a current consumer in
    source, scripts, or config, and none is unused. Bun registry access
@@ -2409,7 +2414,8 @@ reported rather than applied. `app-*.js` still statically imports
 sibling `detail.webp` textures are 3.8–5.6 kB (`src/Data/Projects.ts:57`);
 re-encoding is a release-asset change that needs visual sign-off.
 `public/_headers` has no cache rule for `/textures/` or `/js/blog.js`, and the
-blog pages request JetBrains Mono without declaring it.
+blog pages request JetBrains Mono without declaring it (both closed the same
+day — see the blog cache and mono-font checkpoint below).
 `FullscreenOverlayView`'s poster loader has only a `{ once: true }` `load`
 listener on a local `new Image()`, so nothing leaks, but a failed poster leaves
 `posterReady` false forever with no fallback. Physical-GPU WebGPU parity,
@@ -2679,3 +2685,43 @@ six geometries including `pavilion-sky`, with `scene-owner:env-sky-disposed`
 present exactly once and zero page or console errors: the borrowed material is
 disposed once by its owner and the declared plane once by Tres. Physical-GPU
 WebGPU parity remains **unverified**.
+
+Blog cache and mono-font checkpoint (2026-10-10): closes two open audit items
+from work-queue item 4. `public/_headers` gained the two missing rules —
+`/textures/*` at `max-age=0, must-revalidate` (the stable publicDir path
+`WorksSection.ts:31` loads through `THREE.TextureLoader`) and `/js/blog.js` at
+`max-age=86400, must-revalidate` (hand-written and unhashed, so the file's
+previous strategy note claiming it immutable was wrong and is corrected);
+`/vendor/*` and `/fonts/*` stay 1-year immutable. `renderBlogDocument`
+(`src/core/blogMeta.ts`) now emits
+`<link rel="stylesheet" href="/fonts/jetbrains-mono.css">` next to the
+commissioner declaration, because `src/assets/blog.less` sets
+`var(--jlz-font-mono)` on `.jlz-blog-brand`, the header nav links and
+`code[class*='language-']`; without the declaration those pages silently fell
+back to a system mono. The build regenerated all ten blog documents
+(`blog.html`, `ru/blog.html`, four EN and four RU article pages), each carrying
+the new link exactly once.
+
+Gates: `bun run type-check:vue` clean, `bun run test:unit` 37 files / 115 tests
+pass, `bun run lint` clean, `bun run format:check` clean, `git diff --check`
+clean, `bun run build` reproducing the baseline budgets (Splash 3.32/5.00, boot
+closure 14.32/24.00 from 4 modules, lazy `vendor-three` 310.95/350, `vendor-ui`
+53.84/56, public media 5390.23 total / 4160.18 max), and
+`CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` at 15 passed / 6 skipped /
+3 failed with the same three GPU-limited timeouts.
+
+Browser evidence (throwaway Playwright probe against `bun run preview` on
+127.0.0.1:4188, deleted after the run): `/blog`, `/blog/glassmorphism-webgpu`
+and `/ru/blog` each requested `/fonts/jetbrains-mono.css` (200) and fetched
+`/fonts/jetbrains-mono-latin.woff2` (200); `/ru/blog` additionally fetched
+`/fonts/jetbrains-mono-cyrillic.woff2`, so the Cyrillic subset is genuinely in
+use. After `document.fonts.ready`, `document.fonts.check('700 0.72rem "JetBrains Mono"')`
+was true on all three pages, the loaded-face list contained a loaded
+`JetBrains Mono 100 800` face, and the computed `font-family` of
+`.jlz-blog-brand` (11.52 px), the header nav link and
+`code[class*='language-']` on the article all began with `"JetBrains Mono"`. No
+page or console errors. `_headers` itself is host-consumed (Netlify / Cloudflare
+Pages); `bun run preview` does not apply it, so the served `Cache-Control`
+values are **unverified** locally — only the file contents and the presence of
+`dist/_headers`, `dist/js/blog.js` and `dist/textures/` after the build were
+observed.
