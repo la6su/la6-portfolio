@@ -57,7 +57,9 @@ onBeforeUnmount(() => {
 
 // Decode the poster image before exposing it: the modal stays transparent
 // until decode succeeds, so no transient black frame replaces the scene.
-// A newer poster supersedes an in-flight decode (request-id guard).
+// A newer poster supersedes an in-flight decode (request-id guard). A poster
+// that fails to load or decode keeps the layer hidden — that is the intended
+// fallback, because the alternative is painting a broken frame over the scene.
 watch(posterUrl, (poster) => {
   const requestId = ++posterRequestId
   posterReady.value = false
@@ -67,13 +69,13 @@ watch(posterUrl, (poster) => {
   image.addEventListener(
     'load',
     () => {
-      void image
+      image
         .decode()
-        .catch(() => undefined)
         .then(() => {
           if (requestId !== posterRequestId) return
           posterReady.value = true
         })
+        .catch(() => undefined)
     },
     { once: true },
   )

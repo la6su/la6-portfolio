@@ -2418,7 +2418,9 @@ blog pages request JetBrains Mono without declaring it (both closed the same
 day — see the blog cache and mono-font checkpoint below).
 `FullscreenOverlayView`'s poster loader has only a `{ once: true }` `load`
 listener on a local `new Image()`, so nothing leaks, but a failed poster leaves
-`posterReady` false forever with no fallback. Physical-GPU WebGPU parity,
+`posterReady` false forever with no fallback. Measured the same day the defect
+was the opposite — a rejected `decode()` marked the poster ready — and it is
+closed by the fullscreen poster decode checkpoint below. Physical-GPU WebGPU parity,
 natural device loss, WebKit app coverage, and the `justlovejazz.dev` NXDOMAIN
 remain the standing gates.
 
@@ -2725,3 +2727,41 @@ Pages); `bun run preview` does not apply it, so the served `Cache-Control`
 values are **unverified** locally — only the file contents and the presence of
 `dist/_headers`, `dist/js/blog.js` and `dist/textures/` after the build were
 observed.
+
+Fullscreen poster decode checkpoint (2026-10-10): closes the last
+`FullscreenOverlayView` audit item. The loader chained
+`image.decode().catch(() => undefined).then(() => { posterReady.value = true })`,
+so a rejected decode still marked the poster ready and painted a broken frame
+over the scene — the opposite of the loader's own invariant ("the modal stays
+transparent until decode succeeds"). The chain is now
+`.decode().then(() => { … posterReady.value = true }).catch(() => undefined)`:
+readiness follows a resolved decode. No retry path or new state was added,
+because the only consumers of `posterReady` are the layer's `background-image`
+and `opacity` (`src/app/FullscreenOverlayView.vue`), so keeping the layer hidden
+_is_ the fallback; the comment now says so explicitly.
+
+Browser evidence (throwaway Playwright probes against `bun run dev` on
+127.0.0.1:5199 with `?force-webgl-backend`, content injected through the typed
+`window.__jlzEmit('jlz:project-content', …)` port, all probes deleted): a valid
+poster (`/assets/projects/nocturne-blue/detail.jpg`) left `.jlz-fs-poster` at
+inline and computed opacity `1` with its `background-image` set; a route-fulfilled
+200 `image/jpeg` body of non-image bytes produced the DOM `error` event
+(measured independently as `error-event`) and left the layer at opacity `0` with
+no background; an aborted request did the same; re-emitting the valid poster
+after both failures returned opacity `1`, so the request-id guard still admits a
+newer decode. A truncated copy of the real JPEG (first 1500 bytes) resolved as
+`load+decode-ok` and displayed at opacity `1`, so partial data is not treated as
+failure. The changed branch itself was exercised with a test seam —
+`HTMLImageElement.prototype.decode = () => Promise.reject(...)` installed by an
+init script — which left the layer at opacity `0` with no background and no page
+or console errors, while the identical probe against the pre-fix file (stashed
+with `git stash push -- src/app/FullscreenOverlayView.vue`) produced opacity `1`
+with the background set: the defect reproduced before the change and closed
+after it. No permanent test was added: the behavior lives inside an SFC, the
+repo has no `@vue/test-utils`, and the Playwright overlay case is one of the
+three GPU-limited timeouts. Gates: `bun run type-check:vue` clean,
+`bun run test:unit` 37 files / 115 tests pass, `bun run lint` clean,
+`bun run format:check` clean, `git diff --check` clean, and
+`CI= JLZ_CROSS_BROWSER_MATRIX= bun run test:serial` at 15 passed / 6 skipped /
+3 failed with the same three GPU-limited timeouts. Physical-GPU WebGPU parity
+remains **unverified**.
