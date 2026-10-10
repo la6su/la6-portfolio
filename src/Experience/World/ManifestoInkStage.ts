@@ -23,7 +23,6 @@ export class ManifestoInkStage extends PointerInkStage {
       peakOpacity: 0.14,
       // Keep the wash legible on either UI theme (matches the manifesto ink).
       tints: [0xcfe8ee, 0x243540],
-      focusScale: [0.5, 0.22],
       damping: { rise: 8, decay: 1.2, chase: 2.2 },
       inkField: ({ time, pointer, energy }) => {
         // An anisotropic pool stretched along the reading axis around the

@@ -45,20 +45,63 @@ export interface BakuCubeNodes {
 }
 
 /**
- * The day34 rounding recipe: BoxGeometry + manual vertex rounding +
- * mergeVertices. 24 segments (perf-optimized from 32): 576 verts/face × 6 =
- * 3456 verts total (was 6144 with 32 segs — 44% reduction), still smooth
+ * The day34 rounding recipe: manual vertex rounding + mergeVertices on a
+ * declared box container. 24 segments (perf-optimized from 32): 576 verts/face
+ * × 6 = 3456 verts total (was 6144 with 32 segs — 44% reduction), still smooth
  * enough for 2 noise periods/face. RoundedBoxGeometry was causing normals to
  * bleed from edges into face interiors, producing flat-plane shift instead of
  * jelly bulge; mergeVertices + computeVertexNormals ensures perpendicular
  * normals → correct displacement.
  */
-export function buildBakuShellGeometry(): THREE.BufferGeometry {
-  const size = 0.8
-  let geo: THREE.BufferGeometry = new THREE.BoxGeometry(size, size, size, 24, 24, 24)
-  const pos = geo.getAttribute('position')
-  const r = 0.175 // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
-  const h = size / 2 // 0.4
+const SHELL_SIZE = 0.8
+const SHELL_SEGMENTS = 24
+const SHELL_ROUNDING = 0.175 // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
+
+/** `<TresBoxGeometry :args>` container; Tres owns the buffer the jelly writes. */
+export const BAKU_SHELL_ARGS: [number, number, number, number, number, number] = [
+  SHELL_SIZE,
+  SHELL_SIZE,
+  SHELL_SIZE,
+  SHELL_SEGMENTS,
+  SHELL_SEGMENTS,
+  SHELL_SEGMENTS,
+]
+
+/** The authored glass shell params (single source — the SFC binds these). */
+export const BAKU_SHELL_MATERIAL: THREE.MeshPhysicalMaterialParameters = {
+  color: new THREE.Color(0.94, 0.91, 1.0),
+  emissive: new THREE.Color(0x000000),
+  emissiveIntensity: 0.02,
+  // Transmission is the essential distinction from alpha transparency:
+  // it samples geometry rendered behind the cube. A higher IOR and real
+  // volume thickness make the rounded silhouette read as a soft lens;
+  // restrained roughness turns the result into frosted glass, not a mirror.
+  transmission: 0.9,
+  thickness: 2.6,
+  ior: 1.34,
+  roughness: 0.14,
+  dispersion: 0.035,
+  attenuationColor: new THREE.Color(0xd9cfe8),
+  attenuationDistance: 1.8,
+  side: THREE.FrontSide,
+  depthWrite: false,
+  metalness: 0,
+  envMapIntensity: 2.05,
+  clearcoat: 0.85,
+  clearcoatRoughness: 0.07,
+  iridescence: 0.48,
+  iridescenceIOR: 1.3,
+  iridescenceThicknessRange: [120, 360],
+}
+
+/** Rounds the declared box container in place, before any deformation reads it. */
+export function applyBakuShellRecipe(geometry: THREE.BufferGeometry): void {
+  const pos = geometry.getAttribute('position')
+  if (!pos) {
+    throw new Error('The declared baku shell geometry must expose a position attribute.')
+  }
+  const r = SHELL_ROUNDING
+  const h = SHELL_SIZE / 2
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i),
       y = pos.getY(i),
@@ -79,43 +122,16 @@ export function buildBakuShellGeometry(): THREE.BufferGeometry {
   }
   pos.needsUpdate = true
   // MeshPhysicalMaterial uses the procedural environment only: this cube
-  // has no texture map, so UVs are dead data. Keeping BoxGeometry's six
-  // independent UV islands prevents mergeVertices() from welding the
-  // rounded face edges, which exposes hairline normal seams while it moves.
-  geo.deleteAttribute('uv')
-  geo.deleteAttribute('normal')
-  geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
-  geo.computeVertexNormals()
-  return geo
-}
-
-/** The authored glass shell params (single source — the SFC binds this). */
-export function createBakuShellMaterial(): THREE.MeshPhysicalMaterial {
-  return new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color(0.94, 0.91, 1.0),
-    emissive: new THREE.Color(0x000000),
-    emissiveIntensity: 0.02,
-    // Transmission is the essential distinction from alpha transparency:
-    // it samples geometry rendered behind the cube. A higher IOR and real
-    // volume thickness make the rounded silhouette read as a soft lens;
-    // restrained roughness turns the result into frosted glass, not a mirror.
-    transmission: 0.9,
-    thickness: 2.6,
-    ior: 1.34,
-    roughness: 0.14,
-    dispersion: 0.035,
-    attenuationColor: new THREE.Color(0xd9cfe8),
-    attenuationDistance: 1.8,
-    side: THREE.FrontSide,
-    depthWrite: false,
-    metalness: 0,
-    envMapIntensity: 2.05,
-    clearcoat: 0.85,
-    clearcoatRoughness: 0.07,
-    iridescence: 0.48,
-    iridescenceIOR: 1.3,
-    iridescenceThicknessRange: [120, 360],
-  })
+  // has no texture map, so UVs are dead data. Deleting UVs and normals first
+  // lets mergeVertices() weld the rounded face edges into shared vertices,
+  // and computeVertexNormals() then yields the perpendicular normals the jelly
+  // displacement needs instead of hairline seams while it moves.
+  geometry.deleteAttribute('uv')
+  geometry.deleteAttribute('normal')
+  const merged = mergeVertices(geometry, 0.01)
+  geometry.setIndex(merged.getIndex())
+  geometry.setAttribute('position', merged.getAttribute('position'))
+  geometry.computeVertexNormals()
 }
 
 /**
@@ -153,8 +169,6 @@ export class SplashCube {
   private _currentRole: BakuRole | null = null
   private _blendFromColor: THREE.Color = new THREE.Color(0x3a3a5e)
   private _blendToColor: THREE.Color = new THREE.Color(0x3a3a5e)
-  private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
-  private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
   private _isLightTheme = true
   private _reducedMotion = prefersReducedMotion()
@@ -218,6 +232,9 @@ export class SplashCube {
   constructor(nodes: BakuCubeNodes) {
     this._root = nodes.root
     this._shell = nodes.shell
+    // The owner declares a plain box container; the authored recipe rounds it
+    // in place before the deformation captures its base positions and normals.
+    applyBakuShellRecipe(this._shell.geometry)
     const material = nodes.shell.material
     if (!(material instanceof THREE.MeshPhysicalMaterial)) {
       throw new Error('The declarative baku shell must carry the authored physical glass material.')
@@ -349,18 +366,23 @@ export class SplashCube {
     this.applyMaterialBlend()
   }
 
-  updateWorldBlend(
-    fromColor: THREE.Color,
-    toColor: THREE.Color,
-    fromEmissive: THREE.Color,
-    toEmissive: THREE.Color,
-    t: number,
-  ): void {
+  /** Record the from→to shell colors for this frame's blend.
+   *  Experience calls this on every rendered frame; the blend is a pure
+   *  function of these three inputs, so an unchanged triple is a no-op.
+   *  Without that guard `_blendDirty` is set every frame and `update()` can
+   *  never take its idle early-out. Emissive is not blended here: it reaches
+   *  the shell through `updateMaterial()` on section-context change. */
+  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, t: number): void {
     if (this._disposed) return
+    if (
+      this._blendT === t &&
+      this._blendFromColor.equals(fromColor) &&
+      this._blendToColor.equals(toColor)
+    ) {
+      return
+    }
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
-    this._blendFromEmissive.copy(fromEmissive)
-    this._blendToEmissive.copy(toEmissive)
     this._blendT = t
     this._blendDirty = true
   }

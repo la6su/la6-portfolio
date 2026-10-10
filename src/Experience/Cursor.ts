@@ -39,6 +39,10 @@ type CursorThemeColors = { accent: string; accentGlow: string; teal: string }
 
 export class Cursor {
   private _disposed = false
+  // Motion policy arrives from Experience (the only owner of the preference
+  // port); `jlz:force-cursor` is the user's explicit escape hatch and wins.
+  private _reducedMotion = false
+  private _forcedCursor = false
   private innerEl: HTMLElement
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D | null
@@ -150,7 +154,7 @@ export class Cursor {
    * scheduler's settle decision after each frame.
    */
   get isSettled(): boolean {
-    if (this._disposed) return true
+    if (this._disposed || this._motionDisabled()) return true
     const goalX = this.isStuck ? this.stuckX : this.targetX
     const goalY = this.isStuck ? this.stuckY : this.targetY
     const targetR = this.isStuck ? this.targetRadius : this.baseRadius
@@ -163,6 +167,18 @@ export class Cursor {
       Math.abs(this.bumpScale - this.bumpTarget) < 0.005 &&
       Math.abs(this.fillProgress - this.fillTarget) < 0.005
     )
+  }
+
+  /** The animated cursor layer is off: CSS hides it and restores the native
+   *  pointer, so no spring, redraw or render-demand wake should run. */
+  private _motionDisabled(): boolean {
+    return this._reducedMotion && !this._forcedCursor
+  }
+
+  /** Motion policy port, driven by Experience on init and preference change. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
   }
 
   private readonly mousemoveHandler: (e: MouseEvent) => void
@@ -191,6 +207,7 @@ export class Cursor {
     // CSS @media (pointer: coarse) owns cursor visibility so a touch-screen
     // laptop with a mouse can still use the custom cursor.
     if (forceCursor) {
+      this._forcedCursor = true
       document.documentElement.classList.add('jlz-force-cursor')
     }
 
@@ -198,11 +215,13 @@ export class Cursor {
     document.body.appendChild(this.canvas)
 
     this.mousemoveHandler = (e: MouseEvent) => {
+      if (this._motionDisabled()) return
       this.targetX = e.clientX
       this.targetY = e.clientY
       this.onActivity?.()
     }
     this.mouseoverHandler = (e: MouseEvent) => {
+      if (this._motionDisabled()) return
       this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
@@ -253,6 +272,7 @@ export class Cursor {
       }
     }
     this.mouseoutHandler = (e: MouseEvent) => {
+      if (this._motionDisabled()) return
       this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
@@ -267,13 +287,15 @@ export class Cursor {
       }
     }
     this.clickHandler = () => {
+      // Sound is not motion: the click cue stays under reduced motion.
+      this.sfx?.play('click')
+      if (this._motionDisabled()) return
       // A settled demand-driven loop has no frame available to animate the
       // click bump unless the event explicitly wakes the scheduler.
       this.onActivity?.()
       // Bump: radius scales down to 0.7, then bounces back to 1.0
       this.bumpScale = 0.6
       this.bumpTarget = 1
-      this.sfx?.play('click')
     }
 
     window.addEventListener('mousemove', this.mousemoveHandler, { passive: true })
@@ -283,7 +305,7 @@ export class Cursor {
   }
 
   update() {
-    if (this._disposed) return
+    if (this._disposed || this._motionDisabled()) return
     // Inner dot — instant follow, centered.
     // Color: accent-hover (idle) → RED (hover) via CSS .is-hover class.
     // Inner dot stays visible (no opacity fade) — just changes color.

@@ -155,10 +155,10 @@ onBeforeUnmount(() => stopCarouselFocus?.())
       <div
         class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
       >
-        <!-- The title remains in the DOM for native navigation labels and
-             assistive technology, but the Works frame itself is
-             deliberately image-only. -->
-        <h2 id="jlz-works-title" data-i18n="home.works.title" hidden>Works</h2>
+        <!-- The title stays in the accessibility tree as the label for the
+             Works controls; `hidden` would prune it and leave
+             aria-labelledby pointing at nothing. -->
+        <h2 id="jlz-works-title" class="jlz-visually-hidden" data-i18n="home.works.title">Works</h2>
         <div class="jlz-works-focus" aria-live="polite" aria-atomic="true">
           <span class="jlz-works-focus__eyebrow"
             >{{ String(focusedWork.index + 1).padStart(2, '0') }} /

@@ -53,7 +53,7 @@
     <noscript>
       <style>#jlz-app-loader{display:none!important}</style>
     </noscript>
-    <script type="module" crossorigin="" src="/assets/index-DYi8Di4o.js"></script>
+    <script type="module" crossorigin="" src="/assets/index-CIb4Z1h_.js"></script>
     <link rel="modulepreload" crossorigin="" href="/assets/chunk-runtime-DjMZykf2.js">
       <link rel="alternate" hreflang="en" href="https://justlovejazz.dev/manifesto">
     <link rel="alternate" hreflang="ru" href="https://justlovejazz.dev/ru/manifesto">
@@ -357,6 +357,11 @@
             window.clearTimeout(fallbackTimer)
             loader.removeEventListener('animationend', removeLoader)
             loader.remove()
+            // The skip link only makes sense while the splash owns the page:
+            // its click handler preventDefaults the anchor jump and routes to
+            // exitSplash, which is a no-op once the splash has exited. The
+            // Vue console owns the skip link from then on.
+            skip?.remove()
             if (focusMainAfterExit) {
               document.getElementById('spa-content')?.focus({ preventScroll: true })
             }

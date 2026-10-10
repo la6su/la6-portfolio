@@ -57,7 +57,9 @@ onBeforeUnmount(() => {
 
 // Decode the poster image before exposing it: the modal stays transparent
 // until decode succeeds, so no transient black frame replaces the scene.
-// A newer poster supersedes an in-flight decode (request-id guard).
+// A newer poster supersedes an in-flight decode (request-id guard). A poster
+// that fails to load or decode keeps the layer hidden — that is the intended
+// fallback, because the alternative is painting a broken frame over the scene.
 watch(posterUrl, (poster) => {
   const requestId = ++posterRequestId
   posterReady.value = false
@@ -67,13 +69,13 @@ watch(posterUrl, (poster) => {
   image.addEventListener(
     'load',
     () => {
-      void image
+      image
         .decode()
-        .catch(() => undefined)
         .then(() => {
           if (requestId !== posterRequestId) return
           posterReady.value = true
         })
+        .catch(() => undefined)
     },
     { once: true },
   )
@@ -121,7 +123,9 @@ watch(title, (value) => {
         <span class="jlz-fs-close__label" data-i18n="common.close">Close</span>
         <span uk-icon="icon: close; ratio: 1.15" aria-hidden="true"></span>
       </button>
-      <main class="jlz-fs-theater uk-position-relative">
+      <!-- The page already owns <main id="spa-content">; a second main
+           landmark inside the dialog would split the landmark map. -->
+      <div class="jlz-fs-theater uk-position-relative">
         <div
           class="jlz-fs-poster"
           aria-hidden="true"
@@ -139,7 +143,13 @@ watch(title, (value) => {
           <p class="jlz-fs-kicker" data-i18n="common.projectPresentation">Project presentation</p>
           <h1 ref="titleEl" class="jlz-fs-title"></h1>
           <p class="jlz-fs-desc">{{ description }}</p>
-          <div v-if="tags.length" class="jlz-fs-tags" aria-label="Project disciplines">
+          <div
+            v-if="tags.length"
+            class="jlz-fs-tags"
+            role="group"
+            aria-label="Project disciplines"
+            data-i18n-aria-label="common.projectDisciplines"
+          >
             <span v-for="tag in tags" :key="tag" class="jlz-fs-tag">{{ tag }}</span>
           </div>
           <RouterLink v-if="caseHref" class="jlz-fs-case-link" :to="caseHref">
@@ -147,7 +157,7 @@ watch(title, (value) => {
             <span aria-hidden="true">↗</span>
           </RouterLink>
         </section>
-      </main>
+      </div>
     </div>
   </div>
 </template>

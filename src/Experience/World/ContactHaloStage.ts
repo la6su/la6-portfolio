@@ -24,7 +24,6 @@ export class ContactHaloStage extends PointerInkStage {
       peakOpacity: 0.16,
       // Keep the halo legible on either UI theme (matches the greeting ink).
       tints: [0xdfffe9, 0x233329],
-      focusScale: [0.62, 0.34],
       damping: { rise: 9, decay: 1.4, chase: 3.5 },
       inkField: ({ time, pointer, energy }) => {
         // A soft radial pool around the damped pointer focus, wide

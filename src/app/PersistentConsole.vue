@@ -26,7 +26,9 @@ const blogHref = (path: string): string => localizedPath(langFromPath(route.path
 const currentPath = computed(() => unlocalizedPath(route.path))
 const soundMuted = ref(getSoundMuted())
 const fullscreenOpen = ref(false)
-const activeIndex = ref(0)
+// The viewport lands on the first story frame; the rail must not stay inert
+// until Experience init publishes the first jlz:story-index-change.
+const activeIndex = ref(worldSlotIndex('intro')!)
 const focusedProjectIndex = ref(0)
 const activePageSection = ref('')
 watch(currentPath, () => {
@@ -196,6 +198,9 @@ function toggleSound(): void {
       'is-contact-open': activeIndex === 0,
     }"
   >
+    <a class="jlz-skip-link" href="#spa-content" data-i18n="common.skipToContent"
+      >Skip to content</a
+    >
     <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
       <RouterLink
         class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none"
@@ -274,6 +279,8 @@ function toggleSound(): void {
           aria-controls="section-menu"
           :aria-expanded="activeIndex === 5"
           :aria-label="menuLabel"
+          :aria-hidden="fullscreenOpen"
+          :inert="fullscreenOpen"
           @click="requestStoryNavigation(5)"
         >
           <span class="jlz-menu-launcher__label" data-i18n="menu.navigate">{{ menuLabel }}</span>
@@ -332,7 +339,7 @@ function toggleSound(): void {
     </div>
   </div>
   <div v-else class="jlz-route-fallback">
-    <a class="jlz-route-fallback__skip" href="#spa-content" data-i18n="common.skipToContent"
+    <a class="jlz-skip-link" href="#spa-content" data-i18n="common.skipToContent"
       >Skip to content</a
     >
     <header class="jlz-route-fallback__header">

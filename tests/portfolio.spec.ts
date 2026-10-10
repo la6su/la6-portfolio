@@ -40,11 +40,11 @@ test('public SPA routes render on direct entry with route metadata', async ({ pa
       new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
     )
     if (path === '/works/pro193') {
-      const detailPath = '/assets/projects/nocturne-blue/detail.jpg'
+      const detailPath = '/assets/projects/nocturne-blue/detail.webp'
       const image = page.locator('.jlz-case-media img')
       await expect(image).toHaveAttribute('src', detailPath)
       const response = await page.request.get(detailPath)
-      expect(response.headers()['content-type']).toContain('image/jpeg')
+      expect(response.headers()['content-type']).toContain('image/webp')
       const decodedWidth = await page.evaluate(async (src) => {
         const probe = new Image()
         probe.src = src

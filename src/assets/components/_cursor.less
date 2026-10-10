@@ -64,8 +64,22 @@ html.jlz-force-cursor .interactive {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The custom cursor is a spring-driven animated layer. Under reduce it is
+     dropped, so the native pointer the fine-pointer block hides must return.
+     `html.jlz-force-cursor` keeps its own escape hatch by specificity. */
   .custom-cursor-inner,
   .custom-cursor-canvas {
+    display: none !important;
+  }
+
+  body,
+  a,
+  button,
+  .interactive {
+    cursor: auto;
+  }
+
+  .custom-cursor-inner {
     transition: none;
   }
 }
