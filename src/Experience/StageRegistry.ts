@@ -171,8 +171,9 @@ export class StageRegistry {
       },
       release: async (stage) => {
         await this._ctx.host.contactHalo.unmount(stage)
-        // Vue removes the declared root/mesh; dispose retires the TSL
-        // material and this owner's shared geometry lease.
+        // Vue removes the declared root/mesh — Tres disposes the plane
+        // geometry and the node material; dispose retires the stage's frame
+        // state so a later route visit rebuilds from scratch.
         stage.dispose()
       },
     }
@@ -205,8 +206,9 @@ export class StageRegistry {
       },
       release: async (stage) => {
         await this._ctx.host.manifestoInk.unmount(stage)
-        // Vue removes the declared root/mesh; dispose retires the TSL
-        // material and this owner's shared geometry lease.
+        // Vue removes the declared root/mesh — Tres disposes the plane
+        // geometry and the node material; dispose retires the stage's frame
+        // state so a later route visit rebuilds from scratch.
         stage.dispose()
       },
     }
