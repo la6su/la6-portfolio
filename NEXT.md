@@ -2405,10 +2405,10 @@ Open audit items (2026-10-10): `--jlz-color-text-subtle` measured 3.20:1 over
 use (`.jlz-storyline__item` 0.62rem mono, `.jlz-menu-nav__num` 0.68rem,
 `.jlz-boot-gate__code` 0.6rem, `.jlz-topbar__mode` 0.55rem); the alpha was
 raised to 0.55 dark / 0.62 inverse, closed by the subtle-text contrast
-checkpoint below. `app-*.js` still statically imports
-`chunk-experience` (114.35 kB), which swallows `src/UI/CinematicNav` and
-`FullscreenOverlay`; no `chunk-ui-*.js` is emitted even though `name(id)` maps
-`/src/UI/` to `chunk-ui`, so the UI layer has no independent cache identity.
+checkpoint below. `app-*.js` statically imported `chunk-experience` (114.35 kB),
+which swallowed `src/UI/CinematicNav` and `FullscreenOverlay`; `chunk-ui-*.js` is
+now emitted by a priority-6 `test` group, closed by the UI cache identity
+checkpoint below.
 `public/assets/projects/nocturne-blue/detail.jpg` was 160.2 kB where the three
 sibling `detail.webp` textures are 3.8–5.6 kB (`src/Data/Projects.ts:57`); it is
 now a 109.1 kB WebP, closed by the nocturne detail texture checkpoint below.
@@ -2421,7 +2421,14 @@ listener on a local `new Image()`, so nothing leaks, but a failed poster leaves
 was the opposite — a rejected `decode()` marked the poster ready — and it is
 closed by the fullscreen poster decode checkpoint below. Physical-GPU WebGPU parity,
 natural device loss, WebKit app coverage, and the `justlovejazz.dev` NXDOMAIN
-remain the standing gates.
+remain the standing gates. The deployment gate changed shape the same day:
+`justlovejazz.dev` and `justlovejazz.ru` now resolve to 109.195.250.234 (the
+first through a CNAME to `justlovejazz.dev.justlovejazz.ru`), but that endpoint
+presents a Let's Encrypt wildcard for `*.6la.ru` / `6la.ru` only, so HTTPS fails
+name verification on both portfolio hostnames, plain HTTP on port 80 never
+answers, and `https://6la.ru/` returns 503. Verifying a live deployment therefore
+waits on a certificate and vhost for the portfolio domains at the hosting panel,
+not on this repository.
 
 Declarative pointer-ink slice checkpoint (2026-10-10): work-queue step 4.1
 cut over. `PointerInkStageOwner.vue` now declares
@@ -2809,3 +2816,29 @@ decoded width 1344), `bun run type-check:vue`, `bun run test:unit` (37 files /
 115 tests), `bun run lint` and `bun run format:check` are clean, and
 `bun run build` reports public media at 5339.09 kB — 51.14 kB below the previous
 total.
+
+UI cache identity checkpoint (2026-10-10): closes the chunk-graph audit item
+without introducing a runtime boundary. `vite.config.ts` gains a `chunk-ui`
+group — `test: /[\\/]src[\\/]UI[\\/]/`, `includeDependenciesRecursively: false`,
+priority 6 — and the `if (id.includes('/src/UI/')) return 'chunk-ui'` branch is
+removed from the `name(id)` application group because higher-priority matched
+modules are dropped from lower-priority groups, making it unreachable. The
+mechanism: rolldown re-merges a `name(id)` group into a consuming chunk when the
+two are always loaded together, which is how `chunk-experience` had absorbed
+`CinematicNav` (imported only by `src/Experience/ExperienceUI.ts`) and
+`FullscreenOverlay`. A `test` group isolates the directory the way the vendor
+groups do, so no dynamic import, no extra waterfall and no ownership change was
+needed — `chunk-ui` is a static dependency of `chunk-experience` and is fetched
+in parallel with it. Measured from the emitted graph: `chunk-ui-*.js` 13,050 B
+raw / 3,782 B gzip, importing only `chunk-bootstrap-core` and `chunk-core`;
+`chunk-experience` 114,377 → 101,455 B (29.31 kB gzip); `app-*.js` 74,641 →
+74,677 B. The `is-entered` (FullscreenOverlay) and `page-lab` (CinematicNav)
+markers now appear only in `chunk-ui`, and the enumerated and directory forms of
+the test produced byte-identical chunk hashes. Boot closure 4 modules / 14.33 kB
+gzip against the 24 kB budget, splash 3.32 kB gzip, lazy Three.js and UIkit
+vendor unchanged; `chunk-dom-reveal` still captures BlurFade / NoiseText /
+TextReveal at priority 7, so the boot hop is untouched. Gates: `bun run
+type-check:vue` clean, `bun run test:unit` 37 files / 115 tests pass, `bun run
+lint` and `bun run format:check` clean, and `CI= JLZ_CROSS_BROWSER_MATRIX= bun
+run test:serial` at 15 passed / 6 skipped / 3 failed with the same three
+GPU-limited timeouts.

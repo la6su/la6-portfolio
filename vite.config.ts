@@ -247,6 +247,23 @@ export default defineConfig(({ mode }) => {
                 includeDependenciesRecursively: false,
                 priority: 7,
               },
+              {
+                // The `name(id)` application group below mapped `/src/UI/` to
+                // `chunk-ui`, but rolldown merges a named group into a
+                // consuming chunk when the two are always loaded together, so
+                // CinematicNav and FullscreenOverlay were re-merged into
+                // `chunk-experience` and the UI layer had no cache identity of
+                // its own. A `test` group at higher priority isolates the
+                // directory instead: `chunk-ui` is emitted as a static
+                // dependency of `chunk-experience` (parallel fetch, no extra
+                // waterfall), and a UI-only edit re-ships ~3.8 kB gzip instead
+                // of the whole experience chunk. `includeDependenciesRecursively:
+                // false` keeps their core/renderer imports in their own groups.
+                name: 'chunk-ui',
+                test: /[\\/]src[\\/]UI[\\/]/,
+                includeDependenciesRecursively: false,
+                priority: 6,
+              },
               // ── App chunks (lower priority). `name(id)` returns the chunk
               //    name based on src path, or null to fall through to
               //    rolldown's automatic chunking. Order matters — most
@@ -265,7 +282,6 @@ export default defineConfig(({ mode }) => {
                   if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'
                   if (id.includes('/src/core/PostProcessingManager')) return 'chunk-post'
                   if (id.includes('/src/core/')) return 'chunk-core'
-                  if (id.includes('/src/UI/')) return 'chunk-ui'
                   if (id.includes('/src/Experience/')) return 'chunk-experience'
                   return null
                 },
