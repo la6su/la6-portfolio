@@ -353,6 +353,7 @@ export class Experience {
     this.coordinator?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
+    this.cursor?.setReducedMotion(reduced)
     this._showreel.setReducedMotion(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
@@ -488,6 +489,7 @@ export class Experience {
     )
     this.contentReveal = new ContentReveal(this._host.page)
     this.cursor = new Cursor(this.sfx)
+    this.cursor.setReducedMotion(this._reducedMotion)
     // Input was attached above, so pointer coordinates update before Cursor
     // wakes the shared loop; the Works trail consumes them in that same frame.
     this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
@@ -824,8 +826,6 @@ export class Experience {
         this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
           toCfg.baku.material.color,
-          fromCfg.baku.material.emissive,
-          toCfg.baku.material.emissive,
           worldState.phaseProgress,
         )
       }

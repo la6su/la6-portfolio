@@ -320,7 +320,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .jlz-fs-dialog,
+  /* The iris reveal lives on `.jlz-fs-overlay .jlz-fs-dialog`; a bare
+     `.jlz-fs-dialog` here loses the specificity tie and keeps the closed
+     clip-path/scale/opacity state under reduced motion. */
+  .jlz-fs-overlay .jlz-fs-dialog,
   .jlz-fs-poster,
   .jlz-fs-overlay.is-entered .jlz-fs-topline,
   .jlz-fs-overlay.is-entered .jlz-fs-copy {

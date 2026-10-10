@@ -13,4 +13,4 @@ export const UI_CHROME_SELECTOR =
 
 /** Chrome the works-plane tap handler must not reinterpret as a plane tap. */
 export const WORKS_TAP_CHROME_SELECTOR =
-  '.jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'
+  '.jlz-works-actions, #jlz-fs-overlay, #cinematic-nav, #jlz-contact-launcher, .jlz-topbar, [data-cinematic-menu]'

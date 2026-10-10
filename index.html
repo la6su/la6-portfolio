@@ -1337,6 +1337,11 @@
             window.clearTimeout(fallbackTimer)
             loader.removeEventListener('animationend', removeLoader)
             loader.remove()
+            // The skip link only makes sense while the splash owns the page:
+            // its click handler preventDefaults the anchor jump and routes to
+            // exitSplash, which is a no-op once the splash has exited. The
+            // Vue console owns the skip link from then on.
+            skip?.remove()
             if (focusMainAfterExit) {
               document.getElementById('spa-content')?.focus({ preventScroll: true })
             }
