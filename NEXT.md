@@ -1722,7 +1722,7 @@ Execution order:
    unit or browser test suites without the user's explicit request; report the
    unverified runtime cases as open acceptance gates.
 
-### 4. Declarative Vue + TresJS v5 migration — architecture decision
+### 4. Declarative Vue + TresJS v5 migration — owner sweep complete; physical-GPU parity gated
 
 Decision: keep the existing three-layer split and finish it by moving **scene
 composition** (geometry and material construction) out of the runtime stage
@@ -1749,7 +1749,9 @@ Boundary rules:
   `RenderPipeline` as the only render step.
 - A Vue owner that declares a node constructs and disposes it. A runtime owner
   that borrows a node never disposes it; borrowing is explicit in the owner's
-  comment and its `onBeforeUnmount` (see `EnvSky.vue`).
+  comment and, when the borrowed buffer is a shared lease, in its
+  `onBeforeUnmount` (see `CasePlaneNode.vue`; `EnvSky.vue` is the pure-borrow
+  case that releases nothing itself).
 - Runtime stages expose _behavior_ to the template (visibility, position,
   scale, uniform updates), not GPU resources.
 - Lazy loading is a contract, not an accident: route stage implementations
@@ -1770,9 +1772,11 @@ it to the catalog."` (:1216). `:args` is the constructor-argument seam.
   `extend` call. Confirmed `three/webgpu` 0.186.1 exports
   `MeshBasicNodeMaterial` and 17 other node materials.
 - Tres `remove(node, dispose)` (:1265-1292) disposes catalogue-created nodes
-  and their attached children on unmount; `:dispose="null"` opts a subtree out.
-  Declarative geometry/material therefore needs no manual dispose in the owner;
-  borrowed resources must keep `:dispose="null"` plus an explicit release.
+  and their attached children on unmount; `:dispose="null"` opts a subtree out
+  of that traversal (see the disposal-propagation risk below). Declarative
+  geometry/material therefore needs no manual dispose in the owner; borrowed
+  resources either stay as mesh props or keep `:dispose="null"` plus an explicit
+  release.
 - `TresCanvas` props/events match docs.tresjs.org 5.9.3
   (`/api/components/tres-canvas`, `/api/advanced/web-gpu`): the `renderer`
   factory `(ctx: TresRendererSetupContext) => renderer` is the documented
@@ -1841,6 +1845,10 @@ path in the same change):
    scratch `THREE.Object3D` matrix helper, so step 4.2 has no owner left.
 4. Re-measure budgets and the e2e matrix after each cutover; a cutover that
    moves GPU work into the boot closure is rejected.
+
+Steps 1-4 are closed as of 2026-10-10: every scene owner either declares the
+geometry and material it uses, or borrows a buffer its runtime controller
+shares, and each cutover kept the budgets and the serial suite at the baseline.
 
 Compatibility risks:
 
