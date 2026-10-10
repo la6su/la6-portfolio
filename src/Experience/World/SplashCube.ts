@@ -153,8 +153,6 @@ export class SplashCube {
   private _currentRole: BakuRole | null = null
   private _blendFromColor: THREE.Color = new THREE.Color(0x3a3a5e)
   private _blendToColor: THREE.Color = new THREE.Color(0x3a3a5e)
-  private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
-  private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
   private _isLightTheme = true
   private _reducedMotion = prefersReducedMotion()
@@ -349,18 +347,23 @@ export class SplashCube {
     this.applyMaterialBlend()
   }
 
-  updateWorldBlend(
-    fromColor: THREE.Color,
-    toColor: THREE.Color,
-    fromEmissive: THREE.Color,
-    toEmissive: THREE.Color,
-    t: number,
-  ): void {
+  /** Record the from→to shell colors for this frame's blend.
+   *  Experience calls this on every rendered frame; the blend is a pure
+   *  function of these three inputs, so an unchanged triple is a no-op.
+   *  Without that guard `_blendDirty` is set every frame and `update()` can
+   *  never take its idle early-out. Emissive is not blended here: it reaches
+   *  the shell through `updateMaterial()` on section-context change. */
+  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, t: number): void {
     if (this._disposed) return
+    if (
+      this._blendT === t &&
+      this._blendFromColor.equals(fromColor) &&
+      this._blendToColor.equals(toColor)
+    ) {
+      return
+    }
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
-    this._blendFromEmissive.copy(fromEmissive)
-    this._blendToEmissive.copy(toEmissive)
     this._blendT = t
     this._blendDirty = true
   }

@@ -152,7 +152,8 @@ export class ParticleBurst {
     const depth = -eased * 0.72
     const rotation = eased * 0.1
 
-    this._segments.forEach(({ frame, side }, index) => {
+    for (let index = 0; index < this._segments.length; index++) {
+      const { frame, side } = this._segments[index]!
       const radius = FRAME_RADII[frame]! * (1 - eased * 0.58)
       const long = radius * 1.62
       const short = 0.024 + frame * 0.006
@@ -169,7 +170,7 @@ export class ParticleBurst {
       this._dummy.scale.set(long, short, 1)
       this._dummy.updateMatrix()
       this._mesh.setMatrixAt(index, this._dummy.matrix)
-    })
+    }
     this._mesh.instanceMatrix.needsUpdate = true
   }
 

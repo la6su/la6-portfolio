@@ -77,11 +77,11 @@ export class SectionStateMachine {
   }
 
   /** Advance the sections' pending state deadlines (called from the frame
-   *  path where the former StateBus tick used to run). */
+   *  path where the former StateBus tick used to run). Indexed loop: this runs
+   *  every rendered frame, and a `forEach` callback would be a fresh closure
+   *  each time. */
   public updateSections(dt: number): void {
-    this.sections.forEach((s) => {
-      s.update(dt)
-    })
+    for (let i = 0; i < this.sections.length; i++) this.sections[i]!.update(dt)
   }
 
   public disposeSections(): void {
