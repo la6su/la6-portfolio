@@ -66,6 +66,8 @@ const projects = crossBrowserMatrix
 
 export default defineConfig({
   testDir: './tests',
+  // Vitest specs live under tests/unit; only the Playwright specs run here.
+  testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

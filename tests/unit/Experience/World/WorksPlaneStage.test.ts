@@ -8,7 +8,7 @@ const { loadTexture, releaseTexture } = vi.hoisted(() => ({
   releaseTexture: vi.fn(),
 }))
 
-vi.mock('./caseTexture', () => ({
+vi.mock('../../../../src/Experience/World/caseTexture', () => ({
   loadCaseTexture: loadTexture,
   releaseCaseTexture: releaseTexture,
 }))

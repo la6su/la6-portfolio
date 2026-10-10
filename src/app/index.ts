@@ -15,7 +15,7 @@ import {
   resolvePagePath,
   unlocalizedPath,
 } from '../core/routeManifest'
-import { RouteTransition } from '../UI/RouteTransition'
+import { prefersReducedMotion } from '../core/motionPolicy'
 import AppShell from './AppShell.vue'
 import { jlzRouteRecords } from './routes'
 
@@ -74,6 +74,100 @@ export function createSingleFrameOwner(): {
   }
 }
 
+/**
+ * Own the AppShell-declared route transition cover. `cover()` awaits the
+ * cover phase inside the navigation guard (the RouterView re-render lands
+ * under the covered document) and `reveal()` starts the reveal after the
+ * route settles. Under reduced motion both phases are synchronous no-ops
+ * and the statically declared overlay stays hidden. A newer cover supersedes
+ * a pending reveal (sequence check). The app layer owns this handoff because
+ * it is part of router navigation, not scene or DOM-controller behavior.
+ */
+function createRouteTransitionCover(): {
+  cover: () => Promise<void>
+  reveal: () => void
+  cancel: () => void
+  dispose: () => void
+} {
+  const COVER_MS = 260
+  const REVEAL_MS = 420
+  let overlay: HTMLElement | null = null
+  let sequence = 0
+  let coverTimer: { id: number; resolve: () => void } | null = null
+  let revealTimer: number | null = null
+
+  const overlayEl = (): HTMLElement => {
+    if (overlay?.isConnected) return overlay
+    const element = document.getElementById('jlz-route-transition')
+    if (!element) throw new Error('Route transition view must be mounted by AppShell.')
+    overlay = element
+    return element
+  }
+  const cancelCoverTimer = (): void => {
+    if (coverTimer !== null) {
+      clearTimeout(coverTimer.id)
+      const { resolve } = coverTimer
+      coverTimer = null
+      resolve()
+    }
+  }
+  const cancelRevealTimer = (): void => {
+    if (revealTimer !== null) {
+      clearTimeout(revealTimer)
+      revealTimer = null
+    }
+  }
+  return {
+    cover: async () => {
+      const token = ++sequence
+      cancelCoverTimer()
+      cancelRevealTimer()
+      if (prefersReducedMotion()) {
+        if (overlay) overlay.dataset.state = 'idle'
+        return
+      }
+      const element = overlayEl()
+      element.dataset.state = 'covering'
+      await new Promise<void>((resolve) => {
+        const id = window.setTimeout(() => {
+          coverTimer = null
+          resolve()
+        }, COVER_MS)
+        coverTimer = { id, resolve }
+      })
+      if (token !== sequence) return
+    },
+    reveal: () => {
+      const token = sequence
+      if (prefersReducedMotion()) {
+        if (overlay) overlay.dataset.state = 'idle'
+        return
+      }
+      cancelRevealTimer()
+      const element = overlayEl()
+      element.dataset.state = 'revealing'
+      revealTimer = window.setTimeout(() => {
+        revealTimer = null
+        if (token !== sequence) return
+        if (element.isConnected) element.dataset.state = 'idle'
+      }, REVEAL_MS)
+    },
+    cancel: () => {
+      sequence += 1
+      cancelCoverTimer()
+      cancelRevealTimer()
+      if (overlay) overlay.dataset.state = 'idle'
+    },
+    dispose: () => {
+      sequence += 1
+      cancelCoverTimer()
+      cancelRevealTimer()
+      if (overlay) overlay.dataset.state = 'idle'
+      overlay = null
+    },
+  }
+}
+
 /** Mount the public Vue application on `#app` and take over navigation. */
 export async function mountVueApp(): Promise<void> {
   if (mounted) return
@@ -92,7 +186,7 @@ export async function mountVueApp(): Promise<void> {
   // re-render lands under the covered document; the reveal starts once the
   // route has settled. Under reduced motion both phases are synchronous
   // no-ops; AppShell keeps the statically declared overlay hidden.
-  const routeTransition = new RouteTransition()
+  const routeTransition = createRouteTransitionCover()
   let appMounted = false
   let routeFocusGeneration = 0
   let destroyAppShell: (() => Promise<void>) | null = null
@@ -256,7 +350,7 @@ export async function mountVueApp(): Promise<void> {
 
   try {
     await routerReady
-    // `unmountVueApp()` can be called while initial navigation is still
+    // The app-level unmount path can run while initial navigation is still
     // pending. Its teardown owns the pending mount too: never resurrect the
     // Vue tree after that teardown has completed.
     if (disposed) return
@@ -283,9 +377,4 @@ export async function mountVueApp(): Promise<void> {
       }
     }
   }
-}
-
-/** Release the app-level listeners and timers before unmounting its Vue tree. */
-export function unmountVueApp(): Promise<void> {
-  return unmountMountedVueApp?.() ?? Promise.resolve()
 }

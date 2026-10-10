@@ -1,11 +1,11 @@
 import type { Object3D } from 'three'
 
-export interface WorksCardMetadata {
+interface WorksCardMetadata {
   projectIndex: number
   textureUrl: string
 }
 
-export interface CarouselCardMetadata {
+interface CarouselCardMetadata {
   textureIndex: number
   projectIndex: number
   textureUrl: string

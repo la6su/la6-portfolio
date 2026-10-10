@@ -80,6 +80,12 @@ test('language toggle updates translated content and document metadata', async (
     waitUntil: 'domcontentloaded',
   })
   await expect(page.locator('[data-page-view="case-study"]')).toHaveCount(1)
+  // The case-study marker is prerendered static DOM; the language-toggle
+  // meta listener installs with the mounted app chunk, so wait for the
+  // router before clicking (same readiness gate as the /services section).
+  await page.waitForFunction(() =>
+    Boolean((window as Window & { __jlzRouterReady?: boolean }).__jlzRouterReady),
+  )
   const caseCanonical = page.locator('link[rel="canonical"]')
   await expect(caseCanonical).toHaveAttribute('href', /\/works\/porsche-911-spider$/)
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'article')
@@ -307,6 +313,10 @@ test('Works lazy scene survives repeated route mount and release cycles', async 
 })
 
 test('Contact scene survives repeated route mount and release cycles', async ({ page }) => {
+  // Software-rendering environments (headless CI without a GPU) need a
+  // longer budget: the Cyprus GLB/DRACO decode plus three mount/release
+  // cycles measured ~32.6s under WebGL2 fallback vs ~10-15s on hardware.
+  test.setTimeout(60_000)
   const errors: string[] = []
   const dracoAssets = new Set<string>()
   let cyprusAssetStatus: number | undefined
@@ -740,7 +750,7 @@ test('Renderer recovers from WebGL context loss on the persistent canvas', async
     )
   if (!recovered) {
     const failure = await page
-      .locator('.renderer-unsupported')
+      .locator('.jlz-renderer-failure')
       .innerText()
       .catch(() => 'no failure UI')
     throw new Error(

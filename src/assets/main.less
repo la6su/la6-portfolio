@@ -110,6 +110,17 @@ body[data-lab-camera='on']
   -webkit-overflow-scrolling: touch;
 }
 
+// Services is a native scroll track. Let wheel/touch momentum carry through
+// chapter boundaries instead of forcing a stop at every full-screen section.
+#spa-content > .jlz-services-page {
+  scroll-snap-type: y proximity;
+  scroll-behavior: auto;
+}
+
+#spa-content > .jlz-services-page > .jlz-page-section {
+  scroll-snap-stop: normal;
+}
+
 #spa-content[data-page-view='home']::-webkit-scrollbar,
 #spa-content > .jlz-page::-webkit-scrollbar {
   display: none;

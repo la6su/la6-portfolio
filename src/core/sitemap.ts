@@ -27,7 +27,7 @@ const XML_ESCAPES: Record<string, string> = {
 }
 
 /** XML-escape a text value. */
-export function escapeXml(value: string): string {
+function escapeXml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => XML_ESCAPES[character] ?? character)
 }
 

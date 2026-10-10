@@ -262,7 +262,7 @@ export class SplashCube {
   /** Bind an environment texture directly to the shared cube material's envMap.
    *  Explicit binding keeps the reflection source stable while the scene is
    *  rendered through either backend's post-processing target.
-   *  Called by Experience.setupEnvironment() after PMREM is generated. */
+   *  Applied by SceneEnvironment.apply() after PMREM is generated. */
   bindEnvironment(envTexture: THREE.Texture): void {
     if (this._disposed) return
     this._material.envMap = envTexture

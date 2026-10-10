@@ -5,7 +5,7 @@ const mockTheaters = vi.hoisted(
 )
 const disposeOrder = vi.hoisted(() => [] as string[])
 
-vi.mock('./World/ShowreelTheater', () => ({
+vi.mock('../../../src/Experience/World/ShowreelTheater', () => ({
   ShowreelTheater: class {
     open = vi.fn()
     close = vi.fn()

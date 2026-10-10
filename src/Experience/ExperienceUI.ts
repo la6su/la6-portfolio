@@ -13,6 +13,7 @@ import type { PageId } from '../core/routeManifest'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
+import { WORKS_TAP_CHROME_SELECTOR } from '../core/chromeSelectors'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 import { PROJECTS } from '../Data/Projects'
@@ -25,7 +26,7 @@ import type { BakuCarousel } from './World/BakuCarousel'
  * render demand, and initialization remain callbacks because they can change
  * or are actions rather than owned objects.
  */
-export interface ExperienceUIHost {
+interface ExperienceUIHost {
   page: () => PageId
   baku: SplashCube
   particleBurst: ParticleBurst
@@ -96,20 +97,13 @@ export class ExperienceUI {
 
     // ── Semantic project control → open fullscreen overlay ──
     // Works and case-study Vue views emit this port from their native controls.
-    // All opens (showreel, slider, /works) use the same unified DOM cinematic
-    // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
+    // All opens use one DOM viewer. Works planes add a small TSL cloth pulse;
+    // the viewer's matching-origin reveal carries that gesture into the UI.
     this._unsubs.push(
       eventBus.on('jlz:open-project', ({ idx }) => {
         if (typeof idx !== 'number') return
         this.ensureProjectControls()
         this.onProjectSelect(idx)
-      }),
-    )
-
-    this._unsubs.push(
-      eventBus.on('jlz:project-navigate', ({ direction }) => {
-        if (!this.overlay?.isOpen) return
-        this.navigateProject(direction)
       }),
     )
 
@@ -157,12 +151,7 @@ export class ExperienceUI {
       // present. It must not be reinterpreted as a click on the first 3D plane.
       if (document.getElementById('jlz-app-loader')) return
       const target = e.target as HTMLElement | null
-      if (
-        target?.closest(
-          '.jlz-works-aperture, .jlz-works-actions, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]',
-        )
-      )
-        return
+      if (target?.closest(WORKS_TAP_CHROME_SELECTOR)) return
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       this.ensureProjectControls()
@@ -277,24 +266,19 @@ export class ExperienceUI {
     const project = projs[safeIdx]
     if (!project) return
 
-    // Open/preload fullscreen overlay with project info + poster.
-    // All opens (showreel, slider, /works) use the unified DOM cinematic
-    // reveal — no origin='plane' 3D handoff.
-    const opts = {
+    // Publish the project's content to the Vue-owned overlay view; the view
+    // binds it (text, tags, poster decode, authored title reveal). Preload
+    // only publishes — the modal stays hidden until a later open. All opens
+    // (showreel, slider, /works) use the unified DOM cinematic reveal.
+    eventBus.emit('jlz:project-content', {
+      projectId: project.id,
       poster: project.textureUrl,
       title: project.title,
       category: `${project.year ?? ''} · ${project.category ?? ''}`,
       description: project.description,
       tags: project.tags,
-      counter: `${safeIdx + 1} / ${projs.length}`,
-      hasPrev: true,
-      hasNext: true,
-    }
-    if (preload) {
-      overlay.preload(opts)
-    } else {
-      overlay.open(opts)
-    }
+    })
+    if (!preload) overlay.open()
   }
 
   /** Remove every UI-feature listener + dispose the created features. */

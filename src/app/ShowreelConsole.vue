@@ -58,7 +58,10 @@ function onState(next: ShowreelState): void {
     announce('Showreel closed')
     return
   }
-  if (wasClosed) showChrome()
+  if (wasClosed) {
+    restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    showChrome()
+  }
   if (wasOpen && next.phase === 'open') announce('Showreel playing')
 }
 
@@ -92,14 +95,6 @@ function onKeydown(event: KeyboardEvent): void {
     event.stopImmediatePropagation()
     eventBus.emit('jlz:showreel-toggle-play')
   }
-}
-
-function onDocumentClick(event: MouseEvent): void {
-  const target = event.target as HTMLElement | null
-  if (!target?.closest('#jlz-showreel-trigger')) return
-  event.preventDefault()
-  restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  eventBus.emit('jlz:showreel-open')
 }
 
 function onBackdropClick(): void {
@@ -163,13 +158,11 @@ onMounted(() => {
     eventBus.on('jlz:close-media-layer', onCloseMediaLayer),
   )
   document.addEventListener('keydown', onKeydown)
-  document.addEventListener('click', onDocumentClick)
 })
 
 onBeforeUnmount(() => {
   unsubs.splice(0).forEach((unsubscribe) => unsubscribe())
   document.removeEventListener('keydown', onKeydown)
-  document.removeEventListener('click', onDocumentClick)
   if (state.value.phase !== 'closed') {
     eventBus.emit('jlz:fullscreen-change', { open: false })
     document.body.classList.remove('jlz-media-layer-open')

@@ -235,6 +235,11 @@ export class DevPanel {
   private startRefresh(): void {
     if (this.refreshInterval) clearInterval(this.refreshInterval)
     this.refreshInterval = setInterval(() => {
+      // The panel is hidden by default. Avoid traversing the entire scene for
+      // resource counts or refreshing Tweakpane while its diagnostics are out
+      // of view; the next visible refresh reads a fresh snapshot.
+      if (!this.state.visible) return
+
       // Update stats from renderer info
       const r = this.host.renderer.instance
       const backend = inspectUnifiedBackend(r)

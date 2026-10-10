@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
+import { rendererAvailable } from '../../core/rendererAvailability'
 
 const rootEl = ref<HTMLElement | null>(null)
 const activeSectionId = useJlzPage('contact', () => rootEl.value, 'contact-01')
@@ -193,6 +194,7 @@ const activeSectionId = useJlzPage('contact', () => rootEl.value, 'contact-01')
               Make the move.
             </h3>
             <a
+              v-if="!rendererAvailable"
               href="mailto:hello@justlovejazz.com?subject=Project%20brief"
               class="uk-button uk-button-primary uk-margin-medium-top"
               data-i18n="contact.form.action"

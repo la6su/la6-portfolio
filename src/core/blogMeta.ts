@@ -17,7 +17,7 @@ import { localizedPath } from './routeManifest'
 import { SITE_ORIGIN } from './siteConfig'
 
 /** The site origin used for canonical/OG URLs (override for staging). */
-export const BLOG_SITE_ORIGIN = SITE_ORIGIN
+const BLOG_SITE_ORIGIN = SITE_ORIGIN
 
 const SITE_NAME = 'JUSTLOVEJAZZ'
 const OG_IMAGE = `${BLOG_SITE_ORIGIN}/preview.jpg`
@@ -204,7 +204,7 @@ export const BLOG_PAGE_META_RU: { index: BlogIndexMeta } & Record<
 }
 
 /** The static path of a page key (`index` → the list page). */
-export function blogMetaPath(key: BlogPageKey, lang: 'EN' | 'RU' = 'EN'): string {
+function blogMetaPath(key: BlogPageKey, lang: 'EN' | 'RU' = 'EN'): string {
   const path = key === 'index' ? BLOG_INDEX_PATH : blogArticlePath(key)
   return localizedPath(lang, path)
 }
@@ -226,7 +226,7 @@ function esc(value: string): string {
  * clean static HTML that matches the hand-maintained documents byte-for-byte
  * in structure.
  */
-export function stripSsrComments(html: string): string {
+function stripSsrComments(html: string): string {
   return html.replace(/<!--\[-->|<!--\]-->|<!---->/g, '')
 }
 

@@ -24,5 +24,4 @@ export interface BakuMaterialState {
 export interface WorldState {
   phaseProgress: number
   bakuMaterial: BakuMaterialState
-  envColor: THREE.Color
 }

@@ -25,13 +25,13 @@ export type FrameReason =
   | 'external'
 
 /** The single edge to the renderer's animation loop. */
-export interface LoopDriver {
+interface LoopDriver {
   /** Install the frame callback (delta in ms), or `null` to stop the loop. */
   setLoop(callback: ((deltaMs: number) => void) | null): void
 }
 
 /** The frame work and settle state, owned by the scene runtime. */
-export interface SchedulerHost {
+interface SchedulerHost {
   /** Run one frame of work. Called only while the loop is active and visible. */
   onFrame(deltaMs: number): void
   /**

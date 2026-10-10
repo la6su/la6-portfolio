@@ -4,7 +4,7 @@
 
 import type { ThemeMode } from './ThemeManager'
 
-export interface AppEvents {
+interface AppEvents {
   /** ExperienceRuntime begins scene preparation after SceneHost readiness. */
   'jlz:experience-starting': void
   /** Fired by the Vue runtime owner after Experience's first successful draw. */
@@ -25,7 +25,7 @@ export interface AppEvents {
   /**
    * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
    * the renderer. The PMREM environment texture dies with the lost device, so
-   * Experience re-runs setupEnvironment() to bind a fresh one.
+   * Experience re-applies the environment (SceneEnvironment.apply()).
    */
   'jlz:renderer-recovered': void
   /** Fired by the nav template / UI controls when the cinematic menu panel must close. */
@@ -38,14 +38,27 @@ export interface AppEvents {
   'jlz:navigate': { path: string }
   /** Fired by a semantic project control on a Works or case-study page. */
   'jlz:open-project': { idx: number }
+  /** Project content published by ExperienceUI; the fullscreen overlay view binds it. */
+  'jlz:project-content': {
+    projectId: string
+    poster?: string
+    title?: string
+    category?: string
+    description?: string
+    tags?: string[]
+  }
   /** Fired by CinematicNav when a non-home page's active canonical world slot changes. */
   'jlz:page-section-change': { worldIndex: number; sectionId: string }
   /** Persistent Vue shell requests a story-track section. */
   'jlz:story-navigate': { index: number }
   /** CinematicNav updates the persistent shell's active section state. */
   'jlz:story-index-change': { index: number }
-  /** Fired by FullscreenOverlay on prev/next project navigation. */
-  'jlz:project-navigate': { direction: -1 | 1 }
+  /**
+   * CinematicNav publishes the storyline labels it resolved from the track's
+   * section headings (on track bind and language change); the Vue-owned nav
+   * rail binds them into its aria-labels.
+   */
+  'jlz:story-labels': { labels: string[] }
   /** Fullscreen media becomes the active interaction layer. */
   'jlz:fullscreen-change': { open: boolean }
   /** Requests that the active fullscreen media owner closes itself. */
@@ -62,6 +75,8 @@ export interface AppEvents {
   'jlz:theme-change': { mode: ThemeMode }
   /** Fired by BakuCarousel on a card wobble tap. */
   'jlz:wobble-pulse': void
+  /** BakuCarousel's settled/target focus for the home project ribbon. */
+  'jlz:carousel-focus': { index: number; total: number; title: string; category: string }
   /** Fired by ShowreelConsole.vue when its trigger requests the theater. */
   'jlz:showreel-open': void
   /** Fired by the shared media exit or Esc to exit the showreel theater. */

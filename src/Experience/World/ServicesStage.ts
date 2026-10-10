@@ -1,55 +1,129 @@
 import * as THREE from 'three'
-import { MeshStandardNodeMaterial, MeshBasicNodeMaterial } from 'three/webgpu'
-import { shallowRef } from 'vue'
+import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial } from 'three/webgpu'
 
-/** Animation/material controller for the declarative services scene. */
+const RIBBON_SEGMENTS = 192
+const RIBBON_WIDTH_SEGMENTS = 28
+const RIBBON_RADIUS = 0.92
+const RIBBON_HALF_WIDTH = 0.18
+
+function ribbonPoint(angle: number, across: number, target = new THREE.Vector3()): THREE.Vector3 {
+  const twist = angle
+  const radial = RIBBON_RADIUS + 0.12 * Math.cos(angle * 2 + 0.42) + across * Math.cos(twist)
+  return target.set(
+    radial * Math.cos(angle),
+    radial * Math.sin(angle),
+    0.29 * Math.sin(angle * 2 + 0.42) + across * Math.sin(twist),
+  )
+}
+
+function createRibbonGeometry(): THREE.BufferGeometry {
+  const geometry = new THREE.BufferGeometry()
+  const rowSize = RIBBON_WIDTH_SEGMENTS + 1
+  const positions = new Float32Array(RIBBON_SEGMENTS * rowSize * 3)
+  const indices: number[] = []
+  const point = new THREE.Vector3()
+
+  for (let i = 0; i < RIBBON_SEGMENTS; i++) {
+    const angle = (i / RIBBON_SEGMENTS) * Math.PI * 2
+    for (let j = 0; j <= RIBBON_WIDTH_SEGMENTS; j++) {
+      const across = (j / RIBBON_WIDTH_SEGMENTS) * RIBBON_HALF_WIDTH * 2 - RIBBON_HALF_WIDTH
+      ribbonPoint(angle, across, point)
+      const offset = (i * rowSize + j) * 3
+      positions[offset] = point.x
+      positions[offset + 1] = point.y
+      positions[offset + 2] = point.z
+    }
+  }
+
+  for (let i = 0; i < RIBBON_SEGMENTS; i++) {
+    const nextI = (i + 1) % RIBBON_SEGMENTS
+    for (let j = 0; j < RIBBON_WIDTH_SEGMENTS; j++) {
+      const a = i * rowSize + j
+      const b = nextI * rowSize + j
+      const c = nextI * rowSize + j + 1
+      const d = i * rowSize + j + 1
+      indices.push(a, b, d, b, c, d)
+    }
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setIndex(indices)
+  geometry.computeVertexNormals()
+  geometry.computeBoundingSphere()
+  return geometry
+}
+
+function createSignalSeamGeometry(): THREE.TubeGeometry {
+  const points: THREE.Vector3[] = []
+  const start = Math.PI * 0.48
+  const end = Math.PI * 0.88
+  for (let i = 0; i <= 56; i++) {
+    const angle = THREE.MathUtils.lerp(start, end, i / 56)
+    points.push(ribbonPoint(angle, 0, new THREE.Vector3()).add(new THREE.Vector3(0, 0, -0.012)))
+  }
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
+  return new THREE.TubeGeometry(curve, 96, 0.009, 6, false)
+}
+
+/** A single reflective signal ribbon; chapter changes move its pose, never its idle clock. */
 export class ServicesStage {
-  private readonly _visible = shallowRef(false)
+  readonly ribbonGeometry = createRibbonGeometry()
+  readonly seamGeometry = createSignalSeamGeometry()
+
   private disposed = false
+  private _visible = false
   private root: THREE.Group | null = null
-  private readonly metal = new MeshStandardNodeMaterial({
-    color: 0x71858f,
-    metalness: 0.65,
-    roughness: 0.32,
+  private sculpture: THREE.Group | null = null
+  private readonly ribbonMaterial = new MeshPhysicalNodeMaterial({
+    color: 0x9eaaa5,
+    metalness: 0.72,
+    roughness: 0.2,
+    clearcoat: 0.92,
+    clearcoatRoughness: 0.14,
+    iridescence: 0.12,
+    iridescenceIOR: 1.28,
+    iridescenceThicknessRange: [150, 280],
+    envMapIntensity: 1.35,
+    side: THREE.DoubleSide,
     fog: false,
   })
-  private readonly signal = new MeshBasicNodeMaterial({ color: 0x58e6a9, fog: false })
-  private readonly ringMaterials = [
-    new MeshBasicNodeMaterial({ color: 0x2a4a7a, transparent: true, opacity: 0.4, fog: false }),
-    new MeshBasicNodeMaterial({ color: 0x1a3a6a, transparent: true, opacity: 0.3, fog: false }),
-    new MeshBasicNodeMaterial({ color: 0x0a2a5a, transparent: true, opacity: 0.2, fog: false }),
-  ]
-  private readonly targets = Array.from({ length: 7 }, () => new THREE.Vector3())
+  private readonly seamMaterial = new MeshBasicNodeMaterial({
+    color: 0x75f2bd,
+    toneMapped: false,
+    fog: false,
+  })
+  private readonly targetPosition = new THREE.Vector3()
   private readonly worldPosition = new THREE.Vector3()
   private readonly offset = new THREE.Vector3()
-  private state = -1
+  private readonly targetPose = new THREE.Quaternion()
+  private readonly poseEuler = new THREE.Euler()
+  private chapter = -1
   private settled = true
 
-  private parts: THREE.Mesh[] = []
-  private rings: THREE.Mesh[] = []
-
   get visible(): boolean {
-    return this._visible.value
+    return this._visible
   }
-
   set visible(value: boolean) {
-    this._visible.value = value
+    this._visible = value
+    if (this.root) this.root.visible = value
+  }
+  get sculptureMaterial(): MeshPhysicalNodeMaterial {
+    return this.ribbonMaterial
+  }
+  get seamSignalMaterial(): MeshBasicNodeMaterial {
+    return this.seamMaterial
   }
 
-  get metalMaterial(): MeshStandardNodeMaterial {
-    return this.metal
-  }
-  get signalMaterial(): MeshBasicNodeMaterial {
-    return this.signal
-  }
-  get orbitMaterials(): readonly MeshBasicNodeMaterial[] {
-    return this.ringMaterials
-  }
-
-  adopt(nodes: { root: THREE.Group; parts: THREE.Mesh[]; rings: THREE.Mesh[] }): void {
+  adopt(nodes: { root: THREE.Group; sculpture: THREE.Group }): void {
     this.root = nodes.root
-    this.parts = nodes.parts
-    this.rings = nodes.rings
+    this.sculpture = nodes.sculpture
+    this.root.visible = this._visible
+  }
+
+  bindEnvironment(texture: THREE.Texture): void {
+    if (this.disposed) return
+    this.ribbonMaterial.envMap = texture
+    this.ribbonMaterial.needsUpdate = true
   }
 
   get isAnimating(): boolean {
@@ -62,51 +136,54 @@ export class ServicesStage {
     dt: number,
     reduced: boolean,
   ): void {
-    if (this.disposed || !this.root) return
+    if (this.disposed || !this.root || !this.sculpture) return
     camera.getWorldPosition(this.worldPosition)
     this.root.position.copy(this.worldPosition)
     this.root.quaternion.copy(camera.quaternion)
+
     const height = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 5
     const mobile = camera.aspect < 1.2
-    const scale = Math.min(height * 0.27, height * camera.aspect * 0.29)
-    if (chapter !== this.state) {
-      this.state = chapter
-      for (let i = 0; i < 7; i++) {
-        const t = i - 3
-        this.targets[i]!.set(
-          chapter === 0 ? t * 0.08 : chapter === 1 ? t * 0.26 : t * 0.32,
-          chapter === 2 ? Math.sin(i * 0.8) * 0.48 : chapter === 3 ? (i % 2) * 0.4 - 0.2 : t * 0.05,
-          chapter === 0 ? t * 0.14 : chapter === 1 ? t * 0.3 : 0,
-        )
-      }
+    const scale = Math.min(
+      height * (mobile ? 0.19 : 0.32),
+      height * camera.aspect * (mobile ? 0.4 : 0.32),
+    )
+
+    if (chapter !== this.chapter) {
+      this.chapter = chapter
+      const poses = [
+        [0.34, -0.42, 0.12],
+        [-0.2, 0.34, 0.58],
+        [0.54, 0.82, -0.3],
+        [-0.42, 1.16, 0.24],
+      ] as const
+      const pose = poses[THREE.MathUtils.clamp(chapter, 0, poses.length - 1)]!
+      this.poseEuler.set(pose[0], pose[1], pose[2])
+      this.targetPose.setFromEuler(this.poseEuler)
     }
-    this.settled = true
-    for (let i = 0; i < 7; i++) {
-      const part = this.parts[i]!
-      const target = this.targets[i]!
-      if (reduced) part.position.copy(target)
-      else part.position.lerp(target, 1 - Math.exp(-Math.max(dt, 0) * 6))
-      if (part.position.distanceToSquared(target) > 0.000001) this.settled = false
-      else part.position.copy(target)
-      part.rotation.set(-0.32, -0.55, chapter === 2 ? (i - 3) * 0.12 : 0)
-    }
-    this.rings.forEach((ring, index) => {
-      ring.rotation.y += dt * (0.08 + index * 0.025)
-    })
+
+    const alpha = reduced ? 1 : 1 - Math.exp(-Math.max(dt, 0) * 5.5)
+    this.sculpture.quaternion.slerp(this.targetPose, alpha)
+    this.settled = this.sculpture.quaternion.angleTo(this.targetPose) <= 0.001
+    if (this.settled) this.sculpture.quaternion.copy(this.targetPose)
+
     this.root.scale.setScalar(scale)
-    this.offset.set(mobile ? 0 : height * camera.aspect * 0.22, mobile ? height * 0.05 : 0, -5)
-    this.offset.applyQuaternion(camera.quaternion)
+    this.targetPosition.set(
+      mobile ? 0 : height * camera.aspect * 0.22,
+      height * (mobile ? 0.045 : 0.1),
+      -5,
+    )
+    this.offset.copy(this.targetPosition).applyQuaternion(camera.quaternion)
     this.root.position.add(this.offset)
   }
 
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-    this.metal.dispose()
-    this.signal.dispose()
-    this.ringMaterials.forEach((material) => material.dispose())
-    this.rings.length = 0
-    this.parts.length = 0
+    this.ribbonMaterial.dispose()
+    this.seamMaterial.dispose()
+    this.ribbonGeometry.dispose()
+    this.seamGeometry.dispose()
     this.root = null
+    this.sculpture = null
   }
 }

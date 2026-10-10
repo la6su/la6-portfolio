@@ -35,27 +35,37 @@
   outline-offset: 4px;
 }
 
-.jlz-fs-prev,
-.jlz-fs-next {
-  position: absolute;
-  top: 50%;
-  z-index: 5;
-  transform: translateY(-50%);
-}
-
-.jlz-fs-prev {
-  left: 1rem;
-}
-
-.jlz-fs-next {
-  right: 1rem;
-}
-
 /* The BakuCarousel owns slider state; UIkit supplies the cover/flex layout. */
 .jlz-works-slider-controls {
   z-index: 4;
   padding: 0 clamp(1rem, 3.5vw, 4.5rem);
   pointer-events: none;
+}
+
+.jlz-works-focus {
+  position: absolute;
+  z-index: 3;
+  left: clamp(1.25rem, 5vw, 5rem);
+  bottom: clamp(1.25rem, 3.5vh, 3rem);
+  display: grid;
+  gap: 0.22rem;
+  max-width: min(32rem, 40vw);
+  pointer-events: none;
+  text-shadow: 0 1px 18px color-mix(in srgb, var(--jlz-color-bg) 70%, transparent);
+}
+
+.jlz-works-focus__eyebrow,
+.jlz-works-focus__hint {
+  color: var(--jlz-color-text-muted);
+  font: 0.62rem var(--jlz-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.jlz-works-focus__title {
+  color: var(--jlz-color-text);
+  font-size: clamp(1rem, 1.55vw, 1.5rem);
+  line-height: 1.1;
 }
 
 .jlz-works-slider-arrow {
@@ -73,12 +83,18 @@
     height: 1.35rem;
   }
 
-  .jlz-fs-prev,
-  .jlz-fs-next {
-    top: calc(50% + 0.5rem);
-  }
-
   .jlz-works-slider-controls {
     padding: 0 0.75rem;
+  }
+
+  .jlz-works-focus {
+    top: 6.5rem;
+    bottom: auto;
+    left: 1rem;
+    max-width: 54vw;
+  }
+
+  .jlz-works-focus__hint {
+    display: none;
   }
 }

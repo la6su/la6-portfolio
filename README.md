@@ -25,6 +25,17 @@ are emitted at `/blog` and `/blog/<slug>`. Works media includes labelled
 placeholders. The Contact project CTA opens a `mailto:` draft; the site does
 not send or store messages through a backend.
 
+## Self-hosted deployment
+
+The static production build can run as an unprivileged NGINX container behind
+the homelab reverse proxy. From the repository root, build and start it with
+`docker compose -f deploy/compose.yml up --build -d`. The service listens on
+port 8080, serves generated extensionless routes and SPA fallback, and exposes
+`/healthz` for container health checks. Restrict port 8080 to the reverse-proxy
+host in the network firewall; terminate public TLS and configure redirects at
+the reverse proxy. Container startup and the active ingress still need to be
+verified on the deployment host.
+
 ## Quality checks
 
 ```bash

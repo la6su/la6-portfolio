@@ -72,23 +72,6 @@
 .jlz-works-enter {
   color: var(--jlz-color-accent);
 }
-.jlz-works-aperture {
-  position: absolute;
-  top: 30%;
-  left: 49%;
-  width: 41%;
-  height: 38%;
-  z-index: 2;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-}
-.jlz-works-aperture:focus-visible {
-  outline: 2px solid var(--jlz-color-accent);
-  outline-offset: 0.75rem;
-}
 .jlz-works-footnote {
   position: absolute;
   left: 4vw;
@@ -113,7 +96,7 @@
 .jlz-works-archive > span {
   flex-basis: 100%;
 }
-.jlz-works-archive button {
+.jlz-works-archive__link {
   font-size: 0.7rem;
 }
 .jlz-works-entrance {
@@ -156,12 +139,6 @@
   .jlz-works-actions {
     margin-top: 0.75rem;
   }
-  .jlz-works-aperture {
-    top: 35%;
-    left: 7%;
-    width: 86%;
-    height: 27%;
-  }
   .jlz-works-footnote {
     bottom: 6rem;
     font-size: 0.58rem;
@@ -180,6 +157,16 @@
     display: none;
   }
 }
+
+@media (max-width: 639px) {
+  .jlz-works-section .jlz-works-heading {
+    top: 11%;
+  }
+  .jlz-works-section .jlz-works-title {
+    font-size: clamp(3rem, 11vw, 5rem);
+  }
+}
+
 @media (max-height: 650px) and (min-width: 960px) {
   .jlz-works-coordinate {
     top: 4.5rem;
@@ -205,14 +192,58 @@
   font-size: clamp(3.702rem, 6.8vw, 8rem);
   max-width: 10ch;
 }
+.jlz-case-study-page {
+  --jlz-case-accent: var(--jlz-color-accent);
+}
+.jlz-case-chapter .jlz-works-heading {
+  top: 15%;
+  z-index: 4;
+  padding: 0.8rem 1rem 1.1rem;
+  border-left: 2px solid var(--jlz-case-accent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--jlz-color-bg) 96%, transparent),
+    color-mix(in srgb, var(--jlz-color-bg) 80%, transparent) 74%,
+    transparent
+  );
+  backdrop-filter: blur(12px);
+}
 .jlz-case-copy {
-  bottom: 19%;
+  bottom: 17%;
+  z-index: 4;
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+  border-left: 2px solid var(--jlz-case-accent);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 96%, transparent);
+  box-shadow: 0 1rem 3rem color-mix(in srgb, #000 20%, transparent);
+  backdrop-filter: blur(14px);
+}
+.jlz-case-copy .jlz-works-premise {
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  line-height: 1.45;
 }
 .jlz-case-copy .jlz-works-context {
   margin-top: 0.7rem;
 }
+.jlz-case-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+.jlz-case-stack span {
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text-muted);
+  font:
+    0.58rem var(--jlz-font-mono),
+    monospace;
+  letter-spacing: 0.04em;
+}
 .jlz-case-notes {
   margin-top: 1rem;
+  border-top: 1px solid var(--jlz-color-border);
 }
 .jlz-case-notes .uk-accordion-title {
   font-size: 0.8rem;
@@ -257,6 +288,11 @@
   gap: 1rem;
   color: var(--jlz-color-text-muted);
 }
+.jlz-case-proof li + li {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--jlz-color-border);
+}
 .jlz-case-proof strong {
   color: var(--jlz-color-text);
   font-weight: 500;
@@ -264,7 +300,11 @@
 }
 .jlz-case-media {
   margin: 1rem 0 0;
-  max-width: 22rem;
+  width: 100%;
+  max-width: 36rem;
+  overflow: hidden;
+  border: 1px solid var(--jlz-color-border);
+  background: #050505;
 }
 .jlz-case-media img {
   display: block;
@@ -279,21 +319,38 @@
   margin-top: 0.4rem;
 }
 @media (max-width: 959px) {
+  .jlz-case-chapter .jlz-works-heading {
+    top: 13%;
+    left: 1.15rem;
+    width: calc(100% - 2.3rem);
+    padding: 0.7rem 0.8rem 0.9rem;
+  }
+
   .jlz-case-title {
-    font-size: clamp(3rem, 11vw, 5rem);
+    max-width: 11ch;
+    font-size: clamp(2.8rem, 11vw, 4.5rem);
   }
+
   .jlz-case-copy {
-    bottom: 16%;
-    max-height: 26dvh;
+    right: 1.15rem;
+    bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+    left: 1.15rem;
+    width: auto;
+    max-height: min(34dvh, 18rem);
     overflow-y: auto;
+    padding: 0.85rem 0.95rem;
+    overscroll-behavior: contain;
   }
+
   .jlz-case-copy .jlz-works-premise {
     font-size: 0.9rem;
   }
+
   .jlz-case-copy .jlz-works-context {
     display: block;
     font-size: 0.8rem;
   }
+
   .jlz-case-notes .uk-accordion-content {
     max-height: none;
   }

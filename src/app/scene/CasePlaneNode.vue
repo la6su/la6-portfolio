@@ -8,10 +8,12 @@ import {
   createCasePlaneMaterialResources,
 } from '../../Experience/World/CasePlane'
 
-const props = defineProps<{ card: { texture: Texture } }>()
+const props = defineProps<{ card: { texture: Texture }; ribbon?: boolean }>()
 const emit = defineEmits<{ ready: [controller: CasePlane] }>()
 const geometryLease = markRaw(acquireCasePlaneGeometry())
-const resources = markRaw(createCasePlaneMaterialResources(props.card.texture))
+const resources = markRaw(
+  createCasePlaneMaterialResources(props.card.texture, props.ribbon ?? false),
+)
 const mesh = shallowRef<Mesh<PlaneGeometry, MeshBasicNodeMaterial> | null>(null)
 let controller: CasePlane | null = null
 

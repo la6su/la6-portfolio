@@ -18,7 +18,19 @@
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
+import {
+  Fn,
+  positionLocal,
+  sin,
+  cos,
+  smoothstep,
+  uniform,
+  vec3,
+  abs,
+  max,
+  mix,
+  float,
+} from 'three/tsl'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
@@ -26,7 +38,7 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 let sharedGeometry: THREE.PlaneGeometry | null = null
 let sharedGeometryUsers = 0
 
-export interface CasePlaneGeometryLease {
+interface CasePlaneGeometryLease {
   readonly geometry: THREE.PlaneGeometry
   release(): void
 }
@@ -62,9 +74,59 @@ export const CLOTH_PARAMS = {
   wobbleSmoothing: 8.0,
 } as const
 
-export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
+/** Shared space curve for the home Works ribbon. Covers remain flat tiles. */
+export const WORKS_RIBBON_PATH = {
+  spacing: 3.34,
+  cardWidth: 3.05,
+  bandWidth: 0.085,
+  tileSpan: 0.91,
+  elevationA: { frequency: 0.55, amplitude: 0.45 },
+  elevationB: { frequency: 0.23, amplitude: 0.22 },
+  depthA: { frequency: 0.42, amplitude: 1.1 },
+  depthB: { frequency: 0.78, amplitude: 0.16 },
+} as const
+
+/** One shader-driven substrate gives the separate case images a shared path. */
+export function createWorksRibbonMaterialResources() {
+  const reveal = uniform(0)
+  const material = new MeshBasicNodeMaterial({
+    color: 0x0b2026,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    fog: false,
+    toneMapped: false,
+  })
+  material.positionNode = Fn(() => {
+    const along = positionLocal.x.div(WORKS_RIBBON_PATH.spacing)
+    const elevation = sin(along.mul(WORKS_RIBBON_PATH.elevationA.frequency))
+      .mul(WORKS_RIBBON_PATH.elevationA.amplitude)
+      .add(
+        sin(along.mul(WORKS_RIBBON_PATH.elevationB.frequency)).mul(
+          WORKS_RIBBON_PATH.elevationB.amplitude,
+        ),
+      )
+    const depth = sin(along.mul(WORKS_RIBBON_PATH.depthA.frequency))
+      .mul(WORKS_RIBBON_PATH.depthA.amplitude)
+      .add(
+        sin(along.mul(WORKS_RIBBON_PATH.depthB.frequency)).mul(WORKS_RIBBON_PATH.depthB.amplitude),
+      )
+    return vec3(positionLocal.x, positionLocal.y.add(elevation), depth.sub(0.07))
+  })()
+  material.colorNode = Fn(() => {
+    const edge = abs(positionLocal.y)
+    const core = float(1).sub(smoothstep(0.008, 0.034, edge))
+    return mix(vec3(0.008, 0.022, 0.028), vec3(0.025, 0.19, 0.2), core)
+  })()
+  material.opacityNode = Fn(() => reveal.mul(0.58))()
+  return { material, reveal }
+}
+
+export function createCasePlaneMaterialResources(mapTexture: THREE.Texture, ribbonEnabled = false) {
   const time = uniform(0)
   const state = uniform(new THREE.Vector2(0, 0))
+  // x is the tile coordinate along the one continuous path; y blends it in.
+  const ribbon = uniform(new THREE.Vector2(0, 0))
   const material = new MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
@@ -84,13 +146,62 @@ export function createCasePlaneMaterialResources(mapTexture: THREE.Texture) {
     const h2 = sin(local.x.mul(1.8).sub(local.y.mul(1.2)).add(time.mul(1.2)))
     const ripple = h1.add(h2.mul(0.45)).mul(wobble).mul(0.022).mul(clothMask)
     const rippleZ = ripple.mul(0.25)
-    return vec3(local.x, local.y.add(ripple), local.z.add(rippleZ))
+    if (!ribbonEnabled) return vec3(local.x, local.y.add(ripple), local.z.add(rippleZ))
+
+    // Evaluate one shared space curve across every tile. Remove the centerline
+    // and tangent already represented by each mesh transform; the remaining
+    // vertex displacement is the local segment of that continuous ribbon.
+    const tileOffset = local.x.mul(WORKS_RIBBON_PATH.tileSpan)
+    const coordinate = ribbon.x.add(tileOffset)
+    const elevationAt = (position: typeof coordinate) =>
+      sin(position.mul(WORKS_RIBBON_PATH.elevationA.frequency))
+        .mul(WORKS_RIBBON_PATH.elevationA.amplitude)
+        .add(
+          sin(position.mul(WORKS_RIBBON_PATH.elevationB.frequency)).mul(
+            WORKS_RIBBON_PATH.elevationB.amplitude,
+          ),
+        )
+    const depthAt = (position: typeof coordinate) =>
+      sin(position.mul(WORKS_RIBBON_PATH.depthA.frequency))
+        .mul(WORKS_RIBBON_PATH.depthA.amplitude)
+        .add(
+          sin(position.mul(WORKS_RIBBON_PATH.depthB.frequency)).mul(
+            WORKS_RIBBON_PATH.depthB.amplitude,
+          ),
+        )
+    const elevationSlope = cos(ribbon.x.mul(WORKS_RIBBON_PATH.elevationA.frequency))
+      .mul(WORKS_RIBBON_PATH.elevationA.frequency * WORKS_RIBBON_PATH.elevationA.amplitude)
+      .add(
+        cos(ribbon.x.mul(WORKS_RIBBON_PATH.elevationB.frequency)).mul(
+          WORKS_RIBBON_PATH.elevationB.frequency * WORKS_RIBBON_PATH.elevationB.amplitude,
+        ),
+      )
+    const depthSlope = cos(ribbon.x.mul(WORKS_RIBBON_PATH.depthA.frequency))
+      .mul(WORKS_RIBBON_PATH.depthA.frequency * WORKS_RIBBON_PATH.depthA.amplitude)
+      .add(
+        cos(ribbon.x.mul(WORKS_RIBBON_PATH.depthB.frequency)).mul(
+          WORKS_RIBBON_PATH.depthB.frequency * WORKS_RIBBON_PATH.depthB.amplitude,
+        ),
+      )
+    const elevationResidual = elevationAt(coordinate)
+      .sub(elevationAt(ribbon.x))
+      .sub(elevationSlope.mul(tileOffset))
+      .mul(ribbon.y)
+    const depthResidual = depthAt(coordinate)
+      .sub(depthAt(ribbon.x))
+      .sub(depthSlope.mul(tileOffset))
+      .mul(ribbon.y)
+    return vec3(
+      local.x,
+      local.y.add(ripple).add(elevationResidual),
+      local.z.add(rippleZ).add(depthResidual),
+    )
   })()
   material.opacityNode = Fn(() => state.x)()
-  return { material, time, state }
+  return { material, time, state, ribbon }
 }
 
-export type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
+type CasePlaneMaterialResources = ReturnType<typeof createCasePlaneMaterialResources>
 
 export class CasePlane {
   readonly mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>
@@ -106,6 +217,7 @@ export class CasePlane {
   // Per-instance uniform nodes — each material has its own GPU uniform buffer.
   private readonly _timeUni: CasePlaneMaterialResources['time']
   private readonly _stateUni: CasePlaneMaterialResources['state']
+  private readonly _ribbonUni: CasePlaneMaterialResources['ribbon']
 
   constructor(
     mesh: THREE.Mesh<THREE.PlaneGeometry, MeshBasicNodeMaterial>,
@@ -122,6 +234,7 @@ export class CasePlane {
     this._texture = mapTexture
     this._timeUni = resources.time
     this._stateUni = resources.state
+    this._ribbonUni = resources.ribbon
   }
 
   get position(): THREE.Vector3 {
@@ -155,6 +268,11 @@ export class CasePlane {
     this._myReveal = nextReveal
     this._stateUni.value.x = this._myReveal
     this.visible = nextReveal > 0.001
+  }
+
+  setRibbonPath(position: number, strength: number): void {
+    if (this._disposed) return
+    this._ribbonUni.value.set(position, THREE.MathUtils.clamp(strength, 0, 1))
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {

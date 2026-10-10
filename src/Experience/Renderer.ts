@@ -26,19 +26,12 @@ import {
   inspectUnifiedBackend,
 } from '../core/unifiedRenderer'
 
-export type RenderSurface = WebGPURenderer
+type RenderSurface = WebGPURenderer
 
-export interface Viewport {
+interface Viewport {
   width: number
   height: number
   dpr: number
-}
-
-/** WebGPURenderer's device-loss hook is runtime-supported but not declared
- * by the Three type surface used by this project. Keep that narrow extension
- * at the integration boundary instead of weakening the whole renderer. */
-type DeviceLossCapableRenderer = WebGPURenderer & {
-  onDeviceLost?: (info: unknown) => void
 }
 
 /**
@@ -47,7 +40,7 @@ type DeviceLossCapableRenderer = WebGPURenderer & {
  * capability, and recovery instead of constructing another renderer. `mode`
  * names the backend Three initialized.
  */
-export interface AdoptedRenderer {
+interface AdoptedRenderer {
   instance: RenderSurface
   mode: FinalMode
   /** Sync the live instance after a device-loss recovery swap. */
@@ -150,10 +143,12 @@ export class Renderer {
    * Experience handles by closing the scheduler window.
    */
   private attachDeviceLossRecovery(renderer: WebGPURenderer): void {
-    const wg = renderer as DeviceLossCapableRenderer
-    if (typeof wg.onDeviceLost !== 'function') return
-    const orig = wg.onDeviceLost.bind(wg)
-    wg.onDeviceLost = (info: unknown) => {
+    // Three declares `onDeviceLost` and initializes it in the Renderer
+    // constructor, so the hook is always present; the wrapper runs the bounded
+    // recovery first, then defers to Three's own handler for its internal
+    // bookkeeping.
+    const orig = renderer.onDeviceLost.bind(renderer)
+    renderer.onDeviceLost = (info) => {
       if (this._disposed) {
         orig(info)
         return
@@ -180,7 +175,7 @@ export class Renderer {
         orig(info)
         return
       }
-      const recovery = this.recoverFromDeviceLost(info as { api?: string })
+      const recovery = this.recoverFromDeviceLost(info)
       this._recoveryPromise = recovery
       void recovery
         .finally(() => {
@@ -348,7 +343,7 @@ export class Renderer {
     // Fog is managed by SceneCoordinator (per-section fog color + density
     // from WorldConfig). SceneCoordinator creates scene.fog on init and
     // updates it on section change. Do NOT touch scene.fog here — that
-    // would overwrite the per-section fog with a stale envColor value.
+    // would overwrite the per-section fog with stale values.
 
     // Recovery closes the frame window while its replacement pipeline is built.
     const pipeline = this.pipeline

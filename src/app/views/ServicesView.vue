@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// Services route: four story beats, with the console window reserved for the
-// opening proposition and final action rather than repeated page furniture.
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { langFromPath, localizedPath } from '../../core/routeManifest'
+import { rendererAvailable } from '../../core/rendererAvailability'
 import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
@@ -13,13 +12,68 @@ const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
 const blogHref = (path: string): string => localizedPath(langFromPath(route.path), path)
 const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-creativeDirection')
+
+const services = [
+  {
+    id: 'creativeDirection',
+    number: '01',
+    title: 'services.creativeDirection.title',
+    lead: 'services.creativeDirection.lead',
+    result: 'services.creativeDirection.result',
+    capabilities: [
+      'services.creativeDirection.capability1',
+      'services.creativeDirection.capability2',
+      'services.creativeDirection.capability3',
+    ],
+    href: '/blog/glassmorphism-webgpu',
+  },
+  {
+    id: 'interactiveDev',
+    number: '02',
+    title: 'services.interactiveDev.title',
+    lead: 'services.interactiveDev.lead',
+    result: 'services.interactiveDev.result',
+    capabilities: [
+      'services.interactiveDev.capability1',
+      'services.interactiveDev.capability2',
+      'services.interactiveDev.capability3',
+    ],
+    href: '/blog/on-demand-rendering',
+  },
+  {
+    id: 'motionRealtime',
+    number: '03',
+    title: 'services.motionRealtime.title',
+    lead: 'services.motionRealtime.lead',
+    result: 'services.motionRealtime.result',
+    capabilities: [
+      'services.motionRealtime.capability1',
+      'services.motionRealtime.capability2',
+      'services.motionRealtime.capability3',
+    ],
+    href: '/blog/tsl-changes-everything',
+  },
+  {
+    id: 'aiSystems',
+    number: '04',
+    title: 'services.aiSystems.title',
+    lead: 'services.aiSystems.lead',
+    result: 'services.aiSystems.result',
+    capabilities: [
+      'services.aiSystems.capability1',
+      'services.aiSystems.capability2',
+      'services.aiSystems.capability3',
+    ],
+    href: '/blog/on-demand-rendering',
+  },
+]
 </script>
 
 <template>
   <main
     id="spa-content"
-    tabindex="-1"
     ref="rootEl"
+    tabindex="-1"
     role="main"
     class="uk-position-relative"
     data-page-view="content"
@@ -29,284 +83,50 @@ const activeSectionId = useJlzPage('services', () => rootEl.value, 'services-cre
       <ContactFooter mode="content" :active-section-id="activeSectionId" />
       <h1 class="uk-hidden-visually" data-i18n="nav.services">Services</h1>
 
-      <!-- 01 · Creative Direction (start, active) -->
       <section
-        class="jlz-page-section uk-section uk-section-small uk-section-large@m"
-        id="section-services-creativeDirection"
-        data-page-section="services-creativeDirection"
-        :class="{ 'section-active': activeSectionId === 'services-creativeDirection' }"
+        v-for="service in services"
+        :key="service.id"
+        class="jlz-page-section uk-section uk-section-small uk-section-large@m jlz-service-frame"
+        :id="`section-services-${service.id}`"
+        :data-page-section="`services-${service.id}`"
+        :data-service-frame="service.id"
+        :class="{ 'section-active': activeSectionId === `services-${service.id}` }"
       >
-        <div
-          class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
-        >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-            <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="01"
-              >01</span
-            >
-            <h2
-              class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
-              data-i18n="services.creativeDirection.title"
-            >
-              Creative Direction
-            </h2>
-            <p class="uk-text-lead uk-margin-small-top" data-i18n="services.creativeDirection.lead">
-              Start with the business, its audience and its data.
+        <div class="uk-container uk-container-expand uk-padding jlz-service-room">
+          <header class="jlz-service-heading">
+            <h2 class="studio-title" :data-i18n="service.title">Service</h2>
+            <p class="jlz-service-lead" :data-i18n="service.lead">
+              Clear direction. Built to perform.
             </p>
-          </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
-              <div>
-                <span aria-hidden="true">></span>
-              </div>
-              <div>
-                <div class="jlz-console-card jlz-service-console">
-                  <div class="jlz-console-card__chrome" aria-hidden="true">
-                    <span class="jlz-console-card__index uk-text-meta uk-text-uppercase"
-                      >01 / 04</span
-                    >
-                  </div>
-                  <p
-                    class="jlz-service-console__statement uk-text-lead uk-margin-remove"
-                    data-i18n="services.creativeDirection.statement"
-                  >
-                    Define the goal. Direct the story, design and technology around it.
-                  </p>
-                  <ul class="jlz-service-spec uk-list uk-list-divider uk-margin-medium-top">
-                    <li>
-                      <span>01</span><strong>Position</strong
-                      ><small>point of view, audience, signal</small>
-                    </li>
-                    <li>
-                      <span>02</span><strong>System</strong
-                      ><small>type, color, interaction rules</small>
-                    </li>
-                  </ul>
-                  <a
-                    :href="blogHref('/blog/glassmorphism-webgpu')"
-                    class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle uk-margin-medium-top"
-                  >
-                    <span
-                      class="jlz-service-explore__dot uk-display-inline-block"
-                      aria-hidden="true"
-                    ></span>
-                    <span data-i18n="common.explore">Explore</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          </header>
 
-      <!-- 02 · Development -->
-      <section
-        class="jlz-page-section uk-section uk-section-small uk-section-large@m"
-        id="section-services-interactiveDev"
-        data-page-section="services-interactiveDev"
-        :class="{ 'section-active': activeSectionId === 'services-interactiveDev' }"
-      >
-        <div
-          class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
-        >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-            <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="02"
-              >02</span
-            >
-            <h2
-              class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
-              data-i18n="services.interactiveDev.title"
-            >
-              Development
-            </h2>
-            <p class="uk-text-lead uk-margin-small-top" data-i18n="services.interactiveDev.lead">
-              Fast to ship, built around real tasks.
-            </p>
-          </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
-              <div>
-                <span aria-hidden="true">></span>
-              </div>
-              <div>
-                <div class="jlz-service-runtime">
-                  <div
-                    class="jlz-service-runtime__field"
-                    role="img"
-                    aria-label="A responsive signal travelling through a realtime scene"
-                    data-i18n-aria-label="services.signalDiagram"
-                    uk-scrollspy="cls: uk-animation-scale-up; repeat: true"
-                  >
-                    <svg viewBox="0 0 320 180" aria-hidden="true" focusable="false">
-                      <path
-                        class="jlz-service-runtime__trace"
-                        d="M8 128C54 128 55 48 102 48s48 84 94 84 43-76 116-76"
-                      />
-                      <path
-                        class="jlz-service-runtime__signal"
-                        d="M8 128C54 128 55 48 102 48s48 84 94 84 43-76 116-76"
-                      />
-                    </svg>
-                    <span class="jlz-service-runtime__node jlz-service-runtime__node--start"></span>
-                    <span
-                      class="jlz-service-runtime__node jlz-service-runtime__node--middle"
-                    ></span>
-                    <span class="jlz-service-runtime__node jlz-service-runtime__node--end"></span>
-                  </div>
-                  <p
-                    class="jlz-service-runtime__caption uk-text-meta uk-margin-remove"
-                    data-i18n="services.interactiveDev.caption"
-                    uk-scrollspy="cls: uk-animation-slide-bottom-small; repeat: true"
-                  >
-                    Responsive input. Clear journeys. Measured performance.
-                  </p>
-                  <p class="jlz-service-runtime__detail" data-i18n="services.interactiveDev.detail">
-                    One scene, one demand signal, one measurable reason to move.
-                  </p>
-                  <div uk-scrollspy="cls: uk-animation-slide-bottom-small; delay: 90; repeat: true">
-                    <a
-                      :href="blogHref('/blog/on-demand-rendering')"
-                      class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
-                    >
-                      <span
-                        class="jlz-service-explore__dot uk-display-inline-block"
-                        aria-hidden="true"
-                      ></span>
-                      <span data-i18n="common.explore">Explore</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
+          <div class="jlz-service-dossier">
+            <div class="jlz-service-dossier__top">
+              <span :id="`services-deliverables-${service.id}`" data-i18n="services.deliverables">
+                WHAT WE DO
+              </span>
+              <span>{{ service.number }} <i>/ 04</i></span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 03 · Motion -->
-      <section
-        class="jlz-page-section uk-section uk-section-small uk-section-large@m"
-        id="section-services-motionRealtime"
-        data-page-section="services-motionRealtime"
-        :class="{ 'section-active': activeSectionId === 'services-motionRealtime' }"
-      >
-        <div
-          class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
-        >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-            <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="03"
-              >03</span
-            >
-            <h2
-              class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
-              data-i18n="services.motionRealtime.title"
-            >
-              Motion
-            </h2>
-            <p class="uk-text-lead uk-margin-small-top" data-i18n="services.motionRealtime.lead">
-              Show how the product works and why it's worth choosing.
+            <p class="jlz-service-result" :data-i18n="service.result">
+              A clear result, made useful.
             </p>
-          </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
-              <div>
-                <span aria-hidden="true">></span>
-              </div>
-              <div>
-                <div class="jlz-service-motion">
-                  <div
-                    class="jlz-service-motion__words"
-                    aria-label="Motion sequence"
-                    data-i18n-aria-label="services.motionSequence"
-                    uk-scrollspy="target: > span; cls: uk-animation-slide-bottom-small; delay: 110; repeat: true"
-                  >
-                    <span data-i18n="services.motionRealtime.word1">Context</span>
-                    <span data-i18n="services.motionRealtime.word2">Impulse</span>
-                    <span data-i18n="services.motionRealtime.word3">Calm</span>
-                  </div>
-                  <p class="jlz-service-motion__detail" data-i18n="services.motionRealtime.detail">
-                    Transitions are authored as states: context, impulse, calm — each settling on
-                    purpose.
-                  </p>
-                  <div uk-scrollspy="cls: uk-animation-slide-left-small; delay: 120; repeat: true">
-                    <a
-                      :href="blogHref('/blog/tsl-changes-everything')"
-                      class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
-                    >
-                      <span
-                        class="jlz-service-explore__dot uk-display-inline-block"
-                        aria-hidden="true"
-                      ></span>
-                      <span data-i18n="common.explore">Explore</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 04 · AI & automation -->
-      <section
-        class="jlz-page-section uk-section uk-section-small uk-section-large@m"
-        id="section-services-aiSystems"
-        data-page-section="services-aiSystems"
-        :class="{ 'section-active': activeSectionId === 'services-aiSystems' }"
-      >
-        <div
-          class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1"
-        >
-          <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-            <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="04"
-              >04</span
+            <ul
+              class="jlz-service-capabilities"
+              :aria-labelledby="`services-deliverables-${service.id}`"
             >
-            <h2
-              class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
-              data-i18n="services.aiSystems.title"
+              <li v-for="(key, index) in service.capabilities" :key="key">
+                <span>0{{ index + 1 }}</span
+                ><b :data-i18n="key">Capability</b>
+              </li>
+            </ul>
+            <a
+              v-if="!rendererAvailable"
+              :href="blogHref(service.href)"
+              class="jlz-service-fallback"
+              data-i18n="common.explore"
             >
-              AI & automation
-            </h2>
-            <p class="uk-text-lead uk-margin-small-top" data-i18n="services.aiSystems.lead">
-              Automate the routine: content, handoffs and publishing.
-            </p>
-          </div>
-          <div class="jlz-section-bottom">
-            <div class="jlz-cinematic-shell">
-              <div>
-                <span aria-hidden="true">></span>
-              </div>
-              <div>
-                <div class="jlz-console-card jlz-service-console jlz-service-console--cta">
-                  <div class="jlz-console-card__chrome" aria-hidden="true">
-                    <span class="jlz-console-card__index uk-text-meta uk-text-uppercase"
-                      >04 / 04</span
-                    >
-                  </div>
-                  <p
-                    class="jlz-service-console__statement uk-text-lead uk-margin-remove"
-                    data-i18n="services.aiSystems.statement"
-                  >
-                    Shorten the path from idea to delivery. Keep people in control of important
-                    decisions.
-                  </p>
-                  <p class="jlz-service-console__note">
-                    Brief → prototype → measured scene → handoff.
-                  </p>
-                  <a
-                    href="mailto:hello@justlovejazz.com?subject=Project%20brief"
-                    class="uk-button uk-button-primary uk-margin-medium-top"
-                    data-i18n="services.aiSystems.action"
-                  >
-                    Start a project
-                  </a>
-                  <p
-                    class="jlz-service-console__note uk-text-meta"
-                    data-i18n="services.aiSystems.note"
-                  >
-                    A short brief is enough to begin the conversation.
-                  </p>
-                </div>
-              </div>
-            </div>
+              Explore
+            </a>
           </div>
         </div>
       </section>

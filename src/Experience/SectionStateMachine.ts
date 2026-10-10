@@ -40,7 +40,7 @@ export class SectionStateMachine {
   /** Build the Section instances for the configs beginRoute loaded. */
   public buildSections(): void {
     this._configs.forEach((config, index) => {
-      const section = new Section(config, index)
+      const section = new Section(config)
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
         section.forceState(SectionState.VIEWING)
@@ -63,8 +63,7 @@ export class SectionStateMachine {
   }
 
   /** Scroll-driven state thresholds (Junni: trigger on entering/leaving
-   *  scroll ranges). The 0.1/0.7 boundaries and the 0.8/0.5 deadline
-   *  durations are pinned by SceneCoordinator.scrollStates.test.ts. */
+   *  scroll ranges): 0.1/0.7 boundaries, 0.8/0.5 deadline durations. */
   public applyScrollStates(fromSec: Section, toSec: Section, t: number, reduced: boolean): void {
     if (fromSec.state === SectionState.READY) {
       fromSec.switchState(SectionState.VIEWING, 0.8, reduced)

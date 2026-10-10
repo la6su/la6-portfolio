@@ -155,3 +155,118 @@ test('SceneHost releases declared owners before disposing its renderer', async (
   }
   expect(pageErrors).toEqual([])
 })
+
+test('A throwing sync disposer is isolated and teardown completes', async ({ page }) => {
+  const pageErrors: string[] = []
+  const teardownFailures: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('teardown failed')) {
+      teardownFailures.push(message.text())
+    }
+  })
+  await page.addInitScript(() => {
+    window.__jlzTestLifecycleTrace = []
+    window.__jlzTestTeardownFaults = {
+      ground: () => {
+        throw new Error('fault: ground disposer threw')
+      },
+    }
+  })
+  await page.goto('/contact')
+  await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, {
+    timeout: 60_000,
+  })
+  await page.waitForFunction(() => typeof window.__jlzRuntimeDestroy === 'function')
+
+  // The faulted release must not reject or hang the public teardown promise.
+  await page.evaluate(() => window.__jlzRuntimeDestroy?.())
+  await page.evaluate(() => window.__jlzTestUnmountVueApp?.())
+  // The deferred backend disposal runs with the SceneHost unmount.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const trace = window.__jlzTestLifecycleTrace ?? []
+        return (
+          trace.includes('renderer:backend-disposed') &&
+          trace.includes('scene-host:renderer-disposed') &&
+          trace.includes('experience:async-scene-teardown-complete')
+        )
+      }),
+    )
+    .toBe(true)
+  const trace = await page.evaluate(() => window.__jlzTestLifecycleTrace ?? [])
+  const backendDispose = trace.lastIndexOf('renderer:backend-disposed')
+  const rendererDispose = trace.indexOf('scene-host:renderer-disposed')
+  const asyncSceneTeardown = trace.indexOf('experience:async-scene-teardown-complete')
+  // Owners released after the fault still ran, in the documented order.
+  expect(backendDispose).toBeGreaterThanOrEqual(0)
+  expect(asyncSceneTeardown).toBeGreaterThanOrEqual(0)
+  for (const stage of ['ContactTypographyStage', 'ContactCyprusStage', 'ContactHaloStage']) {
+    const released = trace.indexOf(`scene-stage:${stage}:released`)
+    expect(released, `${stage} should still finish disposal`).toBeGreaterThanOrEqual(0)
+    expect(released, `${stage} should release before backend disposal`).toBeLessThan(backendDispose)
+  }
+  expect(asyncSceneTeardown).toBeLessThan(rendererDispose)
+  // The fault surfaced once, named, through the release error channel.
+  const groundFailures = teardownFailures.filter((line) => line.includes('[Experience] ground'))
+  expect(groundFailures).toHaveLength(1)
+  expect(groundFailures[0]).toContain('fault: ground disposer threw')
+  expect(pageErrors).toEqual([])
+})
+
+test('A rejecting async scene-owner teardown is isolated and completes', async ({ page }) => {
+  const pageErrors: string[] = []
+  const teardownFailures: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('teardown failed')) {
+      teardownFailures.push(message.text())
+    }
+  })
+  await page.addInitScript(() => {
+    window.__jlzTestLifecycleTrace = []
+    window.__jlzTestTeardownFaults = {
+      showreel: () => Promise.reject(new Error('fault: showreel teardown rejected')),
+    }
+  })
+  await page.goto('/contact')
+  await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, {
+    timeout: 60_000,
+  })
+  await page.waitForFunction(() => typeof window.__jlzRuntimeDestroy === 'function')
+
+  // The rejected async owner flows through allSettled; the public teardown
+  // promise still resolves and the remaining async owners finish.
+  await page.evaluate(() => window.__jlzRuntimeDestroy?.())
+  await page.evaluate(() => window.__jlzTestUnmountVueApp?.())
+  // The deferred backend disposal runs with the SceneHost unmount.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const trace = window.__jlzTestLifecycleTrace ?? []
+        return (
+          trace.includes('renderer:backend-disposed') &&
+          trace.includes('scene-host:renderer-disposed') &&
+          trace.includes('experience:async-scene-teardown-complete')
+        )
+      }),
+    )
+    .toBe(true)
+  const trace = await page.evaluate(() => window.__jlzTestLifecycleTrace ?? [])
+  expect(trace).toContain('renderer:backend-disposed')
+  expect(trace).toContain('experience:async-scene-teardown-complete')
+  const backendDispose = trace.lastIndexOf('renderer:backend-disposed')
+  for (const stage of ['ContactTypographyStage', 'ContactCyprusStage', 'ContactHaloStage']) {
+    const released = trace.indexOf(`scene-stage:${stage}:released`)
+    expect(released, `${stage} should still finish disposal`).toBeGreaterThanOrEqual(0)
+    expect(released, `${stage} should release before backend disposal`).toBeLessThan(backendDispose)
+  }
+  // The rejection surfaced once through the isolated async error channel.
+  const asyncFailures = teardownFailures.filter((line) =>
+    line.includes('[Experience] asynchronous scene owner'),
+  )
+  expect(asyncFailures).toHaveLength(1)
+  expect(asyncFailures[0]).toContain('fault: showreel teardown rejected')
+  expect(pageErrors).toEqual([])
+})

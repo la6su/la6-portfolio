@@ -84,11 +84,10 @@ function initLangToggle(): void {
 }
 
 /**
- * Wire both splash config toggles. Exported for the splash-toggles lifecycle
- * test; the bootstrap calls it before any async work so the toggles work
- * while the 3D scene is still loading.
+ * Wire both splash config toggles. The bootstrap calls it before any
+ * async work so the toggles work while the 3D scene is still loading.
  */
-export function initSplashToggles(): void {
+function initSplashToggles(): void {
   initSoundToggle()
   initLangToggle()
 }

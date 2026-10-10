@@ -19,7 +19,7 @@ onBeforeUnmount(() => {
     :args="[stage.geometry, stage.material, stage.count]"
     :visible="stage.visible"
     name="particles"
-    :frustum-culled="false"
+    :frustum-culled="true"
     :dispose="null"
   />
 </template>

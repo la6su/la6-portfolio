@@ -7,7 +7,7 @@ const worksOwners = vi.hoisted(() => ({
   ownedTextures: [{ dispose: vi.fn() }],
 }))
 const createWorksSection = vi.hoisted(() => vi.fn(() => worksOwners))
-vi.mock('./WorksSection', () => ({ createWorksSection }))
+vi.mock('../../../../src/Experience/Scene/WorksSection', () => ({ createWorksSection }))
 
 import { SectionGroups } from '../../../../src/Experience/Scene/SectionGroups'
 import {

@@ -3,8 +3,8 @@
 // `getLang()` and `t(key)` are pull-based reads. The current public URL owns
 // the locale; `toggleLang()` publishes `jlz:lang-change` so consumers can
 // re-render scene textures, copy, and metadata while the router changes URL.
-// It is already unit-locked (`src/__tests__/i18n.test.ts`), including the
-// EN/RU dictionary parity guard.
+// There is no dedicated i18n unit test; behavior is exercised through the
+// app bootstrap and route suites.
 //
 // Translation system: t(key) returns the translated string for the current
 // language. data-i18n attributes on elements auto-translate on load, on
@@ -28,7 +28,7 @@
 import { eventBus } from './EventBus'
 import { langFromPath } from './routeManifest'
 
-export type Lang = 'EN' | 'RU'
+type Lang = 'EN' | 'RU'
 
 // ── Translation dictionaries ──
 /** Complete EN/RU content data. Exported for the parity regression check. */
@@ -63,6 +63,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.routes': 'Portfolio routes',
     'nav.goToSection': 'Go to section',
     'nav.section': 'Section',
+    'manifesto.protocolLabel': 'Working protocol',
+    'lab.run': 'Run /',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Menu',
@@ -77,6 +79,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Common CTAs
+    'launcher.reel': 'Reel',
+    'launcher.explore': 'Explore',
+    'launcher.contact': 'Contact',
     'common.explore': 'Explore',
     'common.close': 'Close',
     'common.closeContactFooter': 'Close contact footer',
@@ -85,6 +90,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.toggleSound': 'Toggle sound',
     'common.skipToContent': 'Skip to content',
     'common.fullscreenViewer': 'Fullscreen project viewer',
+    'common.selectedProject': 'Selected project',
+    'common.projectPresentation': 'Project presentation',
+    'common.exploreCase': 'Explore case study',
     'common.previous': 'Previous',
     'common.next': 'Next',
 
@@ -105,6 +113,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.works.title': 'Works',
     'home.previousWork': 'Previous work',
     'home.nextWork': 'Next work',
+    'home.works.openHint': 'Select a frame to open the case',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Manifesto',
@@ -118,30 +127,33 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Home — lab
 
     // Services page
-    'services.creativeDirection.title': 'Creative Direction',
-    'services.creativeDirection.lead': 'Start with the business, its audience and its data.',
-    'services.creativeDirection.statement':
-      'Define the goal. Direct the story, design and technology around it.',
-    'services.interactiveDev.title': 'Development',
-    'services.interactiveDev.lead': 'Fast to ship, built around real tasks.',
-    'services.interactiveDev.caption': 'Responsive input. Clear journeys. Measured performance.',
-    'services.interactiveDev.detail':
-      'One scene, one demand signal, one measurable reason to move.',
-    'services.signalDiagram': 'A responsive signal travelling through a realtime scene',
-    'services.motionSequence': 'Motion sequence',
-    'services.motionRealtime.title': 'Motion',
-    'services.motionRealtime.lead': "Show how the product works and why it's worth choosing.",
-    'services.motionRealtime.word1': 'Context',
-    'services.motionRealtime.word2': 'Impulse',
-    'services.motionRealtime.word3': 'Calm',
-    'services.motionRealtime.detail':
-      'Transitions are authored as states: context, impulse, calm — each settling on purpose.',
-    'services.aiSystems.title': 'AI & automation',
-    'services.aiSystems.lead': 'Automate the routine: content, handoffs and publishing.',
-    'services.aiSystems.statement':
-      'Shorten the path from idea to delivery. Keep people in control of important decisions.',
-    'services.aiSystems.action': 'Start a project',
-    'services.aiSystems.note': 'A short brief is enough to begin the conversation.',
+    'services.deliverables': 'WHAT WE DO',
+    'services.creativeDirection.title': 'Find the signal.',
+    'services.creativeDirection.lead': 'A clear position makes every design decision count.',
+    'services.creativeDirection.result':
+      'A brand people recognize. A team that moves with clarity.',
+    'services.creativeDirection.capability1': 'Positioning',
+    'services.creativeDirection.capability2': 'Art direction',
+    'services.creativeDirection.capability3': 'Design systems',
+    'services.interactiveDev.title': 'Solve real problems.',
+    'services.interactiveDev.lead':
+      'Fast, accessible digital products that turn intent into action.',
+    'services.interactiveDev.result': 'A useful experience, ready to grow with the business.',
+    'services.interactiveDev.capability1': 'Product design',
+    'services.interactiveDev.capability2': 'Web development',
+    'services.interactiveDev.capability3': 'Performance',
+    'services.motionRealtime.title': 'Make complexity feel simple.',
+    'services.motionRealtime.lead': '3D and motion make the value clear in the first few seconds.',
+    'services.motionRealtime.result': 'Complex ideas made tangible, memorable and easy to explore.',
+    'services.motionRealtime.capability1': '3D storytelling',
+    'services.motionRealtime.capability2': 'Realtime graphics',
+    'services.motionRealtime.capability3': 'Interface motion',
+    'services.aiSystems.title': 'Make time for good work.',
+    'services.aiSystems.lead': 'Automate repeatable work. Keep people in control.',
+    'services.aiSystems.result': 'Less manual work. More time for decisions that matter.',
+    'services.aiSystems.capability1': 'AI workflows',
+    'services.aiSystems.capability2': 'Content pipelines',
+    'services.aiSystems.capability3': 'Integrations',
 
     // Works page — section headers (project names stay English — proper nouns)
     'works.observatory': 'An observatory of ideas.',
@@ -164,24 +176,37 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Pro193: an online store for tall men, centred on fit, clothing and a clear path to product.',
     'works.enterRooms': 'Explore the four rooms',
     'works.archiveLabel': 'Project archive',
-    'works.section1.title': 'Motion & CG',
-    'works.section2.title': 'Motion & CG',
-    'works.section3.title': 'Product website',
-    'works.section4.title': 'E-commerce',
 
-    // Manifesto page
-    'manifesto.purpose.title': 'Purpose',
-    'manifesto.purpose.lead': "We don't build what everyone builds.",
-    'manifesto.purpose.desc1': 'We solve different problems.',
-    'manifesto.purpose.desc2': 'We improve experience and understand the pain.',
-    'manifesto.clarity.title': 'Clarity',
-    'manifesto.clarity.lead': 'Clean structure.',
-    'manifesto.clarity.desc1': 'Clear logic.',
-    'manifesto.clarity.desc2': 'No noise.',
-    'manifesto.emotion.title': 'Emotion',
-    'manifesto.emotion.lead': 'We use motion, light and interaction to create a sense of presence.',
-    'manifesto.simplicity.title': 'Simplicity',
-    'manifesto.simplicity.lead': 'We strive for minimalism — but not emptiness.',
+    // Manifesto page: decisions and checks, not abstract promises.
+    'manifesto.pageTitle': 'How we work',
+    'manifesto.sectionLabel': 'FIELD NOTES / STUDIO PRACTICE',
+    'manifesto.ruleLabel': 'DECISION RULE',
+    'manifesto.practiceLabel': 'IN PRACTICE',
+    'manifesto.checkLabel': 'WE CHECK',
+    'manifesto.friction.title': 'Remove the friction.',
+    'manifesto.friction.lead': 'Turn hesitation into the next clear step.',
+    'manifesto.friction.rule': 'Make the best action the easiest one.',
+    'manifesto.friction.practice': 'Find the pause. Remove the obstacle.',
+    'manifesto.friction.check': 'Can a first-time visitor finish unaided?',
+    'manifesto.friction.link': 'Explore our services',
+    'manifesto.clarity.title': 'Make the next step obvious.',
+    'manifesto.clarity.lead': 'Clarity earns trust at every interaction.',
+    'manifesto.clarity.rule': 'Show what happened and what comes next.',
+    'manifesto.clarity.practice': 'Name loading, success, and failure.',
+    'manifesto.clarity.check': 'No guesswork. No color-only signals.',
+    'manifesto.clarity.link': 'Read our rendering notes',
+    'manifesto.motion.title': 'Make motion mean something.',
+    'manifesto.motion.lead': 'Bring interfaces to life without slowing people down.',
+    'manifesto.motion.rule': 'Animate change, focus, and feedback.',
+    'manifesto.motion.practice': 'Keep feedback close. Respect reduced motion.',
+    'manifesto.motion.check': 'Still clear with motion off?',
+    'manifesto.motion.link': 'Explore realtime experiments',
+    'manifesto.complexity.title': 'Make complexity earn its place.',
+    'manifesto.complexity.lead': 'Use 3D and AI where they move results forward.',
+    'manifesto.complexity.rule': 'Every effect must improve a choice or task.',
+    'manifesto.complexity.practice': 'Start lean. Add depth when it pays off.',
+    'manifesto.complexity.check': 'Useful on mobile and without a GPU?',
+    'manifesto.complexity.link': 'See how we work',
 
     // Lab page
     'lab.shaderLab.title': 'Shader Lab',
@@ -240,7 +265,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Selected projects in design, motion and development. Explore the intent, decisions and materials behind each case.',
     'meta.manifesto.title': 'Manifesto — JUSTLOVEJAZZ',
     'meta.manifesto.description':
-      'Purpose, clarity, emotion, simplicity. The principles that guide our work.',
+      'Four principles for clearer digital experiences: remove friction, make the next step obvious, give motion meaning and make complexity earn its place.',
     'meta.lab.title': 'Lab — JUSTLOVEJAZZ',
     'meta.lab.description':
       'Experiments in shaders, interactive interfaces and realtime 3D. A place to test ideas for future digital experiences.',
@@ -279,6 +304,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.routes': 'Разделы портфолио',
     'nav.goToSection': 'Перейти к разделу',
     'nav.section': 'Раздел',
+    'manifesto.protocolLabel': 'Принцип работы',
+    'lab.run': 'Запуск /',
 
     // Menu overlay (RU)
     'menu.navigate': 'Меню',
@@ -294,6 +321,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Lab section (RU)
     // Common CTAs
+    'launcher.reel': 'Ролик',
+    'launcher.explore': 'Открыть',
+    'launcher.contact': 'Контакт',
     'common.explore': 'Исследовать',
     'common.close': 'Закрыть',
     'common.closeContactFooter': 'Закрыть контакты',
@@ -302,6 +332,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'common.toggleSound': 'Переключить звук',
     'common.skipToContent': 'Перейти к содержимому',
     'common.fullscreenViewer': 'Полноэкранный просмотр проекта',
+    'common.selectedProject': 'Выбранный проект',
+    'common.projectPresentation': 'Презентация проекта',
+    'common.exploreCase': 'Перейти к кейсу',
     'common.previous': 'Предыдущий проект',
     'common.next': 'Следующий проект',
 
@@ -322,6 +355,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.works.title': 'Работы',
     'home.previousWork': 'Предыдущая работа',
     'home.nextWork': 'Следующая работа',
+    'home.works.openHint': 'Выберите кадр, чтобы открыть кейс',
 
     // Home — contact (Manifesto face)
     'home.manifesto.title': 'Манифест',
@@ -335,31 +369,31 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Home — lab
 
     // Services page
-    'services.creativeDirection.title': 'Креатив',
-    'services.creativeDirection.lead': 'Начать с бизнеса, его аудитории и данных.',
-    'services.creativeDirection.statement':
-      'Определить цель. Связать с ней историю, дизайн и технологии.',
-    'services.interactiveDev.title': 'Разработка',
-    'services.interactiveDev.lead': 'Быстрый запуск — и фокус на реальных задачах.',
-    'services.interactiveDev.caption':
-      'Быстрый отклик. Понятный путь. Измеримая производительность.',
-    'services.interactiveDev.detail':
-      'Одна сцена, один сигнал спроса, одна измеримая причина двигаться.',
-    'services.signalDiagram': 'Отзывчивый сигнал в интерактивной сцене реального времени',
-    'services.motionSequence': 'Последовательность движения',
-    'services.motionRealtime.title': 'Моушн',
-    'services.motionRealtime.lead': 'Показать, как работает продукт и почему его выбирают.',
-    'services.motionRealtime.word1': 'Контекст',
-    'services.motionRealtime.word2': 'Импульс',
-    'services.motionRealtime.word3': 'Покой',
-    'services.motionRealtime.detail':
-      'Транзишены собраны как состояния: контекст, импульс, покой — каждое оседает осознанно.',
-    'services.aiSystems.title': 'AI и автоматизация',
-    'services.aiSystems.lead': 'Автоматизируем рутину: контент, передачи и публикацию.',
-    'services.aiSystems.statement':
-      'Сократить путь от идеи до результата. Сохранить контроль человека над важными решениями.',
-    'services.aiSystems.action': 'Начать проект',
-    'services.aiSystems.note': 'Для начала разговора достаточно короткого брифа.',
+    'services.deliverables': 'ЧТО ДЕЛАЕМ',
+    'services.creativeDirection.title': 'Находим главное.',
+    'services.creativeDirection.lead': 'Ясное позиционирование задаёт смысл каждому решению.',
+    'services.creativeDirection.result': 'Узнаваемый бренд. Команда, которая движется уверенно.',
+    'services.creativeDirection.capability1': 'Позиционирование',
+    'services.creativeDirection.capability2': 'Арт-дирекшн',
+    'services.creativeDirection.capability3': 'Дизайн-системы',
+    'services.interactiveDev.title': 'Решаем задачи.',
+    'services.interactiveDev.lead': 'Быстрые цифровые продукты, которые помогают действовать.',
+    'services.interactiveDev.result': 'Полезный опыт, готовый расти вместе с бизнесом.',
+    'services.interactiveDev.capability1': 'Дизайн продукта',
+    'services.interactiveDev.capability2': 'Веб-разработка',
+    'services.interactiveDev.capability3': 'Производительность',
+    'services.motionRealtime.title': 'Проясняем сложное.',
+    'services.motionRealtime.lead': '3D и анимация показывают ценность за первые секунды.',
+    'services.motionRealtime.result': 'Сложные идеи становятся наглядными и запоминаются.',
+    'services.motionRealtime.capability1': '3D-истории',
+    'services.motionRealtime.capability2': 'Графика реального времени',
+    'services.motionRealtime.capability3': 'Анимация интерфейсов',
+    'services.aiSystems.title': 'Освобождаем время.',
+    'services.aiSystems.lead': 'Автоматизируем рутину, сохраняя контроль за человеком.',
+    'services.aiSystems.result': 'Меньше ручной работы. Больше времени на важные решения.',
+    'services.aiSystems.capability1': 'AI-процессы',
+    'services.aiSystems.capability2': 'Контент-пайплайны',
+    'services.aiSystems.capability3': 'Интеграции',
 
     // Works page — section headers
     'works.observatory': 'Обсерватория идей.',
@@ -381,25 +415,37 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Pro193: интернет-магазин для высоких мужчин, построенный вокруг посадки, вещей и ясного выбора.',
     'works.enterRooms': 'Войти в четыре комнаты',
     'works.archiveLabel': 'Архив проектов',
-    'works.section1.title': 'Моушн и CG',
-    'works.section2.title': 'Моушн и CG',
-    'works.section3.title': 'Продуктовый сайт',
-    'works.section4.title': 'E-commerce',
 
-    // Manifesto page
-    'manifesto.purpose.title': 'Цель',
-    'manifesto.purpose.lead': 'Мы не делаем то, что делают все.',
-    'manifesto.purpose.desc1': 'Мы решаем другие задачи.',
-    'manifesto.purpose.desc2': 'Мы улучшаем опыт и понимаем боль.',
-    'manifesto.clarity.title': 'Ясность',
-    'manifesto.clarity.lead': 'Чистая структура.',
-    'manifesto.clarity.desc1': 'Чёткая логика.',
-    'manifesto.clarity.desc2': 'Без шума.',
-    'manifesto.emotion.title': 'Эмоция',
-    'manifesto.emotion.lead':
-      'Мы используем движение, свет и взаимодействие, чтобы создать чувство присутствия.',
-    'manifesto.simplicity.title': 'Простота',
-    'manifesto.simplicity.lead': 'Мы стремимся к минимализму — но не к пустоте.',
+    // Manifesto page: decisions and checks, not abstract promises.
+    'manifesto.pageTitle': 'Принципы нашей работы',
+    'manifesto.sectionLabel': 'ЗАМЕТКИ / ПРАКТИКА СТУДИИ',
+    'manifesto.ruleLabel': 'ПРАВИЛО РЕШЕНИЯ',
+    'manifesto.practiceLabel': 'НА ПРАКТИКЕ',
+    'manifesto.checkLabel': 'ПРОВЕРЯЕМ',
+    'manifesto.friction.title': 'Убираем трение.',
+    'manifesto.friction.lead': 'Превращаем заминку в понятный следующий шаг.',
+    'manifesto.friction.rule': 'Лучшее действие — самое простое.',
+    'manifesto.friction.practice': 'Находим паузу. Убираем препятствие.',
+    'manifesto.friction.check': 'Новый посетитель справится без подсказки?',
+    'manifesto.friction.link': 'Наши услуги',
+    'manifesto.clarity.title': 'Следующий шаг очевиден.',
+    'manifesto.clarity.lead': 'Ясность укрепляет доверие при каждом действии.',
+    'manifesto.clarity.rule': 'Показываем, что произошло и что дальше.',
+    'manifesto.clarity.practice': 'Обозначаем загрузку, успех и ошибку.',
+    'manifesto.clarity.check': 'Без догадок. Не только цветом.',
+    'manifesto.clarity.link': 'Заметки о рендеринге',
+    'manifesto.motion.title': 'Движение со смыслом.',
+    'manifesto.motion.lead': 'Добавляем жизни, не заставляя ждать.',
+    'manifesto.motion.rule': 'Анимируем изменение, фокус и отклик.',
+    'manifesto.motion.practice': 'Отклик рядом с действием. Уважаем настройку «меньше движения».',
+    'manifesto.motion.check': 'Всё ещё понятно без анимации?',
+    'manifesto.motion.link': 'Эксперименты в реальном времени',
+    'manifesto.complexity.title': 'Сложность должна окупаться.',
+    'manifesto.complexity.lead': '3D и AI должны двигать результат вперёд.',
+    'manifesto.complexity.rule': 'Каждый эффект проясняет выбор или ускоряет задачу.',
+    'manifesto.complexity.practice': 'Начинаем просто. Углубляем, когда есть отдача.',
+    'manifesto.complexity.check': 'Полезно на телефоне и без GPU?',
+    'manifesto.complexity.link': 'Как мы работаем',
 
     // Lab page
     'lab.shaderLab.title': 'Шейдерная лаборатория',
@@ -458,7 +504,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
       'Избранные проекты в дизайне, моушне и разработке. Задачи, решения и материалы каждого кейса.',
     'meta.manifesto.title': 'Манифест — JUSTLOVEJAZZ',
     'meta.manifesto.description':
-      'Цель, ясность, эмоция, простота. Принципы, направляющие нашу работу.',
+      'Четыре принципа ясного цифрового опыта: убрать трение, прояснить следующий шаг, придать смысл движению и оправдать сложность.',
     'meta.lab.title': 'Лаборатория — JUSTLOVEJAZZ',
     'meta.lab.description':
       'Эксперименты с шейдерами, интерактивными интерфейсами и 3D в реальном времени. Проверяем идеи для будущих цифровых решений.',

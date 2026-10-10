@@ -94,6 +94,32 @@ disposing its textures.
 
 Current known facts:
 
+- TvT v5 architecture audit on 2026-10-03 compared every custom subsystem
+  with the installed library APIs (`@tresjs/core` 5.9.2, `@tresjs/cientos`
+  5.9.2, `three` 0.186.1) and the TvT v5 reference. Ownership is single-owner
+  per resource: Tres owns the canvas, the one RAF host, and the renderer
+  manager; `RenderScheduler` owns frame demand through the SceneHost loop
+  port; Vue/Tres declares the scene graph and the 22 `src/app/scene` owners
+  adopt nodes instead of building them. The World controllers are legitimate
+  imperative owners of generated geometry, TSL graphs, and loader lifecycles;
+  a whole-tree consumer scan found no dead module in `src`. Cientos adoption
+  is bounded by the single WebGPU/TSL render path: Lab `OrbitControls` is the
+  one adopted component, while Environment/useEnvironment and the
+  GLSL-ShaderMaterial family (Stars, Sparkles, Sky, transmission, FBO, and
+  reflector components) would import classic WebGL symbols that
+  `three-webgpu-compat` stubs, so they stay non-candidates until that
+  constraint changes. Verified keep verdicts (do not re-litigate without new
+  library evidence): the custom render-demand seam (Tres 5.9.2 on-demand
+  keeps ticking its RAF and cannot express settle-based demand),
+  `Experience/Camera` (Cientos CameraShake/MouseParallax do not map onto
+  WorldConfig section targets or the Lab yield handoff), the
+  caseTexture/ShowreelTheater/ContactCyprusStage loaders (the Cientos
+  loaders lack refcount leases, abort, prewarm, and deferred disposal), and
+  the authored TextReveal/NoiseText/BlurFade effects. The
+  EventBus↔ThemeManager import edge is type-only and erased at runtime; it
+  needs no fix. The remaining pre-migration surface is the imperative UI
+  layer over Vue-rendered DOM, planned in the phase-1 route-UI migration
+  plan below.
 - Deep audit found a shared inverse-theme defect on content routes, including
   Works and Manifesto: `ContentReveal` matched the route DOM section ID against
   `WorldConfig.domSection`, but content configs use `content-0..5` while the
@@ -504,10 +530,118 @@ Current known facts:
   `vue-tsc` path is not established; keep the verified TypeScript 6 toolchain
   until upstream support is confirmed. `bun outdated` could not reach npm due
   to DNS, so transitive dependency freshness is still unverified.
+- Runtime-evidence session on 2026-10-04 (headless Chromium via the
+  agent-browser CLI, dev server + `?force-webgl-backend` and `dev:hmr` mode;
+  software WebGL2/SwiftShader backend — the same environment class as the
+  earlier manual Chromium runs, not physical GPU). All sampling used the
+  dev-only `__jlzRuntimeSnapshot()` probe; the production preview smoke
+  (direct `/` and `/works` load, splash Enter, automatic WebGL2 fallback)
+  ran without the probe and with zero page/console errors. Evidence gathered:
+
+  - Idle wake-frame attribution: a 21-second settled window sampled at
+    100 ms recorded 10 wake frames, every one carrying
+    `lastInvalidation: 'breath'` at a steady 2.4–2.6 s cadence, with
+    `loopActive=false` between wakes, `settledFrames` advancing 1:1 with
+    frames, and zero activity flags. All idle wake demand is the deliberate
+    ambient-breath timer stepping the volumetric-light orbit; no stuck
+    animator and no stray one-shot source appeared. This closes the
+    attribution question on software WebGL2; a physical-GPU repeat stays
+    open.
+  - Route-churn plateau: 15 stops across 3 full home→works→manifesto→
+    contact→lab cycles held `rendererCanvasCount=1` and
+    `documentCanvasCount=2` at every stop and returned route-identical
+    scene counts from cycle 2 onward (the cycle-1→2 delta of +8
+    geometries/+4 materials is the documented Lab-stays-mounted contract).
+    A follow-up contact probe with a 12 s settle converged to exactly
+    37/35 scene geometries/materials and 27/12 renderer geometries/textures
+    on three consecutive visits (an earlier 6 s settle had sampled mid
+    Cyprus prewarm — timing, not a leak). No route-churn resource leak on
+    software WebGL2.
+  - Driven synthetic device loss: `WEBGL_lose_context.loseContext()` plus an
+    externally driven `restoreContext()` 300 ms later produced the recorded
+    loss(prevented)→restore→disposal-loss→helper-restore sequence,
+    `__jlzHost.recovered=true`, resumed frame advancement, one renderer
+    canvas, and no failure overlay — matching the earlier production
+    evidence, now also on the dev path. An undriven synthetic loss
+    (no external restore) correctly terminates in the failure overlay after
+    the 5 s restore wait: the first wait deliberately does not call
+    `restoreContext()` because natural browser loss restores itself.
+  - Post-recovery resize: after recovery, viewport changes to 390×844 and
+    1600×900 each mirrored exactly into the canvas drawing buffer with
+    frames advancing — the recovered-renderer viewport ownership path
+    works.
+  - Ready-state SceneHost HMR replacement (script-block comment edit via an
+    in-place write): vue:reload → old runtime retired → full re-init
+    sequence in console → resources back at the home baseline (22/28/5),
+    one canvas, no overlay, no page errors.
+  - HMR during active prewarm: a page-side watcher fired the SceneHost
+    script edit at the exact window where `__jlzHost` was published but
+    `__jlzRuntimeSnapshot` did not yet exist (Experience mid-init,
+    `compileAsync` prewarm active; edit landed at t≈5.9 s of boot). The
+    replacement retired the mid-init runtime and the new runtime completed
+    init at t≈9.3 s with baseline resources, one canvas, Enter enabled, no
+    errors. The teardown barrier + generation guard hold during startup,
+    closing the HMR-during-prewarm gate on software WebGL2.
+  - Environment note for reading future logs: `sed -i` (temp-file rename)
+    edits are invisible to the Vite watcher in this sandbox — in-place
+    writes (`printf >>`/`writeFileSync`) are required to trigger HMR.
+    Vite 8 mirrors browser console lines into the server terminal tagged
+    `(client)`.
+
+  Slices executed after the evidence session (all zero-reader deletions
+  verified by rg across src/tests/scripts/prerender/content, then
+  type-check, lint, format, the 103/103 unit suite, and full production
+  builds): the envColor dataflow (config → Section.lightData → per-frame
+  lerp → no reader) including LightTransform/lighting/lightColor/
+  lightIntensity and dead Section.name/phaseIndex; unread WorldConfig
+  fields (sectionLights, ui.showGallery, bgColor, unreachable domSection
+  fallback); dead controller accessors (WorksPlaneStage.handleTap,
+  BakuCarousel.getTargetCardIndex/sceneRoot, JunniParticles.mesh);
+  DeviceCapability.isTouch plus a provably-redundant guard; stale
+  spec-reference comments; EnvSphere's six pass-through color fields;
+  the never-applied 5.5 KB uikit form-range CSS plus nine unused console
+  icons, two never-invoked accordion hook mixins, and one dead blog CSS
+  rule; eight dead works.sectionN.title i18n keys in both dictionaries;
+  the consumer-less `src/types/less.d.ts` ambient module, a phantom eslint
+  ignore, the stale `.renderer-unsupported` e2e locator (now
+  `.jlz-renderer-failure`), and 22 internal-only type export keywords.
+
+  2026-10-04 styling-layer audit (LESS/CSS whole-assembly pass). Facts
+  established: the SPA's compiled theme ships inside the entry JS chunk
+  (`main-*.js` is 225,152 bytes of CSS string under a 225,183-byte chunk —
+  the `?inline` import in entry-app.ts); the blog ships the same
+  `_import.less` assembly as a real stylesheet (159,495 bytes minified).
+  The `?inline` seam is a verified port, not debt: the inline comment
+  documents that dev-mode CSS HMR through the reverse proxy breaks
+  `/@vite/client` injection, and the runtime cost in production is hidden
+  behind the splash gate — keep. Project-owned CSS is clean: all 99
+  `.jlz-*` classes and all 97 `--jlz-*` custom properties in the shipped
+  CSS have live references (zero dead). The uikit import list was re-walked
+  against every markup/JS consumer: one import was dead — `form.less`
+  (no `<form>`/`<input>`/`<select>`/`<textarea>` anywhere, no `uk-form-*`
+  or `uk-input`-family class usage, no programmatic form usage) — and is
+  now commented out with its `.hook-form()`/`.hook-form-focus()` hooks and
+  `@form-focus-*` vars removed from the console theme. Measured with
+  esbuild-minified compiles of both roots: SPA CSS 226,900 → 205,150
+  bytes (−9.6%), blog 159,495 → 139,209 bytes (−12.7%). Every other
+  active uikit import has at least one live consumer (`uk-tooltip` drives
+  PersistentConsole, `uk-modal` drives FullscreenOverlay, `uk-scrollspy`
+  drives Contact/Services reveals, `uk-accordion`/`uk-card`/`uk-navbar`
+  families drive the views). Known dead weight left in place deliberately:
+  ~380 unused `uk-*` variant selectors inside live component families
+  (card color-variants, inverse color-mode blocks, width/margin/position
+  utility variants) — removing them needs either hand-trimmed copies of
+  uikit sources (upgrade hazard) or a purge tool with a runtime-class
+  safelist (build complexity); neither clears the anti-overengineering
+  bar while CSS sits behind the splash gate. Same for the UIkit JS side:
+  the package ships no per-component ESM entry, so `import UIkit from
+'uikit'` bundles all JS components (vendor-ui 153 KB, async) — swapping
+  to deep `src/js` imports is brittle and not worth it now. Lint and the
+  103/103 unit suite green after the slice.
 
 ## Work queue
 
-### 1. Reduce runtime ownership overlap — active
+### 1. Reduce runtime ownership overlap — complete
 
 Trace callers and state before changing boundaries. For each method in
 `Experience`, `SceneCoordinator`, `SceneTransformPass`, `StageRegistry`,
@@ -544,13 +678,9 @@ their shared async cancellation/release mechanics; `useSceneStages` owns the
 Vue-declared mount points. `ExperienceUI` owns navigation and project-overlay
 behavior. The reduced-motion fan-out is split by domain and currently has no
 mirrored value; keep it until a specific duplicate owner is demonstrated.
-Next inspect `SceneHost` readiness/renderer bridge and the split route policy
-between `Experience`, `SceneCoordinator`, and `StageRegistry` before moving
-state. [Completed below: SceneHost bridge, route policy and navigation observer
-ownership were traced; no redundant RAF, scheduler or scroll-state owner was
-found. Continue with lifecycle error/teardown paths and inspect route UI
-controllers for behavior that can move back into Vue without losing scene
-ownership.]
+The complete source trace found one owner for renderer/RAF/scheduling,
+route-stage creation, scroll state, and UI orchestration. Lifecycle and teardown
+paths were rechecked; remaining items are external runtime acceptance gates.
 
 Route-UI controller checkpoint: the lifecycle error/teardown source pass found
 no additional source gap (its open items are runtime-evidence gates), and the
@@ -583,6 +713,179 @@ chunks and prerendered route HTML). A baseline rebuild of the unmodified
 source reproduced the committed dist with zero diff, confirming the churn is
 the chunk-rename cascade of this edit.
 
+Route-UI Vue migration plan (from the 2026-10-03 TvT v5 audit): the remaining
+old-world surface is imperative UI classes writing into DOM that Vue already
+renders. Four slices, smallest first:
+
+1. Remove verified-dead exports: `tslVec3` in `types/tsl-helpers.ts` (no
+   consumer), the exported `unmountVueApp` wrapper in `app/index.ts` (the
+   host-teardown spec uses the dev hook; the internal teardown mechanism
+   stays), the `export` on `initSplashToggles` (`entry-app.ts` calls it
+   internally and the referenced lifecycle test does not exist), and nine
+   `export` keywords with no importer (`normalizeSiteOrigin`,
+   `supportsPostProcessing`, `resolvePage`, `isCaseStudyPath`, `escapeXml`,
+   `stripSsrComments`, `BLOG_SITE_ORIGIN`, `blogMetaPath`, `labExperiments` —
+   all still used inside their own modules). Correct the stale
+   `src/__tests__/i18n.test.ts` claim in the `core/i18n.ts` header; no i18n
+   unit test exists. [Completed below: every named symbol was re-verified
+   against `src`, `tests`, and `scripts` before removal; all twelve dead
+   exports are gone, the `i18n.ts` header now states the real coverage, and
+   lint, type-check, the full production build, and `git diff --check` pass
+   with regenerated tracked dist assets.]
+2. Fold `UI/RouteTransition` into the app layer: the class only sequences
+   `data-state` on the AppShell-declared overlay; an app-owned function pair
+   keeps the same cover/reveal/cancel contract for the router guards.
+   [Completed below: `src/UI/RouteTransition.ts` is deleted and the sequence
+   (cover/reveal/cancel/dispose, COVER_MS/REVEAL_MS timings, reduced-motion
+   no-ops, and the missing-overlay error) now lives in
+   `createRouteTransitionCover()` inside `src/app/index.ts`, beside the other
+   router-owned local factories; the `_shell.less` comment names the new
+   owner. Behavior is unchanged; lint, type-check, the full production build,
+   and `git diff --check` pass with regenerated tracked dist assets.]
+3. Move fullscreen overlay content into Vue: `FullscreenOverlayView.vue`
+   binds title, category, description, tags, counter, poster, and arrow
+   visibility from a small reactive store; the UIkit modal, keyboard, and
+   focus-trap behavior stay with the controller class;
+   `ExperienceUI.onProjectSelect` writes the store instead of the class
+   filling DOM text nodes. [Completed below: content now flows through the
+   typed `jlz:project-content` port — `ExperienceUI.onProjectSelect`
+   publishes one payload and the view owns the reactive state, the poster
+   decode (request-id guarded), the tag list, `v-show` arrow visibility, and
+   the authored title reveal (BlurFade after the title change, plain text
+   plus aria-label under reduced motion). `UI/FullscreenOverlay` keeps only
+   the UIkit modal lifecycle, Escape/arrow/Tab keyboard layer, focus trap,
+   and fullscreen-change events; its `open()`/`preload()` content arguments,
+   the per-open `onClose` callback (never supplied by any caller), the
+   never-read `is-image-mode`/`is-poster-ready` container classes, and the
+   poster/title DOM filling are gone. Preload is now publish-only. The
+   overlay is not part of the prerendered route documents, so SSR output is
+   unchanged. Lint, type-check, the full production build, and
+   `git diff --check` pass with regenerated tracked dist assets.]
+4. Share the story scroll track mapping: one helper owns scroller/section
+   discovery (page-mode selector plus excluded sheet sections) and the
+   rAF-throttled scroll-to-section mapping; `CinematicNav` (scene mode) and
+   the `useJlzPage` no-scene branch both consume it while keeping their own
+   side-state, labels, and activity behavior. [Completed below:
+   `core/storyTrack.ts` now owns `resolveStoryTrack` (scroller + main-section
+   discovery + sheet exclusion), `storyPositionFromScroll` (the clamped
+   position and 0-based section index), and `observeStoryScroll` (one
+   rAF-throttled frame per scroll burst, passive listener, dispose/sync).
+   `CinematicNav._bindTrack` resolves the shared track and keeps only its
+   side-state/label/focus/activity behavior; the no-scene branch of
+   `useJlzPage` publishes sections through the same contract. Both owners'
+   notify payloads and timing are unchanged; lint, type-check, the full
+   production build, and `git diff --check` pass with regenerated tracked
+   dist assets.]
+5. Restore the unit suite's broken mock wiring: the 2026-10-02 test-tree
+   move (`45941ce1`) rewrote the module-under-test imports but left the
+   `vi.mock()` specifiers relative to the OLD `src/Experience/` location, so
+   the mocks silently stopped matching and 11 tests in 5 files failed on a
+   false baseline. [Completed below: every `vi.mock()` path in the five
+   affected files (`ExperienceLifecycle`, `ShowreelController`,
+   `Scene/SectionGroups`, `World/WorksPlaneStage`, plus the latently broken
+   `Lab/manifest` mock that passed for the wrong reason) now points at the
+   real `src/` modules; `ContactCyprusStage`'s stale `root.name` assertion
+   was updated to the current contract (the name is declared in
+   `ContactCyprusStageOwner.vue`, and the stage must not rename the
+   Vue-owned root — `b00bfb8c`). No new tests, no harness code: the suite is
+   103/103 green on Bun + vitest 4.1.11 + jsdom 29 on Linux. The earlier
+   "pre-existing baseline failures" note in Status is superseded.]
+6. Deduplicate the DRACO decoder delivery: three 0.186's DRACOLoader module
+   eagerly resolves BOTH decoder sets it ships — the standalone
+   `libs/draco/` trio (719 KB draco_decoder.js + 286 KB wasm + 59 KB
+   wrapper) as constructor defaults, and the exported `DRACO_GLTF_CONFIG`
+   (`libs/draco/gltf/` wrapper + wasm pair) — so the bundler emitted both
+   into dist while the runtime (ContactCyprusStage passes
+   `DRACO_GLTF_CONFIG` to `setDecoderPath`) only ever fetches the gltf
+   pair. This closes the previously open "dual DRACO decoder sets" gate
+   statically: the fetched set is provable from
+   `ContactCyprusStage.load()`, no network trace needed.
+   [Completed below: a build-only `strip-unused-draco-decoder-defaults`
+   Vite plugin (vite.config.ts) rewrites the three standalone
+   `new URL(..., import.meta.url)` default initializers to plain
+   page-relative names so nothing is emitted — it warns and no-ops if three
+   changes the shape. The stdlib shim's `DRACOLoader`/`GLTFLoader`
+   re-exports now point at three's own addons modules (one loader
+   implementation in the graph by construction; the three-stdlib copies
+   were already tree-shaken — `vendor-lab-controls` is byte-identical), and
+   `check-stdlib-modules.mjs` resolves package specifiers through the
+   installed exports maps. dist drops the 1.06 MB never-fetched standalone
+   set and keeps only the gltf pair; lint, type-check, `check:stdlib`, the
+   full production build, budgets (three 310.95 kB gzip, unchanged), the
+   103/103 unit suite, and `git diff --check` pass with regenerated tracked
+   dist assets.]
+
+WebGPU→WebGL2 fallback verification (2026-10-03, three 0.186.1 source): the
+fallback IS automatic and the app already relies on it correctly.
+`WebGPURenderer`'s constructor picks `WebGPUBackend` unless `forceWebGL` is
+set, and registers `parameters.getFallback = () => new WebGLBackend(...)` —
+when WebGPU is unavailable (no `navigator.gpu`, adapter/device request
+failure) three falls back to the WebGL2 backend itself and TSL node
+materials compile for either backend. The app's single construction path
+(`createUnifiedWebGPUInstance`) passes `forceWebGL` only for the dev-only
+`?force-webgl-backend` recovery seam and to keep a recovered renderer on
+the backend it had already settled on; `DeviceCapability`'s
+`navigator.gpu` check is an initial DPR/tier HINT only (corrected after
+init via `setFinalRendererMode` + `inspectUnifiedBackend`'s explicit
+backend markers), and it deliberately does not probe with a second
+canvas/context. No app-side fallback duplication exists to remove.
+
+Route-UI controller slices (TvT v5 direction — all eight slices are now
+complete; slices 1–4 and 5–6 above, 7–8 below):
+
+7. `CinematicNav` is the last large imperative UI controller (~448 LOC)
+   writing into Vue-rendered DOM (nav rail, section labels, keyboard
+   navigation, scroll sync via the shared storyTrack). Incremental
+   Vue-ification in the same pattern as slices 2–4: move the DOM
+   structure and label state into a Vue view bound to the storyTrack
+   position, keep the keyboard/focus/behavior controller slim. Slice only
+   after re-reading its consumers (`ExperienceUI.init`, SceneHost activity
+   flags); verify with the same gates as above.
+   [Completed below: the rail DOM structure was already Vue-declared in
+   `PersistentConsole.vue`, so the slice targeted the remaining imperative
+   writes into it. The heading-derived storyline labels now travel over a
+   typed `jlz:story-labels` event (published on track bind and language
+   change — i18n patches the `data-i18n` headings synchronously before
+   `jlz:lang-change` fires) and the Vue `:aria-label` binding is the single
+   writer, deleting the dual-writer race where Vue's async re-render could
+   clobber the imperative label write after a language switch. Rail inert
+   while a cinematic sheet is open became a Vue binding from the already-
+   published active index. The `data-sheet` attribute on `#cinematic-nav`
+   had no consumer in CSS, JS, or tests, and the `[data-story-label]` span
+   sat permanently `uk-hidden` (display:none !important) with no CSS
+   rules — both dead paths are deleted together with the `_navButtons`
+   query and the constructor's rail lookup, so `CinematicNav` keeps
+   behavior only: scroll sync via the shared storyTrack, side sheets,
+   keyboard navigation, focus handling, and the scroll-rate per-section
+   story CSS variables (a deliberate non-React write; the CSS-var writes
+   are consumed by `[data-story-state]` rules in main.less). The storyline
+   hint span stays: it is static Vue-owned content with no imperative
+   writer, so touching it is out of scope. Lint, type-check, the full
+   production build, budgets (three 310.95 kB gzip, unchanged), the
+   103/103 unit suite, and `git diff --check` pass with regenerated
+   tracked dist assets.]
+8. `ExperienceUI` orchestration audit: after slice 7 the remaining event
+   wiring may collapse further into the owning views; re-trace before
+   writing code. [Re-traced 2026-10-04, verdict: no collapse is justified.
+   Every remaining `ExperienceUI.init` wire is either a Vue↔runtime
+   semantic port (`jlz:story-navigate` and `jlz:goto-section-by-hash` →
+   storyNav; `jlz:open-project`/`jlz:project-navigate` → overlay; the sfx
+   init and `jlz:sound-toggle` wiring; `jlz:fullscreen-overlay-unmounted` →
+   overlay and carousel release, a Vue-lifecycle → runtime teardown bridge)
+   or 3D behavior that needs Experience-owned resources (`jlz:wobble-pulse`
+   → BakuCube, the window pointerup works-plane raycast via
+   `worksPlaneStage.hitTest`, the sec_works poster preload). Moving any of
+   these into Vue views would make the Vue layer reach into sfx/stage/baku
+   resources — exactly the ownership violation this architecture avoids.
+   The route-change → `overlay.close()` wire stays here rather than being
+   re-expressed as `jlz:close-media-layer` (which the overlay controller
+   already listens to): the direct call is the shorter path through the
+   owner. `TextReveal`/`BlurFade`/`NoiseText` were re-checked under the
+   same lens: they replace element children with per-character spans and
+   interpolate styles per rAF frame — declarative equivalents would pay a
+   vdom diff per frame and reimplement the same math, so they are
+   legitimate no-equivalent imperative code per the working rules.]
+
 Readiness trace update: the renderer is constructed synchronously by the
 `TresCanvas` factory, initialized by Tres, then inspected in `onReady`. The
 host publishes only after its declared Vue/Tres nodes report ready; Experience
@@ -593,7 +896,8 @@ previously left `onReady` suspended on unresolved slots; the wait now races a
 host-owned cancellation signal, with a lifecycle generation check before
 publishing. No browser evidence was available for exercising that race.
 
-Async teardown source trace: the supported app-level `unmountVueApp()` path
+Async teardown source trace: the supported app-level unmount path (the dev
+`__jlzTestUnmountVueApp` hook backed by the internal teardown owner)
 awaits `AppShell.destroyExperience()` (which awaits `Experience.destroy()`) and
 only then calls `app.unmount()`. Experience stops the scheduler and listeners
 synchronously, awaits an active `compileAsync` prewarm, then awaits lazy-stage
@@ -926,7 +1230,7 @@ Execution order:
    evaluated Three core URLs and inspect the actual backend when browser access
    is available.
 
-### 2. Make scene composition declarative where it helps — active
+### 2. Make scene composition declarative where it helps — complete
 
 Inventory scene owners as stable declared nodes, loaded assets, generated
 geometry/TSL, or route-lazy behavior. Stable transforms and hierarchy belong
@@ -1176,7 +1480,7 @@ settle/release path. Attribution of the two idle wake frames and a repeat
 idle check on physical WebGPU remain runtime gates; no performance claim is
 made without new measurements.
 
-### 3. Production and whole-tree audit — pending
+### 3. Production and whole-tree audit — implementation complete; deployment gated
 
 Review direct route entry, accessibility, reduced motion, locale switching,
 responsive behavior, renderer failure, content generation, asset paths,
@@ -1423,7 +1727,12 @@ Execution order:
 - Read repo instructions, callers, and installed library APIs before changing
   ownership.
 - Make coherent slices that remove the replaced path in the same change.
-- Do not add or run tests unless requested. A production build may be used for
+- Tests exist to guard real user-facing behavior and contracts that can
+  plausibly regress — not coverage for its own sake, and never scaffolding
+  written just to keep an agent-authored test green. Prefer deleting a brittle
+  test over adding harness code, keep the unit suite green instead of growing
+  a baseline of known failures, and do not add new test files without a
+  concrete regression class to guard. A production build may be used for
   type, compatibility, prerender, bundle, and release validation.
 - Do not claim runtime, browser, or performance evidence beyond what ran.
 - Keep generated `dist/` and deployment workarounds only after verifying their
@@ -1431,13 +1740,322 @@ Execution order:
 - Update this queue when evidence or phase status changes; commit completed
   slices with a message describing the simplification.
 
+The project viewer expands from the current interaction point: pointer opens
+use the captured pointer location, keyboard opens use the focused control's
+center, and the desktop/mobile scene coordinates are fallbacks for scripted
+opens. The plane's existing TSL cloth pulse and DOM clip reveal form one
+gesture. Case-study media now uses a larger framed presentation, and case
+titles clear the material narrative. Static local
+Chromium review at 1440×900 and 390×844 found and fixed two mobile overlaps:
+the Works title against the orbit installation, and the fullscreen title
+against the persistent media controls. Mobile `/works` has no horizontal
+overflow; the viewer poster decodes and the transition settles without console
+errors. Pointer-origin computation and focus-origin fallback both resolve to
+the trigger location. These screenshots use SwiftShader and are visual
+DOM/backend smoke, not physical-GPU visual evidence.
+
+A local Chromium 152 run forced Three's WebGL2 backend over SwiftShader because
+this session has no `/dev/dri` or `/dev/nvidia*`, and `nvidia-smi` cannot reach a
+driver. On `/works`, the settled snapshot reported one renderer canvas, 27
+scene geometries, 22 materials, 5 scene textures, and renderer counters of 14
+geometries / 16 textures. Idle ended with `loopActive=false`; 22 startup/idle
+frames had total CPU-frame p50 1.5 ms / p95 70.4 ms, with the latest at 1.7 ms.
+After warmup, 120 pointer-active frames measured total p50 0.9 ms / p95 1.9 ms
+and renderer p50 0.6 ms / p95 1.3 ms. The startup p95 outlier is shader/backend
+initialization under software rendering, not a physical-GPU budget result. A
+resource-snapshot traversal measured about 0.058 ms per call on this scene.
+DevPanel previously performed that scene traversal and refreshed hidden
+Tweakpane controls every 500 ms in development; its refresh now returns early
+while hidden. The Vite dev dependency transfer (~19.6 MB) is unbundled and is
+not used as a production-size metric. The final project films are not present
+yet, so the existing static placeholder textures remain until the local renders
+are ready; the current Porsche cover is visibly marked “EBB VIBES”.
+
+Type-check, lint, format check and production build/budgets remain the release
+checks for this local slice. CUA still exits before initialization, and no
+physical GPU is exposed to this shell, so WebGPU hardware performance remains
+open.
+
+Home Works ribbon and project theater checkpoint (2026-10-04): the carousel
+tiles remain flat image planes while their positions, yaw and small residual
+shader deformation sample the same continuous path. A single narrow TSL
+substrate follows that path beneath the tiles, so the home display reads as one
+spatial timeline ribbon rather than a set of individually bent cards. The
+substrate was muted and narrowed after the first local render showed bright,
+rectangular patches in the gaps. This ribbon material is enabled only for the
+home carousel; `/works` case planes keep their existing material. A follow-up
+particle pass found the likely source of persistent glyph flicker: linearly
+filtered atlas samples could bleed across tile boundaries. The reference
+`Sec3Particle` confirms that atlas selection is static per instance using
+`floor(6 * mod(num.x / 4, 1))`; restore that exact distribution rather than
+mapping every instance across all six cells. Particles follow the reference's
+Y rise and XZ orbit around the field center; a mistaken extra `0.08` multiplier
+had almost stopped both motions. Use `speed` as the single time scale (0.35 in
+Works), keep each glyph upright (per-sprite spin made the asymmetric triangle
+and arrow cells read as tile swaps), remove the abrupt 4× exponential size
+pulse and hue cycling, keep glyphs above subpixel size, soften the cyan glow
+threshold, and fade particles near the vertical wrap edge. Atlas UVs remain
+inset to prevent adjacent-cell sampling. A separate immutable `atlasFrame`
+instance attribute now carries the CPU-computed reference frame, so time and
+position nodes cannot influence tile identity. Frustum culling is enabled with
+a conservative sphere covering the orbit, wrap and visibility-fade expansion.
+This source comparison is grounded in
+[`Sec3Particle/index.ts`](https://github.com/junni-inc/next.junni.co.jp/blob/master/src/ts/MainScene/World/Sections/Section3/Sec3Particle/index.ts)
+and its vertex/fragment shaders; the new adaptation still needs browser visual
+review.
+
+Opening a project now presents a full-viewport mobile-first case theater in the
+site's graphite, phosphor and technical type system. It features the selected
+project's cover, title, description, metadata and tags, a dedicated close
+control, and a link to its localized case route; carousel arrows and arrow-key
+navigation were removed from the overlay. The overlay keeps its focus trap and
+Escape behavior. Desktop SwiftShader review from this change confirmed the
+selected-project content and successful navigation to `/works/porsche-911-spider`
+with no console errors. The attempted fresh 390×844 review stalled at the
+disabled splash-entry control under headless SwiftShader, so this revision does
+not claim new mobile-render evidence. Earlier mobile scene evidence remains in
+the history above. No physical GPU timing was measured. Type-check, lint and
+format checks and the full production build/budget check pass. The refreshed
+particle change has not had a new browser render because headless SwiftShader
+stalled at splash initialization. No test suites were run.
+
+The fullscreen entrance now uses a trigger-origin circular aperture, with a
+short phosphor bloom, a restrained poster settle, then staggered frame and
+copy reveals. Keyboard opens fall back to the focused trigger or viewport
+center, and reduced-motion mode bypasses the bloom/transitions. This pass has
+build evidence and a forced-open 390×844 headless Chromium/SwiftShader layout
+review with no horizontal overflow. This checked the settled theater and CSS
+origin variables, not the live pointer-trigger lifecycle or physical GPU.
+
 ## Status
 
-Phases 1, 2, and 3 remain active. Prior work has removed the
-app-authored renderer backend recreation, silent TSL render fallback, duplicate
-route-mount flag, duplicate route state, repeated frame config lookups, and a
-dead particle branch. The host contract now belongs to the Experience runtime;
-Three selects the backend; Showreel shares the TSL graph; and static scene
-transforms use Tres props in reviewed owners. These are partial reductions,
-not proof that the architecture or project is production ready. Continue with
-the source ownership audit, then revise status from concrete findings.
+Phases 1 (runtime ownership) and 2 (declarative scene composition) are
+complete. Phase 3's source, quality gates, route output, and static deployment
+configuration are implemented. The S1–S9 release audit findings are closed;
+the latest recorded verification includes type-check, lint, formatting,
+103/103 unit tests, two byte-identical production builds, and e2e results of
+18 passed / 6 skipped / 0 failed. This session's `bun run build`,
+`bun run type-check:vue`, `bun run lint`, `bun run format:check`,
+`bun run check:stdlib`, `bun run test:unit` (103/103), and
+`bun run test:serial` (18 passed / 6 opt-in skipped) passed; the Playwright
+suite used pinned Chromium 153 installed under `/tmp`. A pinned Firefox 155
+run also passed 17 tests with 7 opt-in skips. Compose config validation passed
+and a static route check mapped all 30 sitemap URLs to generated HTML files.
+The full production build passed with budgets unchanged.
+
+The project now includes a non-root NGINX image and Compose service for the
+existing reverse-proxy deployment shape. The image built locally and passed
+`nginx -t`; its restricted runtime became healthy as UID 101 with a read-only
+root filesystem. HTTP smoke checks passed for all 30 sitemap routes, EN/RU
+language markers, security/cache headers, gzip, `/healthz`, missing-asset 404,
+and the unknown-route fallback. The first smoke exposed a route/directory
+collision on `/works` and `/blog`; ordering `$uri.html` before `$uri/` fixed it.
+An isolated local HAProxy 3.2.19 listener (matching the OPNsense binary) then
+proxied the restricted origin container over a private Docker bridge. A
+temporary self-signed `portfolio.test` certificate verified TLS/SNI locally;
+`/healthz` returned 204, all 30 sitemap routes returned 200, security and
+HTML cache headers matched policy, gzip was enabled, missing assets returned
+404, and unmatched Host returned 404. HAProxy/origin containers, network, and
+certificate were removed automatically. This closes the local origin↔HAProxy
+integration smoke, but does not stand in for the OPNsense frontend: no
+app-specific ACL/action/backend exists there yet, and its existing LE
+certificate/public DNS route was not used for the portfolio.
+
+Physical-GPU Chromium evidence is now available. With Chromium 152 on the
+RTX 5090 (Blackwell), the production app requested a non-fallback NVIDIA
+adapter (`GPUCanvasContext`, `isFallbackAdapter=false`) and rendered the
+Home → Services → Works → Porsche 911 Spider → Manifesto → Lab → Contact SPA
+sequence on one persistent canvas without page or console errors. A controlled
+Works-route comparison on the same GPU confirmed Three's WebGL2 backend as
+`WebGL2RenderingContext` via ANGLE/NVIDIA; both screenshots showed matching
+scene composition and the runs had no errors. This is visual/runtime evidence,
+not pixel-identical output. The workstation also exposes an RTX 4060 Ti.
+
+Firefox app coverage is now confirmed by the pinned Playwright Firefox 155
+run (17 passed / 7 opt-in skipped). The system Firefox executable had failed
+the Playwright Juggler handshake, but using Playwright's pinned browser resolved
+that environment mismatch. WebKit 26.6 installed, but Playwright could not
+launch it because the host lacks `libicu74`, `libxml2`, and `libflite1`;
+WebKit's 20 launch failures are environment failures, not app assertions. An
+attempt to use the matching official Playwright Docker image instead made no
+download progress for over four minutes and was stopped; no system packages
+were installed.
+Natural hardware device-loss evidence remains open. The CUA automation runtime
+also exited unexpectedly and was not needed for these Playwright checks.
+
+Ingress recheck on 2026-10-04: system DNS returned no addresses for
+`justlovejazz.dev` or `www.justlovejazz.dev`, and HTTPS failed before
+connection with `Could not resolve host`; independent DNS-over-HTTPS returned
+NXDOMAIN for both. The only Docker context is the local Unix socket.
+
+The user SSH config resolves `pvebase` to `192.168.10.192`; its OPNsense VM
+(ID 100, `192.168.10.1`) has an active TLS frontend on port 443 and presents a
+Let's Encrypt wildcard certificate for `*.6la.ru` (valid through
+2026-12-23). Existing `pvebase.6la.ru` and `opnroute.6la.ru` routes return
+200 through this frontend. Read-only config inspection found active ACL/action
+routes for other services but none for `justlovejazz.dev`; that SNI gets the
+default HAProxy 503. DNS-over-HTTPS independently returns NXDOMAIN for both
+`justlovejazz.dev` and `www.justlovejazz.dev`; the public IP path timed out.
+No OPNsense configuration was changed, consistent with the user's
+clarification that the project is still in development and checks are local.
+
+Follow-up attempt to exercise the OPNsense HAProxy binary itself on a temporary
+LAN-only listener (`192.168.10.1:18443`) did not complete. QEMU Guest Agent
+timed out while staging the temporary config/certificate; subsequent
+`qm agent ping` reports that the guest agent is not running. The OPNsense VM
+remains `running`, the existing `pvebase.6la.ru` and `opnroute.6la.ru` routes
+still return 200, port 18443 times out, and the temporary origin container was
+removed. Persistent `config.xml` and the active `:443` frontend were untouched.
+Guest `/tmp` cleanup could not be confirmed after QGA stopped; any remaining
+files contain only the generated self-signed test certificate/key and
+temporary HAProxy config. Follow-up recovery probes confirm the VM is running,
+but `qm agent ping`/`guest-exec` still fail, direct root SSH rejects the
+available public key, serial terminal exposes no shell prompt, and unauthenticated
+WebGUI requests reach only the login redirect (`/` 200, `/ui/` 302). CUA
+automation also cannot start because its sandbox reports `.aws: Bad file
+descriptor`; `.aws` was not touched. No non-disruptive guest recovery path is
+available from this session. Do not reboot the firewall VM without approval;
+QGA recovery requires authenticated local console access or a controlled
+restart before this test can be retried.
+
+Production-ready acceptance is not yet complete. Remaining gates are
+an app-specific route through the local OPNsense HAProxy using its existing
+certificate (including container-origin headers/routes/TLS), WebKit app
+coverage, natural hardware device-loss evidence, and recovery of the OPNsense
+guest agent before a direct-gateway test. Public DNS/TLS and deployment remain
+later release gates; local build and isolated HAProxy smoke do not claim them.
+
+The persistent cinematic CTA is the only visible content action across the 3D
+routes. On Home it opens the showreel, Services, the focused Works project, or
+the Contact footer according to the active frame. Services, Manifesto, and Lab
+use the active section to open its related article; Works opens the case for
+the active room; case-study chapters open the focused project's fullscreen
+material, with Contact on the final chapter. Labels use short EN/RU copy and a
+single fixed-size left icon. Pagination and route navigation remain separate;
+Telegram, GitHub, and email channels remain available. Inline CTAs are retained
+only in the no-renderer continuation path.
+
+Local visual review used headless Chromium with SwiftShader at 390×844 and
+1440×900. The single launcher remained visible in both layouts; its label
+changed through Reel, Explore, Explore, Contact. The Works action opened the
+focused Porsche project viewer, and the Services action reached its static
+article route. This checks DOM/UI flow and responsive placement only; it is not
+physical-GPU rendering evidence.
+
+Route-template checkpoint (2026-10-05): Services now uses a capability
+instrument layout with a clear editorial heading and a readable proof panel;
+Manifesto uses a principles folio with a large principle index and working
+protocol; Lab uses a compact experiment readout; case studies use the project's
+accent color, chapter marker, discipline chips, and a legible narrative panel.
+The same mono index, accent rule, elevated panel, and persistent launcher tie
+the pages together without forcing one shared page component. English and
+Russian labels were added for the new protocol/run markers. Headless Chromium
+visual review covered all four routes at 390×844 and 1440×900; section content
+fits its desktop viewport, and mobile copy panels sit clear of the persistent
+launcher. The main Works carousel and Home, Contact remain unchanged; the case
+study template was included because it was among the unfinished content routes.
+The preview used SwiftShader and does not certify physical-GPU rendering.
+
+This local slice passed `bun run type-check:vue`, `bun run lint`, and
+`bun run build` with existing bundle budgets. No tests were run, consistent
+with the repository's local-work contract.
+
+Manifesto redesign checkpoint (2026-10-05): replaced the generic Purpose /
+Clarity / Emotion / Simplicity copy with four specific studio decision rules:
+remove user friction, make interface states legible, give motion a job, and
+justify technical complexity. Each section now pairs its rule with a practical
+method and a check. The mobile-first visual uses a compact field-note heading,
+the live 3D object, and a structured dossier panel. All copy, links, labels,
+and page metadata have EN/RU entries; language switching was verified in both
+directions on the live local preview, including `html[lang]`. The existing
+`manifesto-clarity` hash remains navigable, and launcher targets now match the
+new section IDs. Chromium review covered all four principles in EN/RU at
+390×844 plus desktop composition at 1440×900; the dossier clears the launcher
+in every mobile section. EN/RU dictionaries have no missing keys. Local type
+check, lint, build/budgets, and `git diff --check` passed. No tests or external
+deployment were run.
+
+Manifesto copy checkpoint (2026-10-05): shortened every principle to a punchy
+headline, a client-facing benefit, a one-line action, and a brief test. EN/RU
+mobile review at 390×844 confirms all four versions stay within their frames;
+the tallest RU dossier ends 94 px above the persistent launcher. Title,
+subtitle, principle rule, and compact practice/check labels now provide the
+reading hierarchy while leaving more of the canvas available to the 3D scene.
+
+Chrome cleanup checkpoint (2026-10-05): removed the phosphor corner-tick
+bezel from the top control bank and bottom console bar, including its hover /
+focus brightening state. Removed the fullscreen theater's inset border and
+corner brackets, then deleted the now-empty frame element and its transition
+rules. The banks retain their neutral housing and individual key feedback.
+Type-check, lint, build/budgets, and `git diff --check` pass; no tests were run.
+
+Services composition checkpoint (2026-10-05): the four localized capability
+dossiers, word-safe headings, section launcher, proximity snapping, and settled
+on-demand behavior remain in place. Replaced the scattered low-poly nodes and
+crossed rails with one asymmetric, folded metal ribbon and a single phosphor
+seam, composed around the glass cube as the visual core. The sculpture gets
+the shared PMREM bound directly to its physical node material; no new
+environment target or post effect was added. Its four authored poses animate
+only on chapter changes, and its custom geometry/materials have one owner and
+deterministic disposal. Disposable local screenshots at 390×844 and 1440×900
+used system Chromium with the existing forced WebGLBackend dev switch and
+SwiftShader: the mobile heading clears the sculpture, the cube sits inside its
+loop, and the lower dossier remains readable. This is visual layout evidence,
+not a hardware render claim. Unforced Chromium/WebGPU hit SwiftShader's known
+48-byte `createBuffer` mapped-at-creation error. The connected-browser adapter
+could not initialize because its container hit the read-only `.aws` mount; the
+workstation Firefox profile was not touched. Confirm material and TSL parity
+in the user's Firefox/WebGPU session. The scene and chapter flow still pass
+type-check, lint, formatting, and production build/budgets; tests were not run.
+
+Cross-project performance review checkpoint (2026-10-05): source inspection
+confirms the existing single persistent Tres canvas, one RenderScheduler
+driving Tres's loop, one shared scroll-track observer, lazy route stages, a
+1.5 DPR cap, low-tier TSL post bypass, and sustained-low-FPS particle reduction.
+No second renderer/RAF or parallel route scroll observer was introduced. The
+only new scroll policy is scoped to Services because its native story sections
+were forcing a snap stop on every gesture. Broad visual changes to the shared
+blurred surfaces were deferred: their cost needs measurements on the target
+GPU. The headless shell Chromium had no GPU device/driver and SwiftShader's
+WebGPU backend failed on a 48-byte mapped buffer. This limitation belongs to
+that harness, not the workstation browser generally.
+
+Firefox WebGPU runtime checkpoint (2026-10-05): the user supplied local Firefox
+startup logs for the development build. They report
+`WebGPU (WebGPUBackend)`, `TSL post=true`, and `isFallbackAdapter=false`; scene
+owners, the Works carousel, procedural environment, DevPanel, and SceneHost
+all reached ready without a fatal renderer error in the supplied excerpt.
+Firefox warns that its requested adapter `featureLevel: compatibility` is not
+implemented yet and returns its core-defaulting adapter; Three still
+initialized the WebGPU backend. This confirms backend startup only. The
+excerpt has no frame timing or screenshot, so Services appearance, scroll
+latency, idle wake count, and sustained per-route GPU performance still need
+direct Firefox measurements before they are marked verified.
+
+Firefox Services snapshot (user supplied, 2026-10-05): on the Services route,
+the live probe reports WebGPUBackend, TSL post enabled, one renderer canvas,
+28 scene geometries / 31 materials / 5 scene textures, and 29 renderer-side
+geometries / 24 textures. Two document canvases are expected: the renderer
+canvas plus the custom 2D cursor. The scheduler is stopped, `needsRender=false`,
+the cursor is settled, and all activity flags are false. Across 120 CPU-side
+frame samples, renderer p50/p95 are 1/1 ms and total application frame-path
+p50/p95 are 1/2 ms. These are CPU timing spans around the render call, not GPU
+timestamp-query results. `frames=6619` and `settledFrames=147` are cumulative
+since boot; without a timed before/after idle interval they do not establish
+the idle wake rate. The snapshot confirms low settled frame-path cost and
+correct on-demand idle state, not every route's sustained GPU performance.
+
+Scene-effect ownership checkpoint (2026-10-05): the user supplied a second
+Services snapshot from its third section where `activity.particles=true`,
+`needsRender=true`, and the scheduler stayed active. Shared slot index 3 had
+been treated as effect ownership, allowing home Works particles and DrawTrail
+to leak into routes that reuse slot 3. Effects now use the existing
+`WorldConfig.scene.objects` opt-in: home Works authors JunniParticles and
+DrawTrail; standalone Works opts into DrawTrail; other content sections
+default off. `SceneTransformPass` applies visibility from the active scene
+config, and `SceneCoordinator` advances only visible opted-in effects. The old
+contact-section particle visibility writer was removed. This keeps scene
+tuning explicit without another effect registry. Type-check, lint,
+formatting, diff check, and the complete production build passed. A fresh
+local Firefox snapshot is still needed to confirm Services third-section
+settles with `particles=false` and `loopActive=false`.

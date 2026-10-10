@@ -17,7 +17,7 @@
 import { traceDevLifecycle } from '../core/devLifecycleTrace'
 
 /** Mutable lifecycle state and terminal cleanup owner for one lazy stage. */
-export interface LazyStageOwner<T> {
+interface LazyStageOwner<T> {
   /** Current instance and memoized ensure flow. */
   stage: T | null
   promise: Promise<void> | null

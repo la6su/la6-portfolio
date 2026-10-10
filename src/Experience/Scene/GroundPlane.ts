@@ -9,7 +9,7 @@ import * as THREE from 'three'
 import type { PhaseConfig } from '../../core/WorldConfig'
 
 /** The per-section ground config shape (WorldConfig `ground` field). */
-export type GroundConfig = PhaseConfig['ground']
+type GroundConfig = PhaseConfig['ground']
 
 export type GroundPlaneNode = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>
 

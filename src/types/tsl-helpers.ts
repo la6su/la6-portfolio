@@ -45,8 +45,3 @@ export function tslBloom(
 export function tslFloat(node: Node, components: 'x' | 'y' | 'z' | 'w'): Node<'float'> {
   return _split(node, components) as Node<'float'>
 }
-
-/** Multi-component swizzle returning a vec3 (`.xyz`, `.yzx`, …). */
-export function tslVec3(node: Node, components: string): Node<'vec3'> {
-  return _split(node, components) as Node<'vec3'>
-}

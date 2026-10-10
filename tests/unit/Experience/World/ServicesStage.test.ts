@@ -10,12 +10,11 @@ describe('declarative services stage controller', () => {
     stage = null
   })
 
-  it('drives the Vue-owned group and geometry nodes without owning their scene graph', () => {
+  it('poses one Vue-owned sculpture without owning its scene graph', () => {
     stage = new ServicesStage()
     const root = new THREE.Group()
-    const parts = Array.from({ length: 7 }, () => new THREE.Mesh(new THREE.BoxGeometry()))
-    const rings = Array.from({ length: 3 }, () => new THREE.Mesh(new THREE.TorusGeometry()))
-    stage.adopt({ root, parts, rings })
+    const sculpture = new THREE.Group()
+    stage.adopt({ root, sculpture })
 
     stage.visible = true
     expect(stage.visible).toBe(true)
@@ -30,7 +29,7 @@ describe('declarative services stage controller', () => {
     )
     expect(root.position.y).toBeCloseTo(2)
     expect(root.position.z).toBeCloseTo(-2)
-    expect(parts[0]?.position.x).toBeCloseTo(-0.24)
+    expect(stage.ribbonGeometry.getAttribute('position').count).toBeGreaterThan(1000)
     expect(stage.isAnimating).toBe(false)
   })
 })

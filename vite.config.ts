@@ -300,6 +300,44 @@ export default defineConfig(({ mode }) => {
         },
       },
       {
+        // three's DRACOLoader module eagerly resolves the standalone decoder
+        // set (`libs/draco/`: 719 KB draco_decoder.js + 286 KB wasm + 59 KB
+        // wrapper) into constructor defaults. The app's only DRACOLoader
+        // consumer (ContactCyprusStage) always passes the exported
+        // `DRACO_GLTF_CONFIG` (the `libs/draco/gltf/` pair), so the standalone
+        // URLs are never fetched — but `new URL(..., import.meta.url)`
+        // statically forces the bundler to emit all three files into dist.
+        // Rewrite the three default initializers to plain page-relative
+        // names: nothing is emitted, and a hypothetical future default-path
+        // consumer fails loudly with a 404 instead of silently shipping a
+        // megabyte of dead decoders. The gltf URLs are untouched.
+        name: 'strip-unused-draco-decoder-defaults',
+        apply: (_config, env) => env.command === 'build',
+        transform(code, id) {
+          if (
+            !/[\\/]node_modules[\\/]three[\\/]examples[\\/]jsm[\\/]loaders[\\/]DRACOLoader\.js$/.test(
+              id,
+            )
+          )
+            return null
+          let stripped = 0
+          const out = code.replace(
+            /new URL\(\s*'\.\.\/libs\/draco\/(draco_decoder\.wasm|draco_wasm_wrapper\.js|draco_decoder\.js)'\s*,\s*import\.meta\.url\s*\)\.toString\(\)/g,
+            (_match, file: string) => {
+              stripped += 1
+              return `'${file}'`
+            },
+          )
+          if (stripped !== 3) {
+            this.warn(
+              `strip-unused-draco-decoder-defaults: expected 3 standalone decoder URLs in ${id}, found ${stripped} — three may have changed; dist will re-emit the unused set.`,
+            )
+            return null
+          }
+          return { code: out, map: null }
+        },
+      },
+      {
         // Prerender the 6 home sections into index.html at build time so the
         // 3D app boots with DOM content already present (SEO, the no-scene
         // contract, domcontentloaded e2e assertions). The source is the home

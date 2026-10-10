@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const labGamepad = vi.hoisted(() => ({ construct: vi.fn() }))
 
-vi.mock('../World/LabGamepad', () => ({
+vi.mock('../../../../src/Experience/World/LabGamepad', () => ({
   LabGamepad: class {
     constructor() {
       labGamepad.construct()

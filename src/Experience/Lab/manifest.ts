@@ -36,7 +36,7 @@ interface LabExperiment {
  * The catalogue content may describe future research, but only this manifest
  * is allowed to allocate route-specific GPU resources.
  */
-export const labExperiments: readonly LabExperiment[] = [
+const labExperiments: readonly LabExperiment[] = [
   {
     id: 'gamepad',
     page: 'lab',

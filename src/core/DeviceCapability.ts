@@ -15,7 +15,7 @@ export function maxDprForMode(mode: RendererMode, isMobile: boolean): number {
 }
 
 /** Keep the full-screen TSL graph off low-tier devices on either backend. */
-export function supportsPostProcessing(tier: QualityTier): boolean {
+function supportsPostProcessing(tier: QualityTier): boolean {
   return tier !== 'low'
 }
 
@@ -54,7 +54,6 @@ export class DeviceCapability {
   public tier: QualityTier
   public mode: RendererMode
   public readonly isMobile: boolean
-  public readonly isTouch: boolean
 
   public get maxDpr(): number {
     return maxDprForMode(this.mode, this.isMobile)
@@ -66,7 +65,6 @@ export class DeviceCapability {
 
   private constructor() {
     this.isMobile = detectMobile()
-    this.isTouch = navigator.maxTouchPoints > 0
 
     this.mode = this.detectInitialRendererMode()
     this.tier = this.detectTier()
@@ -93,17 +91,12 @@ export class DeviceCapability {
     // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).
     // Accessing via LAN IP (http://192.168.x.x) is NOT secure context —
     // navigator.gpu is undefined even if the browser supports WebGPU.
-    // Check isSecureContext first and log a warning if not secure.
     if ('gpu' in navigator) {
       return 'webgpu'
     }
-    // WebGPU API exists but not available — likely non-secure context
-    if (
-      typeof navigator !== 'undefined' &&
-      !('gpu' in navigator) &&
-      typeof isSecureContext !== 'undefined' &&
-      !isSecureContext
-    ) {
+    // No navigator.gpu here. On a non-secure context that is the reason:
+    // warn so the LAN-IP case is diagnosable.
+    if (typeof isSecureContext !== 'undefined' && !isSecureContext) {
       console.warn(
         '[DeviceCapability] WebGPU not available — page is not a secure context.\n' +
           'WebGPU requires HTTPS or localhost. Accessing via LAN IP (http://192.168.x.x) will NOT work.\n' +

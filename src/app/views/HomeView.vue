@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Home route: its section order matches the cube orientation in
 // `routeManifest.ts`; `data-section` attributes synchronize the 3D scene.
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import { langFromPath, localizedPagePath } from '../../core/routeManifest'
@@ -9,12 +9,28 @@ import { useJlzPage } from '../useJlzPage'
 import ContactFooter from './ContactFooter.vue'
 import NavMenu from './NavMenu.vue'
 import { rendererAvailable } from '../../core/rendererAvailability'
+import { eventBus } from '../../core/EventBus'
 
 const rootEl = ref<HTMLElement | null>(null)
 const route = useRoute()
 const pageHref = (page: import('../../core/routeManifest').PageId): string =>
   localizedPagePath(page, langFromPath(route.path))
 const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
+const focusedWork = ref({
+  index: 0,
+  total: 4,
+  title: 'Porsche 911 Spider',
+  category: 'Motion & CG',
+})
+let stopCarouselFocus: (() => void) | null = null
+
+onMounted(() => {
+  stopCarouselFocus = eventBus.on('jlz:carousel-focus', (work) => {
+    focusedWork.value = work
+  })
+})
+
+onBeforeUnmount(() => stopCarouselFocus?.())
 </script>
 
 <template>
@@ -68,25 +84,6 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
                   Creative direction. Automation. Performance.
                 </p>
               </div>
-              <div class="uk-margin-top">
-                <button
-                  v-if="rendererAvailable"
-                  type="button"
-                  class="jlz-showreel-btn"
-                  id="jlz-showreel-trigger"
-                  data-cursor="play"
-                  aria-haspopup="dialog"
-                >
-                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">[</span>
-                  <span class="jlz-showreel-btn__glyph" aria-hidden="true">▶</span>
-                  <span class="jlz-showreel-btn__label" data-i18n="home.studio.showreel"
-                    >Showreel</span
-                  >
-                  <span class="jlz-showreel-btn__meta" aria-hidden="true">MP4·2026</span>
-                  <span class="jlz-showreel-btn__bracket" aria-hidden="true">]</span>
-                  <span class="jlz-showreel-btn__cursor" aria-hidden="true"></span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -132,6 +129,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
                 </p>
               </div>
               <RouterLink
+                v-if="!rendererAvailable"
                 :to="pageHref('services')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >
@@ -161,6 +159,16 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
              assistive technology, but the Works frame itself is
              deliberately image-only. -->
         <h2 id="jlz-works-title" data-i18n="home.works.title" hidden>Works</h2>
+        <div class="jlz-works-focus" aria-live="polite" aria-atomic="true">
+          <span class="jlz-works-focus__eyebrow"
+            >{{ String(focusedWork.index + 1).padStart(2, '0') }} /
+            {{ String(focusedWork.total).padStart(2, '0') }} · {{ focusedWork.category }}</span
+          >
+          <span class="jlz-works-focus__title">{{ focusedWork.title }}</span>
+          <span class="jlz-works-focus__hint" data-i18n="home.works.openHint"
+            >Select a frame to open the case</span
+          >
+        </div>
         <!-- bottom block: none (3D plane owns the frame) -->
       </div>
       <div
@@ -189,7 +197,11 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
-      <RouterLink :to="pageHref('works')" class="jlz-works-entrance uk-button uk-button-default">
+      <RouterLink
+        v-if="!rendererAvailable"
+        :to="pageHref('works')"
+        class="jlz-works-entrance uk-button uk-button-default"
+      >
         <span data-i18n="works.enterRooms">Explore the four rooms</span> ↗
       </RouterLink>
     </section>
@@ -236,6 +248,7 @@ const activeSectionId = useJlzPage('home', () => rootEl.value, 'intro')
                 </p>
               </div>
               <RouterLink
+                v-if="!rendererAvailable"
                 :to="pageHref('manifesto')"
                 class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle"
               >

@@ -105,8 +105,12 @@ export class DrawTrail {
   private _geometryDirty = true
   private _reducedMotion = prefersReducedMotion()
 
+  public get visible(): boolean {
+    return this._root.visible
+  }
+
   public get isAnimating(): boolean {
-    return !this._reducedMotion && this._energy > 0.008
+    return this._root.visible && !this._reducedMotion && this._energy > 0.008
   }
 
   /** Settle the cursor trail at the owner boundary when motion is reduced. */

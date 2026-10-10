@@ -26,6 +26,8 @@ interface SceneEnvironmentOwners {
   renderer: () => { instance: object }
   /** The glass cube binds the PMREM texture directly (see apply()). */
   baku: () => { bindEnvironment(texture: THREE.Texture): void } | null | undefined
+  /** Reflective content sculptures bind the same PMREM, without another target. */
+  services: () => { bindEnvironment(texture: THREE.Texture): void } | null | undefined
 }
 
 export class SceneEnvironment {
@@ -119,6 +121,7 @@ export class SceneEnvironment {
       scene.environment = nextEnvironment
       try {
         this._owners.baku()?.bindEnvironment(nextEnvironment)
+        this._owners.services()?.bindEnvironment(nextEnvironment)
       } catch (error) {
         scene.environment = previousEnvironment ?? null
         nextEnvironment.dispose()

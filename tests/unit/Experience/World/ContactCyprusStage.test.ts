@@ -92,10 +92,12 @@ describe('ContactCyprusStage scene ownership', () => {
     scene.add(root)
 
     expect(stage).not.toBeInstanceOf(Group)
+    // The root name is authored declaratively in ContactCyprusStageOwner.vue;
+    // the stage must not rename the Vue-owned root.
     stage.bindRoot(root, (model) => {
       published.push(model)
     })
-    expect(root.name).toBe('contact-cyprus-stage')
+    expect(root.name).toBe('')
     expect(stage.visible).toBe(false)
 
     stage.setActive(true)

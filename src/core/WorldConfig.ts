@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import type { PageId } from './routeManifest'
 import { BakuRole } from './types'
 import type { PostParams } from './postParams'
-import { worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
+import { WORKS_SLOT_INDEX, worldSlotAt, WORLD_SLOT_COUNT } from './worldSlots'
 
 // ── Types ──
 export interface CameraTransform {
@@ -27,11 +27,6 @@ export interface BakuTransform {
   }
 }
 
-export interface LightTransform {
-  ambientColor: THREE.Color
-  intensity: number
-}
-
 interface FogTransform {
   color: THREE.Color
   density: number
@@ -48,13 +43,6 @@ type PostTransform = Pick<
   'bloom' | 'vignette' | 'grain' | 'chromatic' | 'refract' | 'gradeShadows' | 'gradeHighlights'
 >
 
-interface SectionLightDef {
-  hexColor: string
-  intensity?: number
-  distance?: number
-  position: [number, number, number]
-}
-
 /** Transition easing authored in WorldConfig. The list is closed: only these
  *  two curves are used by any section, so SceneCoordinator implements exactly
  *  them (no dead 'linear'/'cubic-bezier' branches). */
@@ -63,11 +51,13 @@ export type SceneTransitionEasing = 'ease-out' | 'ease-in-out'
 /** Per-section 3D scene control. All optional — sections without these
  *  use defaults (objects visible when their scene group is visible,
  *  standard transition). */
-export interface SceneControl {
+interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
     wireframeText?: boolean
     bakuCarousel?: boolean
+    junniParticles?: boolean
+    drawTrail?: boolean
   }
   /** Transition easing for camera + baku morph when entering this section.
    *  (The former duration field had zero readers — the crossfade speed and
@@ -90,12 +80,9 @@ export interface PhaseConfig {
   camFovDuration: number
   camSmoothing: number
   baku: BakuTransform
-  lighting: LightTransform
   fog: FogTransform
   post: PostTransform
-  ui: { showGallery: boolean }
   ground: { color: THREE.Color; opacity: number }
-  sectionLights?: SectionLightDef[]
   /** Per-section 3D scene control (background pattern, objects, transition). */
   scene?: SceneControl
   /** Section theme: 'light' = light background (dark text), 'dark' = dark background (light text).
@@ -125,12 +112,8 @@ type RawScene = {
   postRefract?: number
   postGradeShadows?: [number, number, number]
   postGradeHighlights?: [number, number, number]
-  lightColor?: number
-  lightIntensity?: number
   fogColor?: number
   fogDensity?: number
-  bgColor?: number
-  showGallery?: boolean
   groundColor?: number
   groundOpacity?: number
   /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text). */
@@ -159,12 +142,8 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   postRefract: 0,
   postGradeShadows: [1.0, 1.0, 1.0],
   postGradeHighlights: [1.0, 1.0, 1.0],
-  lightColor: 0xffffff,
-  lightIntensity: 1.2,
   fogColor: 0x000000,
   fogDensity: 0.005,
-  bgColor: 0x000000,
-  showGallery: false,
   groundColor: 0x101010,
   groundOpacity: 0,
   sectionTheme: 'dark',
@@ -199,8 +178,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     bakuOpacity: 0.35,
     bakuColor: 0xc0c0c0,
     postBloom: 0.4,
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
     groundOpacity: 0.08,
     sceneTransition: { easing: 'ease-out' },
   },
@@ -213,11 +190,8 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     camSmoothing: 6,
     bakuOpacity: 0.4,
     bakuColor: 0xc0c0c0,
-    showGallery: true,
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
     groundOpacity: 0.1,
-    sceneObjects: { bakuCarousel: true },
+    sceneObjects: { bakuCarousel: true, junniParticles: true, drawTrail: true },
     sceneTransition: { easing: 'ease-out' },
   },
   {
@@ -225,8 +199,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     id: 'sec_contact',
     context: 'CONTACT — Footer',
     postBloom: 0.2,
-    lightColor: 0xffffff,
-    lightIntensity: 1.5,
     groundColor: 0x121212,
     groundOpacity: 0.4,
     sceneObjects: { wireframeText: true },
@@ -242,8 +214,6 @@ const HOME_RAW: Array<Omit<RawScene, 'domSection' | 'range'>> = [
     postRefract: 0.012,
     postGradeShadows: [0.82, 0.84, 1.0],
     postGradeHighlights: [1.0, 0.98, 0.72],
-    lightColor: 0xa6a9d6,
-    lightIntensity: 0.72,
     groundOpacity: 0.02,
     sceneTransition: { easing: 'ease-in-out' },
   },
@@ -264,7 +234,7 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
   return {
     id: r.id,
     context: r.context,
-    domSection: r.domSection ?? r.id.replace(/^sec_/, ''),
+    domSection: r.domSection,
     range: r.range,
     camera: { position: _toVec(r.camPos!), target: _toVec(r.camTarget!), fov: r.camFov! },
     camFovOffset: r.camFovOffset!,
@@ -285,10 +255,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
         metalness: 0.0,
       },
     },
-    lighting: {
-      ambientColor: _toColor(r.lightColor!),
-      intensity: r.lightIntensity!,
-    },
     fog: { color: _toColor(r.fogColor!), density: r.fogDensity! },
     post: {
       bloom: r.postBloom!,
@@ -299,7 +265,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       gradeShadows: r.postGradeShadows!,
       gradeHighlights: r.postGradeHighlights!,
     },
-    ui: { showGallery: r.showGallery! },
     ground: {
       color: _toColor(r.groundColor!),
       opacity: r.groundOpacity!,
@@ -410,6 +375,8 @@ function makeContentScenes(pageId: ContentPageId): PhaseConfig[] {
       fogColor: p.fogColor,
       groundColor: p.groundColor,
       groundOpacity: 0.05,
+      sceneObjects:
+        pageId === 'works' && idx === WORKS_SLOT_INDEX ? { drawTrail: true } : undefined,
     }),
   )
 }

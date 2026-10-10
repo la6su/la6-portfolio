@@ -1,0 +1,14 @@
+.git
+.agents
+.aws
+.codex
+.omp
+node_modules
+dist
+test-results
+playwright-report
+playwright/.cache
+.vite
+.env
+.env.*
+!.env.example

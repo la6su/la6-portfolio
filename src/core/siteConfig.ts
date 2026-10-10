@@ -1,7 +1,7 @@
 /** Shared public origin for generated metadata and sitemap output. */
 const DEFAULT_SITE_ORIGIN = 'https://justlovejazz.dev'
 
-export function normalizeSiteOrigin(origin: string): string {
+function normalizeSiteOrigin(origin: string): string {
   return origin.trim().replace(/\/+$/, '')
 }
 

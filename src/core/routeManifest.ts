@@ -67,7 +67,7 @@ export function localizedPagePath(page: PageId, lang: SiteLang): string {
  * the initial-load behaviour — a shared deep link to a stale or preview path
  * should still present the application at its home face.
  */
-export function resolvePage(path: string): PageId {
+function resolvePage(path: string): PageId {
   return PAGE_BY_PATH.get(unlocalizedPath(path)) ?? 'home'
 }
 
@@ -77,6 +77,6 @@ export function resolvePagePath(path: string): PageId {
 }
 
 /** True for a case-study detail route owned by the works section. */
-export function isCaseStudyPath(path: string): boolean {
+function isCaseStudyPath(path: string): boolean {
   return /^\/works\/[a-z0-9-]+$/.test(unlocalizedPath(path))
 }

@@ -3,23 +3,38 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import UIkit from '../core/uikit'
 import { NAV_ITEMS } from './navItems'
-import { getLang, t, toggleLang } from '../core/i18n'
+import { getLang, t, toggleLang, TRANSLATIONS } from '../core/i18n'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 import { eventBus } from '../core/EventBus'
 import { themeManager } from '../core/ThemeManager'
 import { worldSlotIndex } from '../core/worldSlots'
 import { rendererAvailable, setRendererAvailable } from '../core/rendererAvailability'
 import { noSceneRequested } from '../core/sceneMode'
-import { langFromPath, localizedPagePath, localizedPath } from '../core/routeManifest'
+import {
+  langFromPath,
+  localizedPagePath,
+  localizedPath,
+  unlocalizedPath,
+} from '../core/routeManifest'
+import { getWorksCaseProject } from '../core/worksExperience'
 
 const language = ref(getLang())
 const route = useRoute()
 const pageHref = (page: import('../core/routeManifest').PageId): string =>
   localizedPagePath(page, langFromPath(route.path))
 const blogHref = (path: string): string => localizedPath(langFromPath(route.path), path)
+const currentPath = computed(() => unlocalizedPath(route.path))
 const soundMuted = ref(getSoundMuted())
 const fullscreenOpen = ref(false)
 const activeIndex = ref(0)
+const focusedProjectIndex = ref(0)
+const activePageSection = ref('')
+watch(currentPath, () => {
+  activePageSection.value = ''
+})
+// Storyline labels published by the CinematicNav behavior controller from the
+// track's section headings; this view is the single aria-label writer.
+const storyLabels = ref<string[]>([])
 const themeIsInverse = ref(themeManager.isInverse)
 const soundIcon = ref<HTMLElement | null>(null)
 const menuLabel = computed(() => t(fullscreenOpen.value ? 'common.close' : 'menu.navigate'))
@@ -44,6 +59,9 @@ onMounted(() => {
   if (nav.value) {
     UIkit.update(nav.value)
   }
+  activePageSection.value =
+    document.querySelector<HTMLElement>('.jlz-page-section.section-active')?.dataset.pageSection ??
+    ''
   unsubscribers.push(
     eventBus.on('jlz:lang-change', () => {
       language.value = getLang()
@@ -59,6 +77,15 @@ onMounted(() => {
     }),
     eventBus.on('jlz:story-index-change', ({ index }) => {
       activeIndex.value = index
+    }),
+    eventBus.on('jlz:carousel-focus', ({ index }) => {
+      focusedProjectIndex.value = index
+    }),
+    eventBus.on('jlz:page-section-change', ({ sectionId }) => {
+      activePageSection.value = sectionId
+    }),
+    eventBus.on('jlz:story-labels', ({ labels }) => {
+      storyLabels.value = labels
     }),
     eventBus.on('jlz:webgl-ready', () => {
       setRendererAvailable(!noSceneRequested)
@@ -79,6 +106,76 @@ function requestStoryNavigation(index: number): void {
     return
   }
   eventBus.emit('jlz:story-navigate', { index })
+}
+
+const SECTION_EXPLORE_PATHS: Record<string, string> = {
+  'services-creativeDirection': '/blog/glassmorphism-webgpu',
+  'services-interactiveDev': '/blog/on-demand-rendering',
+  'services-motionRealtime': '/blog/tsl-changes-everything',
+  'services-aiSystems': '/blog/on-demand-rendering',
+  'manifesto-friction': '/services',
+  'manifesto-clarity': '/blog/on-demand-rendering',
+  'manifesto-motion': '/blog/undercurrent-webgpu-fluid',
+  'manifesto-complexity': '/blog/tsl-changes-everything',
+  'lab-01': '/blog/glassmorphism-webgpu',
+  'lab-02': '/blog/tsl-changes-everything',
+  'lab-03': '/blog/undercurrent-webgpu-fluid',
+  'lab-04': '/blog/on-demand-rendering',
+}
+
+const launcherLabel = computed(() => {
+  let key = 'launcher.contact'
+  if (currentPath.value === '/') {
+    if (activeIndex.value === 1) key = 'launcher.reel'
+    else if (activeIndex.value === 2 || activeIndex.value === 3) key = 'launcher.explore'
+  } else if (
+    SECTION_EXPLORE_PATHS[activePageSection.value] ||
+    activePageSection.value.startsWith('works-') ||
+    /^case-[1-3]$/.test(activePageSection.value)
+  ) {
+    key = 'launcher.explore'
+  }
+  return TRANSLATIONS[language.value][key] ?? t(key)
+})
+
+function activateContextAction(): void {
+  if (currentPath.value === '/') {
+    switch (activeIndex.value) {
+      case 1:
+        eventBus.emit('jlz:showreel-open')
+        return
+      case 2:
+        eventBus.emit('jlz:navigate', { path: pageHref('services') })
+        return
+      case 3:
+        eventBus.emit('jlz:open-project', { idx: focusedProjectIndex.value })
+        return
+    }
+  }
+
+  const explorePath = SECTION_EXPLORE_PATHS[activePageSection.value]
+  if (explorePath) {
+    window.location.assign(blogHref(explorePath))
+    return
+  }
+
+  const worksSection = /^works-(\d+)$/.exec(activePageSection.value)
+  if (worksSection) {
+    eventBus.emit('jlz:open-project', { idx: Number(worksSection[1]) - 1 })
+    return
+  }
+
+  if (/^case-[1-3]$/.test(activePageSection.value)) {
+    eventBus.emit('jlz:open-project', { idx: getWorksCaseProject() ?? 0 })
+    return
+  }
+
+  requestStoryNavigation(0)
+}
+
+/** The storyline button label: the track heading when published, else the slot. */
+function storyLabel(index: number): string {
+  return storyLabels.value[index - firstStorySection] ?? String(index)
 }
 
 function toggleSound(): void {
@@ -191,29 +288,23 @@ function toggleSound(): void {
           class="uk-button uk-button-default uk-flex uk-flex-middle jlz-contact-launcher__button"
           type="button"
           id="jlz-contact-launcher"
-          aria-controls="section-lab"
-          :aria-expanded="activeIndex === 0"
+          :aria-label="launcherLabel"
           :tabindex="activeIndex === 0 || activeIndex === 5 ? -1 : 0"
-          @click="requestStoryNavigation(0)"
+          @click="activateContextAction"
         >
           <span class="jlz-contact-launcher__channel" aria-hidden="true">
-            <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
+            <svg viewBox="0 0 16 16" focusable="false">
               <path d="M2 3h10v8H2ZM5 13v2M9 13v2M5 6h4M5 8.5h2" />
             </svg>
           </span>
-          <span data-i18n="story.contact">{{ t('story.contact') }}</span>
-          <span
-            class="jlz-contact-launcher__arrow"
-            uk-icon="icon: arrow-up; ratio: 0.8"
-            aria-hidden="true"
-          ></span>
+          <span>{{ launcherLabel }}</span>
         </button>
       </div>
       <nav
         id="cinematic-nav"
         class="jlz-storyline"
         :aria-label="t('nav.storyline')"
-        data-sheet="center"
+        :inert="activeIndex === 0 || activeIndex === 5"
       >
         <div class="jlz-storyline__items uk-flex uk-flex-middle">
           <button
@@ -223,14 +314,13 @@ function toggleSound(): void {
             :class="{ 'is-active': activeIndex === index }"
             type="button"
             :data-story-index="index"
-            :aria-label="`${t('nav.goToSection')} ${index}`"
+            :aria-label="`${t('nav.goToSection')} ${storyLabel(index)}`"
             :aria-current="activeIndex === index ? 'step' : undefined"
             @click="requestStoryNavigation(index)"
           >
             <span class="jlz-storyline__number uk-text-meta uk-text-uppercase">{{
               String(index).padStart(2, '0')
             }}</span>
-            <span class="jlz-storyline__label uk-hidden" data-story-label>Section {{ index }}</span>
           </button>
         </div>
         <span
