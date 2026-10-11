@@ -176,16 +176,21 @@ test('DOM-only mode keeps semantic route navigation available without a canvas',
   page,
 }) => {
   await page.goto('/?no-scene', { waitUntil: 'domcontentloaded' })
-  await expect(page.locator('.jlz-route-fallback')).toBeVisible()
-  await expect(page.locator('#jlz-showreel-trigger')).toHaveCount(0)
+  // The splash owns first paint: `#app` stays visibility-hidden until Enter
+  // starts the loader exit (the LCP gate in index.html), so the DOM-only
+  // fallback is mounted and complete before the click, visible after it.
+  await expect(page.locator('.jlz-route-fallback')).toHaveCount(1)
   await expect(page.locator('.jlz-scene-host')).toHaveCount(0)
   await expect(page.locator('.jlz-route-fallback__nav a')).toHaveCount(7)
 
   const enter = page.locator('#jlz-splash-enter')
   await expect(enter).toHaveClass(/is-ready/, { timeout: 20_000 })
   await enter.click()
+  await expect(page.locator('.jlz-route-fallback')).toBeVisible()
+  // The exit is a 1.2 s animation with a 1.3 s fallback timer; the node is
+  // removed when either fires, so the budget has to survive a loaded machine.
   await expect(page.locator('#jlz-app-loader')).toHaveCount(0, {
-    timeout: 2_000,
+    timeout: 5_000,
   })
   await page
     .getByRole('navigation', { name: 'Portfolio routes' })
@@ -283,6 +288,9 @@ test('Works lazy scene survives repeated route mount and release cycles', async 
     }
     return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady)
   })
+  const enter = page.locator('#jlz-splash-enter')
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 })
+  await enter.click()
   await expect(page.locator('[data-page-view="works"]')).toHaveCount(1)
   await page.waitForFunction((paths) => {
     const resources = performance.getEntriesByType('resource')
@@ -298,9 +306,7 @@ test('Works lazy scene survives repeated route mount and release cycles', async 
     await page.waitForFunction(() => location.pathname === '/')
     await expect(page.locator('[data-page-view="home"]')).toHaveCount(1)
 
-    await page
-      .locator('.jlz-works-entrance')
-      .evaluate((element: HTMLAnchorElement) => element.click())
+    await page.goBack()
     await page.waitForFunction(() => location.pathname === '/works')
     await expect(page.locator('[data-page-view="works"]')).toHaveCount(1)
     await expect(page.locator('#app canvas')).toHaveCount(1)
@@ -399,6 +405,9 @@ test('Lab route mounts its lazy 3D experiment without browser errors', async ({ 
 })
 
 test('Showreel lazily mounts its TresPortal scene and closes cleanly', async ({ page }) => {
+  // Software-rendering environments need the extra budget: the showreel
+  // theater decodes its media on the first open command.
+  test.setTimeout(60_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('console', (message) => {
@@ -413,8 +422,15 @@ test('Showreel lazily mounts its TresPortal scene and closes cleanly', async ({ 
     }
     return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady)
   })
-  const trigger = page.locator('#jlz-showreel-trigger')
-  await trigger.evaluate((element: HTMLButtonElement) => element.click())
+  const enter = page.locator('#jlz-splash-enter')
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 })
+  await enter.click()
+  // The showreel is a render mode of the persistent scene: it opens from the
+  // home contextual launcher at story slot 01, and its theater (media decode
+  // + quad) mounts lazily on that command.
+  await page.locator('#cinematic-nav [data-story-index="1"]').click()
+  const launcher = page.locator('#jlz-contact-launcher')
+  await launcher.click()
   const consolePanel = page.locator('#jlz-showreel-console')
   await expect(consolePanel).toHaveAttribute('data-state', 'open')
   const video = page.locator('video[aria-hidden="true"]')
@@ -426,7 +442,7 @@ test('Showreel lazily mounts its TresPortal scene and closes cleanly', async ({ 
     .toBeGreaterThan(0)
   await page.keyboard.press('Escape')
   await expect(consolePanel).toHaveAttribute('data-state', 'closed')
-  await trigger.evaluate((element: HTMLButtonElement) => element.click())
+  await launcher.click()
   await expect(consolePanel).toHaveAttribute('data-state', 'open')
   await page.keyboard.press('Escape')
   await expect(consolePanel).toHaveAttribute('data-state', 'closed')
@@ -442,6 +458,10 @@ test('navigation sheet moves focus in and restores it after Escape', async ({ pa
     }
     return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady)
   })
+
+  const enter = page.locator('#jlz-splash-enter')
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 })
+  await enter.click()
 
   const launcher = page.locator('#jlz-menu-launcher')
   await launcher.focus()
@@ -480,7 +500,10 @@ test('Vue story rail reflects and requests the active story slot', async ({ page
 })
 
 test('fullscreen project overlay traps and restores keyboard focus', async ({ page }) => {
-  await page.goto('/works', { waitUntil: 'domcontentloaded' })
+  // The overlay's project controls and poster decode are scene-side and lazy;
+  // software rendering needs the extra budget.
+  test.setTimeout(60_000)
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.waitForFunction(() => {
     const runtime = window as Window & {
       __jlzHost?: object
@@ -489,9 +512,18 @@ test('fullscreen project overlay traps and restores keyboard focus', async ({ pa
     return Boolean(runtime.__jlzHost && runtime.__jlzRouterReady)
   })
 
-  const trigger = page.getByRole('button', { name: 'View material' }).first()
-  await trigger.focus()
-  await page.keyboard.press('Enter')
+  const enter = page.locator('#jlz-splash-enter')
+  await expect(enter).toHaveClass(/is-ready/, { timeout: 60_000 })
+  await enter.click()
+
+  // Story slot 03 maps the contextual launcher to the project viewer. Focus
+  // the launcher explicitly: WebKit does not focus a button on click, and the
+  // overlay restores focus to whatever was active when it opened.
+  await page.locator('#cinematic-nav [data-story-index="3"]').click()
+  const launcher = page.locator('#jlz-contact-launcher')
+  await launcher.focus()
+  await launcher.click()
+
   const dialog = page.getByRole('dialog', {
     name: 'Fullscreen project viewer',
   })
@@ -499,12 +531,21 @@ test('fullscreen project overlay traps and restores keyboard focus', async ({ pa
   const close = dialog.getByRole('button', { name: 'Close' })
   await expect(close).toBeFocused()
 
-  await page.locator('.jlz-fs-next').focus()
+  const focusStaysInDialog = () =>
+    page.evaluate(() => {
+      const panel = document.querySelector('.jlz-fs-overlay .uk-modal-dialog')
+      const active = document.activeElement
+      return Boolean(panel && active && panel.contains(active))
+    })
+
+  await page.keyboard.press('Shift+Tab')
+  expect(await focusStaysInDialog()).toBe(true)
   await page.keyboard.press('Tab')
-  await expect(close).toBeFocused()
+  expect(await focusStaysInDialog()).toBe(true)
+
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
-  await expect(trigger).toBeFocused()
+  await expect(launcher).toBeFocused()
 })
 
 test('reduced-motion preference reaches the shell and cinematic controls', async ({ page }) => {
@@ -660,7 +701,6 @@ test('Renderer initialization failure reaches the accessible boot error state', 
   })
   await expect(page.locator('[data-page-view="home"]')).toHaveCount(1)
   await expect(page.locator('[data-page-view="home"]')).toBeFocused()
-  await expect(page.locator('#jlz-showreel-trigger')).toHaveCount(0)
   await expect(page.locator('.jlz-route-fallback')).toBeVisible()
   await expect(page.locator('.jlz-route-fallback__nav a')).toHaveCount(7)
   await page

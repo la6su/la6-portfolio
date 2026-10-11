@@ -6,21 +6,25 @@ Update the relevant phase when code or evidence changes.
 
 ## Goal and constraints
 
-Deliver a production ready EN/RU portfolio on Vue 3, TresJS 5, Three.js
-WebGPU/TSL, and WebGL2 where Three selects that backend. Keep the codebase
-small and easy to change. Vue owns UI and declared scene composition; Tres
-owns Vue/Three integration and its render host; Three owns GPU primitives and
-TSL; Cientos owns controls it already provides. Project code should implement
-portfolio behavior, bespoke visuals, and only the browser policy the libraries
-do not provide.
+Deliver a production ready EN/RU portfolio with a strong Vue + TvT.js v5
+developer experience. Prefer the framework's current declarative Vue/Tres and
+Cientos APIs for scene composition, resources, controls, and rendering. Use
+TvT's WebGPU integration as a first-class path; retain Three's alternate backend
+or fallback where the supported framework/runtime provides it. Keep the
+codebase small and easy to change. Implement custom runtime and TSL logic only
+where the product needs behavior the framework does not provide, and simplify
+or remove bespoke infrastructure when TvT/Tres owns that responsibility.
 
-Use [TvT.js v5](https://github.com/hawk86104/three-vue-tres) as a reference
-for focused declarative composition and framework delegation. Do not copy its
-editor or product-specific systems. Prefer deletion or library APIs over new
-wrappers. Keep imperative Three code for generated geometry, GPU algorithms,
-and behavior with no declarative library equivalent. Do not split files solely
-to reduce line counts, preserve abstractions for tests, or optimize without
-measured evidence.
+Use [TvT.js v5](https://gitee.com/ice-gl/icegl-three-vue-tres/) and its
+[current guide](https://docs.icegl.cn/docs/three-vue-tres/guide/introduction)
+as the primary ecosystem and developer-experience reference, not only as a
+source of isolated Vue patterns. Adopt its declarative composition and
+WebGPU-ready integration where they fit the portfolio. Do not copy its editor
+or product-specific systems. Prefer supported framework APIs and deletion of
+project-specific glue. Keep imperative Three/TSL code only for product behavior
+that has no suitable framework API or where measured output requires it; record
+that reason next to the remaining custom seam. Do not preserve complexity only
+because the current implementation already owns it.
 
 The product is an EN/RU portfolio for distinctive business solutions through
 data-informed creative direction, automation, speed, performance, and style.
@@ -57,25 +61,43 @@ needed.
    and blog routes; canonical metadata and generated sitemap agree with routes.
 2. Keyboard, screen-reader, reduced-motion, responsive, and no-scene behavior
    remain usable without WebGPU or a working 3D renderer.
-3. Tres owns one persistent canvas, Three owns one unified WebGPU renderer with
-   automatic WebGL2 backend selection, and there is one RAF host and one
-   demand scheduler. Startup, device loss, route changes, HMR and teardown have
-   explicit owners and bounded failure paths.
+3. The Vue/TvT/Tres declarative runtime owns the canvas, scene lifecycle, and
+   rendering wherever its supported APIs allow. WebGPU is a first-class
+   rendering path. Any custom renderer, loop, scheduler, or recovery layer must
+   solve a demonstrated product/runtime need and must not duplicate framework
+   ownership.
 4. Every scene node, listener, timer, observer, media element, texture,
    material, geometry, render target, and GPU owner has a deterministic release
    path. Repeated route/host lifetimes return owned resources to baseline.
-5. Vue/Tres owns stable declared hierarchy and transforms; imperative code is
-   limited to generated assets, animation, GPU algorithms, and browser policy
-   with no equivalent library feature. No helper or compatibility seam lacks
-   a current consumer and documented reason.
+5. Prefer declarative Vue/Tres/TvT components and composables for scene graph,
+   transforms, assets, controls, and effects. Keep custom code only for
+   intentional portfolio behavior without a suitable framework feature. Every
+   compatibility seam and renderer override has a current consumer, a
+   documented reason, and a simpler framework-native alternative review.
 6. `bun run build` passes, including type-check, stdlib shim verification,
    prerender, sitemap generation, and bundle/media budgets; tracked release
    artifacts match sources. Lint passes. Tests are run only on explicit user
    request.
-7. WebGPU/TSL, WebGL2 backend selection, visual parity, context/device recovery,
-   idle rendering, reduced motion, and lifecycle behavior have evidence in
-   available engines/hardware. Anything unavailable is listed as an open gate,
-   not represented as proven.
+7. TvT's supported WebGPU integration, rendering output, reduced motion, and
+   lifecycle behavior have evidence in available engines/hardware. Any
+   alternate backend, parity, or recovery behavior is verified only where the
+   selected framework/runtime claims to support it; unavailable checks remain
+   open gates.
+
+## Active direction: TvT v5 developer experience first
+
+The user's priority is a good developer experience with Vue and TvT v5,
+including declarative scene authoring and the framework's WebGPU integration.
+The existing bespoke renderer/scheduler/TSL architecture is an implementation
+to reassess, not a constraint to protect. Before more scene-owner migration,
+audit the current TvT v5 docs and installed package surfaces against this
+project's custom renderer factory, render-loop bridge, scheduler, compatibility
+aliases, loaders, and post-processing. Identify the smallest reversible slice
+that delegates ownership back to TvT/Tres/Cientos and removes custom code while
+preserving portfolio behavior and accessible no-scene navigation. Do not
+assume a traditional WebGL-only path is the only way to obtain declarative DX;
+verify the framework's current WebGPU support and examples first. Keep only
+custom effects or lifecycle policy that remain necessary after that audit.
 
 ## Current architecture and evidence
 
@@ -94,6 +116,27 @@ disposing its textures.
 
 Current known facts:
 
+- Strategic reference update (2026-10-11): the [ICEGL TvT.js base migration
+  notice](https://www.icegl.cn/ask/article/22769.html) states that TvT is
+  moving to Tres v5, Cientos v4, and Three r18x, with ESM and WebGPU
+  integration as core goals. Its migration details include the Tres v5
+  composable changes (`useLoop`, `useTres`, texture loading in Cientos) and
+  changed renderer/canvas assumptions. This confirms that TvT's native-WebGPU
+  direction is architectural guidance for this portfolio, not merely a
+  declarative Vue example. The post itself was published 2025-09-27 and gave a
+  mid-October completion target; treat that target and its r180-era examples as
+  historical, not proof of the current TvT branch or plugin status. The
+  [official Tres upgrade guide](https://docs.tresjs.org/getting-started/upgrade-guide)
+  is the source of truth for Tres API migration; inspect installed package
+  source and current upstream docs before changing APIs. This repository is
+  already beyond the post's baseline at Tres/Cientos 5.9.2 and Three 0.186.1,
+  with a native `WebGPURenderer` + TSL path and Three-managed WebGL2 fallback.
+  This confirms the ecosystem direction; it does not make the current custom
+  renderer architecture mandatory. The active DX-first direction above
+  supersedes the earlier rule to preserve the bespoke WebGPU/TSL pipeline and
+  its WebGL2 fallback at all costs. Prefer the current supported TvT integration
+  and simplify the app around it, validating actual APIs and behavior as the
+  migration proceeds.
 - TvT v5 architecture audit on 2026-10-03 compared every custom subsystem
   with the installed library APIs (`@tresjs/core` 5.9.2, `@tresjs/cientos`
   5.9.2, `three` 0.186.1) and the TvT v5 reference. Ownership is single-owner
@@ -106,16 +149,19 @@ Current known facts:
   is bounded by the single WebGPU/TSL render path: Lab `OrbitControls` is the
   one adopted component, while Environment/useEnvironment and the
   GLSL-ShaderMaterial family (Stars, Sparkles, Sky, transmission, FBO, and
-  reflector components) would import classic WebGL symbols that
-  `three-webgpu-compat` stubs, so they stay non-candidates until that
-  constraint changes. Verified keep verdicts (do not re-litigate without new
-  library evidence): the custom render-demand seam (Tres 5.9.2 on-demand
-  keeps ticking its RAF and cannot express settle-based demand),
-  `Experience/Camera` (Cientos CameraShake/MouseParallax do not map onto
+  reflector components) imported classic WebGL symbols that
+  `three-webgpu-compat` stubbed in the audited app configuration. This is a
+  dated compatibility finding, not a reason to rule out framework-native
+  approaches; re-check it against TvT's current WebGPU integration. The 2026-10-03
+  audit retained the custom render-demand seam (Tres 5.9.2 on-demand kept
+  ticking its RAF and could not express settle-based demand),
+  `Experience/Camera` (Cientos CameraShake/MouseParallax did not map onto
   WorldConfig section targets or the Lab yield handoff), the
-  caseTexture/ShowreelTheater/ContactCyprusStage loaders (the Cientos
-  loaders lack refcount leases, abort, prewarm, and deferred disposal), and
-  the authored TextReveal/NoiseText/BlurFade effects. The
+  caseTexture/ShowreelTheater/ContactCyprusStage loaders (the then-installed
+  Cientos loaders lacked refcount leases, abort, prewarm, and deferred
+  disposal), and the authored TextReveal/NoiseText/BlurFade effects. These are
+  previous tradeoffs to reassess under the active direction, not fixed keep
+  decisions. The
   EventBus↔ThemeManager import edge is type-only and erased at runtime; it
   needs no fix. The remaining pre-migration surface is the imperative UI
   layer over Vue-rendered DOM, planned in the phase-1 route-UI migration
@@ -1729,14 +1775,14 @@ Execution order:
 
 ### 4. Declarative Vue + TresJS v5 migration — owner sweep complete; physical-GPU parity observed
 
-Decision: keep the existing three-layer split and finish it by moving **scene
-composition** (geometry and material construction) out of the runtime stage
-classes and into Tres primitives, one route-owned owner at a time. The first
-slice is the pointer-ink family (`ContactHaloStage`, `ManifestoInkStage`),
-because it is the smallest real scene that exercises the whole path: a lazy
-route dynamic import, a TSL `MeshBasicNodeMaterial`, per-frame uniform
-updates, pointer reactivity, reveal damping, reduced-motion snap, theme
-retint, and deterministic teardown.
+Historical decision: keep the existing three-layer split and move **scene
+composition** (geometry and material construction) into Tres primitives. This
+produced the completed owner migrations below. It is no longer the default
+direction for new work: the active TvT v5 DX-first audit above takes precedence
+and may replace the custom renderer, scheduler, and TSL pipeline with supported
+framework facilities. Preserve this section as evidence of completed changes
+and prior tradeoffs; do not treat its remaining migration order or keep verdicts
+as the current queue until the new audit reconciles them.
 
 Ownership after the migration:
 
@@ -2918,3 +2964,36 @@ accumulated GPU/memory pressure from repeated headed WebGPU runs rather than
 an app assertion; the machine became unstable and the user is rebooting.
 Headed system-Firefox WebGPU verification of the gating is therefore not yet
 recorded; the user's own Firefox session remains the reference for that path.
+
+Frame-timing consolidation checkpoint (2026-10-11): the two bespoke frame
+samplers are gone. `src/core/FrameTiming.ts` (per-stage CPU sampler) and
+`src/core/FrameGapStats.ts` (gap percentiles) are replaced by one generic
+`src/core/FrameStats.ts`: a bounded ring with one p50/p95/latest summary per
+named metric, sorting through a reused scratch buffer so no array is
+allocated per read. `Experience` now samples the DEV-only CPU cost of one
+rendered frame per stage (`scene`/`camera`/`renderer`/`total`), the
+`__jlzRuntimeSnapshot` timing payload is `FrameStatsSnapshot<CpuFrameMetric>`,
+and `DevPanel` reads its frame-gap percentiles from
+`FrameStats(['gap'], 240)`. No source or test references to the removed
+modules remain.
+
+Showreel WebKit playback checkpoint (2026-10-11): the theater video element
+was `display: none`; WebKit suspends playback for media not rendered in the
+viewport (`currentTime` stays 0). The element is now a 1 px, fully
+transparent, in-viewport fixed element with `pointer-events: none` — still
+inert, still `aria-hidden`, still sampled by the shader.
+
+Browser-spec splash-gating adaptation checkpoint (2026-10-11):
+`tests/portfolio.spec.ts` now clicks `#jlz-splash-enter` before scene
+interaction, matching the painted-splash gate shipped in `e562382`. The
+showreel spec opens its theater through story slot 01 plus the contact
+launcher (the removed `#jlz-showreel-trigger` has no remaining consumer),
+the Works churn spec navigates back with `page.goBack()`, and the timeout
+budgets were raised for software-rendering environments.
+
+Evidence for this slice: `bun run lint`, `bun run type-check:vue`, and
+`bun run build` pass (prerender, sitemap, budgets: boot closure 14.33 kB,
+lazy Three 310.95 kB gzip, largest media `coming-soon.mp4` 4160 kB).
+Tracked `dist` artifacts are regenerated with the source change. Running the
+adapted browser specs and the WebKit playback fix on a real WebKit engine
+remain open checks.

@@ -12,7 +12,7 @@ import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { DeviceCapability } from '../core/DeviceCapability'
-import { FrameTiming } from '../core/FrameTiming'
+import { FrameStats, type FrameStatsSnapshot } from '../core/FrameStats'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
 import { ShowreelController } from './ShowreelController'
@@ -54,6 +54,9 @@ import { readDevTeardownFaults } from '../core/devTeardownFaults'
  */
 type ExperienceHost = Omit<SceneHostReady, 'backend'>
 
+/** Stages whose CPU cost is sampled per rendered frame in development. */
+type CpuFrameMetric = 'scene' | 'camera' | 'renderer' | 'total'
+
 export class Experience {
   scene!: THREE.Scene
   /** Per-frame delta clamp — internal to the loop host. */
@@ -64,7 +67,8 @@ export class Experience {
   private _themeAppliedUnsub: (() => void) | null = null
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
-  private _frameTiming: FrameTiming | null = null
+  // DEV-only CPU cost of one rendered frame, measured per stage.
+  private _frameTiming: FrameStats<CpuFrameMetric> | null = null
   // Coordinates section state, transforms and updates over adopted scene
   // owners. Experience constructs and disposes this coordinator.
   public coordinator!: SceneCoordinator
@@ -569,7 +573,7 @@ export class Experience {
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
       try {
-        this._frameTiming = new FrameTiming()
+        this._frameTiming = new FrameStats(['scene', 'camera', 'renderer', 'total'])
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         // HMR or host teardown can land while the dev-only chunk is loading.
         // Do not construct a panel or publish its window probe after destroy.
@@ -600,7 +604,7 @@ export class Experience {
                 cursorSettled: boolean | null
                 activity: Record<string, boolean>
               }
-              timing: ReturnType<FrameTiming['snapshot']>
+              timing: FrameStatsSnapshot<CpuFrameMetric> | null
             } | null
           }
         ).__jlzRuntimeSnapshot = () => {
