@@ -2965,6 +2965,15 @@ an app assertion; the machine became unstable and the user is rebooting.
 Headed system-Firefox WebGPU verification of the gating is therefore not yet
 recorded; the user's own Firefox session remains the reference for that path.
 
+New prototype track (2026-10-11): the user opened `~/Work/la6-next` as the
+replacement candidate - MPA static-HTML islands on Vite + Vue + Tres 5.9.3 +
+Cientos 5.9.3 + three 0.186.1 (`three/webgpu` only), UIkit CSS-only, direct
+paint with scene fade-in, EN-first, no custom runtime infrastructure,
+verification limited to eslint + vue-tsc. Its SPEC.md/PLAN.md are that
+project's only docs. This repository becomes the reference archive for that
+track; this file remains the queue for this repository until the replacement
+decision lands.
+
 Frame-timing consolidation checkpoint (2026-10-11): the two bespoke frame
 samplers are gone. `src/core/FrameTiming.ts` (per-stage CPU sampler) and
 `src/core/FrameGapStats.ts` (gap percentiles) are replaced by one generic
