@@ -104,3 +104,62 @@ describe('CinematicNav keyboard policy', () => {
     expect(event.defaultPrevented).toBe(false)
   })
 })
+
+describe('CinematicNav programmatic section commit', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  afterEach(() => {
+    for (const nav of liveNavs.splice(0)) nav.dispose()
+  })
+
+  const scrollFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+  it('keeps the committed section authoritative while a programmatic scroll approaches it', async () => {
+    const { track } = mountStoryTrack()
+    Object.defineProperty(track, 'clientHeight', { value: 400, configurable: true })
+    const nav = createNav(() => 'home')
+    const published: number[] = []
+    nav.onSectionChange((index) => published.push(index))
+    expect(published).toEqual([FIRST_MAIN])
+
+    nav.goToSection(FIRST_MAIN + 2)
+    expect(published.at(-1)).toBe(FIRST_MAIN + 2)
+
+    // jsdom performs no smooth scroll: feed the intermediate frames a real
+    // smooth scroll emits between slot 1 and slot 3 (target top = 2 * 400).
+    track.scrollTop = 250
+    track.dispatchEvent(new Event('scroll'))
+    await scrollFrame()
+    expect(published).toEqual([FIRST_MAIN, FIRST_MAIN + 2])
+    expect(nav.getSectionIndex()).toBe(FIRST_MAIN + 2)
+
+    // Arrival frame: the scroll-derived index matches the committed target.
+    track.scrollTop = 800
+    track.dispatchEvent(new Event('scroll'))
+    await scrollFrame()
+    expect(nav.getSectionIndex()).toBe(FIRST_MAIN + 2)
+  })
+
+  it('releases the commit when the user scrolls away mid-animation', async () => {
+    const { track } = mountStoryTrack()
+    Object.defineProperty(track, 'clientHeight', { value: 400, configurable: true })
+    const nav = createNav(() => 'home')
+    const published: number[] = []
+    nav.onSectionChange((index) => published.push(index))
+
+    nav.goToSection(FIRST_MAIN + 2)
+    track.scrollTop = 250
+    track.dispatchEvent(new Event('scroll'))
+    await scrollFrame()
+    expect(published.at(-1)).toBe(FIRST_MAIN + 2)
+
+    // Wheel interruption: the track moves away from the committed target.
+    track.scrollTop = 100
+    track.dispatchEvent(new Event('scroll'))
+    await scrollFrame()
+    expect(published.at(-1)).toBe(FIRST_MAIN)
+    expect(nav.getSectionIndex()).toBe(FIRST_MAIN)
+  })
+})
