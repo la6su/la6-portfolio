@@ -22,6 +22,7 @@ import {
   floor,
   max,
   hash,
+  renderOutput,
 } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
@@ -84,8 +85,9 @@ export class TSLPostPipeline {
     // IMPORTANT: TSL RenderPipeline has its own render() — it renders the
     // scene+post graph via its outputNode. Do NOT call renderer.render()
     // (that would double-render and bypass post-processing).
-    // The pipeline.render() method overrides toneMapping/outputColorSpace
-    // internally and applies them via the outputNode chain.
+    // The graph carries its own explicit renderOutput(...) transform;
+    // pipeline.render() only swaps the renderer's tone mapping/output color
+    // space around the fullscreen draw so the renderer does not re-encode.
     if (this._pipeline) {
       this._pipeline.render()
     }
@@ -188,23 +190,22 @@ export class TSLPostPipeline {
       const vig = smoothstep(0.0, 1.0, vigRaw)
       color = color.mul(vig)
 
-      // ── sRGB encode ──
-      // Let TSLRenderPipeline apply sRGB automatically via outputColorTransform=true
-      // (default). Three applies its exact sRGB transfer function rather than
-      // a power approximation, especially important in the shadows.
-      //
-      // We do NOT apply pow(0.4545) manually — that's an approximation that
-      // differs from the exact sRGB curve (especially in shadows).
-      //
-      // ACES is intentionally absent from this graph to preserve faithful
-      // texture colors: the draw path (RenderPipeline.render) holds
-      // renderer.toneMapping at NoToneMapping for the entire TSL draw, and
-      // the constructor below captures that value into the output transform.
-      this._pipeline = new TSLRenderPipeline(this._renderer, color)
-      // outputColorTransform = true (default) → TSLRenderPipeline applies
-      // renderOutput(color, NoToneMapping, SRGBColorSpace) which does:
-      //   1. toneMapping (NoToneMapping → no-op)
-      //   2. workingToColorSpace(SRGB) → exact sRGBTransferOETF
+      // ── Output transform ──
+      // Three's documented pipeline idiom: end the graph with
+      // renderOutput(color, NoToneMapping, SRGBColorSpace) and disable the
+      // pipeline's implicit output transform. Three applies its exact sRGB
+      // transfer function rather than a pow(0.4545) approximation, which
+      // matters most in the shadows. ACES stays absent so case textures keep
+      // faithful colors: naming NoToneMapping here keeps the renderer's own
+      // ACES setting out of the TSL draw.
+      this._pipeline = new TSLRenderPipeline(
+        this._renderer,
+        renderOutput(color, THREE.NoToneMapping, THREE.SRGBColorSpace),
+      )
+      // outputColorTransform = false → the pipeline no longer re-bakes
+      // renderer.toneMapping/outputColorSpace into the output node; the
+      // explicit renderOutput above is the single output transform.
+      this._pipeline.outputColorTransform = false
     } catch (error) {
       // PassNode owns a render target independently of the TSL pipeline. It
       // must be released even when graph construction throws before the
