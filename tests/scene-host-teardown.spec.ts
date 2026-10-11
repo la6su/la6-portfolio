@@ -74,6 +74,15 @@ test('SceneHost releases declared owners before disposing its renderer', async (
       .toBe(true)
   }
   await page.waitForFunction(() => typeof window.__jlzTestUnmountVueApp === 'function')
+  // The declared ink mesh must be adopted by the stage before the stage is
+  // announced ready, otherwise the first visible frame would have no ink.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window.__jlzTestLifecycleTrace ?? []).includes('scene-owner:pointer-ink-bound'),
+      ),
+    )
+    .toBe(true)
 
   await page.evaluate(() => window.__jlzEmit?.('jlz:showreel-open'))
   await expect(page.locator('#jlz-showreel-console')).toHaveAttribute('data-state', 'open')
@@ -129,12 +138,17 @@ test('SceneHost releases declared owners before disposing its renderer', async (
   expect(rendererDispose).toBeGreaterThanOrEqual(0)
   expect(asyncSceneTeardown).toBeGreaterThanOrEqual(0)
   expect(showreelDispose).toBeGreaterThanOrEqual(0)
+  const inkBound = trace.indexOf('scene-owner:pointer-ink-bound')
+  const haloReady = trace.indexOf('scene-stage:ContactHaloStage:ready')
+  expect(inkBound, 'the declared ink mesh should bind during mount').toBeGreaterThanOrEqual(0)
+  expect(inkBound, 'the ink bind should precede ContactHaloStage ready').toBeLessThan(haloReady)
   expect(trace.filter((event) => event === 'scene-host:renderer-disposed')).toHaveLength(1)
   for (const ownerRelease of [
     'scene-owner:env-sphere-disposed',
     'scene-owner:env-sky-disposed',
-    'scene-owner:cursor-placeholder-disposed',
+    'scene-owner:cursor-trail-unbound',
     'scene-owner:showreel-quad-unbound',
+    'scene-owner:pointer-ink-unbound',
   ]) {
     const releaseIndex = trace.indexOf(ownerRelease)
     expect(releaseIndex, `${ownerRelease} should run during host teardown`).toBeGreaterThanOrEqual(

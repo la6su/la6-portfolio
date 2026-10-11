@@ -27,7 +27,9 @@ describe('declarative services stage controller', () => {
     expect(root.position.x).toBeCloseTo(
       1 + 2 * Math.tan(THREE.MathUtils.degToRad(75 / 2)) * 5 * 1.5 * 0.22,
     )
-    expect(root.position.y).toBeCloseTo(2)
+    expect(root.position.y).toBeCloseTo(
+      2 + 2 * Math.tan(THREE.MathUtils.degToRad(75 / 2)) * 5 * 0.1,
+    )
     expect(root.position.z).toBeCloseTo(-2)
     expect(stage.ribbonGeometry.getAttribute('position').count).toBeGreaterThan(1000)
     expect(stage.isAnimating).toBe(false)

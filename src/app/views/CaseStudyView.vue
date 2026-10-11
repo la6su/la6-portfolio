@@ -160,7 +160,12 @@ watch(language, applyCaseStudyMeta, { flush: 'post' })
               <template v-if="index === 0">
                 <p class="jlz-works-premise">{{ localizedStudy.outcome }}</p>
                 <p class="jlz-works-context">{{ localizedStudy.role }}</p>
-                <div class="jlz-case-stack" aria-label="Project disciplines">
+                <div
+                  class="jlz-case-stack"
+                  role="group"
+                  aria-label="Project disciplines"
+                  data-i18n-aria-label="common.projectDisciplines"
+                >
                   <span v-for="item in localizedStudy.stack" :key="item">{{ item }}</span>
                 </div>
                 <dl class="jlz-case-facts uk-description-list uk-margin-top">

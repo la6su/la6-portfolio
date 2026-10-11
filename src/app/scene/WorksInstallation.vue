@@ -30,14 +30,12 @@ function nodes(): WorksInstallationNodes | null {
   return { assembly: assembly.value, arcs: arcs.value, trace: trace.value, ticks: ticks.value }
 }
 
-function disposeGeometry(): void {
+function releaseNodes(): void {
   const mounted = mountedNodes
   if (!mounted) return
+  // Tres owns the declared torus/box geometries and the instanced mesh's
+  // instance matrix; the controller only retires its own frame state.
   props.installation.release(mounted)
-  mounted.arcs.forEach((arc) => arc.geometry.dispose())
-  mounted.trace.geometry.dispose()
-  mounted.ticks.geometry.dispose()
-  mounted.ticks.dispose()
   mountedNodes = null
 }
 
@@ -65,11 +63,13 @@ watch(
   },
 )
 
-onBeforeUnmount(disposeGeometry)
+onBeforeUnmount(releaseNodes)
 </script>
 
 <template>
-  <TresGroup ref="assembly" name="works-installation-assembly" :dispose="null">
+  <!-- The torus/box geometries and the instanced tick mesh are Tres-owned; the
+       metal and signal materials stay runtime props of the controller. -->
+  <TresGroup ref="assembly" name="works-installation-assembly">
     <TresMesh
       v-for="(args, index) in arcArgs"
       :key="index"

@@ -14,7 +14,7 @@ import { Pane } from 'tweakpane'
 import type * as THREE from 'three'
 import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 import { getLang } from './i18n'
-import { FrameGapStats } from './FrameGapStats'
+import { FrameStats } from './FrameStats'
 import { inspectUnifiedBackend } from './unifiedRenderer'
 
 interface CarouselDebugControls {
@@ -278,8 +278,8 @@ export class DevPanel {
       this.stats.frameMs = this._frameMs
       const framePercentiles = this._frameGaps.snapshot()
       if (framePercentiles) {
-        this.stats.frameP50 = framePercentiles.p50
-        this.stats.frameP95 = framePercentiles.p95
+        this.stats.frameP50 = framePercentiles.gap.p50
+        this.stats.frameP95 = framePercentiles.gap.p95
       }
 
       this.pane.refresh()
@@ -291,7 +291,7 @@ export class DevPanel {
   private _fpsLastTime: number | null = null
   private _lastRenderedAt = 0
   private _fpsFrames = 0
-  private readonly _frameGaps = new FrameGapStats()
+  private readonly _frameGaps = new FrameStats(['gap'], 240)
 
   /** Record one real scene render. Idle on-demand frames intentionally read 0. */
   recordRenderFrame(now = performance.now()): void {
@@ -308,7 +308,7 @@ export class DevPanel {
       return
     }
 
-    this._frameGaps.record(gap)
+    this._frameGaps.record({ gap })
     this._fpsFrames += 1
     const delta = now - this._fpsLastTime
     if (delta < 500) return

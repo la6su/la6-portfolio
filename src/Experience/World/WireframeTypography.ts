@@ -146,9 +146,11 @@ export class WireframeTypography {
     const revealDelay = 0.72
     const revealDuration = 0.72
     this.revealProgress = easeOutCubic((this.revealElapsed - revealDelay) / revealDuration)
-    for (const [index, { x, phase }] of this.glyphs.entries()) {
+    for (let index = 0; index < this.glyphs.length; index++) {
+      const glyph = this.glyphs[index]!
       const mesh = this.meshes[index]
       if (!mesh) continue
+      const { x, phase } = glyph
       const bob = Math.sin(this.time * 1.05 + phase)
       const sway = Math.sin(this.time * 0.62 + phase * 1.3)
       const breathe = (1 + Math.sin(this.time * 1.3 + phase) * 0.06) * this.revealProgress
@@ -164,10 +166,10 @@ export class WireframeTypography {
 
   private settleReducedMotion(): void {
     this.revealProgress = 1
-    for (const [index, { x }] of this.glyphs.entries()) {
+    for (let index = 0; index < this.glyphs.length; index++) {
       const mesh = this.meshes[index]
       if (!mesh) continue
-      mesh.position.set(x, 0, 0)
+      mesh.position.set(this.glyphs[index]!.x, 0, 0)
       mesh.rotation.set(0, 0, 0)
       mesh.scale.setScalar(1)
     }

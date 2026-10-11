@@ -41,7 +41,9 @@
 
 @jlz-color-text: #e6edf3;
 @jlz-color-text-muted: rgba(230, 237, 243, 0.62);
-@jlz-color-text-subtle: rgba(230, 237, 243, 0.38);
+// 0.55 keeps subtle text at 5.27-5.46:1 over the dark surfaces, above the
+// WCAG 1.4.3 floor its small mono consumers need; 0.38 measured 3.19-3.23:1.
+@jlz-color-text-subtle: rgba(230, 237, 243, 0.55);
 @jlz-color-text-inverse: #0a0c10;
 
 @jlz-color-accent: #ffd60a;
@@ -320,7 +322,8 @@
 html.uk-light {
   --jlz-color-text: @jlz-inverse-text;
   --jlz-color-text-muted: @jlz-inverse-text-muted;
-  --jlz-color-text-subtle: rgba(11, 14, 19, 0.5);
+  // 0.62 measures 5.33:1 over @jlz-inverse-surface; 0.5 measured 3.57:1.
+  --jlz-color-text-subtle: rgba(11, 14, 19, 0.62);
   /* Light theme backgrounds — flip from dark to light for inverse mode.
      Needed for dropdown/overlay components that use CSS vars. */
   --jlz-color-bg: @jlz-inverse-bg;
@@ -458,9 +461,9 @@ html.uk-light {
   font-weight: @button-font-weight;
   text-transform: @button-text-transform;
   transition:
-    border-color @jlz-duration-fast ease,
-    background @jlz-duration-fast ease,
-    color @jlz-duration-fast ease;
+    border-color var(--jlz-duration-fast) ease,
+    background var(--jlz-duration-fast) ease,
+    color var(--jlz-duration-fast) ease;
 }
 
 .hook-button-default() {
@@ -495,11 +498,11 @@ html.uk-light {
   border-radius: @jlz-radius-md;
   box-shadow: none;
   transition:
-    transform @jlz-duration-fast @jlz-ease-state,
-    border-color @jlz-duration-fast ease,
-    background @jlz-duration-fast ease,
-    color @jlz-duration-fast ease,
-    box-shadow @jlz-duration-fast ease;
+    transform var(--jlz-duration-fast) @jlz-ease-state,
+    border-color var(--jlz-duration-fast) ease,
+    background var(--jlz-duration-fast) ease,
+    color var(--jlz-duration-fast) ease,
+    box-shadow var(--jlz-duration-fast) ease;
 }
 
 .hook-card() {

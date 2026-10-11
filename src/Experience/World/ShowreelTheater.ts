@@ -352,8 +352,17 @@ export class ShowreelTheater {
     video.muted = true
     video.loop = true
     video.playsInline = true
-    // Keep the element inert and out of layout — the shader samples it.
-    video.style.display = 'none'
+    // Keep the element inert and out of view — the shader samples it. WebKit
+    // suspends playback for media that is not rendered in the viewport
+    // (`display: none` or offscreen coordinates leave `currentTime` at 0), so
+    // the source stays painted: 1px, fully transparent, in-viewport.
+    video.style.position = 'fixed'
+    video.style.top = '0'
+    video.style.left = '0'
+    video.style.width = '1px'
+    video.style.height = '1px'
+    video.style.opacity = '0'
+    video.style.pointerEvents = 'none'
     video.setAttribute('aria-hidden', 'true')
     document.body.appendChild(video)
 

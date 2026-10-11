@@ -50,6 +50,12 @@ export class CinematicNav {
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _isInteracting = false
   private _lastNotified = -1
+  // Committed target of a programmatic goToSection scroll. While the smooth
+  // scroll approaches it, scroll-derived sync must keep the committed section
+  // authoritative: otherwise the rail/launcher index flickers (3 → 1 → 2 → 3)
+  // and a launcher click mid-animation takes the wrong action.
+  private _programmaticTarget: number | null = null
+  private _programmaticDistance = 0
   private _inactiveTimer: ReturnType<typeof setTimeout> | null = null
   private _scrollObserver: { dispose: () => void; sync: () => void } | null = null
   private _focusFrame: number | null = null
@@ -80,7 +86,10 @@ export class CinematicNav {
     this._unsubs.push(eventBus.on('jlz:close-nav', () => this._closeSide()))
 
     this._keydownHandler = (event: KeyboardEvent) => {
+      // Modal layers own the keyboard. The project theater is a UIkit modal;
+      // the showreel dialog is Vue chrome that marks the body instead.
       if (document.querySelector('.uk-modal.uk-open')) return
+      if (document.body.classList.contains('jlz-media-layer-open')) return
       const target = event.target as HTMLElement | null
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
 
@@ -89,6 +98,15 @@ export class CinematicNav {
         this._closeSide()
         return
       }
+
+      // Story shortcuts exist only while a track is bound, only for bare keys
+      // (a modifier means the browser owns the key) and only when nothing
+      // under the target scrolls on its own. Short windows make story
+      // sections `overflow-y: auto` and case panels cap at 42dvh; those
+      // regions keep their native keyboard scrolling.
+      if (!this._track || event.metaKey || event.ctrlKey || event.altKey) return
+      if (this._scrollsInsideStorySection(target)) return
+
       if (event.key === 'ArrowDown' || event.key === 'PageDown') {
         event.preventDefault()
         this.goToDirection(1)
@@ -139,6 +157,7 @@ export class CinematicNav {
     this._mainSection = FIRST_MAIN
     this._side = 'center'
     this._lastNotified = -1
+    this._programmaticTarget = null
     this._track.scrollTop = 0
     this._applySideState()
 
@@ -173,6 +192,26 @@ export class CinematicNav {
     // contract; the clamped position also feeds the per-section CSS vars.
     const position = clampStoryPosition(this._track.scrollTop / height, this._mainSections.length)
     const nextMain = mainSectionFromPosition(position, FIRST_MAIN, this._mainSections.length)
+
+    if (this._programmaticTarget !== null) {
+      const targetTop = (this._programmaticTarget - FIRST_MAIN) * height
+      const distance = Math.abs(targetTop - this._track.scrollTop)
+      if (nextMain === this._programmaticTarget || distance <= 1) {
+        this._programmaticTarget = null
+      } else if (distance <= this._programmaticDistance) {
+        // Still approaching the committed target: the decorative parallax
+        // follows the real position, but the committed section stays
+        // authoritative until the scroll arrives or the user takes over.
+        this._programmaticDistance = distance
+        this._updateStoryState(position)
+        this._setInteracting(true)
+        this._queueInactive()
+        return
+      } else {
+        // The track moved away from the target: the user took over.
+        this._programmaticTarget = null
+      }
+    }
 
     const wasSide = this._side
     this._side = 'center'
@@ -284,6 +323,7 @@ export class CinematicNav {
     if (!this._track) return
     const clamped = Math.max(FIRST_MAIN, Math.min(LAST_MAIN, index))
     const top = (clamped - FIRST_MAIN) * Math.max(1, this._track.clientHeight || window.innerHeight)
+    this._programmaticDistance = Math.abs(top - this._track.scrollTop)
     const behavior: ScrollBehavior = this._reducedMotion ? 'auto' : 'smooth'
     if (typeof this._track.scrollTo === 'function') this._track.scrollTo({ top, behavior })
     else this._track.scrollTop = top
@@ -329,6 +369,7 @@ export class CinematicNav {
 
     if (target === CONTACT_FOOTER_INDEX || target === MENU_INDEX) {
       const nextSide: SideState = target === CONTACT_FOOTER_INDEX ? 'footer' : 'menu'
+      this._programmaticTarget = null
       if (this._side === nextSide) {
         this._closeSide()
         return
@@ -357,6 +398,7 @@ export class CinematicNav {
     this._applySideState()
     this._mainSection = target
     this._notifySection(target)
+    this._programmaticTarget = target
     this._scrollToMain(target)
     this._updateStoryState(target - FIRST_MAIN)
     this._setInteracting(true)
@@ -401,6 +443,23 @@ export class CinematicNav {
     return this._isInteracting
   }
 
+  /** True when the key target sits inside an element between it and the story
+   *  track that scrolls on its own; those regions keep native keyboard scroll. */
+  private _scrollsInsideStorySection(target: HTMLElement | null): boolean {
+    let node: HTMLElement | null = target
+    while (node && node !== this._track) {
+      const overflowY = getComputedStyle(node).overflowY
+      if (
+        (overflowY === 'auto' || overflowY === 'scroll') &&
+        node.scrollHeight > node.clientHeight + 1
+      ) {
+        return true
+      }
+      node = node.parentElement
+    }
+    return false
+  }
+
   private _applySideState(): void {
     // The rail's own inert state is Vue-owned (PersistentConsole binds it from
     // the published active index); this owner still inerts the story sections
@@ -412,8 +471,19 @@ export class CinematicNav {
 
     const menu = this._track?.querySelector<HTMLElement>('[data-cinematic-menu]')
     const footer = this._track?.querySelector<HTMLElement>('[data-contact-footer]')
-    menu?.setAttribute('aria-hidden', String(this._side !== 'menu'))
-    footer?.setAttribute('aria-hidden', String(this._side !== 'footer'))
+    const menuOpen = this._side === 'menu'
+    const footerOpen = this._side === 'footer'
+    if (menu) {
+      menu.setAttribute('aria-hidden', String(!menuOpen))
+      // The sheet stays `visibility: visible` for the whole close transition
+      // (900ms, 1400ms for the footer), so its links would remain tabbable
+      // inside an aria-hidden subtree until the delayed visibility flip.
+      menu.inert = !menuOpen
+    }
+    if (footer) {
+      footer.setAttribute('aria-hidden', String(!footerOpen))
+      footer.inert = !footerOpen
+    }
 
     if (this._side === 'center') delete document.body.dataset.cinematicSheet
     else document.body.dataset.cinematicSheet = this._side

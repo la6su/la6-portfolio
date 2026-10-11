@@ -52,6 +52,17 @@
   }
 }
 
+// Keeps a node in the accessibility tree (landmark/group names, live regions)
+// while removing it from the visual layout. `hidden` would prune it entirely.
+.jlz-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 // The persistent Tres scene host sits below the semantic route DOM
 // (#spa-content z-index 2). Tres sizes the canvas to this wrapper.
 .jlz-scene-host {
@@ -382,8 +393,13 @@ body[data-cinematic-sheet]
   #spa-content > [data-contact-footer],
   .jlz-page > [data-contact-footer],
   .jlz-storyline,
-  .jlz-contact-launcher {
+  .jlz-contact-launcher,
+  .jlz-storyline__item,
+  .jlz-contact-launcher__button,
+  .jlz-menu-launcher,
+  .jlz-topbar-controls .uk-icon-button {
     transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
   }
 }
 

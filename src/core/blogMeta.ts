@@ -372,6 +372,9 @@ export function renderBlogDocument(
     '',
     '    <link rel="preload" href="/fonts/commissioner-variable.woff2" as="font" type="font/woff2" crossorigin />',
     '    <link rel="stylesheet" href="/fonts/commissioner.css" />',
+    // blog.less sets var(--jlz-font-mono); without this declaration the pages
+    // would fall back to a system mono instead of the self-hosted face.
+    '    <link rel="stylesheet" href="/fonts/jetbrains-mono.css" />',
     '    <link rel="stylesheet" href="/src/assets/blog.less" />',
     ...(meta.ogType === 'article'
       ? ['    <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />']

@@ -11,7 +11,7 @@
 // Case playback will use project-owned media when those assets are supplied;
 // this controller stays independent of whether the current hero is an image.
 
-import UIkit from 'uikit'
+import UIkit from '../core/uikit'
 import { eventBus } from '../core/EventBus'
 
 const FOCUSABLE_SELECTOR =
@@ -38,6 +38,8 @@ export class FullscreenOverlay {
   private _restoreFocus: HTMLElement | null = null
   private _hideHandled = false
   private readonly _closeMediaLayerUnsub: () => void
+  /** Release functions returned by `UIkit.util.on` for the modal lifecycle. */
+  private readonly _modalOffs: Array<() => void> = []
 
   private readonly _onModalHidden = (): void => {
     const target = this._restoreFocus
@@ -68,44 +70,51 @@ export class FullscreenOverlay {
     // UIKit3 modal events — uk-open is the authoritative state. UIkit adds it
     // on show and removes it on hide; isOpen reads it directly. No custom
     // enter/opening flags needed.
-    UIkit.util.on(this.container, 'show', () => {
-      eventBus.emit('jlz:close-nav')
-      eventBus.emit('jlz:fullscreen-change', { open: true })
-      document.body.classList.add('jlz-media-layer-open')
-      document.addEventListener('keydown', this._keydownHandler!)
-      document.addEventListener('focusin', this._focusTrapHandler!)
-      // Double-rAF fallback: more reliable than fixed timeout.
-      // Fires after 2 frames (~32ms at 60Hz), giving UIkit time to
-      // process transitions without the arbitrariness of a 120ms guess.
-      if (!this._enterFallback) {
-        this._enterFallback = requestAnimationFrame(() => {
+    // `UIkit.util.on` returns its own release function: the container element is
+    // owned by AppShell and outlives this controller, so an Experience that is
+    // replaced while the shell stays mounted would otherwise stack a second set
+    // of handlers on the same element (duplicate jlz:close-nav and
+    // jlz:fullscreen-change emissions, plus dead-instance hide/hidden runs).
+    this._modalOffs.push(
+      UIkit.util.on(this.container, 'show', () => {
+        eventBus.emit('jlz:close-nav')
+        eventBus.emit('jlz:fullscreen-change', { open: true })
+        document.body.classList.add('jlz-media-layer-open')
+        document.addEventListener('keydown', this._keydownHandler!)
+        document.addEventListener('focusin', this._focusTrapHandler!)
+        // Double-rAF fallback: more reliable than fixed timeout.
+        // Fires after 2 frames (~32ms at 60Hz), giving UIkit time to
+        // process transitions without the arbitrariness of a 120ms guess.
+        if (!this._enterFallback) {
           this._enterFallback = requestAnimationFrame(() => {
-            this._enterFallback = null
-            if (!this.container.classList.contains('is-entered')) {
-              this.container.classList.add('is-entered')
-            }
+            this._enterFallback = requestAnimationFrame(() => {
+              this._enterFallback = null
+              if (!this.container.classList.contains('is-entered')) {
+                this.container.classList.add('is-entered')
+              }
+            })
           })
+        }
+      }),
+      UIkit.util.on(this.container, 'shown', () => {
+        // Clear the fallback — UIkit confirmed the modal is shown.
+        if (this._enterFallback) {
+          cancelAnimationFrame(this._enterFallback)
+          this._enterFallback = null
+        }
+        // Trigger the CSS reveal transition (clip-path + scale + opacity).
+        const generation = this._mediaGeneration
+        this._shownRevealFrame = requestAnimationFrame(() => {
+          this._shownRevealFrame = null
+          if (generation !== this._mediaGeneration || !this.container.isConnected) return
+          this.container.classList.add('is-entered')
         })
-      }
-    })
-    UIkit.util.on(this.container, 'shown', () => {
-      // Clear the fallback — UIkit confirmed the modal is shown.
-      if (this._enterFallback) {
-        cancelAnimationFrame(this._enterFallback)
-        this._enterFallback = null
-      }
-      // Trigger the CSS reveal transition (clip-path + scale + opacity).
-      const generation = this._mediaGeneration
-      this._shownRevealFrame = requestAnimationFrame(() => {
-        this._shownRevealFrame = null
-        if (generation !== this._mediaGeneration || !this.container.isConnected) return
-        this.container.classList.add('is-entered')
-      })
-      // Move focus into the modal so keyboard users are not stranded behind it.
-      this.container.querySelector<HTMLElement>('.jlz-fs-close')?.focus({ preventScroll: true })
-    })
-    UIkit.util.on(this.container, 'hide', () => this.handleHide())
-    UIkit.util.on(this.container, 'hidden', this._onModalHidden)
+        // Move focus into the modal so keyboard users are not stranded behind it.
+        this.container.querySelector<HTMLElement>('.jlz-fs-close')?.focus({ preventScroll: true })
+      }),
+      UIkit.util.on(this.container, 'hide', () => this.handleHide()),
+      UIkit.util.on(this.container, 'hidden', this._onModalHidden),
+    )
     // Keyboard: Escape closes the theater; Tab stays within it.
     // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents CinematicNav's window keydown from
@@ -241,6 +250,7 @@ export class FullscreenOverlay {
       this._restoreFocus = null
     }
     this._listeners.abort()
+    this._modalOffs.splice(0).forEach((off) => off())
     this._mediaGeneration += 1
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)

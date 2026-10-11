@@ -6,13 +6,16 @@
 // rides, and reduced-motion snap. Only the ink art and its tuning differ —
 // they arrive through PointerInkStageConfig.
 //
-// Conventions (inherited from the ContactHaloStage originals): lazy dynamic
-// import behind the route handler, per-instance uniform nodes advanced only
-// on rendered frames, amplitude-capped single-sourced ink subgraph, and one
-// shared plane geometry refcounted across concurrent stage instances.
+// Conventions: lazy dynamic import behind the route handler, per-instance
+// uniform nodes advanced only on rendered frames, an amplitude-capped
+// single-sourced ink subgraph, and no GPU resources of its own — the plane
+// geometry and the node material are declared by PointerInkStageOwner.vue and
+// disposed by Tres when the route owner unmounts. This stage only borrows the
+// mounted mesh to feed its node graph and to ride the reveal scale.
 
-import * as THREE from 'three'
 import { shallowRef } from 'vue'
+import { Color, Vector2 } from 'three'
+import type { Mesh } from 'three'
 import { MeshBasicNodeMaterial, type Node, type UniformNode } from 'three/webgpu'
 import { Fn, float, uniform } from 'three/tsl'
 import { input } from '../Input'
@@ -21,7 +24,7 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 /** The uniform nodes an ink field may compose. */
 interface PointerInkUniforms {
   time: UniformNode<'float', number>
-  pointer: UniformNode<'vec2', THREE.Vector2>
+  pointer: UniformNode<'vec2', Vector2>
   energy: UniformNode<'float', number>
 }
 
@@ -31,15 +34,16 @@ interface PointerInkStageConfig {
   stageName: string
   meshName: string
   meshPosition: readonly [number, number, number]
-  /** Shared plane geometry extent. */
-  planeSize: readonly [number, number]
+  /** Plane extent. Mutable tuple: the declarative owner hands this exact
+   *  array to `<TresPlaneGeometry :args>`, so its identity must not change
+   *  between renders. */
+  planeSize: [number, number]
   /** Peak alpha — kept low so the ink reads as paper, not glow. */
   peakOpacity: number
   /** [dark-UI tint, light-UI tint]. */
   tints: readonly [number, number]
-  /** Pointer NDC → plane-local focus scale. */
-  focusScale: readonly [number, number]
-  /** Damping voice: energy rise, exponential decay, pointer chase. */
+  /** Damping voice: energy rise, exponential decay, pointer chase. The
+   *  pointer NDC → plane-local focus scale is part of the authored field. */
   damping: {
     readonly rise: number
     readonly decay: number
@@ -49,37 +53,12 @@ interface PointerInkStageConfig {
   inkField: (u: PointerInkUniforms) => Node<'float'>
 }
 
-// One buffer per plane size can serve concurrent stage instances, but its
-// lifetime must end with the final route owner rather than survive root
-// teardown indefinitely. Keyed by size: the halo and the wash use different
-// extents, instances of one voice share one buffer.
-const sharedGeometries = new Map<string, { geometry: THREE.PlaneGeometry; users: number }>()
-
-function acquireGeometry(width: number, height: number): THREE.PlaneGeometry {
-  const key = `${width}x${height}`
-  let entry = sharedGeometries.get(key)
-  entry ??= { geometry: new THREE.PlaneGeometry(width, height), users: 0 }
-  entry.users += 1
-  sharedGeometries.set(key, entry)
-  return entry.geometry
-}
-
-function releaseGeometry(width: number, height: number): void {
-  const key = `${width}x${height}`
-  const entry = sharedGeometries.get(key)
-  if (!entry) return
-  entry.users -= 1
-  if (entry.users !== 0) return
-  entry.geometry.dispose()
-  sharedGeometries.delete(key)
-}
-
 export class PointerInkStage {
   private active = false
   private disposed = false
   private reducedMotion = prefersReducedMotion()
   private readonly _visible = shallowRef(false)
-  private inkMesh: THREE.Mesh | null = null
+  private inkMesh: Mesh | null = null
 
   // Reveal damp (0 hidden → 1 shown) — exponential, no timeline to rewind.
   private reveal = 0
@@ -87,58 +66,27 @@ export class PointerInkStage {
   // Damped pointer state. `pointerTarget` mirrors input in NDC; the uniform
   // chases it so the ink glides instead of snapping. Energy rises while the
   // pointer is moving and decays exponentially when it rests.
-  private readonly pointerTarget = new THREE.Vector2(0, 0)
-  private readonly pointerDelta = new THREE.Vector2()
+  private readonly pointerTarget = new Vector2(0, 0)
+  private readonly pointerDelta = new Vector2()
   private energy = 0
 
   protected readonly config: PointerInkStageConfig
-  readonly material: MeshBasicNodeMaterial
-  readonly geometry: THREE.PlaneGeometry
 
   // Per-instance uniform nodes — JS-advanced only on rendered frames so the
   // breathing clock respects the demand-driven loop (never global `time`).
   protected readonly _timeUni: UniformNode<'float', number>
-  protected readonly _pointerUni: UniformNode<'vec2', THREE.Vector2>
+  protected readonly _pointerUni: UniformNode<'vec2', Vector2>
   protected readonly _energyUni: UniformNode<'float', number>
   protected readonly _revealUni: UniformNode<'float', number>
-  protected readonly _tintUni: UniformNode<'color', THREE.Color>
+  protected readonly _tintUni: UniformNode<'color', Color>
 
   constructor(config: PointerInkStageConfig) {
     this.config = config
-
-    const time = uniform(0)
-    const pointer = uniform(new THREE.Vector2(0, 0))
-    const energy = uniform(0)
-    const reveal = uniform(0)
-    const tint = uniform(new THREE.Color(config.tints[0]))
-
-    const mat = new MeshBasicNodeMaterial({
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      fog: false,
-      toneMapped: false,
-    })
-
-    // One shared subgraph feeding color and opacity keeps the graph
-    // single-sourced; the authored field supplies all the art.
-    const ink = Fn(() => config.inkField({ time, pointer, energy }))()
-
-    mat.colorNode = Fn(() => {
-      return tint.mul(ink)
-    })()
-    ;(mat as unknown as { opacityNode: unknown }).opacityNode = Fn(() => {
-      return ink.mul(reveal).mul(float(config.peakOpacity))
-    })()
-
-    this.material = mat
-    this.geometry = acquireGeometry(config.planeSize[0], config.planeSize[1])
-
-    this._timeUni = time
-    this._pointerUni = pointer
-    this._energyUni = energy
-    this._revealUni = reveal
-    this._tintUni = tint
+    this._timeUni = uniform(0)
+    this._pointerUni = uniform(new Vector2(0, 0))
+    this._energyUni = uniform(0)
+    this._revealUni = uniform(0)
+    this._tintUni = uniform(new Color(config.tints[0]))
   }
 
   get stageName(): string {
@@ -153,16 +101,44 @@ export class PointerInkStage {
     return this.config.meshPosition
   }
 
+  /** Plane extent the declarative owner builds the geometry with. */
+  get planeSize(): [number, number] {
+    return this.config.planeSize
+  }
+
   get visible(): boolean {
     return this._visible.value
   }
 
-  bindMesh(inkMesh: THREE.Mesh): void {
+  /** Adopt the declaratively mounted mesh. The plane geometry and the
+   *  `MeshBasicNodeMaterial` belong to the Vue owner; this stage supplies the
+   *  one ink subgraph that feeds their color and opacity. */
+  bindMesh(inkMesh: Mesh): void {
     if (this.disposed) return
+    const material = inkMesh.material
+    if (!(material instanceof MeshBasicNodeMaterial)) {
+      throw new Error(
+        `Pointer ink stage '${this.config.stageName}' needs a MeshBasicNodeMaterial on its declarative mesh.`,
+      )
+    }
+
+    // One shared subgraph feeding color and opacity keeps the graph
+    // single-sourced; the authored field supplies all the art.
+    const ink = Fn(() =>
+      this.config.inkField({
+        time: this._timeUni,
+        pointer: this._pointerUni,
+        energy: this._energyUni,
+      }),
+    )()
+    material.colorNode = Fn(() => this._tintUni.mul(ink))()
+    material.opacityNode = Fn(() => ink.mul(this._revealUni).mul(float(this.config.peakOpacity)))()
+
     this.inkMesh = inkMesh
   }
 
-  unbindMesh(inkMesh: THREE.Mesh): void {
+  /** Release the borrowed mesh when the Vue owner unmounts; Tres disposes it. */
+  unbindMesh(inkMesh: Mesh): void {
     if (this.inkMesh !== inkMesh) return
     this.inkMesh = null
   }
@@ -250,13 +226,13 @@ export class PointerInkStage {
     this.inkMesh?.scale.setScalar(Math.max(0.001, this.reveal))
   }
 
+  /** Retire the stage's own state. The mesh, its geometry and its material
+   *  belong to the Vue owner and are disposed by Tres on unmount. */
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
     this.active = false
     this._visible.value = false
-    this.material.dispose()
-    releaseGeometry(this.config.planeSize[0], this.config.planeSize[1])
     this.inkMesh = null
   }
 }

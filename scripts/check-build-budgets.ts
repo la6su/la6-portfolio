@@ -8,6 +8,7 @@ const ASSETS_DIR = join(DIST_DIR, 'assets')
 const THREE_GZIP_BUDGET = 350_000
 const UIKIT_GZIP_BUDGET = 56_000
 const SPLASH_GZIP_BUDGET = 5_000
+const BOOT_CLOSURE_GZIP_BUDGET = 24_000
 
 function gzipBytes(bytes: Uint8Array | string): number {
   // Match a typical server/CDN gzip response rather than relying on the
@@ -48,6 +49,28 @@ function startupAssets(html: string): string[] {
   return [...paths]
 }
 
+/**
+ * Static import closure of the app bootstrap module. `entry-app` is reached by
+ * a dynamic import from the shell entry, so the HTML-declared startup assets
+ * never show what it pulls in: importing the event bus / sound / motion policy
+ * from here silently makes the whole Three vendor graph eager. Dynamic imports
+ * stay out of this closure — they are the lazy path the budget protects.
+ */
+function bootClosure(entryAsset: string): string[] {
+  const seen = new Set<string>()
+  const queue = [entryAsset]
+  while (queue.length > 0) {
+    const path = queue.shift()!
+    if (seen.has(path)) continue
+    seen.add(path)
+    const source = readFileSync(path, 'utf8')
+    for (const match of source.matchAll(/\b(?:import|export\*|from)\s*"(\.\/[^"]+\.js)"/g)) {
+      queue.push(join(ASSETS_DIR, match[1]!.slice(2)))
+    }
+  }
+  return [...seen]
+}
+
 function walkFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name)
@@ -67,6 +90,10 @@ const uiGzip = gzipBytes(readFileSync(uiAsset))
 const splashGzip =
   startupAssets(html).reduce((total, path) => total + gzipBytes(readFileSync(path)), 0) +
   executableInlineScripts(html).reduce((total, script) => total + gzipBytes(script), 0)
+const bootAsset = uniqueAsset(/^entry-app-[\w-]+\.js$/, 'entry-app')
+const bootModules = bootClosure(bootAsset)
+const bootGzip = bootModules.reduce((total, path) => total + gzipBytes(readFileSync(path)), 0)
+const eagerThreeModule = bootModules.find((path) => basename(path).startsWith('vendor-three'))
 
 const mediaFiles = walkFiles(join('public', 'assets'))
 const mediaBytes = mediaFiles.reduce((total, path) => total + statSync(path).size, 0)
@@ -77,6 +104,7 @@ const largestMedia = mediaFiles.reduce((largest, path) =>
 console.log(
   [
     `Splash startup: ${formatKb(splashGzip)} gzip / ${formatKb(SPLASH_GZIP_BUDGET)}`,
+    `Boot closure: ${formatKb(bootGzip)} gzip / ${formatKb(BOOT_CLOSURE_GZIP_BUDGET)} (${bootModules.length} modules from ${basename(bootAsset)})`,
     `Lazy Three.js:  ${formatKb(threeGzip)} gzip / ${formatKb(THREE_GZIP_BUDGET)} (${basename(threeAsset)})`,
     `UIkit vendor:   ${formatKb(uiGzip)} gzip / ${formatKb(UIKIT_GZIP_BUDGET)} (${basename(uiAsset)})`,
     `Public media:   ${formatKb(mediaBytes)} total; largest ${formatKb(statSync(largestMedia).size)} (${largestMedia})`,
@@ -94,6 +122,16 @@ if (threeGzip > THREE_GZIP_BUDGET) {
 }
 if (uiGzip > UIKIT_GZIP_BUDGET) {
   failures.push(`UIkit vendor exceeds its budget by ${formatKb(uiGzip - UIKIT_GZIP_BUDGET)}.`)
+}
+if (eagerThreeModule) {
+  failures.push(
+    `entry-app statically imports ${basename(eagerThreeModule)}: the Three vendor graph must stay behind a dynamic import.`,
+  )
+}
+if (bootGzip > BOOT_CLOSURE_GZIP_BUDGET) {
+  failures.push(
+    `Boot closure exceeds its budget by ${formatKb(bootGzip - BOOT_CLOSURE_GZIP_BUDGET)}.`,
+  )
 }
 if (failures.length > 0) {
   throw new Error(failures.join('\n'))

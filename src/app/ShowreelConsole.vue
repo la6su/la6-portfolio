@@ -55,14 +55,14 @@ function onState(next: ShowreelState): void {
   if (next.phase === previous.phase && next.playing === previous.playing) return
   if (next.phase === 'closed') {
     if (wasOpen) hideChrome()
-    announce('Showreel closed')
+    announce(t('showreel.closed'))
     return
   }
   if (wasClosed) {
     restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
     showChrome()
   }
-  if (wasOpen && next.phase === 'open') announce('Showreel playing')
+  if (wasOpen && next.phase === 'open') announce(t('showreel.playing'))
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -140,7 +140,9 @@ function hideChrome(): void {
   eventBus.emit('jlz:fullscreen-change', { open: false })
   document.body.classList.remove('jlz-media-layer-open')
   setPageContentInert(false)
-  restoreFocus?.focus({ preventScroll: true })
+  // A route swap while the showreel was open detaches the saved element;
+  // focusing it would silently drop the keyboard user to <body>.
+  if (restoreFocus?.isConnected) restoreFocus.focus({ preventScroll: true })
   restoreFocus = null
 }
 

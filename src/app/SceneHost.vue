@@ -172,7 +172,12 @@ const cameraNode = cameraSlot.value
 // Consumers: the policy port (Experience/Camera), this template's v-if and
 // the `body[data-lab-camera]` CSS port the pass-through layers react to.
 const route = useRoute()
-const currentPage = (): PageId => resolvePagePath(route.path)
+// The frame path reads the active page several times per frame
+// (Experience._updateInner, the breath policy, the carousel gate). Resolve the
+// route once per path change instead of re-running the locale/case-study path
+// matching on every frame.
+const currentPageId = computed(() => resolvePagePath(route.path))
+const currentPage = (): PageId => currentPageId.value
 const hasMountedWorksRoute = ref(route.name === 'works')
 watch(
   () => route.name,

@@ -12,7 +12,7 @@ import { ExperienceUI } from './ExperienceUI'
 import { SceneCoordinator } from './SceneCoordinator'
 import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { DeviceCapability } from '../core/DeviceCapability'
-import { FrameTiming } from '../core/FrameTiming'
+import { FrameStats, type FrameStatsSnapshot } from '../core/FrameStats'
 import { FpsTracker } from './FpsTracker'
 import { SceneEnvironment } from './SceneEnvironment'
 import { ShowreelController } from './ShowreelController'
@@ -54,6 +54,9 @@ import { readDevTeardownFaults } from '../core/devTeardownFaults'
  */
 type ExperienceHost = Omit<SceneHostReady, 'backend'>
 
+/** Stages whose CPU cost is sampled per rendered frame in development. */
+type CpuFrameMetric = 'scene' | 'camera' | 'renderer' | 'total'
+
 export class Experience {
   scene!: THREE.Scene
   /** Per-frame delta clamp — internal to the loop host. */
@@ -64,7 +67,8 @@ export class Experience {
   private _themeAppliedUnsub: (() => void) | null = null
   private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
-  private _frameTiming: FrameTiming | null = null
+  // DEV-only CPU cost of one rendered frame, measured per stage.
+  private _frameTiming: FrameStats<CpuFrameMetric> | null = null
   // Coordinates section state, transforms and updates over adopted scene
   // owners. Experience constructs and disposes this coordinator.
   public coordinator!: SceneCoordinator
@@ -112,6 +116,12 @@ export class Experience {
     return this.features?.storyNav ?? null
   }
   private _needsRender = true // start true to render the first frame
+  /** False until the visitor passes the splash. While the opaque loader
+   *  covers the canvas, continuous ambient/particle/carousel activity must
+   *  not raise render demand: those frames are invisible and only burn
+   *  main-thread time during boot. The first frame still renders (Enter is
+   *  gated on it), and prewarm compiles materials without rendering. */
+  private _splashEntered = false
   private _debugContinuousRendering = false
   // Ambient breathing requests one refresh frame every ~2.5 s while idle.
   // The loop stops when settled, so the per-frame dt
@@ -353,6 +363,7 @@ export class Experience {
     this.coordinator?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
+    this.cursor?.setReducedMotion(reduced)
     this._showreel.setReducedMotion(reduced)
     this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
@@ -488,6 +499,7 @@ export class Experience {
     )
     this.contentReveal = new ContentReveal(this._host.page)
     this.cursor = new Cursor(this.sfx)
+    this.cursor.setReducedMotion(this._reducedMotion)
     // Input was attached above, so pointer coordinates update before Cursor
     // wakes the shared loop; the Works trail consumes them in that same frame.
     this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
@@ -521,6 +533,7 @@ export class Experience {
     // Enter is not exposed until the first successful frame, after the UI
     // owner and its scene dependencies have been initialized.
     this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
+      this._splashEntered = true
       features.triggerSplashOpener()
     })
     // Sync the scene and cursor with the effective section theme. Theme toggles
@@ -560,7 +573,7 @@ export class Experience {
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
       try {
-        this._frameTiming = new FrameTiming()
+        this._frameTiming = new FrameStats(['scene', 'camera', 'renderer', 'total'])
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         // HMR or host teardown can land while the dev-only chunk is loading.
         // Do not construct a panel or publish its window probe after destroy.
@@ -591,7 +604,7 @@ export class Experience {
                 cursorSettled: boolean | null
                 activity: Record<string, boolean>
               }
-              timing: ReturnType<FrameTiming['snapshot']>
+              timing: FrameStatsSnapshot<CpuFrameMetric> | null
             } | null
           }
         ).__jlzRuntimeSnapshot = () => {
@@ -672,7 +685,10 @@ export class Experience {
   private _scheduleBreath(activity: RenderActivity): void {
     // Services is intentionally a still composition at rest; it has no
     // ambient shader or periodic refresh that needs a wall-clock wake-up.
+    // Before Enter the loader covers the canvas: a breath frame would be
+    // invisible work during boot.
     const idle =
+      this._splashEntered &&
       this._host.page() !== 'services' &&
       !document.hidden &&
       idleForAmbientBreath(activity, this._reducedMotion)
@@ -749,10 +765,10 @@ export class Experience {
     // crossing frame, active navigation keeps the frame scheduled; later
     // frames use isAnimating to carry the morph through to its settled state.
     const carousel = this._host.page() === 'home' ? this.carousel : null
-    const carouselActive = carousel?.isAnimating ?? false
+    const carouselActive = this._splashEntered && (carousel?.isAnimating ?? false)
     const worksPlaneActive = this._stages.worksPlaneStage?.isAnimating ?? false
     const contactCyprusActive = this._stages.contactCyprusStage?.isAnimating ?? false
-    const drawTrailActive = this.drawTrail?.isAnimating ?? false
+    const drawTrailActive = this._splashEntered && (this.drawTrail?.isAnimating ?? false)
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
     const burstActive = this.particleBurst?.isActive ?? false
@@ -766,9 +782,13 @@ export class Experience {
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).
     const particlesActive =
-      !this._reducedMotion && (this.coordinator?.hasVisibleParticles() ?? false)
+      !this._reducedMotion &&
+      this._splashEntered &&
+      (this.coordinator?.hasVisibleParticles() ?? false)
     const ambientSceneActive =
-      !this._reducedMotion && (this.coordinator?.hasVisibleAmbientMotion() ?? false)
+      !this._reducedMotion &&
+      this._splashEntered &&
+      (this.coordinator?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
     const camPulsing = this.camera.isPulsing
@@ -824,8 +844,6 @@ export class Experience {
         this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
           toCfg.baku.material.color,
-          fromCfg.baku.material.emissive,
-          toCfg.baku.material.emissive,
           worldState.phaseProgress,
         )
       }

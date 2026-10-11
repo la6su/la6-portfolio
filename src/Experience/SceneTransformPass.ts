@@ -245,8 +245,11 @@ export class SceneTransformPass {
         }
         for (const mesh of meshCache) {
           const m = mesh.material as THREE.Material & { opacity: number }
-          const state = this._opacityCache.get(m) ?? { base: m.opacity, lastFade: Number.NaN }
-          this._opacityCache.set(m, state)
+          let state = this._opacityCache.get(m)
+          if (!state) {
+            state = { base: m.opacity, lastFade: Number.NaN }
+            this._opacityCache.set(m, state)
+          }
           if (state.lastFade !== fade) {
             m.opacity = state.base * fade
             state.lastFade = fade

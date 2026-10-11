@@ -4,17 +4,18 @@
 // history. The material uses the Studio Console's lime/teal signals, and the
 // whole trace decays after the pointer stops so it never leaves a frozen line.
 //
-// Declarative boundary: the owner structure (root group + ribbon mesh) is
-// declared by `app/scene/CursorTrailOwner.vue` and reaches this controller
-// through the `CursorTrailNodes` bag. The pointer history, the hand-built
-// ribbon geometry and the TSL signal material are behavior — they stay here
-// and are assigned onto the adopted mesh.
+// Declarative boundary: `app/scene/CursorTrailOwner.vue` declares the root
+// group, the ribbon mesh, the ribbon BufferGeometry and the TSL node material,
+// and hands them to this controller through the `CursorTrailNodes` bag. The
+// pointer history, the ribbon buffers and the color/opacity node subgraphs are
+// behavior — this controller fills the declared geometry's attributes and
+// assigns the declared material's nodes, and never disposes either resource.
 //
 // HERMES §1: TSL NodeMaterial only.
 // HERMES §35: works section (idx=3) ONLY.
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
+import type { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec3, float, uniform, uv, sin, mix, smoothstep } from 'three/tsl'
 import { input } from '../Input'
 import { prefersReducedMotion } from '../../core/motionPolicy'
@@ -72,16 +73,15 @@ const createTrailOpacityNode = (trailUniforms: TrailUniforms) =>
 export interface CursorTrailNodes {
   /** The owner root — hidden until the Works route gates it on. */
   root: THREE.Group
-  /** The ribbon leaf (geometry + TSL signal material assigned by the
-   *  controller below). */
-  ribbon: THREE.Mesh
+  /** The declared ribbon leaf: its geometry container and TSL material are
+   *  constructed by Tres and disposed with the owner. */
+  ribbon: THREE.Mesh<THREE.BufferGeometry, MeshBasicNodeMaterial>
 }
 
 export class DrawTrail {
   private readonly _root: THREE.Group
-  private readonly _ribbon: THREE.Mesh
   private readonly _uniforms = createTrailUniforms()
-  private geometry: THREE.BufferGeometry
+  private readonly geometry: THREE.BufferGeometry
   private positions: Float32Array // ribbon vertex positions (TRAIL_LENGTH * 2 * 3)
   private uvs: Float32Array // UVs (TRAIL_LENGTH * 2 * 2)
   private indices: Uint16Array // triangle strip indices
@@ -131,7 +131,6 @@ export class DrawTrail {
     // Initial visibility is declared by CursorTrailOwner.vue (:visible="false");
     // setVisible is the only dynamic writer of the root's visibility.
     this._root = nodes.root
-    this._ribbon = nodes.ribbon
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       this.trailPositions.push(new THREE.Vector3())
@@ -164,31 +163,19 @@ export class DrawTrail {
       this.indices[idx + 5] = vi + 2 // left-next
     }
 
-    const material = new MeshBasicNodeMaterial({
-      transparent: true,
-      depthWrite: false,
-      depthTest: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      fog: false,
-      // Keep additive glow energy predictable.
-      toneMapped: false,
-    })
-    material.colorNode = createTrailColorNode(this._uniforms)
-    ;(material as unknown as { opacityNode: unknown }).opacityNode = createTrailOpacityNode(
-      this._uniforms,
-    )
+    // The declared material already carries the transparent/additive/
+    // double-sided options the ribbon needs; this controller only feeds its
+    // node graph. Tres owns the geometry container and the material and
+    // disposes both with the owner, so the controller writes the pointer
+    // buffers into the declared container instead of constructing a second one.
+    const ribbon = nodes.ribbon
+    ribbon.material.colorNode = createTrailColorNode(this._uniforms)
+    ribbon.material.opacityNode = createTrailOpacityNode(this._uniforms)
 
-    // The Tres-mounted leaf carries an owner placeholder until this controller
-    // replaces its geometry/material. The node's Tres disposal boundary owns
-    // the currently assigned ribbon resources; CursorTrailOwner separately
-    // retires its displaced placeholder geometry.
-    this.geometry = new THREE.BufferGeometry()
+    this.geometry = ribbon.geometry
     this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3))
     this.geometry.setAttribute('uv', new THREE.BufferAttribute(this.uvs, 2))
     this.geometry.setIndex(new THREE.BufferAttribute(this.indices, 1))
-    this._ribbon.geometry = this.geometry
-    this._ribbon.material = material
   }
 
   update(_dt: number, camera: THREE.Camera): void {
@@ -341,7 +328,7 @@ export class DrawTrail {
     this._geometryDirty = false
     this._hasCameraBasis = false
     this._hasCameraWorld = false
-    // The Tres-declared mesh owns whichever geometry/material are assigned to
-    // it at host teardown. This controller only retires animation state.
+    // The declared geometry and material belong to the Vue owner; Tres disposes
+    // them when the owner unmounts. This controller only retires animation state.
   }
 }

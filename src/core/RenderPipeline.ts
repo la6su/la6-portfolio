@@ -4,7 +4,6 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { TSLPostPipeline } from './TSLPostPipeline'
-import { withNoToneMapping } from './toneMappingGuard'
 import { copyPostParams, postParamsMatch, type PostParams } from './postParams'
 
 // ─── RenderPipeline Class ──────────────────────────────────────
@@ -64,9 +63,10 @@ export class RenderPipeline {
         pipeline.updateParams(this._params)
         this._paramsDirty = false
       }
-      // The graph handles output conversion; disable renderer tone mapping
-      // for this draw and restore the renderer setting afterward.
-      withNoToneMapping(this._renderer, () => pipeline.render(scene, camera))
+      // The TSL graph owns its output transform (explicit renderOutput with
+      // NoToneMapping + sRGB); three's RenderPipeline.render() swaps the
+      // renderer's own tone mapping/output color space around the draw.
+      pipeline.render(scene, camera)
       return
     }
 

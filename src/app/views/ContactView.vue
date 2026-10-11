@@ -154,7 +154,9 @@ const activeSectionId = useJlzPage('contact', () => rootEl.value, 'contact-01')
           <h2 class="uk-hidden" data-i18n="contact.location.title">Location</h2>
           <div
             class="jlz-contact-location uk-width-1-1"
+            role="group"
             aria-label="Cyprus · Agros"
+            data-i18n-aria-label="contact.location.name"
             uk-scrollspy="cls: uk-animation-fade; repeat: true"
           >
             <span class="uk-text-meta uk-text-uppercase">34.916° N · 32.999° E</span>

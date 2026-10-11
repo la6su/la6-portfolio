@@ -7,9 +7,12 @@
 # Strategy:
 #   - Fingerprinted root JS/CSS/WASM (vite emits [name]-[hash].ext) → immutable, 1 year.
 #     Safe because the hash changes on content change.
-#   - Stable public media under /assets/projects, /assets/gltf and /assets/video
-#     → always revalidate; these publicDir paths do not include content hashes.
-#   - /vendor/prism/* + /js/blog.js → 1 year immutable (version-pinned in repo).
+#   - Stable public media under /assets/projects, /assets/gltf, /assets/video
+#     and /textures → always revalidate; these publicDir paths do not include
+#     content hashes.
+#   - /vendor/* + /fonts/* → 1 year immutable (version-pinned in repo; bump the
+#     path when their content changes).
+#   - /js/blog.js → revalidate daily; it is hand-written and unhashed.
 #   - logo.svg, site.webmanifest, robots.txt, sitemap.xml → revalidate.
 #   - All EN/RU HTML routes → revalidate (OG tags, metadata, and content).
 
@@ -91,9 +94,18 @@
 /assets/video/*
   Cache-Control: public, max-age=0, must-revalidate
 
+# WorksSection loads /textures/sec3-particles.jpg at runtime through
+# THREE.TextureLoader; the path is stable, so the browser must revalidate.
+/textures/*
+  Cache-Control: public, max-age=0, must-revalidate
+
 # ── Vendored libs (version-pinned, content-addressed) ──
 /vendor/*
   Cache-Control: public, max-age=31536000, immutable
+
+# ── Hand-written blog enhancement script (unhashed, edited in place) ──
+/js/blog.js
+  Cache-Control: public, max-age=86400, must-revalidate
 
 # ── Fonts (never change without a path bump) ──
 /fonts/*

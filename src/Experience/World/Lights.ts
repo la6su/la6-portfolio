@@ -215,9 +215,10 @@ export class CinematicLights {
       }
     }
 
-    // Volumetric light: slow orbit for organic atmosphere
-    // (frozen when prefers-reduced-motion — continuous orbit is a vestibular hazard)
-    if (!this._reducedMotion) {
+    // Volumetric light: slow orbit for organic atmosphere. Reduced motion has
+    // already returned above, so the orbit only needs to skip when the section
+    // preset carries no volumetric contribution at all.
+    if (this.volumetricLight.intensity > 0 || this._targetVolumetricIntensity > 0) {
       const time = performance.now() * 0.0004
       this.volumetricLight.position.x = Math.sin(time) * 2.5
       this.volumetricLight.position.z = Math.cos(time) * 2.5
