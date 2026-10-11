@@ -2995,5 +2995,69 @@ Evidence for this slice: `bun run lint`, `bun run type-check:vue`, and
 `bun run build` pass (prerender, sitemap, budgets: boot closure 14.33 kB,
 lazy Three 310.95 kB gzip, largest media `coming-soon.mp4` 4160 kB).
 Tracked `dist` artifacts are regenerated with the source change. Running the
-adapted browser specs and the WebKit playback fix on a real WebKit engine
-remain open checks.
+WebKit playback fix on a real WebKit engine remains an open check; the
+adapted browser specs passed on Chromium and pinned Firefox (see the
+triage checkpoint below).
+
+CinematicNav committed-target checkpoint (2026-10-11): a programmatic
+`goToSection` smooth scroll let scroll-derived sync re-derive the section
+from the live `scrollTop` on every event, so the rail/launcher index
+flickered (3 → 1 → 2 → 3) mid-animation and a launcher click during the
+scroll took the wrong action. `CinematicNav` now commits the target
+(`_programmaticTarget`): while the distance to it shrinks monotonically,
+`_syncFromScroll` keeps the committed section authoritative (parallax still
+follows the real position); arrival (`nextMain === target` or distance ≤ 1
+px) clears the commit, and any increase in distance means the user took
+over and also clears it. Side-target paths clear the commit explicitly.
+`tests/unit/UI/CinematicNav.test.ts` covers commit hold, arrival release,
+and takeover release.
+
+Browser-spec triage checkpoint (2026-10-11): three matrix failures were
+triaged to environment gates, not app defects.
+
+- `home text reveal waits for splash dismissal`: probes measured the
+  reveal chain at +304 ms with `?no-scene` but +0.3-6 s with the scene
+  mounted — the splash opener's first frames stall the main thread for one
+  2.4 s+ block under SwiftShader (rAF probe: single 2437 ms stall). The
+  `data-visible` assertion now carries a 15 s budget; the pre-click
+  "not visible yet" assertion keeps its default budget.
+- Loader-exit budgets (`reduced-motion`, `coarse-pointer`, boot-error
+  specs) were unified at 5 s, matching the DOM-only spec's existing
+  "survive a loaded machine" budget for the same 1.2 s animation plus
+  1.3 s fallback timer.
+- `direct section hashes …` failed once under load: the snapshot showed
+  the splash still mounted 5 s after Enter, so the post-Enter
+  `jlz:navigate` → `router.push` chain hit the same splash-exit stall.
+  Its `toHaveURL` assertion now carries the same 15 s budget.
+- `language toggle …` crashed headless Firefox on the case-study half:
+  the second WebGL document in the same page hits the same software-WebGL
+  GPU-process gate documented for the reduced-motion spec. The test now
+  closes the `/services` page and opens a fresh page for
+  `/works/porsche-911-spider`.
+  After these changes the full suites passed on the rebuilt bundle: Chromium
+  18 passed / 6 skipped, pinned Firefox 17 passed / 7 skipped (0 failed,
+  retries 0). WebKit remains launch-gated by the missing host libraries.
+
+Tone-mapping delegation checkpoint (2026-10-11): a full seam audit against
+installed Tres 5.9.2, Cientos 5.9.2, and Three 0.186.x (custom
+renderer factory, loop bridge, scheduler, compat aliases, loaders,
+post-processing) ranked the removable bespoke seams; slice #1 is
+implemented. `src/core/toneMappingGuard.ts` and its `withNoToneMapping`
+wrap in `RenderPipeline.render` are deleted. `TSLPostPipeline._buildPipeline`
+now ends the graph with three's documented idiom —
+`renderOutput(color, NoToneMapping, SRGBColorSpace)` — and sets
+`outputColorTransform = false`, so the `NoToneMapping` invariant lives in
+the graph instead of a draw-site guard; this supersedes the earlier
+"guard keeps one live consumer" decision. Three's `RenderPipeline.render()`
+still swaps the renderer's own tone mapping/output color space around the
+fullscreen quad draw, so the renderer does not re-encode.
+Parity evidence on the case-texture route (`/works/porsche-911-spider`,
+headless Chromium): per-channel frame means match before/after to five
+decimals (0.0736362/0.086405/0.10958 vs 0.0736342/0.0864031/0.109578),
+maxima identical, pixel diff 8.3 AE (9e-06) — animation jitter only; an
+ACES regression would shift these strongly. `bun run lint`,
+`bun run type-check:vue`, `bun run build` (budgets unchanged), and
+`bun run test:unit` (117/117) pass. Remaining audit candidates #2-#4
+(Cientos control events for `manager.invalidate`, `vignette()` from
+CRT.js, Showreel poster via `useTexture`) and the evidence-backed
+rejections stay recorded in the audit report; they are not scheduled.
